@@ -94,6 +94,18 @@ void line(int x, int y, int xx, int yy) {
       drawRoundedLine(x, y, xx, yy, xstrokeWeight, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
    }
 }
+
+float dist(float x1, float y1, float x2, float y2) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+void point(int x, int y ){
+   SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+   SDL_RenderDrawPoint(renderer, x, y);
+}
+
 void endShape() {
    SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a); // set drawing color to red
    if (shape_style == LINES) {
