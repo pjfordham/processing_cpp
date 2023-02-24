@@ -238,6 +238,10 @@ void fill(unsigned char r) {
    fill_color = { r,r,r,255};
 }
 
+void fill(unsigned char r,unsigned char a) {
+   fill_color = { r,r,r,a};
+}
+
 void fill(unsigned char r, unsigned char g, unsigned char b) {
    fill_color = { r,g,b,255};
 }
@@ -258,6 +262,7 @@ float map(float value, float fromLow, float fromHigh, float toLow, float toHigh)
 }
 
 
+int frameCount = 0;
 int mouseX = 0;
 int mouseY = 0;
 
@@ -284,7 +289,6 @@ int main()
    Uint32 clock = SDL_GetTicks();
    Uint32 frameRateClock = clock;
    bool quit = false;
-   int frameCount = 0;
 
    while (!quit) {
 
