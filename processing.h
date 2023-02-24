@@ -217,6 +217,16 @@ int hour() {
     return hours;
 }
 
+bool xloop = true;
+
+void noLoop() {
+   xloop = false;
+}
+
+void loop() {
+   xloop = true;
+}
+
 void background(int gray) {
    // Clear window to Blue to do blue boarder.
    SDL_SetRenderDrawColor(renderer, gray,gray,gray,0xFF);
@@ -229,9 +239,9 @@ void background(int r, int g, int b) {
    SDL_RenderClear(renderer);
 }
 
-#define M_PI 3.14159265358979323846
-#define TWO_PI (M_PI * 2.0)
-#define HALF_PI (M_PI / 2.0)
+#define PI 3.14159265358979323846
+#define TWO_PI (PI * 2.0)
+#define HALF_PI (PI / 2.0)
 
 int width = 0;
 int height = 0;
@@ -294,6 +304,7 @@ void rect(int x, int y, int width, int height) {
 
 
 int frameCount = 0;
+int zframeCount = 0;
 int mouseX = 0;
 int mouseY = 0;
 
@@ -354,20 +365,25 @@ int main()
          }
       }
 
-      frameCount++;
+      zframeCount++;
       // Print the frame rate every 10 seconds
       Uint32 currentTicks = SDL_GetTicks();
       if (currentTicks - frameRateClock >= 10000) {
-         float frameRate = 1000 * (float) frameCount / (currentTicks - frameRateClock);
+         float frameRate = 1000 * (float) zframeCount / (currentTicks - frameRateClock);
          printf("Frame rate: %f fps\n", frameRate);
-         frameCount = 0;
+         zframeCount = 0;
          frameRateClock = currentTicks;
       }
 
-      draw();
+      if (xloop || frameCount == 0) {
+         draw();
+         // Update the screen
+         SDL_RenderPresent(renderer);
+         frameCount++;
+      } else {
+         SDL_Delay(200);
+      }
       
-      // Update the screen
-      SDL_RenderPresent(renderer);
    }
 
    // TTF_CloseFont(font);
