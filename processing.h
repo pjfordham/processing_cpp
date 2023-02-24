@@ -16,10 +16,51 @@ void draw();
 SDL_Window *window;
 SDL_Renderer *renderer;
 
-std::vector<Pos> shape;
+enum {
+  RADIUS = 0,
+  DIAMETER = 1,
+};
 
-int POINTS = 0;
+enum {
+  CORNERS = 0,
+  WIDTH = 1,
+};
+
+int xellipse_mode = DIAMETER;
+int xrect_mode = WIDTH;
+
+void ellipseMode(int mode) {
+   xellipse_mode = mode;
+}
+
+void rectMode(int mode){
+   xrect_mode = mode;
+}
+
+void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+    // Draw thick line
+    thickLineRGBA(renderer, x1, y1, x2, y2, thickness, r, g, b, a);
+    
+    // // Draw rounded ends
+     filledCircleRGBA(renderer, x1, y1, thickness / 2, r, g, b, a);
+     filledCircleRGBA(renderer, x2, y2, thickness / 2, r, g, b, a);
+}
+
+SDL_Color stroke_color{255,255,255,255};
+SDL_Color fill_color{255,255,255,255};
+
+std::vector<Pos> shape;
+int xstrokeWeight = 1;
+
+enum{
+   POINTS = 0,
+   LINES = 1,
+};
+
+int shape_style = LINES;
+
 void beginShape(int points) {
+   shape_style = points;
    shape.clear();
 }
 
@@ -27,24 +68,54 @@ void vertex(int x, int y) {
    shape.push_back({x,y});
 }
 
-void endShape() {
-   for (std::size_t i = 1; i < shape.size(); ++i) {
-      SDL_RenderDrawLine(renderer, shape[i-1].x, shape[i-1].y, shape[i].x, shape[i].y);
-   }
-}
-
-void stroke(int x) {}
-void strokeWeight(int x) {}
-void noStroke() {}
-
 void ellipse(int x, int y, int width, int height) {
-   filledEllipseRGBA(renderer, x, y, width, height, 255, 0, 0, 255);
-   ellipseRGBA(renderer, x, y, width, height, 255, 255, 255,255);
+   if (xellipse_mode == RADIUS ) {
+      width *=2;
+      height *=2;
+   }
+   filledEllipseRGBA(renderer, x, y, width/2, height/2, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
+   ellipseRGBA(renderer, x, y, width/2, height/2, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
 }
 
 void line(int x, int y, int xx, int yy) {
-   SDL_RenderDrawLine(renderer, x, y, xx, yy);
+   if (xstrokeWeight == 1) {
+      SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+      SDL_RenderDrawLine(renderer, x, y, xx, yy);
+   } else {
+      drawRoundedLine(x, y, xx, yy, xstrokeWeight, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+   }
 }
+void endShape() {
+   SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a); // set drawing color to red
+   if (shape_style == LINES) {
+      for (std::size_t i = 1; i < shape.size(); ++i) {
+         line(shape[i-1].x, shape[i-1].y, shape[i].x, shape[i].y);
+      }
+      line(shape[shape.size()-1].x, shape[shape.size()-1].y, shape[0].x, shape[0].y);
+   } else if (shape_style == POINTS) {
+      for (std::size_t i = 0; i < shape.size(); ++i) {
+         if (xstrokeWeight == 1) {
+            SDL_RenderDrawPoint(renderer, shape[i].x, shape[i].y); // draw point at (10, 10)
+         } else {
+            filledEllipseRGBA(renderer, shape[i].x, shape[i].y, xstrokeWeight/2, xstrokeWeight/2, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+         }
+      }
+   }
+}
+
+void stroke(unsigned char x) {
+   stroke_color = SDL_Color{x,x,x,255};
+}
+
+void strokeWeight(int x) {
+   xstrokeWeight = x;
+}
+
+void noStroke() {
+   stroke_color = {0,0,0,0};
+}
+
+
 
 double radians(double degrees) {
     return degrees * M_PI / 180.0;
@@ -73,6 +144,16 @@ int second() {
     int seconds = local_time.tm_sec;
 
     return seconds;
+}
+
+float constrain(float value, float lower, float upper) {
+    if (value < lower) {
+        return lower;
+    } else if (value > upper) {
+        return upper;
+    } else {
+        return value;
+    }
 }
 
 int minute() {
@@ -153,16 +234,20 @@ void size(int _width, int _height) {
 
 }
 
-void fill(int r) {
-   SDL_SetRenderDrawColor(renderer, r, r, r, 0xFF);
+void fill(unsigned char r) {
+   fill_color = { r,r,r,255};
 }
 
-void fill(int r, int g, int b) {
-   SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+void fill(unsigned char r, unsigned char g, unsigned char b) {
+   fill_color = { r,g,b,255};
 }
 
 void rect(int x, int y, int width, int height) {
-   // draw black background for theatre of life
+   if (xrect_mode == CORNERS) {
+      width = width -x;
+      height = height - y;
+   }
+   SDL_SetRenderDrawColor(renderer, fill_color.r,fill_color.g,fill_color.b,fill_color.a); // set drawing color to red
    SDL_Rect fillRect = { x, y, width, height };
    SDL_RenderFillRect(renderer, &fillRect);
 }
@@ -171,6 +256,10 @@ float map(float value, float fromLow, float fromHigh, float toLow, float toHigh)
   float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
   return result;
 }
+
+
+int mouseX = 0;
+int mouseY = 0;
 
 int main()
 {
@@ -190,7 +279,6 @@ int main()
   //     return 1;
   //  }
 
-
    setup();
 
    Uint32 clock = SDL_GetTicks();
@@ -204,6 +292,9 @@ int main()
       while (SDL_PollEvent(&event)) {
          if (event.type == SDL_QUIT) {
             quit = true;
+         } else if (event.type == SDL_MOUSEMOTION ) {
+            mouseX = event.motion.x;
+            mouseY = event.motion.y;
          } else if (event.type == SDL_MOUSEBUTTONDOWN) {
             if (event.button.button == SDL_BUTTON_LEFT) {
             } else if (event.button.button == SDL_BUTTON_RIGHT) {
