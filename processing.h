@@ -1,11 +1,111 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
+#include <algorithm>
+#include <chrono>
+#include <vector>
+
+struct Pos {
+   int x;
+   int y;
+};
 
 void setup();
-void loop();
+void draw();
 
 SDL_Window *window;
 SDL_Renderer *renderer;
+
+std::vector<Pos> shape;
+
+int POINTS = 0;
+void beginShape(int points) {
+   shape.clear();
+}
+
+void vertex(int x, int y) {
+   shape.push_back({x,y});
+}
+
+void endShape() {
+   for (std::size_t i = 1; i < shape.size(); ++i) {
+      SDL_RenderDrawLine(renderer, shape[i-1].x, shape[i-1].y, shape[i].x, shape[i].y);
+   }
+}
+
+void stroke(int x) {}
+void strokeWeight(int x) {}
+void noStroke() {}
+
+void ellipse(int x, int y, int width, int height) {
+   filledEllipseRGBA(renderer, x, y, width, height, 255, 0, 0, 255);
+   ellipseRGBA(renderer, x, y, width, height, 255, 255, 255,255);
+}
+
+void line(int x, int y, int xx, int yy) {
+   SDL_RenderDrawLine(renderer, x, y, xx, yy);
+}
+
+double radians(double degrees) {
+    return degrees * M_PI / 180.0;
+}
+
+double norm(double value, double start, double stop) {
+    return (value - start) / (stop - start);
+}
+
+double norm(double value, double start1, double stop1, double start2, double stop2) {
+    double adjustedValue = (value - start1) / (stop1 - start1);
+    return start2 + (stop2 - start2) * adjustedValue;
+}
+
+int second() {
+   // Get the current wall clock time
+    auto now = std::chrono::system_clock::now();
+
+    // Convert to time_t and then to tm structure in local time
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+    std::tm local_time = *std::localtime(&time);
+
+    // Extract hours, minutes, and seconds from the tm structure
+    int hours = local_time.tm_hour;
+    int minutes = local_time.tm_min;
+    int seconds = local_time.tm_sec;
+
+    return seconds;
+}
+
+int minute() {
+   // Get the current wall clock time
+    auto now = std::chrono::system_clock::now();
+
+    // Convert to time_t and then to tm structure in local time
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+    std::tm local_time = *std::localtime(&time);
+
+    // Extract hours, minutes, and seconds from the tm structure
+    int hours = local_time.tm_hour;
+    int minutes = local_time.tm_min;
+    int seconds = local_time.tm_sec;
+
+    return minutes;
+}
+
+int hour() {
+   // Get the current wall clock time
+    auto now = std::chrono::system_clock::now();
+
+    // Convert to time_t and then to tm structure in local time
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+    std::tm local_time = *std::localtime(&time);
+
+    // Extract hours, minutes, and seconds from the tm structure
+    int hours = local_time.tm_hour;
+    int minutes = local_time.tm_min;
+    int seconds = local_time.tm_sec;
+
+    return hours;
+}
 
 void background(int gray) {
    // Clear window to Blue to do blue boarder.
@@ -19,8 +119,19 @@ void background(int r, int g, int b) {
    SDL_RenderClear(renderer);
 }
 
-void size(int width, int height) {
+#define M_PI 3.14159265358979323846
+#define TWO_PI (M_PI * 2.0)
+#define HALF_PI (M_PI / 2.0)
+
+int width = 0;
+int height = 0;
+
+using std::min;
+
+void size(int _width, int _height) {
    // Create a window
+   width = _width;
+   height = _height;
    window = SDL_CreateWindow("Proce++ing",
                              SDL_WINDOWPOS_UNDEFINED,
                              SDL_WINDOWPOS_UNDEFINED,
@@ -42,10 +153,14 @@ void size(int width, int height) {
 
 }
 
+void fill(int r) {
+   SDL_SetRenderDrawColor(renderer, r, r, r, 0xFF);
+}
+
 void fill(int r, int g, int b) {
    SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
-   
 }
+
 void rect(int x, int y, int width, int height) {
    // draw black background for theatre of life
    SDL_Rect fillRect = { x, y, width, height };
@@ -123,7 +238,7 @@ int main()
          frameRateClock = currentTicks;
       }
 
-      loop();
+      draw();
       
       // Update the screen
       SDL_RenderPresent(renderer);
