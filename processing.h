@@ -101,6 +101,11 @@ float dist(float x1, float y1, float x2, float y2) {
     return std::sqrt(dx * dx + dy * dy);
 }
 
+float random(float min, float max) {
+    float range = max - min;
+    return static_cast<float>(std::rand()) / RAND_MAX * range + min;
+}
+
 void point(int x, int y ){
    SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
    SDL_RenderDrawPoint(renderer, x, y);
