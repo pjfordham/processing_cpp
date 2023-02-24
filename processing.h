@@ -30,6 +30,8 @@ enum {
   WIDTH = 1,
 };
 
+bool anything_drawn;
+
 float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
   float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
   return result;
@@ -47,7 +49,8 @@ void rectMode(int mode){
 }
 
 void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-    // Draw thick line
+   anything_drawn = true;
+   // Draw thick line
     thickLineRGBA(renderer, x1, y1, x2, y2, thickness, r, g, b, a);
     
     // // Draw rounded ends
@@ -78,6 +81,7 @@ void vertex(int x, int y) {
 }
 
 void ellipse(int x, int y, int width, int height) {
+   anything_drawn = true;
    if (xellipse_mode == RADIUS ) {
       width *=2;
       height *=2;
@@ -87,6 +91,7 @@ void ellipse(int x, int y, int width, int height) {
 }
 
 void line(int x, int y, int xx, int yy) {
+   anything_drawn = true;
    if (xstrokeWeight == 1) {
       SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
       SDL_RenderDrawLine(renderer, x, y, xx, yy);
@@ -107,11 +112,13 @@ float random(float min, float max) {
 }
 
 void point(int x, int y ){
+   anything_drawn = true;
    SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
    SDL_RenderDrawPoint(renderer, x, y);
 }
 
 void endShape() {
+   anything_drawn = true;
    SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a); // set drawing color to red
    if (shape_style == LINES) {
       for (std::size_t i = 1; i < shape.size(); ++i) {
@@ -135,14 +142,29 @@ enum {
 };
 
 int xcolorMode = RGB;
-int xcolorScale = 255;
+int xcolorScaleR = 255;
+int xcolorScaleG = 255;
+int xcolorScaleB = 255;
+int xcolorScaleA = 255;
+
 
 void colorMode(int mode, float scale) {
   xcolorMode = mode;
-  xcolorScale = scale;
+  xcolorScaleR = scale;
+  xcolorScaleG = scale;
+  xcolorScaleB = scale;
+  xcolorScaleA = scale;
 }
 
- void stroke(unsigned char x) {
+void colorMode(int mode, float r, float g, float b) {
+  xcolorMode = mode;
+  xcolorScaleR = r;
+  xcolorScaleG = g;
+  xcolorScaleB = b;
+  xcolorScaleA = 255;
+}
+
+void stroke(unsigned char x) {
    stroke_color = SDL_Color{x,x,x,255};
 }
 
@@ -245,12 +267,14 @@ void loop() {
 }
 
 void background(int gray) {
+   anything_drawn = true;
    // Clear window to Blue to do blue boarder.
    SDL_SetRenderDrawColor(renderer, gray,gray,gray,0xFF);
    SDL_RenderClear(renderer);
 }
 
 void background(int r, int g, int b) {
+   anything_drawn = true;
    // Clear window to Blue to do blue boarder.
    SDL_SetRenderDrawColor(renderer, r,g,b,0xFF);
    SDL_RenderClear(renderer);
@@ -264,6 +288,8 @@ int width = 0;
 int height = 0;
 
 using std::min;
+
+SDL_Texture* backBuffer;
 
 void size(int _width, int _height) {
    // Create a window
@@ -288,27 +314,72 @@ void size(int _width, int _height) {
       abort();
    }
 
+   backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, width, height);
+   if (!backBuffer)
+   {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
+      abort();
+   }
+   
+   // Set the back buffer as the render target
+   SDL_SetRenderTarget(renderer, backBuffer);
+
+   anything_drawn = true;
+ 
+}
+
+void HSBtoRGB(float h, float s, float v, int& _r, int& _g, int& _b)
+{
+    int i = floorf(h * 6);
+    auto f = h * 6.0 - i;
+    auto p = v * (1.0 - s);
+    auto q = v * (1.0 - f * s);
+    auto t = v * (1.0 - (1.0 - f) * s);
+
+    float r,g,b;
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    _r = roundf(r * 255);
+    _g = roundf(g * 255);
+    _b = roundf(b * 255);
 }
 
 void fill(float _r) {
-   unsigned char r = map(_r,0,xcolorScale,0,255);
-   fill_color = { r,r,r,255};
+   unsigned char r = map(_r,0,xcolorScaleR,0,255);
+   unsigned char g = map(_r,0,xcolorScaleG,0,255);
+   unsigned char b = map(_r,0,xcolorScaleB,0,255);
+   fill_color = { r,g,b,255};
 }
 
 void fill(float _r,float _a) {
-   unsigned char r = map(_r,0,xcolorScale,0,255);
-   unsigned char a = map(_a,0,xcolorScale,0,255);
+   unsigned char r = map(_r,0,xcolorScaleR,0,255);
+   unsigned char g = map(_r,0,xcolorScaleG,0,255);
+   unsigned char b = map(_r,0,xcolorScaleB,0,255);
+   unsigned char a = map(_a,0,xcolorScaleA,0,255);
    fill_color = { r,r,r,a };
 }
 
 void fill(float _r,float _g,  float _b) {
-   unsigned char r = map(_r,0,xcolorScale,0,255);
-   unsigned char g = map(_g,0,xcolorScale,0,255);
-   unsigned char b = map(_b,0,xcolorScale,0,255);
-   fill_color = { r,g,b,255};
+   unsigned char r = map(_r,0,xcolorScaleR,0,255);
+   unsigned char g = map(_g,0,xcolorScaleG,0,255);
+   unsigned char b = map(_b,0,xcolorScaleB,0,255);
+   if (xcolorMode == HSB) {
+      int rr,gg,bb;
+      HSBtoRGB(r/255.0,g/255.0,b/255.0,rr,gg,bb);
+      fill_color = { (unsigned char)rr,(unsigned char)gg,(unsigned char)bb,255};
+   } else {
+      fill_color = { r,g,b,255};
+   }
 }
 
 void rect(int x, int y, int width, int height) {
+   anything_drawn = true;
    if (xrect_mode == CORNERS) {
       width = width -x;
       height = height - y;
@@ -382,7 +453,6 @@ int main()
          }
       }
 
-      zframeCount++;
       // Print the frame rate every 10 seconds
       Uint32 currentTicks = SDL_GetTicks();
       if (currentTicks - frameRateClock >= 10000) {
@@ -393,14 +463,23 @@ int main()
       }
 
       if (xloop || frameCount == 0) {
+         anything_drawn = false;
          draw();
          // Update the screen
-         SDL_RenderPresent(renderer);
-         frameCount++;
+         if (anything_drawn) {
+            // Set the default render target
+            SDL_SetRenderTarget(renderer, NULL);
+            SDL_RenderCopy(renderer, backBuffer, NULL, NULL);
+            SDL_SetRenderTarget(renderer, backBuffer);
+            SDL_RenderPresent(renderer);
+            frameCount++;
+            zframeCount++;
+         } else {
+            SDL_Delay(5);
+         }
       } else {
-         SDL_Delay(200);
+         SDL_Delay(5);
       }
-      
    }
 
    // TTF_CloseFont(font);
