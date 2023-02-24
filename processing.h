@@ -1,9 +1,13 @@
+#ifndef PROCESSING_H
+#define PROCESSING_H
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <algorithm>
 #include <chrono>
 #include <vector>
+#include <cmath>
 
 struct Pos {
    int x;
@@ -25,6 +29,11 @@ enum {
   CORNERS = 0,
   WIDTH = 1,
 };
+
+float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
+  float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
+  return result;
+}
 
 int xellipse_mode = DIAMETER;
 int xrect_mode = WIDTH;
@@ -103,7 +112,20 @@ void endShape() {
    }
 }
 
-void stroke(unsigned char x) {
+enum {
+  RGB = 0,
+  HSB = 1,
+};
+
+int xcolorMode = RGB;
+int xcolorScale = 255;
+
+void colorMode(int mode, float scale) {
+  xcolorMode = mode;
+  xcolorScale = scale;
+}
+
+ void stroke(unsigned char x) {
    stroke_color = SDL_Color{x,x,x,255};
 }
 
@@ -114,7 +136,6 @@ void strokeWeight(int x) {
 void noStroke() {
    stroke_color = {0,0,0,0};
 }
-
 
 
 double radians(double degrees) {
@@ -128,6 +149,14 @@ double norm(double value, double start, double stop) {
 double norm(double value, double start1, double stop1, double start2, double stop2) {
     double adjustedValue = (value - start1) / (stop1 - start1);
     return start2 + (stop2 - start2) * adjustedValue;
+}
+
+auto start_time = std::chrono::high_resolution_clock::now();
+
+unsigned long millis() {
+   auto current_time = std::chrono::high_resolution_clock::now();
+   auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+   return elapsed_time;
 }
 
 int second() {
@@ -234,15 +263,21 @@ void size(int _width, int _height) {
 
 }
 
-void fill(unsigned char r) {
+void fill(float _r) {
+   unsigned char r = map(_r,0,xcolorScale,0,255);
    fill_color = { r,r,r,255};
 }
 
-void fill(unsigned char r,unsigned char a) {
-   fill_color = { r,r,r,a};
+void fill(float _r,float _a) {
+   unsigned char r = map(_r,0,xcolorScale,0,255);
+   unsigned char a = map(_a,0,xcolorScale,0,255);
+   fill_color = { r,r,r,a };
 }
 
-void fill(unsigned char r, unsigned char g, unsigned char b) {
+void fill(float _r,float _g,  float _b) {
+   unsigned char r = map(_r,0,xcolorScale,0,255);
+   unsigned char g = map(_g,0,xcolorScale,0,255);
+   unsigned char b = map(_b,0,xcolorScale,0,255);
    fill_color = { r,g,b,255};
 }
 
@@ -256,10 +291,6 @@ void rect(int x, int y, int width, int height) {
    SDL_RenderFillRect(renderer, &fillRect);
 }
 
-float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
-  float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
-  return result;
-}
 
 
 int frameCount = 0;
@@ -349,3 +380,5 @@ int main()
    SDL_Quit();
    return 0;
 };
+
+#endif
