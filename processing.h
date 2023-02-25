@@ -21,13 +21,15 @@ SDL_Window *window;
 SDL_Renderer *renderer;
 
 enum {
-  RADIUS = 0,
   DIAMETER = 1,
-};
+//  RADIUS = 3,
+  };
 
 enum {
   CORNERS = 0,
-  WIDTH = 1,
+  CORNER = 1,
+  CENTER = 2,
+  RADIUS = 3,
 };
 
 bool anything_drawn;
@@ -38,7 +40,7 @@ float map(float value, float fromLow, float fromHigh, float toLow, float toHigh)
 }
 
 int xellipse_mode = DIAMETER;
-int xrect_mode = WIDTH;
+int xrect_mode = CORNER;
 
 void ellipseMode(int mode) {
    xellipse_mode = mode;
@@ -383,6 +385,9 @@ void rect(int x, int y, int width, int height) {
    if (xrect_mode == CORNERS) {
       width = width -x;
       height = height - y;
+   } else if (xrect_mode == CENTER) {
+      x = x - width / 2;
+      y = y - height / 2;
    }
    SDL_SetRenderDrawColor(renderer, fill_color.r,fill_color.g,fill_color.b,fill_color.a); // set drawing color to red
    SDL_Rect fillRect = { x, y, width, height };
