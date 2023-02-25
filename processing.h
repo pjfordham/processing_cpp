@@ -320,12 +320,12 @@ void size(int _width, int _height) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
       abort();
    }
-   
+
    // Set the back buffer as the render target
    SDL_SetRenderTarget(renderer, backBuffer);
 
-   anything_drawn = true;
- 
+   background(255);
+
 }
 
 void HSBtoRGB(float h, float s, float v, int& _r, int& _g, int& _b)
