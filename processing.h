@@ -67,6 +67,7 @@ SDL_Color fill_color{255,255,255,255};
 
 std::vector<Pos> shape;
 int xstrokeWeight = 1;
+typedef bool boolean;
 
 enum{
    POINTS = 0,
