@@ -166,8 +166,61 @@ void colorMode(int mode, float r, float g, float b) {
   xcolorScaleA = 255;
 }
 
-void stroke(unsigned char x) {
-   stroke_color = SDL_Color{x,x,x,255};
+SDL_Color HSBtoRGB(float h, float s, float v, float a)
+{
+    int i = floorf(h * 6);
+    auto f = h * 6.0 - i;
+    auto p = v * (1.0 - s);
+    auto q = v * (1.0 - f * s);
+    auto t = v * (1.0 - (1.0 - f) * s);
+
+    float r,g,b;
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+       (unsigned char)roundf(r * 255),
+       (unsigned char)roundf(g * 255),
+       (unsigned char)roundf(b * 255) ,
+       (unsigned char)a
+    };
+}
+
+SDL_Color flatten_color_mode(float r, float g, float b, float a) {
+   r = map(r,0,xcolorScaleR,0,255);
+   g = map(g,0,xcolorScaleG,0,255);
+   b = map(b,0,xcolorScaleB,0,255);
+   a = map(a,0,xcolorScaleA,0,255);
+   if (xcolorMode == HSB) {
+      return HSBtoRGB(r/255.0,g/255.0,b/255.0,a);
+   }
+    return {
+       (unsigned char)r,
+       (unsigned char)g,
+       (unsigned char)b,
+       (unsigned char)a
+    };
+}
+
+void stroke(float r,float g,  float b, float a) {
+   stroke_color = flatten_color_mode(r,g,b,a);
+}
+
+void stroke(float r,float g, float b) {
+   stroke(r,g,b,xcolorScaleA);
+}
+
+void stroke(float r,float a) {
+   stroke(r,r,r,a);
+}
+
+void stroke(float r) {
+   stroke(r,r,r,xcolorScaleA);
 }
 
 void strokeWeight(int x) {
@@ -268,18 +321,14 @@ void loop() {
    xloop = true;
 }
 
-void background(int gray) {
+void background(int r, int g, int b) {
    anything_drawn = true;
-   // Clear window to Blue to do blue boarder.
-   SDL_SetRenderDrawColor(renderer, gray,gray,gray,0xFF);
+   SDL_SetRenderDrawColor(renderer, r,g,b,0xFF);
    SDL_RenderClear(renderer);
 }
 
-void background(int r, int g, int b) {
-   anything_drawn = true;
-   // Clear window to Blue to do blue boarder.
-   SDL_SetRenderDrawColor(renderer, r,g,b,0xFF);
-   SDL_RenderClear(renderer);
+void background(int gray) {
+   background(gray, gray,gray);
 }
 
 #define PI 3.14159265358979323846
@@ -323,62 +372,33 @@ void size(int _width, int _height) {
       abort();
    }
 
+   SDL_SetTextureBlendMode(backBuffer, SDL_BLENDMODE_BLEND);
    // Set the back buffer as the render target
    SDL_SetRenderTarget(renderer, backBuffer);
+   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
    background(255);
 
 }
 
-void HSBtoRGB(float h, float s, float v, int& _r, int& _g, int& _b)
-{
-    int i = floorf(h * 6);
-    auto f = h * 6.0 - i;
-    auto p = v * (1.0 - s);
-    auto q = v * (1.0 - f * s);
-    auto t = v * (1.0 - (1.0 - f) * s);
 
-    float r,g,b;
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
-    }
-    _r = roundf(r * 255);
-    _g = roundf(g * 255);
-    _b = roundf(b * 255);
+void fill(float r,float g,  float b, float a) {
+   fill_color = flatten_color_mode(r,g,b,a);
 }
 
-void fill(float _r) {
-   unsigned char r = map(_r,0,xcolorScaleR,0,255);
-   unsigned char g = map(_r,0,xcolorScaleG,0,255);
-   unsigned char b = map(_r,0,xcolorScaleB,0,255);
-   fill_color = { r,g,b,255};
+void fill(float r,float g, float b) {
+   fill(r,g,b,xcolorScaleA);
 }
 
-void fill(float _r,float _a) {
-   unsigned char r = map(_r,0,xcolorScaleR,0,255);
-   unsigned char g = map(_r,0,xcolorScaleG,0,255);
-   unsigned char b = map(_r,0,xcolorScaleB,0,255);
-   unsigned char a = map(_a,0,xcolorScaleA,0,255);
-   fill_color = { r,r,r,a };
+void fill(float r,float a) {
+   fill(r,r,r,a);
 }
 
-void fill(float _r,float _g,  float _b) {
-   unsigned char r = map(_r,0,xcolorScaleR,0,255);
-   unsigned char g = map(_g,0,xcolorScaleG,0,255);
-   unsigned char b = map(_b,0,xcolorScaleB,0,255);
-   if (xcolorMode == HSB) {
-      int rr,gg,bb;
-      HSBtoRGB(r/255.0,g/255.0,b/255.0,rr,gg,bb);
-      fill_color = { (unsigned char)rr,(unsigned char)gg,(unsigned char)bb,255};
-   } else {
-      fill_color = { r,g,b,255};
-   }
+void fill(float r) {
+   fill(r,r,r,xcolorScaleA);
 }
+
+
 
 void rect(int x, int y, int width, int height) {
    anything_drawn = true;
@@ -389,7 +409,7 @@ void rect(int x, int y, int width, int height) {
       x = x - width / 2;
       y = y - height / 2;
    }
-   SDL_SetRenderDrawColor(renderer, fill_color.r,fill_color.g,fill_color.b,fill_color.a); // set drawing color to red
+   SDL_SetRenderDrawColor(renderer, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
    SDL_Rect fillRect = { x, y, width, height };
    SDL_RenderFillRect(renderer, &fillRect);
 }
