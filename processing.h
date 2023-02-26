@@ -17,6 +17,8 @@ struct Pos {
 void setup();
 void draw();
 
+using FloatArrayList = std::vector<float>;
+
 SDL_Window *window;
 SDL_Renderer *renderer;
 
@@ -138,6 +140,11 @@ void endShape() {
    }
 }
 
+int setFrameRate = 60;
+void frameRate(int rate) {
+   setFrameRate = rate;
+}
+
 enum {
   RGB = 0,
   HSB = 1,
@@ -150,20 +157,20 @@ int xcolorScaleB = 255;
 int xcolorScaleA = 255;
 
 
-void colorMode(int mode, float scale) {
-  xcolorMode = mode;
-  xcolorScaleR = scale;
-  xcolorScaleG = scale;
-  xcolorScaleB = scale;
-  xcolorScaleA = scale;
-}
-
-void colorMode(int mode, float r, float g, float b) {
+void colorMode(int mode, float r, float g, float b, float a) {
   xcolorMode = mode;
   xcolorScaleR = r;
   xcolorScaleG = g;
   xcolorScaleB = b;
-  xcolorScaleA = 255;
+  xcolorScaleA = a;
+}
+
+void colorMode(int mode, float scale) {
+   colorMode(mode, scale, scale, scale, scale);
+}
+
+void colorMode(int mode, float r, float g, float b) {
+   colorMode(mode, r,g,b,255);
 }
 
 SDL_Color HSBtoRGB(float h, float s, float v, float a)
@@ -428,22 +435,25 @@ int main()
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
       return 1;
    }
-  //  TTF_Font* font = NULL;
-  //  if (TTF_Init() != 0) {
-  //     printf("TTF_Init failed: %s\n", TTF_GetError());
-  //     return 1;
-  //  }
-  // font = TTF_OpenFont("../Instruction.ttf", 40);
-  //  if (font == NULL) {
-  //     printf("TTF_OpenFont failed: %s\n", TTF_GetError());
-  //     return 1;
-  //  }
+   //  TTF_Font* font = NULL;
+   //  if (TTF_Init() != 0) {
+   //     printf("TTF_Init failed: %s\n", TTF_GetError());
+   //     return 1;
+   //  }
+   // font = TTF_OpenFont("../Instruction.ttf", 40);
+   //  if (font == NULL) {
+   //     printf("TTF_OpenFont failed: %s\n", TTF_GetError());
+   //     return 1;
+   //  }
 
    setup();
 
    Uint32 clock = SDL_GetTicks();
    Uint32 frameRateClock = clock;
    bool quit = false;
+
+   // Set the initial tick count
+   Uint32 ticks = SDL_GetTicks();
 
    while (!quit) {
 
@@ -478,34 +488,38 @@ int main()
          }
       }
 
-      // Print the frame rate every 10 seconds
-      Uint32 currentTicks = SDL_GetTicks();
-      if (currentTicks - frameRateClock >= 10000) {
-         float frameRate = 1000 * (float) zframeCount / (currentTicks - frameRateClock);
-         printf("Frame rate: %f fps\n", frameRate);
-         zframeCount = 0;
-         frameRateClock = currentTicks;
-      }
+      // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
+      if (SDL_GetTicks() - ticks >= (1000 / setFrameRate))
+      {
+         // Print the frame rate every 10 seconds
+         Uint32 currentTicks = SDL_GetTicks();
+         if (currentTicks - frameRateClock >= 10000) {
+            float frameRate = 1000 * (float) zframeCount / (currentTicks - frameRateClock);
+            printf("Frame rate: %f fps\n", frameRate);
+            zframeCount = 0;
+            frameRateClock = currentTicks;
+         }
 
-      if (xloop || frameCount == 0) {
-         anything_drawn = false;
-         draw();
-         // Update the screen
-         if (anything_drawn) {
-            // Set the default render target
-            SDL_SetRenderTarget(renderer, NULL);
-            SDL_RenderCopy(renderer, backBuffer, NULL, NULL);
-            SDL_SetRenderTarget(renderer, backBuffer);
-            SDL_RenderPresent(renderer);
-            frameCount++;
-            zframeCount++;
+         if (xloop || frameCount == 0) {
+            anything_drawn = false;
+            draw();
+            // Update the screen
+            if (anything_drawn) {
+               // Set the default render target
+               SDL_SetRenderTarget(renderer, NULL);
+               SDL_RenderCopy(renderer, backBuffer, NULL, NULL);
+               SDL_SetRenderTarget(renderer, backBuffer);
+               SDL_RenderPresent(renderer);
+               frameCount++;
+               zframeCount++;
+            } else {
+               SDL_Delay(5);
+            }
          } else {
             SDL_Delay(5);
          }
-      } else {
-         SDL_Delay(5);
-      }
-   }
+         ticks = SDL_GetTicks();
+}   }
 
    // TTF_CloseFont(font);
 
