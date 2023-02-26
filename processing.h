@@ -214,6 +214,19 @@ SDL_Color flatten_color_mode(float r, float g, float b, float a) {
     };
 }
 
+Uint32 color(int r, int g, int b, int a) {
+   SDL_Color color = flatten_color_mode(r,g,b,a);
+   return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+}
+
+Uint32 color(int r, int g, int b) {
+  return color(r, g, b, 255);
+}
+
+Uint32 color(int gray) {
+  return color(gray, gray, gray);
+}
+
 void stroke(float r,float g,  float b, float a) {
    stroke_color = flatten_color_mode(r,g,b,a);
 }
@@ -372,7 +385,7 @@ void size(int _width, int _height) {
       abort();
    }
 
-   backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, width, height);
+   backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
    if (!backBuffer)
    {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -388,6 +401,24 @@ void size(int _width, int _height) {
 
 }
 
+
+std::vector<Uint32> _pixels;
+Uint32 *pixels; // pointer to the texture's pixel data in the desired format
+
+void loadPixels() {
+   _pixels.resize(width*height);
+   pixels =  _pixels.data();
+   int pitch = width * sizeof(Uint32);
+   SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_ARGB8888, pixels, pitch);
+}
+
+void updatePixels() {
+   anything_drawn = true;
+   int pitch = width * sizeof(Uint32);
+   SDL_UpdateTexture(backBuffer, NULL, (void*) pixels, pitch);
+   _pixels.clear();
+   pixels = NULL;
+}
 
 void fill(float r,float g,  float b, float a) {
    fill_color = flatten_color_mode(r,g,b,a);
