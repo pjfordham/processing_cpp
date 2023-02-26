@@ -62,6 +62,10 @@ void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Ui
      filledCircleRGBA(renderer, x2, y2, thickness / 2, r, g, b, a);
 }
 
+float lerp(float start, float stop, float amt) {
+    return start + (stop - start) * amt;
+}
+
 SDL_Color stroke_color{255,255,255,255};
 SDL_Color fill_color{255,255,255,255};
 
