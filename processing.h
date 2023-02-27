@@ -54,6 +54,10 @@ void scale(float x, float y) {
    current_matrix = current_matrix.multiply( Matrix2D::scale(x,y) );
 }
 
+void scale(float x) {
+   scale(x,x);
+}
+
 void rotate(float angle) {
    current_matrix = current_matrix.multiply( Matrix2D::rotate(angle) );
 }
@@ -472,7 +476,7 @@ void rect(int x, int y, int width, int height) {
    float angle = current_matrix.get_angle();
 
    // Create a texture to render to
-   SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width,height);
+   SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 1,1);
    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 
    // Set the render target to the texture
@@ -483,10 +487,8 @@ void rect(int x, int y, int width, int height) {
 
    SDL_SetRenderTarget(renderer, backBuffer);
 
-   SDL_Rect  srcrect{0,0,width,height};
-   SDL_Rect  dstrect = {translation.x+x,translation.y+y,width*scale.x,height*scale.y};
-
-   SDL_RenderCopyEx(renderer,texture,&srcrect,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
+   SDL_Rect dstrect = {translation.x+scale.x*x,translation.y+scale.y*y,width*scale.x,height*scale.y};
+   SDL_RenderCopyEx(renderer,texture,NULL,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
 
 }
 
