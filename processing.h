@@ -612,9 +612,28 @@ void rect(int x, int y, int width, int height) {
       x = x - width / 2;
       y = y - height / 2;
    }
+
+   Vector2D translation = current_matrix.get_translation();
+   Vector2D scale = current_matrix.get_scale();
+   float angle = current_matrix.get_angle();
+
+   // Create a texture to render to
+   SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width,height);
+   SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
+   // Set the render target to the texture
+   SDL_SetRenderTarget(renderer, texture);
+
    SDL_SetRenderDrawColor(renderer, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
-   SDL_Rect fillRect = { x, y, width, height };
-   SDL_RenderFillRect(renderer, &fillRect);
+   SDL_RenderFillRect(renderer, NULL);
+
+   SDL_SetRenderTarget(renderer, backBuffer);
+
+   SDL_Rect  srcrect{0,0,width,height};
+   SDL_Rect  dstrect = {translation.x+x,translation.y+y,width*scale.x,height*scale.y};
+
+   SDL_RenderCopyEx(renderer,texture,&srcrect,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
+
 }
 
 
@@ -698,6 +717,7 @@ int main()
 
          if (xloop || frameCount == 0) {
             anything_drawn = false;
+            current_matrix = Matrix2D::Identity();
             draw();
             // Update the screen
             if (anything_drawn) {
