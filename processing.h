@@ -9,19 +9,14 @@
 #include <vector>
 #include <cmath>
 
-#define y1 processing_y1
+#include "processing_math.h"
+#include "processing_java_compatability.h"
 
-struct Pos {
-   int x;
-   int y;
-};
 
 void setup();
 void draw();
 
 SDL_Texture* backBuffer;
-
-using FloatArrayList = std::vector<float>;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -38,117 +33,6 @@ enum {
   RADIUS = 3,
 };
 
-class Vector2D {
-public:
-    float x, y;
-};
-
-class Matrix2D {
-private:
-   float m_matrix[3][3];
-public:
-   Matrix2D(float a, float b, float c, float d, float e, float f):
-      m_matrix{
-         {a,b,c},
-         {d,e,f},
-         {0,0,1} } {
-   }
-   Matrix2D(float a, float b, float c, float d, float e, float f, float g, float h, float i):
-      m_matrix{
-         {a,b,c},
-         {d,e,f},
-         {g,h,i} } {
-   }
-
-   static Matrix2D Identity() {
-      return {
-         1,0,0,
-         0,1,0};
-   }
-
-   static Matrix2D translate(float x, float y) {
-      return {
-         1,0,x,
-         0,1,y};
-   }
-
-   static Matrix2D rotate(float angle) {
-      return {
-         cos(angle), -sin(angle), 0,
-         sin(angle), cos(angle), 0 };
-   }
-
-   static Matrix2D scale(float x, float y) {
-      return {
-         x, 0, 0,
-         0, y, 0 };
-   }
-
-   Matrix2D multiply(const Matrix2D& other) const {
-      return {
-         m_matrix[0][0] * other.m_matrix[0][0] + m_matrix[0][1] * other.m_matrix[1][0] + m_matrix[0][2] * other.m_matrix[2][0],
-         m_matrix[0][0] * other.m_matrix[0][1] + m_matrix[0][1] * other.m_matrix[1][1] + m_matrix[0][2] * other.m_matrix[2][1],
-         m_matrix[0][0] * other.m_matrix[0][2] + m_matrix[0][1] * other.m_matrix[1][2] + m_matrix[0][2] * other.m_matrix[2][2],
-
-         m_matrix[1][0] * other.m_matrix[0][0] + m_matrix[1][1] * other.m_matrix[1][0] + m_matrix[1][2] * other.m_matrix[2][0],
-         m_matrix[1][0] * other.m_matrix[0][1] + m_matrix[1][1] * other.m_matrix[1][1] + m_matrix[1][2] * other.m_matrix[2][1],
-         m_matrix[1][0] * other.m_matrix[0][2] + m_matrix[1][1] * other.m_matrix[1][2] + m_matrix[1][2] * other.m_matrix[2][2],
-
-         m_matrix[2][0] * other.m_matrix[0][0] + m_matrix[2][1] * other.m_matrix[1][0] + m_matrix[2][2] * other.m_matrix[2][0],
-         m_matrix[2][0] * other.m_matrix[0][1] + m_matrix[2][1] * other.m_matrix[1][1] + m_matrix[2][2] * other.m_matrix[2][1],
-         m_matrix[2][0] * other.m_matrix[0][2] + m_matrix[2][1] * other.m_matrix[1][2] + m_matrix[2][2] * other.m_matrix[2][2] };
-   }
-   
-   Vector2D multiply(const Vector2D& v) const {
-      float x = m_matrix[0][0] * v.x + m_matrix[0][1] * v.y + m_matrix[0][2];
-      float y = m_matrix[1][0] * v.x + m_matrix[1][1] * v.y + m_matrix[1][2];
-      return Vector2D{x, y};
-   }
-
-   SDL_Point transform(const Vector2D &r) const {
-      Vector2D p = multiply( r );
-      return {p.x,p.y};
-   }
-
-   Vector2D get_translation() const {
-       return {m_matrix[0][2], m_matrix[1][2]};
-    }
-
-    Vector2D get_scale() const {
-       // Extract scaling and rotation
-       float a = m_matrix[0][0];
-       float b = m_matrix[0][1];
-       float c = m_matrix[1][0];
-       float d = m_matrix[1][1];
-
-       float sx = sqrt(a * a + b * b);
-       float sy = sqrt(c * c + d * d);
-       return {sx, sy};
-    }
-
-   float get_angle() const {
-      // Extract scaling and rotation
-      float a = m_matrix[0][0];
-      float b = m_matrix[0][1];
-      float c = m_matrix[1][0];
-      float d = m_matrix[1][1];
-
-      float sx = sqrt(a * a + b * b);
-      float sy = sqrt(c * c + d * d);
-      if (sx != 0) {
-         a /= sx;
-         b /= sx;
-      }
-
-      if (sy != 0) {
-         c /= sy;
-         d /= sy;
-      }
-      // Extract scaling and rotation
-      return atan2(m_matrix[0][1], m_matrix[0][0]);
-   }
-
-};
 
 std::vector<Matrix2D> matrix_stack;
 Matrix2D current_matrix = Matrix2D::Identity();
@@ -156,6 +40,7 @@ Matrix2D current_matrix = Matrix2D::Identity();
 void pushMatrix() {
    matrix_stack.push_back(current_matrix);
 }
+
 void popMatrix() {
    current_matrix = matrix_stack.back();
    matrix_stack.pop_back();
@@ -165,16 +50,15 @@ void translate(float x, float y) {
    current_matrix = current_matrix.multiply( Matrix2D::translate(x,y) );
 }
 
+void scale(float x, float y) {
+   current_matrix = current_matrix.multiply( Matrix2D::scale(x,y) );
+}
+
 void rotate(float angle) {
    current_matrix = current_matrix.multiply( Matrix2D::rotate(angle) );
 }
 
 bool anything_drawn;
-
-float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
-  float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
-  return result;
-}
 
 int xellipse_mode = DIAMETER;
 int xrect_mode = CORNER;
@@ -197,16 +81,11 @@ void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Ui
    filledCircleRGBA(renderer, x2, y2, thickness / 2, r, g, b, a);
 }
 
-float lerp(float start, float stop, float amt) {
-    return start + (stop - start) * amt;
-}
-
 SDL_Color stroke_color{255,255,255,255};
 SDL_Color fill_color{255,255,255,255};
 
-std::vector<Pos> shape;
+std::vector<Vector2D> shape;
 int xstrokeWeight = 1;
-typedef bool boolean;
 
 enum{
    POINTS = 0,
@@ -220,7 +99,7 @@ void beginShape(int points) {
    shape.clear();
 }
 
-void vertex(int x, int y) {
+void vertex(float x, float y) {
    shape.push_back({x,y});
 }
 
@@ -261,25 +140,14 @@ void ellipse(float x, float y, float width, float height) {
 
 void line(int x, int y, int xx, int yy) {
    anything_drawn = true;
-   SDL_Point s = current_matrix.transform(Vector2D{x,y});
-   SDL_Point f = current_matrix.transform(Vector2D{xx,yy});
+   Vector2D s = current_matrix.multiply(Vector2D{x,y});
+   Vector2D f = current_matrix.multiply(Vector2D{xx,yy});
    if (xstrokeWeight == 1) {
       SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
       SDL_RenderDrawLine(renderer, s.x, s.y, f.x, f.y);
    } else {
       drawRoundedLine(s.x, s.y, f.x, f.y, xstrokeWeight, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
    }
-}
-
-float dist(float x1, float y1, float x2, float y2) {
-    float dx = x2 - x1;
-    float dy = y2 - y1;
-    return std::sqrt(dx * dx + dy * dy);
-}
-
-float random(float min, float max) {
-    float range = max - min;
-    return static_cast<float>(std::rand()) / RAND_MAX * range + min;
 }
 
 void point(int x, int y ){
@@ -456,16 +324,6 @@ int second() {
     return seconds;
 }
 
-float constrain(float value, float lower, float upper) {
-    if (value < lower) {
-        return lower;
-    } else if (value > upper) {
-        return upper;
-    } else {
-        return value;
-    }
-}
-
 int minute() {
    // Get the current wall clock time
     auto now = std::chrono::system_clock::now();
@@ -517,10 +375,6 @@ void background(int r, int g, int b) {
 void background(int gray) {
    background(gray, gray,gray);
 }
-
-#define PI 3.14159265358979323846
-#define TWO_PI (PI * 2.0)
-#define HALF_PI (PI / 2.0)
 
 int width = 0;
 int height = 0;
