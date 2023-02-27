@@ -17,6 +17,8 @@ struct Pos {
 void setup();
 void draw();
 
+SDL_Texture* backBuffer;
+
 using FloatArrayList = std::vector<float>;
 
 SDL_Window *window;
@@ -33,6 +35,103 @@ enum {
   CENTER = 2,
   RADIUS = 3,
 };
+
+class Vector2D {
+public:
+    float x, y;
+};
+
+class Matrix2D {
+public:
+   Matrix2D() {
+      m_matrix[0] = 1;
+      m_matrix[1] = 0;
+      m_matrix[2] = 0;
+      m_matrix[3] = 1;
+      m_matrix[4] = 0;
+      m_matrix[5] = 0;
+   }
+
+   Matrix2D(float a, float b, float c, float d, float e, float f) {
+      m_matrix[0] = a;
+      m_matrix[1] = b;
+      m_matrix[2] = c;
+      m_matrix[3] = d;
+      m_matrix[4] = e;
+      m_matrix[5] = f;
+   }
+
+   Matrix2D& translate(float x, float y) {
+      m_matrix[4] += m_matrix[0] * x + m_matrix[2] * y;
+      m_matrix[5] += m_matrix[1] * x + m_matrix[3] * y;
+      return *this;
+   }
+
+   Matrix2D& rotate(float angle) {
+      float sin_a = sin(angle);
+      float cos_a = cos(angle);
+      float a = m_matrix[0] * cos_a + m_matrix[2] * sin_a;
+      float b = m_matrix[1] * cos_a + m_matrix[3] * sin_a;
+      float c = m_matrix[0] * -sin_a + m_matrix[2] * cos_a;
+      float d = m_matrix[1] * -sin_a + m_matrix[3] * cos_a;
+      m_matrix[0] = a;
+      m_matrix[1] = b;
+      m_matrix[2] = c;
+      m_matrix[3] = d;
+      return *this;
+   }
+
+   Matrix2D& scale(float x, float y) {
+      m_matrix[0] *= x;
+      m_matrix[1] *= x;
+      m_matrix[2] *= y;
+      m_matrix[3] *= y;
+      return *this;
+   }
+
+   Vector2D multiply(const Vector2D& v) const {
+      float x = v.x * m_matrix[0] + v.y * m_matrix[1] + m_matrix[4];
+      float y = v.x * m_matrix[2] + v.y * m_matrix[3] + m_matrix[5];
+      return Vector2D{x, y};
+   }
+
+   SDL_Rect transform(const SDL_Rect&r) const {
+         Vector2D topleft = multiply( {r.x,r.y} );
+         Vector2D bottomright = multiply( {r.x+r.w,r.y+r.h} );
+         return { topleft.x, topleft.y, bottomright.x - topleft.x, bottomright.y - topleft.y };
+      }
+   SDL_Point transform(const SDL_Point&r) const {
+         Vector2D p = multiply( {r.x,r.y} );
+         return {p.x,p.y};
+      }
+ 
+
+   const float* get_matrix() const {
+      return m_matrix;
+   }
+
+
+   float m_matrix[6];
+};
+
+std::vector<Matrix2D> matrix_stack;
+Matrix2D current_matrix;
+
+void pushMatrix() {
+   matrix_stack.push_back(current_matrix);
+}
+void popMatrix() {
+   current_matrix = matrix_stack.back();
+   matrix_stack.pop_back();
+}
+
+void translate(float x, float y) {
+   current_matrix.translate(x,y);
+}
+
+void rotate(float angle) {
+   current_matrix.rotate(angle);
+}
 
 bool anything_drawn;
 
@@ -89,14 +188,60 @@ void vertex(int x, int y) {
    shape.push_back({x,y});
 }
 
+
 void ellipse(int x, int y, int width, int height) {
    anything_drawn = true;
-   if (xellipse_mode == RADIUS ) {
-      width *=2;
-      height *=2;
+   if (xellipse_mode != RADIUS ) {
+      width /=2;
+      height /=2;
    }
-   filledEllipseRGBA(renderer, x, y, width/2, height/2, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
-   ellipseRGBA(renderer, x, y, width/2, height/2, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+
+   // Extract translation
+   float translation_x = current_matrix.m_matrix[4];
+   float translation_y = current_matrix.m_matrix[5];
+
+   // Extract scaling and rotation
+   float a = current_matrix.m_matrix[0];
+   float b = current_matrix.m_matrix[1];
+   float c = current_matrix.m_matrix[2];
+   float d = current_matrix.m_matrix[3];
+
+   float sx = sqrt(a * a + b * b);
+   float sy = sqrt(c * c + d * d);
+
+   if (sx != 0) {
+      a /= sx;
+      b /= sx;
+   }
+
+   if (sy != 0) {
+      c /= sy;
+      d /= sy;
+   }
+
+   float angle = atan2(b, a);
+
+   // Create a texture to render to
+   SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width*2,height*2);
+   SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
+   // Set the render target to the texture
+   SDL_SetRenderTarget(renderer, texture);
+
+   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+   SDL_RenderClear(renderer);
+
+   filledEllipseRGBA(renderer, width, height, width, height, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
+   ellipseRGBA(renderer,width, height, width, height, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+
+   SDL_SetRenderTarget(renderer, backBuffer);
+
+   SDL_Rect  srcrect{0,0,width*2,height*2};
+   SDL_Rect  dstrect = {translation_x-width+x,translation_y+y-height,+width*2*sx,height*2*sy};
+
+   SDL_Point pos{width-x,height-y};
+
+   SDL_RenderCopyEx(renderer,texture,&srcrect,&dstrect, angle * 180 /M_PI, &pos,SDL_FLIP_NONE);
 }
 
 void line(int x, int y, int xx, int yy) {
@@ -364,8 +509,6 @@ int width = 0;
 int height = 0;
 
 using std::min;
-
-SDL_Texture* backBuffer;
 
 void size(int _width, int _height) {
    // Create a window
