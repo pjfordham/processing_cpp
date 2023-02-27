@@ -162,6 +162,10 @@ inline float random(float min, float max) {
     return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * range + min;
 }
 
+inline float random(float max) {
+   return random(0,max);
+}
+
 inline float radians(float degrees) {
     return degrees * M_PI / 180.0;
 }
