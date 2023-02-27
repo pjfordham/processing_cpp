@@ -88,17 +88,21 @@ void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Ui
 SDL_Color stroke_color{255,255,255,255};
 SDL_Color fill_color{255,255,255,255};
 
-std::vector<Vector2D> shape;
+std::vector<PVector> shape;
 int xstrokeWeight = 1;
 
 enum{
    POINTS = 0,
    LINES = 1,
 };
+enum{
+   OPEN = 0,
+   CLOSE = 1,
+};
 
 int shape_style = LINES;
 
-void beginShape(int points) {
+void beginShape(int points = LINES) {
    shape_style = points;
    shape.clear();
 }
@@ -115,8 +119,8 @@ void ellipse(float x, float y, float width, float height) {
       height /=2;
    }
 
-   Vector2D translation = current_matrix.get_translation();
-   Vector2D scale = current_matrix.get_scale();
+   PVector translation = current_matrix.get_translation();
+   PVector scale = current_matrix.get_scale();
    float angle = current_matrix.get_angle();
 
    // Create a texture to render to
@@ -144,8 +148,8 @@ void ellipse(float x, float y, float width, float height) {
 
 void line(int x, int y, int xx, int yy) {
    anything_drawn = true;
-   Vector2D s = current_matrix.multiply(Vector2D{x,y});
-   Vector2D f = current_matrix.multiply(Vector2D{xx,yy});
+   PVector s = current_matrix.multiply(PVector{x,y});
+   PVector f = current_matrix.multiply(PVector{xx,yy});
    if (xstrokeWeight == 1) {
       SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
       SDL_RenderDrawLine(renderer, s.x, s.y, f.x, f.y);
@@ -160,14 +164,16 @@ void point(int x, int y ){
    SDL_RenderDrawPoint(renderer, x, y);
 }
 
-void endShape() {
+void endShape(int type = OPEN) {
    anything_drawn = true;
    SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a); // set drawing color to red
    if (shape_style == LINES) {
       for (std::size_t i = 1; i < shape.size(); ++i) {
          line(shape[i-1].x, shape[i-1].y, shape[i].x, shape[i].y);
       }
-      line(shape[shape.size()-1].x, shape[shape.size()-1].y, shape[0].x, shape[0].y);
+      if (type == CLOSE) {
+         line(shape[shape.size()-1].x, shape[shape.size()-1].y, shape[0].x, shape[0].y);
+      }
    } else if (shape_style == POINTS) {
       for (std::size_t i = 0; i < shape.size(); ++i) {
          if (xstrokeWeight == 1) {
@@ -290,19 +296,10 @@ void noStroke() {
    stroke_color = {0,0,0,0};
 }
 
-
-double radians(double degrees) {
-    return degrees * M_PI / 180.0;
+void noFill() {
+   fill_color = {0,0,0,0};
 }
 
-double norm(double value, double start, double stop) {
-    return (value - start) / (stop - start);
-}
-
-double norm(double value, double start1, double stop1, double start2, double stop2) {
-    double adjustedValue = (value - start1) / (stop1 - start1);
-    return start2 + (stop2 - start2) * adjustedValue;
-}
 
 auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -471,8 +468,8 @@ void rect(int x, int y, int width, int height) {
       y = y - height / 2;
    }
 
-   Vector2D translation = current_matrix.get_translation();
-   Vector2D scale = current_matrix.get_scale();
+   PVector translation = current_matrix.get_translation();
+   PVector scale = current_matrix.get_scale();
    float angle = current_matrix.get_angle();
 
    // Create a texture to render to

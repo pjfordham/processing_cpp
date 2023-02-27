@@ -12,9 +12,32 @@ const float PI = M_PI;
 const float TWO_PI = M_PI * 2.0;
 const float HALF_PI = M_PI / 2.0;
 
-class Vector2D {
+class PVector {
 public:
-    float x, y;
+   float x, y;
+   PVector() : x(0), y(0) {}
+   PVector(float _x, float _y) : x(_x), y(_y) {}
+   void mult(float a) {
+      x*=a;
+      y*=a;
+   }
+   // Static method to create a PVector from an angle
+   static PVector fromAngle(float a) {
+      float x = cosf(a);
+      float y = sinf(a);
+      return {x, y};
+   }
+    // Method to calculate the distance between two vectors
+   static float dist(PVector a, PVector b) {
+      float dx = a.x - b.x;
+      float dy = a.y - b.y;
+      return sqrtf(powf(dx, 2) + powf(dy, 2));
+   }
+    // Method to calculate a point on a straight line between two vectors
+   void lerp(PVector v, float amt) {
+      x = x + (v.x - x) * amt;
+      y = y + (v.y - y) * amt;
+   }
 };
 
 class Matrix2D {
@@ -72,28 +95,28 @@ public:
          m_matrix[2][0] * other.m_matrix[0][1] + m_matrix[2][1] * other.m_matrix[1][1] + m_matrix[2][2] * other.m_matrix[2][1],
          m_matrix[2][0] * other.m_matrix[0][2] + m_matrix[2][1] * other.m_matrix[1][2] + m_matrix[2][2] * other.m_matrix[2][2] };
    }
-
-   Vector2D multiply(const Vector2D& v) const {
+   
+   PVector multiply(const PVector& v) const {
       float x = m_matrix[0][0] * v.x + m_matrix[0][1] * v.y + m_matrix[0][2];
       float y = m_matrix[1][0] * v.x + m_matrix[1][1] * v.y + m_matrix[1][2];
-      return Vector2D{x, y};
+      return {x, y};
+   }
+   
+   PVector get_translation() const {
+      return {m_matrix[0][2], m_matrix[1][2]};
    }
 
-   Vector2D get_translation() const {
-       return {m_matrix[0][2], m_matrix[1][2]};
-    }
+   PVector get_scale() const {
+      // Extract scaling and rotation
+      float a = m_matrix[0][0];
+      float b = m_matrix[0][1];
+      float c = m_matrix[1][0];
+      float d = m_matrix[1][1];
 
-    Vector2D get_scale() const {
-       // Extract scaling and rotation
-       float a = m_matrix[0][0];
-       float b = m_matrix[0][1];
-       float c = m_matrix[1][0];
-       float d = m_matrix[1][1];
-
-       float sx = sqrt(a * a + b * b);
-       float sy = sqrt(c * c + d * d);
-       return {sx, sy};
-    }
+      float sx = sqrt(a * a + b * b);
+      float sy = sqrt(c * c + d * d);
+      return {sx, sy};
+   }
 
    float get_angle() const {
       // Extract scaling and rotation
