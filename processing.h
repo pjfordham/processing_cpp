@@ -9,6 +9,8 @@
 #include <vector>
 #include <cmath>
 
+#define y1 processing_y1
+
 struct Pos {
    int x;
    int y;
@@ -104,13 +106,46 @@ public:
          Vector2D p = multiply( {r.x,r.y} );
          return {p.x,p.y};
       }
- 
 
-   const float* get_matrix() const {
-      return m_matrix;
+   Vector2D get_translation() const {
+      return {m_matrix[4], m_matrix[5]};
    }
 
+   Vector2D get_scale() const {
+      // Extract scaling and rotation
+      float a = m_matrix[0];
+      float b = m_matrix[1];
+      float c = m_matrix[2];
+      float d = m_matrix[3];
 
+      float sx = sqrt(a * a + b * b);
+      float sy = sqrt(c * c + d * d);
+      return {sx, sy};
+   }
+
+   float get_angle() const {
+      // Extract scaling and rotation
+      float a = m_matrix[0];
+      float b = m_matrix[1];
+      float c = m_matrix[2];
+      float d = m_matrix[3];
+
+      float sx = sqrt(a * a + b * b);
+      float sy = sqrt(c * c + d * d);
+      if (sx != 0) {
+         a /= sx;
+         b /= sx;
+      }
+
+      if (sy != 0) {
+         c /= sy;
+         d /= sy;
+      }
+      // Extract scaling and rotation
+      return atan2(m_matrix[1], m_matrix[0]);
+   }
+
+private:
    float m_matrix[6];
 };
 
@@ -155,7 +190,7 @@ void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Ui
    anything_drawn = true;
    // Draw thick line
     thickLineRGBA(renderer, x1, y1, x2, y2, thickness, r, g, b, a);
-    
+
     // // Draw rounded ends
      filledCircleRGBA(renderer, x1, y1, thickness / 2, r, g, b, a);
      filledCircleRGBA(renderer, x2, y2, thickness / 2, r, g, b, a);
@@ -189,37 +224,16 @@ void vertex(int x, int y) {
 }
 
 
-void ellipse(int x, int y, int width, int height) {
+void ellipse(float x, float y, float width, float height) {
    anything_drawn = true;
    if (xellipse_mode != RADIUS ) {
       width /=2;
       height /=2;
    }
 
-   // Extract translation
-   float translation_x = current_matrix.m_matrix[4];
-   float translation_y = current_matrix.m_matrix[5];
-
-   // Extract scaling and rotation
-   float a = current_matrix.m_matrix[0];
-   float b = current_matrix.m_matrix[1];
-   float c = current_matrix.m_matrix[2];
-   float d = current_matrix.m_matrix[3];
-
-   float sx = sqrt(a * a + b * b);
-   float sy = sqrt(c * c + d * d);
-
-   if (sx != 0) {
-      a /= sx;
-      b /= sx;
-   }
-
-   if (sy != 0) {
-      c /= sy;
-      d /= sy;
-   }
-
-   float angle = atan2(b, a);
+   Vector2D translation = current_matrix.get_translation();
+   Vector2D scale = current_matrix.get_scale();
+   float angle = current_matrix.get_angle();
 
    // Create a texture to render to
    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width*2,height*2);
@@ -237,7 +251,7 @@ void ellipse(int x, int y, int width, int height) {
    SDL_SetRenderTarget(renderer, backBuffer);
 
    SDL_Rect  srcrect{0,0,width*2,height*2};
-   SDL_Rect  dstrect = {translation_x-width+x,translation_y+y-height,+width*2*sx,height*2*sy};
+   SDL_Rect  dstrect = {translation.x-width+x,translation.y+y-height,+width*2*scale.x,height*2*scale.y};
 
    SDL_Point pos{width-x,height-y};
 
