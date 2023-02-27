@@ -44,91 +44,94 @@ public:
 };
 
 class Matrix2D {
+private:
+   float m_matrix[3][3];
 public:
-   Matrix2D() {
-      m_matrix[0] = 1;
-      m_matrix[1] = 0;
-      m_matrix[2] = 0;
-      m_matrix[3] = 1;
-      m_matrix[4] = 0;
-      m_matrix[5] = 0;
+   Matrix2D(float a, float b, float c, float d, float e, float f):
+      m_matrix{
+         {a,b,c},
+         {d,e,f},
+         {0,0,1} } {
+   }
+   Matrix2D(float a, float b, float c, float d, float e, float f, float g, float h, float i):
+      m_matrix{
+         {a,b,c},
+         {d,e,f},
+         {g,h,i} } {
    }
 
-   Matrix2D(float a, float b, float c, float d, float e, float f) {
-      m_matrix[0] = a;
-      m_matrix[1] = b;
-      m_matrix[2] = c;
-      m_matrix[3] = d;
-      m_matrix[4] = e;
-      m_matrix[5] = f;
+   static Matrix2D Identity() {
+      return {
+         1,0,0,
+         0,1,0};
    }
 
-   Matrix2D& translate(float x, float y) {
-      m_matrix[4] += m_matrix[0] * x + m_matrix[2] * y;
-      m_matrix[5] += m_matrix[1] * x + m_matrix[3] * y;
-      return *this;
+   static Matrix2D translate(float x, float y) {
+      return {
+         1,0,x,
+         0,1,y};
    }
 
-   Matrix2D& rotate(float angle) {
-      float sin_a = sin(angle);
-      float cos_a = cos(angle);
-      float a = m_matrix[0] * cos_a + m_matrix[2] * sin_a;
-      float b = m_matrix[1] * cos_a + m_matrix[3] * sin_a;
-      float c = m_matrix[0] * -sin_a + m_matrix[2] * cos_a;
-      float d = m_matrix[1] * -sin_a + m_matrix[3] * cos_a;
-      m_matrix[0] = a;
-      m_matrix[1] = b;
-      m_matrix[2] = c;
-      m_matrix[3] = d;
-      return *this;
+   static Matrix2D rotate(float angle) {
+      return {
+         cos(angle), -sin(angle), 0,
+         sin(angle), cos(angle), 0 };
    }
 
-   Matrix2D& scale(float x, float y) {
-      m_matrix[0] *= x;
-      m_matrix[1] *= x;
-      m_matrix[2] *= y;
-      m_matrix[3] *= y;
-      return *this;
+   static Matrix2D scale(float x, float y) {
+      return {
+         x, 0, 0,
+         0, y, 0 };
    }
 
+   Matrix2D multiply(const Matrix2D& other) const {
+      return {
+         m_matrix[0][0] * other.m_matrix[0][0] + m_matrix[0][1] * other.m_matrix[1][0] + m_matrix[0][2] * other.m_matrix[2][0],
+         m_matrix[0][0] * other.m_matrix[0][1] + m_matrix[0][1] * other.m_matrix[1][1] + m_matrix[0][2] * other.m_matrix[2][1],
+         m_matrix[0][0] * other.m_matrix[0][2] + m_matrix[0][1] * other.m_matrix[1][2] + m_matrix[0][2] * other.m_matrix[2][2],
+
+         m_matrix[1][0] * other.m_matrix[0][0] + m_matrix[1][1] * other.m_matrix[1][0] + m_matrix[1][2] * other.m_matrix[2][0],
+         m_matrix[1][0] * other.m_matrix[0][1] + m_matrix[1][1] * other.m_matrix[1][1] + m_matrix[1][2] * other.m_matrix[2][1],
+         m_matrix[1][0] * other.m_matrix[0][2] + m_matrix[1][1] * other.m_matrix[1][2] + m_matrix[1][2] * other.m_matrix[2][2],
+
+         m_matrix[2][0] * other.m_matrix[0][0] + m_matrix[2][1] * other.m_matrix[1][0] + m_matrix[2][2] * other.m_matrix[2][0],
+         m_matrix[2][0] * other.m_matrix[0][1] + m_matrix[2][1] * other.m_matrix[1][1] + m_matrix[2][2] * other.m_matrix[2][1],
+         m_matrix[2][0] * other.m_matrix[0][2] + m_matrix[2][1] * other.m_matrix[1][2] + m_matrix[2][2] * other.m_matrix[2][2] };
+   }
+   
    Vector2D multiply(const Vector2D& v) const {
-      float x = v.x * m_matrix[0] + v.y * m_matrix[1] + m_matrix[4];
-      float y = v.x * m_matrix[2] + v.y * m_matrix[3] + m_matrix[5];
+      float x = m_matrix[0][0] * v.x + m_matrix[0][1] * v.y + m_matrix[0][2];
+      float y = m_matrix[1][0] * v.x + m_matrix[1][1] * v.y + m_matrix[1][2];
       return Vector2D{x, y};
    }
 
-   SDL_Rect transform(const SDL_Rect&r) const {
-         Vector2D topleft = multiply( {r.x,r.y} );
-         Vector2D bottomright = multiply( {r.x+r.w,r.y+r.h} );
-         return { topleft.x, topleft.y, bottomright.x - topleft.x, bottomright.y - topleft.y };
-      }
-   SDL_Point transform(const SDL_Point&r) const {
-         Vector2D p = multiply( {r.x,r.y} );
-         return {p.x,p.y};
-      }
+   SDL_Point transform(const Vector2D &r) const {
+      Vector2D p = multiply( r );
+      return {p.x,p.y};
+   }
 
    Vector2D get_translation() const {
-      return {m_matrix[4], m_matrix[5]};
-   }
+       return {m_matrix[0][2], m_matrix[1][2]};
+    }
 
-   Vector2D get_scale() const {
-      // Extract scaling and rotation
-      float a = m_matrix[0];
-      float b = m_matrix[1];
-      float c = m_matrix[2];
-      float d = m_matrix[3];
+    Vector2D get_scale() const {
+       // Extract scaling and rotation
+       float a = m_matrix[0][0];
+       float b = m_matrix[0][1];
+       float c = m_matrix[1][0];
+       float d = m_matrix[1][1];
 
-      float sx = sqrt(a * a + b * b);
-      float sy = sqrt(c * c + d * d);
-      return {sx, sy};
-   }
+       float sx = sqrt(a * a + b * b);
+       float sy = sqrt(c * c + d * d);
+       return {sx, sy};
+    }
 
    float get_angle() const {
       // Extract scaling and rotation
-      float a = m_matrix[0];
-      float b = m_matrix[1];
-      float c = m_matrix[2];
-      float d = m_matrix[3];
+      float a = m_matrix[0][0];
+      float b = m_matrix[0][1];
+      float c = m_matrix[1][0];
+      float d = m_matrix[1][1];
 
       float sx = sqrt(a * a + b * b);
       float sy = sqrt(c * c + d * d);
@@ -142,15 +145,13 @@ public:
          d /= sy;
       }
       // Extract scaling and rotation
-      return atan2(m_matrix[1], m_matrix[0]);
+      return atan2(m_matrix[0][1], m_matrix[0][0]);
    }
 
-private:
-   float m_matrix[6];
 };
 
 std::vector<Matrix2D> matrix_stack;
-Matrix2D current_matrix;
+Matrix2D current_matrix = Matrix2D::Identity();
 
 void pushMatrix() {
    matrix_stack.push_back(current_matrix);
@@ -161,11 +162,11 @@ void popMatrix() {
 }
 
 void translate(float x, float y) {
-   current_matrix.translate(x,y);
+   current_matrix = current_matrix.multiply( Matrix2D::translate(x,y) );
 }
 
 void rotate(float angle) {
-   current_matrix.rotate(angle);
+   current_matrix = current_matrix.multiply( Matrix2D::rotate(angle) );
 }
 
 bool anything_drawn;
@@ -189,11 +190,11 @@ void rectMode(int mode){
 void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
    anything_drawn = true;
    // Draw thick line
-    thickLineRGBA(renderer, x1, y1, x2, y2, thickness, r, g, b, a);
+   thickLineRGBA(renderer, x1, y1, x2, y2, thickness, r, g, b, a);
 
-    // // Draw rounded ends
-     filledCircleRGBA(renderer, x1, y1, thickness / 2, r, g, b, a);
-     filledCircleRGBA(renderer, x2, y2, thickness / 2, r, g, b, a);
+   // // Draw rounded ends
+   filledCircleRGBA(renderer, x1, y1, thickness / 2, r, g, b, a);
+   filledCircleRGBA(renderer, x2, y2, thickness / 2, r, g, b, a);
 }
 
 float lerp(float start, float stop, float amt) {
@@ -255,16 +256,18 @@ void ellipse(float x, float y, float width, float height) {
 
    SDL_Point pos{width-x,height-y};
 
-   SDL_RenderCopyEx(renderer,texture,&srcrect,&dstrect, angle * 180 /M_PI, &pos,SDL_FLIP_NONE);
+   SDL_RenderCopyEx(renderer,texture,&srcrect,&dstrect, -angle * 180 /M_PI, &pos,SDL_FLIP_NONE);
 }
 
 void line(int x, int y, int xx, int yy) {
    anything_drawn = true;
+   SDL_Point s = current_matrix.transform(Vector2D{x,y});
+   SDL_Point f = current_matrix.transform(Vector2D{xx,yy});
    if (xstrokeWeight == 1) {
       SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-      SDL_RenderDrawLine(renderer, x, y, xx, yy);
+      SDL_RenderDrawLine(renderer, s.x, s.y, f.x, f.y);
    } else {
-      drawRoundedLine(x, y, xx, yy, xstrokeWeight, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+      drawRoundedLine(s.x, s.y, f.x, f.y, xstrokeWeight, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
    }
 }
 
