@@ -241,8 +241,18 @@ class color {
    }
    color(float _r) : r(_r), g(_r), b(_r), a(xcolorScaleA) {
    }
+   color()  {
+   }
 };
 
+
+color lerpColor(const color& c1, const color& c2, float amt) {
+    float r = c1.r + (c2.r - c1.r) * amt;
+    float g = c1.g + (c2.g - c1.g) * amt;
+    float b = c1.b + (c2.b - c1.b) * amt;
+    float a = c1.a + (c2.a - c1.a) * amt;
+    return color(r, g, b, a);
+}
 
 void colorMode(int mode, float r, float g, float b, float a) {
   xcolorMode = mode;
@@ -315,6 +325,10 @@ void stroke(float r,float a) {
 
 void stroke(float r) {
    stroke(r,r,r,xcolorScaleA);
+}
+
+void stroke(color c) {
+   stroke(c.r,c.g,c.b,c.a);
 }
 
 void strokeWeight(int x) {
