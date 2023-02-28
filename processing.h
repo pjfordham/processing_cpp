@@ -88,7 +88,6 @@ void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Ui
 SDL_Color stroke_color{255,255,255,255};
 SDL_Color fill_color{255,255,255,255};
 
-std::vector<PVector> shape;
 int xstrokeWeight = 1;
 
 enum{
@@ -99,17 +98,6 @@ enum{
    OPEN = 0,
    CLOSE = 1,
 };
-
-int shape_style = LINES;
-
-void beginShape(int points = LINES) {
-   shape_style = points;
-   shape.clear();
-}
-
-void vertex(float x, float y) {
-   shape.push_back({x,y});
-}
 
 
 void ellipse(float x, float y, float width, float height) {
@@ -179,23 +167,51 @@ void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4,
 }
 
 
+std::vector<PVector> shape;
+
+int shape_style = LINES;
+
+void beginShape(int points = LINES) {
+   shape_style = points;
+   shape.clear();
+}
+
+void vertex(float x, float y) {
+   shape.push_back({x, y});
+}
+
 void endShape(int type = OPEN) {
    anything_drawn = true;
-   SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a); // set drawing color to red
-   if (shape_style == LINES) {
+
+   if (shape_style == POINTS) {
+      for (auto z : shape ) {
+         auto p = current_matrix.multiply( z );
+         if (xstrokeWeight == 1) {
+            SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+            SDL_RenderDrawPoint(renderer, p.x, p.y);
+         } else {
+            filledEllipseRGBA(renderer, p.x, p.y, xstrokeWeight/2, xstrokeWeight/2,
+                              stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+         }
+      }
+   } else if (type == CLOSE) {
+      std::vector<Sint16> xs, ys;
+      for (auto z : shape ) {
+         auto p = current_matrix.multiply( z );
+         xs.push_back(p.x);
+         ys.push_back(p.y);
+      }
+
+      filledPolygonRGBA(renderer,xs.data(),ys.data(),xs.size(),
+                        fill_color.r,fill_color.g,fill_color.b,fill_color.a);
+      polygonRGBA(renderer,xs.data(),ys.data(),xs.size(),
+                  stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+   } else if (shape_style == LINES) {
       for (std::size_t i = 1; i < shape.size(); ++i) {
          line(shape[i-1].x, shape[i-1].y, shape[i].x, shape[i].y);
       }
       if (type == CLOSE) {
          line(shape[shape.size()-1].x, shape[shape.size()-1].y, shape[0].x, shape[0].y);
-      }
-   } else if (shape_style == POINTS) {
-      for (std::size_t i = 0; i < shape.size(); ++i) {
-         if (xstrokeWeight == 1) {
-            SDL_RenderDrawPoint(renderer, shape[i].x, shape[i].y); // draw point at (10, 10)
-         } else {
-            filledEllipseRGBA(renderer, shape[i].x, shape[i].y, xstrokeWeight/2, xstrokeWeight/2, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-         }
       }
    }
 }
