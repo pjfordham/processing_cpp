@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <random>
 
 const float PI = M_PI;
 const float TWO_PI = M_PI * 2.0;
@@ -218,9 +219,10 @@ inline float dist(float x1, float y1, float x2, float y2) {
    return std::sqrt(dx * dx + dy * dy);
 }
 
+std::mt19937 randomNumbers( 1 );
 inline float random(float min, float max) {
-   float range = max - min;
-   return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * range + min;
+   std::uniform_real_distribution<float> randomLocationRange(min, max);
+   return randomLocationRange( randomNumbers );
 }
 
 inline float random(float max) {
