@@ -100,6 +100,39 @@ enum{
 };
 
 
+void DrawAntialiasedCircle(SDL_Renderer* renderer, int x, int y, int r) {
+   anything_drawn = true;
+   // Draw circle pixels using antialiasing
+   for (float i = x - r; i < x + r; i += 0.5) {
+      for (float j = y - r; j < y + r; j += 0.5) {
+         float distance = dist(i,j,x,y);
+         if (distance >= r - 1 && distance <= r) {
+            float alpha = 1 - (r - distance);
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, static_cast<int>(alpha * 255));
+            SDL_RenderDrawPoint(renderer, i, j);
+         } else if (distance < r - 1) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            SDL_RenderDrawPoint(renderer, i, j);
+         }
+      }
+   }
+}
+// Create a texture to render to
+SDL_Texture* ellipse_texture;
+
+void setup_ellipse_texture() {
+   ellipse_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 1000,1000);
+   SDL_SetTextureBlendMode(ellipse_texture, SDL_BLENDMODE_BLEND);
+   SDL_SetRenderTarget(renderer, ellipse_texture);
+   SDL_SetRenderDrawColor(renderer,0,0,0,0);
+   SDL_RenderFillRect(renderer, NULL);
+   DrawAntialiasedCircle(renderer, 500,500,500);
+}
+
+void destroy_ellipse_texture() {
+   SDL_DestroyTexture(ellipse_texture);
+}
+
 void ellipse(float x, float y, float width, float height) {
    anything_drawn = true;
    if (xellipse_mode != RADIUS ) {
@@ -111,28 +144,14 @@ void ellipse(float x, float y, float width, float height) {
    PVector scale = current_matrix.get_scale();
    float angle = current_matrix.get_angle();
 
-   // Create a texture to render to
-   SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width*2,height*2);
-   SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+   SDL_SetTextureColorMod(ellipse_texture, fill_color.r,fill_color.g,fill_color.b);
+   SDL_SetTextureAlphaMod(ellipse_texture, fill_color.a);
 
-   // Set the render target to the texture
-   SDL_SetRenderTarget(renderer, texture);
-
-   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-   SDL_RenderClear(renderer);
-
-   filledEllipseRGBA(renderer, width, height, width, height, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
-   ellipseRGBA(renderer,width, height, width, height, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-
-   SDL_SetRenderTarget(renderer, backBuffer);
-
-   SDL_Rect  srcrect{0,0,width*2,height*2};
    SDL_Rect  dstrect = {translation.x-width+x,translation.y+y-height,+width*2*scale.x,height*2*scale.y};
 
    SDL_Point pos{width-x,height-y};
 
-   SDL_RenderCopyEx(renderer,texture,&srcrect,&dstrect, -angle * 180 /M_PI, &pos,SDL_FLIP_NONE);
-   SDL_DestroyTexture(texture);
+   SDL_RenderCopyEx(renderer,ellipse_texture,NULL,&dstrect, -angle * 180 /M_PI, &pos,SDL_FLIP_NONE);
 
 }
 
@@ -450,6 +469,8 @@ void size(int _width, int _height) {
 
    void setup_rect_texture();
    setup_rect_texture();
+   void setup_ellipse_texture();
+   setup_ellipse_texture();
 
    backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
    if (!backBuffer)
@@ -647,6 +668,7 @@ int main()
    // TTF_CloseFont(font);
 
    destroy_rect_texture();
+   destroy_ellipse_texture();
    // Destroy the window and renderer
    SDL_DestroyRenderer(renderer);
    SDL_DestroyWindow(window);
