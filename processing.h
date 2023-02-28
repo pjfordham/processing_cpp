@@ -144,12 +144,14 @@ void ellipse(float x, float y, float width, float height) {
    SDL_Point pos{width-x,height-y};
 
    SDL_RenderCopyEx(renderer,texture,&srcrect,&dstrect, -angle * 180 /M_PI, &pos,SDL_FLIP_NONE);
+   SDL_DestroyTexture(texture);
+
 }
 
-void line(int x, int y, int xx, int yy) {
+void line(float x1, float y1, float x2, float y2) {
    anything_drawn = true;
-   PVector s = current_matrix.multiply(PVector{x,y});
-   PVector f = current_matrix.multiply(PVector{xx,yy});
+   PVector s = current_matrix.multiply(PVector{x1,y1});
+   PVector f = current_matrix.multiply(PVector{x2,y2});
    if (xstrokeWeight == 1) {
       SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
       SDL_RenderDrawLine(renderer, s.x, s.y, f.x, f.y);
@@ -158,11 +160,24 @@ void line(int x, int y, int xx, int yy) {
    }
 }
 
-void point(int x, int y ){
+void point(float x, float y) {
    anything_drawn = true;
+   PVector p = current_matrix.multiply(PVector{x,y});
    SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-   SDL_RenderDrawPoint(renderer, x, y);
+   SDL_RenderDrawPoint(renderer, p.x, p.y);
 }
+
+void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
+   anything_drawn = true;
+   PVector p1 = current_matrix.multiply(PVector{x1,y1});
+   PVector p2 = current_matrix.multiply(PVector{x2,y2});
+   PVector p3 = current_matrix.multiply(PVector{x3,y3});
+   PVector p4 = current_matrix.multiply(PVector{x4,y4});
+   Sint16 xs[] = {p1.x,p2.x,p3.x,p4.x};
+   Sint16 ys[] = {p1.y,p2.y,p3.y,p4.y};
+   filledPolygonRGBA(renderer,xs,ys,4,fill_color.r,fill_color.g,fill_color.b,fill_color.a);
+}
+
 
 void endShape(int type = OPEN) {
    anything_drawn = true;
@@ -479,6 +494,7 @@ void rect(int x, int y, int width, int height) {
    // Set the render target to the texture
    SDL_SetRenderTarget(renderer, texture);
 
+   SDL_SetRenderDrawColor(renderer,0,0,0,255);
    SDL_SetRenderDrawColor(renderer, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
    SDL_RenderFillRect(renderer, NULL);
 
@@ -486,7 +502,7 @@ void rect(int x, int y, int width, int height) {
 
    SDL_Rect dstrect = {translation.x+scale.x*x,translation.y+scale.y*y,width*scale.x,height*scale.y};
    SDL_RenderCopyEx(renderer,texture,NULL,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
-
+   SDL_DestroyTexture(texture);
 }
 
 

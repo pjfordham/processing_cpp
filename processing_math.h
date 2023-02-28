@@ -17,23 +17,65 @@ public:
    float x, y;
    PVector() : x(0), y(0) {}
    PVector(float _x, float _y) : x(_x), y(_y) {}
+   void sub(PVector b) {
+      x = x - b.x;
+      y = y - b.y;
+   }
+   void add(PVector b) {
+      x = x + b.x;
+      y = y + b.y;
+   }
    void mult(float a) {
       x*=a;
       y*=a;
    }
-   // Static method to create a PVector from an angle
+   // Method to normalize the vector
+   void normalize() {
+      float mag = sqrtf(x * x + y * y);
+      if (mag != 0) {
+         x /= mag;
+         y /= mag;
+      }
+   }    // Static method to create a PVector from an angle
    static PVector fromAngle(float a) {
       float x = cosf(a);
       float y = sinf(a);
       return {x, y};
    }
-    // Method to calculate the distance between two vectors
+   // Static method to create a PVector from an angle
+   static PVector random2D() {
+      // Ugly hack
+      float random(float max);
+      return {random(1), random(1)};
+   }
+   // Method to calculate the dot product of two vectors
+   float dot(PVector v) {
+      return x * v.x + y * v.y;
+   }
+
+// Method to calculate the distance between two vectors
    static float dist(PVector a, PVector b) {
       float dx = a.x - b.x;
       float dy = a.y - b.y;
-      return sqrtf(powf(dx, 2) + powf(dy, 2));
+      return sqrtf(dx*dx + dy*dy);
    }
-    // Method to calculate a point on a straight line between two vectors
+   // Method to calculate the distance between two vectors
+   static PVector sub(PVector a, PVector b) {
+      float dx = a.x - b.x;
+      float dy = a.y - b.y;
+      return {dx,dy};
+   }
+   static PVector mult(PVector a, float q) {
+      float dx = a.x * q;
+      float dy = a.y * q;
+      return {dx,dy};
+   }
+   static PVector add(PVector a, PVector b) {
+      float dx = a.x + b.x;
+      float dy = a.y + b.y;
+      return {dx,dy};
+   }
+   // Method to calculate a point on a straight line between two vectors
    void lerp(PVector v, float amt) {
       x = x + (v.x - x) * amt;
       y = y + (v.y - y) * amt;
@@ -95,13 +137,13 @@ public:
          m_matrix[2][0] * other.m_matrix[0][1] + m_matrix[2][1] * other.m_matrix[1][1] + m_matrix[2][2] * other.m_matrix[2][1],
          m_matrix[2][0] * other.m_matrix[0][2] + m_matrix[2][1] * other.m_matrix[1][2] + m_matrix[2][2] * other.m_matrix[2][2] };
    }
-   
+
    PVector multiply(const PVector& v) const {
       float x = m_matrix[0][0] * v.x + m_matrix[0][1] * v.y + m_matrix[0][2];
       float y = m_matrix[1][0] * v.x + m_matrix[1][1] * v.y + m_matrix[1][2];
       return {x, y};
    }
-   
+
    PVector get_translation() const {
       return {m_matrix[0][2], m_matrix[1][2]};
    }
@@ -143,23 +185,23 @@ public:
 };
 
 inline float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
-  float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
-  return result;
+   float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
+   return result;
 }
 
 inline float lerp(float start, float stop, float amt) {
-    return start + (stop - start) * amt;
+   return start + (stop - start) * amt;
 }
 
 inline float dist(float x1, float y1, float x2, float y2) {
-    float dx = x2 - x1;
-    float dy = y2 - y1;
-    return std::sqrt(dx * dx + dy * dy);
+   float dx = x2 - x1;
+   float dy = y2 - y1;
+   return std::sqrt(dx * dx + dy * dy);
 }
 
 inline float random(float min, float max) {
-    float range = max - min;
-    return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * range + min;
+   float range = max - min;
+   return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * range + min;
 }
 
 inline float random(float max) {
@@ -167,27 +209,26 @@ inline float random(float max) {
 }
 
 inline float radians(float degrees) {
-    return degrees * M_PI / 180.0;
+   return degrees * M_PI / 180.0;
 }
 
 inline float norm(float value, float start, float stop) {
-    return (value - start) / (stop - start);
+   return (value - start) / (stop - start);
 }
 
 inline float norm(float value, float start1, float stop1, float start2, float stop2) {
-    float adjustedValue = (value - start1) / (stop1 - start1);
-    return start2 + (stop2 - start2) * adjustedValue;
+   float adjustedValue = (value - start1) / (stop1 - start1);
+   return start2 + (stop2 - start2) * adjustedValue;
 }
 
 inline float constrain(float value, float lower, float upper) {
-    if (value < lower) {
-        return lower;
-    } else if (value > upper) {
-        return upper;
-    } else {
-        return value;
-    }
+   if (value < lower) {
+      return lower;
+   } else if (value > upper) {
+      return upper;
+   } else {
+      return value;
+   }
 }
 
 #endif
-
