@@ -29,6 +29,19 @@ public:
       x*=a;
       y*=a;
    }
+     // Returns the magnitude (length) of the vector
+    double mag() const {
+        return std::sqrt(x * x + y * y);
+    }
+
+    // Limits the magnitude of the vector to a specified value
+    void limit(double maxMag) {
+        double m = mag();
+        if (m > maxMag) {
+            x = x * maxMag / m;
+            y = y * maxMag / m;
+        }
+    }
    // Method to normalize the vector
    void normalize() {
       float mag = sqrtf(x * x + y * y);
@@ -36,7 +49,13 @@ public:
          x /= mag;
          y /= mag;
       }
-   }    // Static method to create a PVector from an angle
+   }
+   void setMag(float mag) {
+      normalize();
+      x *= mag;
+      y *= mag;
+   }
+   // Static method to create a PVector from an angle
    static PVector fromAngle(float a) {
       float x = cosf(a);
       float y = sinf(a);
