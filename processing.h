@@ -448,6 +448,9 @@ void size(int _width, int _height) {
       abort();
    }
 
+   void setup_rect_texture();
+   setup_rect_texture();
+
    backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
    if (!backBuffer)
    {
@@ -503,6 +506,22 @@ void fill(class color color) {
    fill(color.r,color.g,color.b,color.a);
 }
 
+// Create a texture to render to
+SDL_Texture* rect_texture;
+
+void setup_rect_texture() {
+   rect_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 1,1);
+   SDL_SetTextureBlendMode(rect_texture, SDL_BLENDMODE_BLEND);
+   // Set the render target to the texture
+   SDL_SetRenderTarget(renderer, rect_texture);
+   SDL_SetRenderDrawColor(renderer,255,255,255,255);
+   SDL_RenderFillRect(renderer, NULL);
+}
+
+void destroy_rect_texture() {
+   SDL_DestroyTexture(rect_texture);
+}
+
 void rect(int x, int y, int width, int height) {
    anything_drawn = true;
    if (xrect_mode == CORNERS) {
@@ -517,22 +536,11 @@ void rect(int x, int y, int width, int height) {
    PVector scale = current_matrix.get_scale();
    float angle = current_matrix.get_angle();
 
-   // Create a texture to render to
-   SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 1,1);
-   SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-
-   // Set the render target to the texture
-   SDL_SetRenderTarget(renderer, texture);
-
-   SDL_SetRenderDrawColor(renderer,0,0,0,255);
-   SDL_SetRenderDrawColor(renderer, fill_color.r,fill_color.g,fill_color.b,fill_color.a);
-   SDL_RenderFillRect(renderer, NULL);
-
-   SDL_SetRenderTarget(renderer, backBuffer);
+   SDL_SetTextureColorMod(rect_texture, fill_color.r,fill_color.g,fill_color.b);
+   SDL_SetTextureAlphaMod(rect_texture, fill_color.a);
 
    SDL_Rect dstrect = {translation.x+scale.x*x,translation.y+scale.y*y,width*scale.x,height*scale.y};
-   SDL_RenderCopyEx(renderer,texture,NULL,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
-   SDL_DestroyTexture(texture);
+   SDL_RenderCopyEx(renderer,rect_texture,NULL,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
 }
 
 
@@ -638,6 +646,7 @@ int main()
 
    // TTF_CloseFont(font);
 
+   destroy_rect_texture();
    // Destroy the window and renderer
    SDL_DestroyRenderer(renderer);
    SDL_DestroyWindow(window);
