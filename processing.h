@@ -232,6 +232,17 @@ int xcolorScaleG = 255;
 int xcolorScaleB = 255;
 int xcolorScaleA = 255;
 
+class color {
+ public:
+   float r,g,b,a;
+   color(float _r, float _g, float _b,float _a) : r(_r), g(_g), b(_b), a(_a) {
+   }
+   color(float _r, float _g, float _b) : r(_r), g(_g), b(_b), a(xcolorScaleA) {
+   }
+   color(float _r) : r(_r), g(_r), b(_r), a(xcolorScaleA) {
+   }
+};
+
 
 void colorMode(int mode, float r, float g, float b, float a) {
   xcolorMode = mode;
@@ -288,19 +299,6 @@ SDL_Color flatten_color_mode(float r, float g, float b, float a) {
        (unsigned char)b,
        (unsigned char)a
     };
-}
-
-Uint32 color(int r, int g, int b, int a) {
-   SDL_Color color = flatten_color_mode(r,g,b,a);
-   return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
-}
-
-Uint32 color(int r, int g, int b) {
-  return color(r, g, b, 255);
-}
-
-Uint32 color(int gray) {
-  return color(gray, gray, gray);
 }
 
 void stroke(float r,float g,  float b, float a) {
@@ -487,7 +485,9 @@ void fill(float r) {
    fill(r,r,r,xcolorScaleA);
 }
 
-
+void fill(class color color) {
+   fill(color.r,color.g,color.b,color.a);
+}
 
 void rect(int x, int y, int width, int height) {
    anything_drawn = true;
