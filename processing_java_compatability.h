@@ -13,6 +13,7 @@ using FloatArrayList = std::vector<float>;
 
 typedef bool boolean;
 
+typedef unsigned char byte;
 
 #endif
 
