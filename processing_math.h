@@ -229,6 +229,12 @@ inline float random(float max) {
    return random(0,max);
 }
 
+inline float randomGaussian()
+{
+    static std::normal_distribution<float> dist(0.0f, 1.0f);
+    return dist(randomNumbers);
+}
+
 inline float radians(float degrees) {
    return degrees * M_PI / 180.0;
 }
