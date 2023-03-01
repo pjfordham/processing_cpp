@@ -10,12 +10,9 @@
 #include <cmath>
 #include <map>
 
+#include "weak.h"
 #include "processing_math.h"
 #include "processing_java_compatability.h"
-
-
-void setup();
-void draw();
 
 SDL_Texture* backBuffer;
 
@@ -63,7 +60,7 @@ void rotate(float angle) {
    current_matrix = current_matrix.multiply( Matrix2D::rotate(angle) );
 }
 
-bool anything_drawn;
+bool anything_drawn = false;
 
 int xellipse_mode = DIAMETER;
 int xrect_mode = CORNER;
@@ -623,9 +620,7 @@ int zframeCount = 0;
 int mouseX = 0;
 int mouseY = 0;
 
-char key = ' ';
-
-void keyTyped();
+char key = 0;
 
 int main()
 {
@@ -680,6 +675,7 @@ int main()
             // Convert the key code to a string
             const char* keyname = SDL_GetKeyName(keycode);
 
+            key = 1;
             // Get the first character of the string and convert to lowercase if shift is not pressed
             if ( keyname[1] == 0) {
                char zkey = keyname[0];
@@ -695,6 +691,7 @@ int main()
                key = ' ';
                keyTyped();
             }
+            keyPressed();
          }
       }
 
@@ -711,7 +708,6 @@ int main()
          }
 
          if (xloop || frameCount == 0) {
-            anything_drawn = false;
             current_matrix = Matrix2D::Identity();
             draw();
             // Update the screen
@@ -721,6 +717,7 @@ int main()
                SDL_RenderCopy(renderer, backBuffer, NULL, NULL);
                SDL_SetRenderTarget(renderer, backBuffer);
                SDL_RenderPresent(renderer);
+               anything_drawn = false;
                frameCount++;
                zframeCount++;
             } else {
