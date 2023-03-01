@@ -571,6 +571,11 @@ void rect(int x, int y, int width, int height) {
    } else if (xrect_mode == CENTER) {
       x = x - width / 2;
       y = y - height / 2;
+   } else if (xrect_mode == RADIUS) {
+      width *= 2;
+      height *= 2;
+      x = x - width / 2;
+      y = y - height / 2;
    }
 
    PVector translation = current_matrix.get_translation();
@@ -582,6 +587,13 @@ void rect(int x, int y, int width, int height) {
 
    SDL_Rect dstrect = {translation.x+scale.x*x,translation.y+scale.y*y,width*scale.x,height*scale.y};
    SDL_RenderCopyEx(renderer,rect_texture,NULL,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
+
+   rectangleRGBA(renderer,
+                 translation.x+scale.x*x,
+                 translation.y+scale.y*y,
+                 translation.x+scale.x*x + width*scale.x,
+                 translation.y+scale.y*y + height*scale.y,
+                 stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a );
 }
 
 
@@ -667,6 +679,7 @@ int main()
    // Set the initial tick count
    Uint32 ticks = SDL_GetTicks();
 
+   bool dragging = false;
    while (!quit) {
 
       SDL_Event event;
@@ -676,8 +689,19 @@ int main()
          } else if (event.type == SDL_MOUSEMOTION ) {
             mouseX = event.motion.x;
             mouseY = event.motion.y;
+            if (dragging) {
+               mouseDragged();
+            }
          } else if (event.type == SDL_MOUSEBUTTONDOWN) {
             if (event.button.button == SDL_BUTTON_LEFT) {
+               mousePressed();
+               dragging = true;
+            } else if (event.button.button == SDL_BUTTON_RIGHT) {
+            }
+         } else if (event.type == SDL_MOUSEBUTTONUP) {
+            if (event.button.button == SDL_BUTTON_LEFT) {
+               mouseReleased();
+               dragging = false;
             } else if (event.button.button == SDL_BUTTON_RIGHT) {
             }
          } else if (event.type == SDL_MOUSEWHEEL) {
