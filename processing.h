@@ -393,6 +393,26 @@ void noFill() {
    fill_color = {0,0,0,0};
 }
 
+void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+   anything_drawn = true;
+
+   // Set up the Bezier curve points
+   PVector p0 = current_matrix.multiply(PVector{x1,y1});
+   PVector p1 = current_matrix.multiply(PVector{x2,y2});
+   PVector p2 = current_matrix.multiply(PVector{x3,y3});
+   PVector p3 = current_matrix.multiply(PVector{x4,y4});
+
+   // Compute the Bezier curve points
+   std::vector<SDL_Point> curvePoints;
+   for (float t = 0; t <= 1; t += 0.01) {
+      float t_ = 1 - t;
+      float x = t_ * t_ * t_ * p0.x + 3 * t_ * t_ * t * p1.x + 3 * t_ * t * t * p2.x + t * t * t * p3.x;
+      float y = t_ * t_ * t_ * p0.y + 3 * t_ * t_ * t * p1.y + 3 * t_ * t * t * p2.y + t * t * t * p3.y;
+      curvePoints.push_back({ static_cast<int>(x), static_cast<int>(y) });
+   }
+   SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+   SDL_RenderDrawLines(renderer, curvePoints.data(), curvePoints.size());
+}
 
 auto start_time = std::chrono::high_resolution_clock::now();
 
