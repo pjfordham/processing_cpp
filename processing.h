@@ -10,6 +10,7 @@
 #include <cmath>
 #include <map>
 
+#include "PerlinNoise.h"
 #include "weak.h"
 #include "processing_math.h"
 #include "processing_java_compatability.h"
@@ -34,6 +35,23 @@ enum {
 
 std::vector<Matrix2D> matrix_stack;
 Matrix2D current_matrix = Matrix2D::Identity();
+
+PerlinNoise perlin_noise;
+int perlin_octaves = 4 ;
+float perlin_falloff = 0.5;
+
+void noiseSeed(int seed) {
+   perlin_noise = PerlinNoise(seed);
+}
+
+void noiseDetail(int lod, float falloff) {
+   perlin_octaves = lod;
+   perlin_falloff = falloff;
+}
+
+float noise(float x, float y = 0, float z = 0) {
+   return perlin_noise.octave(x,y,z,perlin_octaves,perlin_falloff);
+}
 
 void pushMatrix() {
    matrix_stack.push_back(current_matrix);
@@ -259,6 +277,13 @@ class color {
    color(float _r) : r(_r), g(_r), b(_r), a(xcolorScaleA) {
    }
    color()  {
+   }
+   operator unsigned int() {
+      return
+         ((unsigned char)a << 24) |
+         ((unsigned char)r << 16) |
+         ((unsigned char)g <<  8) |
+         ((unsigned char)b <<  0);
    }
 };
 
