@@ -8,6 +8,7 @@
 #include <chrono>
 #include <vector>
 #include <cmath>
+#include <map>
 
 #include "processing_math.h"
 #include "processing_java_compatability.h"
@@ -565,11 +566,66 @@ void rect(int x, int y, int width, int height) {
 }
 
 
+typedef std::pair<const char *, int> PFont;
+PFont currentFont(NULL,0);
+
+void textFont(PFont font) {
+   currentFont = font;
+}
+
+std::map<PFont, TTF_Font *> fontMap;
+
+PFont createFont(const char *filename, int size) {
+   auto key = std::make_pair(filename,size);
+   if (fontMap.count(key) == 0) {
+      auto font = TTF_OpenFont(filename, size);
+      if (font == NULL) {
+         printf("TTF_OpenFont failed: %s\n", TTF_GetError());
+         abort();
+      }
+      fontMap[key] = font;
+   }
+   return key;
+}
+
+void textSize(int size) {
+   currentFont = createFont(currentFont.first, size);
+}
+
+void text(std::string text, int x, int y, int width=-1, int height=-1) {
+   SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
+                                                 (SDL_Color){ stroke_color.r,
+                                                    stroke_color.g, stroke_color.b,
+                                                    stroke_color.a });
+   if (surface == NULL) {
+      printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
+      abort();
+   }
+
+   SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+   if (texture == NULL) {
+      printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
+      abort();
+   }
+
+   // Get dimensions of text;
+   int textWidth = surface->w;
+   int textHeight = surface->h;
+
+   SDL_Rect text_rect = {x, y, textWidth, textHeight};
+   SDL_RenderCopy(renderer, texture, NULL, &text_rect);
+   SDL_DestroyTexture(texture);
+   SDL_FreeSurface(surface);
+}
 
 int frameCount = 0;
 int zframeCount = 0;
 int mouseX = 0;
 int mouseY = 0;
+
+char key = ' ';
+
+void keyTyped();
 
 int main()
 {
@@ -578,16 +634,12 @@ int main()
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
       return 1;
    }
-   //  TTF_Font* font = NULL;
-   //  if (TTF_Init() != 0) {
-   //     printf("TTF_Init failed: %s\n", TTF_GetError());
-   //     return 1;
-   //  }
-   // font = TTF_OpenFont("../Instruction.ttf", 40);
-   //  if (font == NULL) {
-   //     printf("TTF_OpenFont failed: %s\n", TTF_GetError());
-   //     return 1;
-   //  }
+
+   TTF_Font* font = NULL;
+   if (TTF_Init() != 0) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
+      abort();
+   }
 
    setup();
 
@@ -617,16 +669,31 @@ int main()
             case SDLK_ESCAPE:
                quit = true;
                break;
-            case SDLK_i:
-               break;
-            case SDLK_p:
-               break;
-            case SDLK_c:
-               break;
-            case SDLK_SPACE:
-               break;
-            default:
-               break;
+            }
+            // Get the key code from the event
+            SDL_Keycode keycode = event.key.keysym.sym;
+
+            // Check if any of the modifier keys are pressed
+            SDL_Keymod mod_state = SDL_GetModState();
+            bool shift_pressed = mod_state & KMOD_SHIFT;
+
+            // Convert the key code to a string
+            const char* keyname = SDL_GetKeyName(keycode);
+
+            // Get the first character of the string and convert to lowercase if shift is not pressed
+            if ( keyname[1] == 0) {
+               char zkey = keyname[0];
+               if (shift_pressed) {
+                  // Leave the key uppercase if shift is pressed
+               } else if (zkey >= 'A' && zkey <= 'Z') {
+                  // Convert to lowercase if the key is a letter
+                  zkey += 'a' - 'A';
+               }
+               key = zkey;
+               keyTyped();
+            } else if (keyname[0] == 'S' && keyname[1] == 'p') {
+               key = ' ';
+               keyTyped();
             }
          }
       }
@@ -663,9 +730,12 @@ int main()
             SDL_Delay(5);
          }
          ticks = SDL_GetTicks();
-}   }
+      }
+   }
 
-   // TTF_CloseFont(font);
+   for (auto font : fontMap) {
+      TTF_CloseFont(font.second);
+   }
 
    destroy_rect_texture();
    destroy_ellipse_texture();
