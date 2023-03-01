@@ -337,11 +337,19 @@ void stroke(float r,float g, float b) {
 }
 
 void stroke(float r,float a) {
-   stroke(r,r,r,a);
+   if (xcolorMode == HSB) {
+      stroke(0,0,r,a);
+   } else {
+      stroke(r,r,r,a);
+   }
 }
 
 void stroke(float r) {
-   stroke(r,r,r,xcolorScaleA);
+   if (xcolorMode == HSB) {
+      stroke(r,0,0,xcolorScaleA);
+   } else {
+      stroke(r,r,r,xcolorScaleA);
+   }
 }
 
 void stroke(color c) {
@@ -427,15 +435,21 @@ void loop() {
    xloop = true;
 }
 
-void background(int r, int g, int b) {
+void background(float r, float g, float b) {
    anything_drawn = true;
-   SDL_SetRenderDrawColor(renderer, r,g,b,0xFF);
+   auto color = flatten_color_mode(r,g,b,xcolorScaleA);
+   SDL_SetRenderDrawColor(renderer, color.r,color.g,color.b, color.a);
    SDL_RenderClear(renderer);
 }
 
-void background(int gray) {
-   background(gray, gray,gray);
-}
+void background(float gray) {
+   if (xcolorMode == HSB) {
+      background(0,0,gray);
+   } else {
+      background(gray,gray,gray);
+   }
+};
+
 
 int width = 0;
 int height = 0;
@@ -514,11 +528,19 @@ void fill(float r,float g, float b) {
 }
 
 void fill(float r,float a) {
-   fill(r,r,r,a);
+   if (xcolorMode == HSB) {
+      fill(0,0,r,a);
+   } else {
+      fill(r,r,r,a);
+   }
 }
 
 void fill(float r) {
-   fill(r,r,r,xcolorScaleA);
+   if (xcolorMode == HSB) {
+      fill(0,0,r,xcolorScaleA);
+   } else {
+      fill(r,r,r,xcolorScaleA);
+   }
 }
 
 void fill(class color color) {
