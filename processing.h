@@ -662,7 +662,7 @@ void rect(int x, int y, int _width, int _height) {
    PVector tr = current_matrix.multiply( PVector{x+_width,y} );
    PVector bl = current_matrix.multiply( PVector{x,y+_height} );
    PVector br = current_matrix.multiply( PVector{x+_width,y+_height} );
-   
+
    glBegin(GL_TRIANGLES);
    glColor3f(fill_color.r/255.0, fill_color.g/255.0, fill_color.b/255.0);
    glVertex2f( tl.x,  tl.y );
@@ -676,14 +676,17 @@ void rect(int x, int y, int _width, int _height) {
    glVertex2f( bl.x,  bl.y );
    glEnd();
 
-   glLineWidth(xstrokeWeight);
-   glBegin(GL_LINE_LOOP);
-   glColor3f(stroke_color.r/255.0, stroke_color.g/255.0, stroke_color.b/255.0);
-   glVertex2f( tl.x,  tl.y );
-   glVertex2f( tr.x,  tr.y );
-   glVertex2f( br.x,  br.y );
-   glVertex2f( bl.x,  bl.y );
-   glEnd();
+   // Alpha hack
+   if (stroke_color.a > 0) {
+      glLineWidth(xstrokeWeight);
+      glBegin(GL_LINE_LOOP);
+      glColor3f(stroke_color.r/255.0, stroke_color.g/255.0, stroke_color.b/255.0);
+      glVertex2f( tl.x,  tl.y );
+      glVertex2f( tr.x,  tr.y );
+      glVertex2f( br.x,  br.y );
+      glVertex2f( bl.x,  bl.y );
+      glEnd();
+   }
 
 }
 
