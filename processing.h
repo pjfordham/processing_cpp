@@ -293,6 +293,18 @@ class color {
    }
 };
 
+const color BLACK = color(0);
+const color WHITE = color(255);
+const color GRAY = color(127);
+const color LIGHT_GRAY = color(192);
+const color DARK_GRAY = color(64);
+const color RED = color(255, 0, 0);
+const color GREEN = color(0, 255, 0);
+const color BLUE = color(0, 0, 255);
+const color YELLOW = color(255, 255, 0);
+const color CYAN = color(0, 255, 255);
+const color MAGENTA = color(255, 0, 255);
+
 
 color lerpColor(const color& c1, const color& c2, float amt) {
     float r = c1.r + (c2.r - c1.r) * amt;
@@ -491,6 +503,10 @@ void background(float r, float g, float b) {
    auto color = flatten_color_mode(r,g,b,xcolorScaleA);
    SDL_SetRenderDrawColor(renderer, color.r,color.g,color.b, color.a);
    SDL_RenderClear(renderer);
+}
+
+void background(color c) {
+   background(c.r,c.g,c.b);
 }
 
 void background(float gray) {
@@ -713,6 +729,14 @@ int mouseX = 0;
 int mouseY = 0;
 
 char key = 0;
+int keyCode = 0;
+
+enum {
+   LEFT = 37,
+   RIGHT = 39,
+   UP = 38,
+   DOWN = 40,
+};
 
 int main()
 {
@@ -770,16 +794,17 @@ int main()
                break;
             }
             // Get the key code from the event
-            SDL_Keycode keycode = event.key.keysym.sym;
+            SDL_Keycode sdl_keycode = event.key.keysym.sym;
 
             // Check if any of the modifier keys are pressed
             SDL_Keymod mod_state = SDL_GetModState();
             bool shift_pressed = mod_state & KMOD_SHIFT;
 
             // Convert the key code to a string
-            const char* keyname = SDL_GetKeyName(keycode);
+            const char* keyname = SDL_GetKeyName(sdl_keycode);
 
             key = 1;
+            keyCode = 0;
             // Get the first character of the string and convert to lowercase if shift is not pressed
             if ( keyname[1] == 0) {
                char zkey = keyname[0];
@@ -790,10 +815,20 @@ int main()
                   zkey += 'a' - 'A';
                }
                key = zkey;
+               keyCode = key;
                keyTyped();
             } else if (keyname[0] == 'S' && keyname[1] == 'p') {
                key = ' ';
+               keyCode = key;
                keyTyped();
+            } else if (keyname[0] == 'L' && keyname[1] == 'e') {
+               keyCode = LEFT;
+            } else if (keyname[0] == 'R' && keyname[1] == 'i') {
+               keyCode = RIGHT;
+            } else if (keyname[0] == 'U' && keyname[1] == 'p') {
+               keyCode = UP;
+            } else if (keyname[0] == 'D' && keyname[1] == 'o') {
+               keyCode = DOWN;
             }
             keyPressed();
          }
