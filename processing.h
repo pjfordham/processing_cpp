@@ -174,12 +174,6 @@ void glFilledPoly(int points, PVector *p, SDL_Color color) {
    glEnd();
 }
 
-void glFilledQuad(PVector t1, PVector t2, PVector t3, PVector t4, SDL_Color color) {
-
-   PVector points[] = { t1, t2, t3, t4 };
-   glFilledPoly( 4, points, color );
-}
-
 void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
    if (color.a > 0) {
@@ -187,16 +181,13 @@ void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
       normal.normalize();
       normal.mult(weight/2.0);
 
-      PVector tl = p1;
-      tl.add(normal);
-      PVector bl =  p1;
-      bl.sub(normal);
-      PVector tr = p2;
-      tr.add(normal);
-      PVector br =  p2;
-      br.sub(normal);
+      PVector p[] = {p1,p1,p2,p2};
+      p[0].add(normal);
+      p[1].sub(normal);
+      p[2].sub(normal);
+      p[3].add(normal);
 
-      glFilledQuad(tl, tr, br, bl, color);
+      glFilledPoly(4, p, color);
    }
 
 }
@@ -639,7 +630,6 @@ void rect(int x, int y, int _width, int _height) {
       x = x - _width / 2;
       y = y - _height / 2;
    }
-
    quad(x,y, x+_width,y,  x+_width,y+_height,  x,y+_height);
 }
 
