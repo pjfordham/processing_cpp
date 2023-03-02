@@ -107,62 +107,6 @@ enum{
    CLOSE = 1,
 };
 
-
-void DrawAntialiasedCircle(SDL_Renderer* renderer, int x, int y, int r) {
-   anything_drawn = true;
-   // Draw circle pixels using antialiasing
-   for (float i = x - r; i < x + r; i += 0.5) {
-      for (float j = y - r; j < y + r; j += 0.5) {
-         float distance = dist(i,j,x,y);
-         if (distance >= r - 1 && distance <= r) {
-            float alpha = 1 - (r - distance);
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, static_cast<int>(alpha * 255));
-            SDL_RenderDrawPoint(renderer, i, j);
-         } else if (distance < r - 1) {
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            SDL_RenderDrawPoint(renderer, i, j);
-         }
-      }
-   }
-}
-// Create a texture to render to
-SDL_Texture* ellipse_texture;
-
-void setup_ellipse_texture() {
-   ellipse_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 1000,1000);
-   SDL_SetTextureBlendMode(ellipse_texture, SDL_BLENDMODE_BLEND);
-   SDL_SetRenderTarget(renderer, ellipse_texture);
-   SDL_SetRenderDrawColor(renderer,0,0,0,0);
-   SDL_RenderFillRect(renderer, NULL);
-   DrawAntialiasedCircle(renderer, 500,500,500);
-}
-
-void destroy_ellipse_texture() {
-   SDL_DestroyTexture(ellipse_texture);
-}
-
-void ellipse(float x, float y, float width, float height) {
-   anything_drawn = true;
-   if (xellipse_mode != RADIUS ) {
-      width /=2;
-      height /=2;
-   }
-
-   PVector translation = current_matrix.get_translation();
-   PVector scale = current_matrix.get_scale();
-   float angle = current_matrix.get_angle();
-
-   SDL_SetTextureColorMod(ellipse_texture, fill_color.r,fill_color.g,fill_color.b);
-   SDL_SetTextureAlphaMod(ellipse_texture, fill_color.a);
-
-   SDL_Rect  dstrect = {translation.x-width+x,translation.y+y-height,+width*2*scale.x,height*2*scale.y};
-
-   SDL_Point pos{width-x,height-y};
-
-   SDL_RenderCopyEx(renderer,ellipse_texture,NULL,&dstrect, -angle * 180 /M_PI, &pos,SDL_FLIP_NONE);
-
-}
-
 void glFilledPoly(int points, PVector *p, SDL_Color color) {
    anything_drawn = true;
    glBegin(GL_TRIANGLE_FAN);
@@ -203,6 +147,33 @@ void glLines(int points, PVector *p, SDL_Color color, int weight) {
 void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
    glLines(points, p, color, weight);
    glLine(p[points-1], p[0], color, weight);
+}
+
+void glFilledEllipse( PVector center, float xradius, float yradius, SDL_Color color ) {
+   int NUMBER_OF_VERTICES=32;
+   std::vector<PVector> vertexBuffer;
+   for(float i = 0; i < 2 * M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
+   }
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+}
+
+void glLineEllipse( PVector center, float xradius, float yradius, SDL_Color color, int weight) {
+   int NUMBER_OF_VERTICES=32;
+   std::vector<PVector> vertexBuffer;
+   for(float i = 0; i < 2 * M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
+   }
+   glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
+}
+
+void ellipse(float x, float y, float width, float height) {
+   if (xellipse_mode != RADIUS ) {
+      width /=2;
+      height /=2;
+   }
+   glFilledEllipse(PVector{x,y}, width, width, fill_color);
+   glLineEllipse(PVector{x,y}, width, width, stroke_color, xstrokeWeight);
 }
 
 void line(float x1, float y1, float x2, float y2) {
@@ -551,9 +522,6 @@ void size(int _width, int _height) {
    //  // Create a renderer
    // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-   // void setup_ellipse_texture();
-   // setup_ellipse_texture();
-
    // backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
    // if (!backBuffer)
    // {
@@ -879,7 +847,6 @@ int main_2d()
       TTF_CloseFont(font.second);
    }
 
-   destroy_ellipse_texture();
    // Destroy the window and renderer
    SDL_DestroyRenderer(renderer);
    SDL_DestroyWindow(window);
