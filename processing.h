@@ -676,6 +676,7 @@ void rect(int x, int y, int _width, int _height) {
    glVertex2f( bl.x,  bl.y );
    glEnd();
 
+   glLineWidth(xstrokeWeight);
    glBegin(GL_LINE_LOOP);
    glColor3f(stroke_color.r/255.0, stroke_color.g/255.0, stroke_color.b/255.0);
    glVertex2f( tl.x,  tl.y );
