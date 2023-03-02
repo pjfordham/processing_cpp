@@ -186,8 +186,14 @@ void line(float x1, float y1, float x2, float y2) {
 void point(float x, float y) {
    anything_drawn = true;
    PVector p = current_matrix.multiply(PVector{x,y});
-   SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-   SDL_RenderDrawPoint(renderer, p.x, p.y);
+   if (xstrokeWeight == 1) {
+      SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+      SDL_RenderDrawPoint(renderer, p.x, p.y);
+   } else {
+      PVector scale = current_matrix.get_scale();
+      filledEllipseRGBA(renderer, x, y, scale.x * xstrokeWeight/2, scale.y * xstrokeWeight/2,
+                        stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+   }
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
@@ -687,9 +693,16 @@ void text(std::string text, int x, int y, int width=-1, int height=-1) {
    // Get dimensions of text;
    int textWidth = surface->w;
    int textHeight = surface->h;
+   y = y - textHeight;
 
-   SDL_Rect text_rect = {x, y, textWidth, textHeight};
-   SDL_RenderCopy(renderer, texture, NULL, &text_rect);
+   PVector translation = current_matrix.get_translation();
+   PVector scale = current_matrix.get_scale();
+   float angle = current_matrix.get_angle();
+
+   const SDL_Point center = { 0 , textHeight };
+   const SDL_Rect dstrect = {translation.x+scale.x*x,translation.y+scale.y*y,textWidth*scale.x,textHeight*scale.y};
+   SDL_RenderCopyEx(renderer,texture,NULL,&dstrect, -angle * 180 /M_PI, &center,SDL_FLIP_NONE);
+
    SDL_DestroyTexture(texture);
    SDL_FreeSurface(surface);
 }
