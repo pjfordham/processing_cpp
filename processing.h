@@ -639,11 +639,6 @@ void destroy_rect_texture() {
    SDL_DestroyTexture(rect_texture);
 }
 
-   void glv(float a, float b)
-   {
-      glVertex2f( 2*a/width-1, 2*b / height -1);
-   }
-
 void rect(int x, int y, int _width, int _height) {
    anything_drawn = true;
    if (xrect_mode == CORNERS) {
@@ -670,15 +665,15 @@ void rect(int x, int y, int _width, int _height) {
    
    glBegin(GL_TRIANGLES);
    glColor3f(fill_color.r/255.0, fill_color.g/255.0, fill_color.b/255.0);
-   glv( tl.x,  tl.y );
-   glv( tr.x,  tr.y );
-   glv( bl.x,  bl.y );
+   glVertex2f( tl.x,  tl.y );
+   glVertex2f( tr.x,  tr.y );
+   glVertex2f( bl.x,  bl.y );
    glEnd();
    glBegin(GL_TRIANGLES);
    glColor3f(fill_color.r/255.0, fill_color.g/255.0, fill_color.b/255.0);
-   glv( br.x,  br.y );
-   glv( tr.x,  tr.y );
-   glv( bl.x,  bl.y );
+   glVertex2f( br.x,  br.y );
+   glVertex2f( tr.x,  tr.y );
+   glVertex2f( bl.x,  bl.y );
    glEnd();
 
 }
@@ -867,7 +862,10 @@ int main(int argc, char* argv[]) {
          }
 
          if (xloop || frameCount == 0) {
+            // Translate current coordinates system to OpenGL [-1,1]
             current_matrix = Matrix2D::Identity();
+            current_matrix = current_matrix.multiply(Matrix2D::translate(-1,-1));
+            current_matrix = current_matrix.multiply(Matrix2D::scale(2.0/width, 2.0/height));
             draw();
             SDL_GL_SwapWindow(window);
             // Update the screen
