@@ -173,16 +173,40 @@ void ellipse(float x, float y, float width, float height) {
 
 }
 
-void line(float x1, float y1, float x2, float y2) {
+void glFilledPoly(int points, PVector *p, SDL_Color color) {
    anything_drawn = true;
-   PVector s = current_matrix.multiply(PVector{x1,y1});
-   PVector f = current_matrix.multiply(PVector{x2,y2});
-   if (xstrokeWeight == 1) {
-      SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-      SDL_RenderDrawLine(renderer, s.x, s.y, f.x, f.y);
-   } else {
-      drawRoundedLine(s.x, s.y, f.x, f.y, xstrokeWeight, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-   }
+   glBegin(GL_TRIANGLE_FAN);
+   glColor3f(color.r/255.0, color.g/255.0, color.b/255.0);
+   for (int i =0; i<points;++i) {
+      PVector p1 = current_matrix.multiply( p[i] );
+      glVertex2f(p1.x, p1.y);
+   };
+   glEnd();
+}
+
+void glFilledQuad(PVector t1, PVector t2, PVector t3, PVector t4, SDL_Color color) {
+
+   PVector points[] = { t1, t2, t3, t4 };
+   glFilledPoly( 4, points, color );
+}
+
+void line(float x1, float y1, float x2, float y2) {
+
+   PVector normal = PVector{x2-x1,y2-y1}.normal();
+   normal.normalize();
+   normal.mult(xstrokeWeight/2.0);
+
+   PVector tl = PVector{x1,y1};
+   tl.add(normal);
+   PVector bl =  PVector{x1,y1};
+   bl.sub(normal);
+   PVector tr = PVector{x2,y2};
+   tr.add(normal);
+   PVector br =  PVector{x2,y2};
+   br.sub(normal);
+
+   glFilledQuad(tl, tr, br, bl, stroke_color);
+
 }
 
 void point(float x, float y) {
@@ -199,14 +223,16 @@ void point(float x, float y) {
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-   anything_drawn = true;
-   PVector p1 = current_matrix.multiply(PVector{x1,y1});
-   PVector p2 = current_matrix.multiply(PVector{x2,y2});
-   PVector p3 = current_matrix.multiply(PVector{x3,y3});
-   PVector p4 = current_matrix.multiply(PVector{x4,y4});
-   Sint16 xs[] = {p1.x,p2.x,p3.x,p4.x};
-   Sint16 ys[] = {p1.y,p2.y,p3.y,p4.y};
-   filledPolygonRGBA(renderer,xs,ys,4,fill_color.r,fill_color.g,fill_color.b,fill_color.a);
+   glFilledQuad(PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4}, fill_color);
+
+   // Alpha hack
+   if (stroke_color.a > 0) {
+      line( x1, y1, x2, y2 );
+      line( x2, y2, x3, y3 );
+      line( x3, y3, x4, y4 );
+      line( x4, y4, x1, y1 );
+   }
+
 }
 
 
@@ -238,6 +264,8 @@ void endShape(int type = OPEN) {
          }
       }
    } else if (type == CLOSE) {
+      glFilledPoly( shape.size(), shape.data(), fill_color );
+
       std::vector<Sint16> xs, ys;
       for (auto z : shape ) {
          auto p = current_matrix.multiply( z );
@@ -245,8 +273,6 @@ void endShape(int type = OPEN) {
          ys.push_back(p.y);
       }
 
-      filledPolygonRGBA(renderer,xs.data(),ys.data(),xs.size(),
-                        fill_color.r,fill_color.g,fill_color.b,fill_color.a);
       polygonRGBA(renderer,xs.data(),ys.data(),xs.size(),
                   stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
    } else if (shape_style == LINES) {
@@ -640,7 +666,6 @@ void destroy_rect_texture() {
 }
 
 void rect(int x, int y, int _width, int _height) {
-   anything_drawn = true;
    if (xrect_mode == CORNERS) {
       _width = _width -x;
       _height = _height - y;
@@ -654,40 +679,20 @@ void rect(int x, int y, int _width, int _height) {
       y = y - _height / 2;
    }
 
-   PVector translation = current_matrix.get_translation();
-   PVector scale = current_matrix.get_scale();
-   float angle = current_matrix.get_angle();
+   PVector tl = PVector{x,y};
+   PVector tr = PVector{x+_width,y};
+   PVector bl = PVector{x,y+_height};
+   PVector br = PVector{x+_width,y+_height};
 
-   PVector tl = current_matrix.multiply( PVector{x,y} );
-   PVector tr = current_matrix.multiply( PVector{x+_width,y} );
-   PVector bl = current_matrix.multiply( PVector{x,y+_height} );
-   PVector br = current_matrix.multiply( PVector{x+_width,y+_height} );
-
-   glBegin(GL_TRIANGLES);
-   glColor3f(fill_color.r/255.0, fill_color.g/255.0, fill_color.b/255.0);
-   glVertex2f( tl.x,  tl.y );
-   glVertex2f( tr.x,  tr.y );
-   glVertex2f( bl.x,  bl.y );
-   glEnd();
-   glBegin(GL_TRIANGLES);
-   glColor3f(fill_color.r/255.0, fill_color.g/255.0, fill_color.b/255.0);
-   glVertex2f( br.x,  br.y );
-   glVertex2f( tr.x,  tr.y );
-   glVertex2f( bl.x,  bl.y );
-   glEnd();
+   glFilledQuad(tl,tr,br,bl,fill_color);
 
    // Alpha hack
    if (stroke_color.a > 0) {
-      glLineWidth(xstrokeWeight);
-      glBegin(GL_LINE_LOOP);
-      glColor3f(stroke_color.r/255.0, stroke_color.g/255.0, stroke_color.b/255.0);
-      glVertex2f( tl.x,  tl.y );
-      glVertex2f( tr.x,  tr.y );
-      glVertex2f( br.x,  br.y );
-      glVertex2f( bl.x,  bl.y );
-      glEnd();
+      line( tl.x, tl.y, tr.x, tr.y );
+      line( tr.x, tr.y, br.x, br.y );
+      line( bl.x, br.y, bl.x, bl.y );
+      line( bl.x, bl.y, tl.x, tl.y );
    }
-
 }
 
 

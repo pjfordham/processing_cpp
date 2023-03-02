@@ -51,6 +51,10 @@ public:
          y /= mag;
       }
    }
+   PVector normal() {
+      return PVector(-y, x);
+   }
+
    void setMag(float mag) {
       normalize();
       x *= mag;
