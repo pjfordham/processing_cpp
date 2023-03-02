@@ -93,16 +93,6 @@ void rectMode(int mode){
    xrect_mode = mode;
 }
 
-void drawRoundedLine( int x1, int y1, int x2, int y2, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-   anything_drawn = true;
-   // Draw thick line
-   thickLineRGBA(renderer, x1, y1, x2, y2, thickness, r, g, b, a);
-
-   // // Draw rounded ends
-   filledCircleRGBA(renderer, x1, y1, thickness / 2, r, g, b, a);
-   filledCircleRGBA(renderer, x2, y2, thickness / 2, r, g, b, a);
-}
-
 SDL_Color stroke_color{255,255,255,255};
 SDL_Color fill_color{255,255,255,255};
 
@@ -192,29 +182,36 @@ void glFilledQuad(PVector t1, PVector t2, PVector t3, PVector t4, SDL_Color colo
 
 void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
-   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-   normal.normalize();
-   normal.mult(weight/2.0);
+   if (color.a > 0) {
+      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+      normal.normalize();
+      normal.mult(weight/2.0);
 
-   PVector tl = p1;
-   tl.add(normal);
-   PVector bl =  p1;
-   bl.sub(normal);
-   PVector tr = p2;
-   tr.add(normal);
-   PVector br =  p2;
-   br.sub(normal);
+      PVector tl = p1;
+      tl.add(normal);
+      PVector bl =  p1;
+      bl.sub(normal);
+      PVector tr = p2;
+      tr.add(normal);
+      PVector br =  p2;
+      br.sub(normal);
 
-   glFilledQuad(tl, tr, br, bl, color);
+      glFilledQuad(tl, tr, br, bl, color);
+   }
+
 }
 
-void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
+void glLines(int points, PVector *p, SDL_Color color, int weight) {
    if (color.a > 0) {
       for (int i =1; i<points;++i) {
          glLine(p[i-1], p[i], color, weight);
       }
-      glLine(p[points-1], p[0], color, weight);
    }
+}
+
+void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
+   glLines(points, p, color, weight);
+   glLine(p[points-1], p[0], color, weight);
 }
 
 void line(float x1, float y1, float x2, float y2) {
@@ -255,9 +252,9 @@ void vertex(float x, float y) {
 }
 
 void endShape(int type = OPEN) {
-   anything_drawn = true;
 
    if (shape_style == POINTS) {
+      anything_drawn = true;
       for (auto z : shape ) {
          auto p = current_matrix.multiply( z );
          if (xstrokeWeight == 1) {
@@ -270,23 +267,9 @@ void endShape(int type = OPEN) {
       }
    } else if (type == CLOSE) {
       glFilledPoly( shape.size(), shape.data(), fill_color );
-
-      std::vector<Sint16> xs, ys;
-      for (auto z : shape ) {
-         auto p = current_matrix.multiply( z );
-         xs.push_back(p.x);
-         ys.push_back(p.y);
-      }
-
-      polygonRGBA(renderer,xs.data(),ys.data(),xs.size(),
-                  stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
+      glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
    } else if (shape_style == LINES) {
-      for (std::size_t i = 1; i < shape.size(); ++i) {
-         line(shape[i-1].x, shape[i-1].y, shape[i].x, shape[i].y);
-      }
-      if (type == CLOSE) {
-         line(shape[shape.size()-1].x, shape[shape.size()-1].y, shape[0].x, shape[0].y);
-      }
+      glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
    }
 }
 
@@ -445,24 +428,15 @@ void noFill() {
 }
 
 void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-   anything_drawn = true;
-
-   // Set up the Bezier curve points
-   PVector p0 = current_matrix.multiply(PVector{x1,y1});
-   PVector p1 = current_matrix.multiply(PVector{x2,y2});
-   PVector p2 = current_matrix.multiply(PVector{x3,y3});
-   PVector p3 = current_matrix.multiply(PVector{x4,y4});
-
    // Compute the Bezier curve points
-   std::vector<SDL_Point> curvePoints;
+   std::vector<PVector> curve;
    for (float t = 0; t <= 1; t += 0.01) {
       float t_ = 1 - t;
-      float x = t_ * t_ * t_ * p0.x + 3 * t_ * t_ * t * p1.x + 3 * t_ * t * t * p2.x + t * t * t * p3.x;
-      float y = t_ * t_ * t_ * p0.y + 3 * t_ * t_ * t * p1.y + 3 * t_ * t * t * p2.y + t * t * t * p3.y;
-      curvePoints.push_back({ static_cast<int>(x), static_cast<int>(y) });
+      float x = t_ * t_ * t_ * x1 + 3 * t_ * t_ * t * x2 + 3 * t_ * t * t * x3 + t * t * t * x4;
+      float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
+      curve.emplace_back(x, y);
    }
-   SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-   SDL_RenderDrawLines(renderer, curvePoints.data(), curvePoints.size());
+   glLines(curve.size(), curve.data(), stroke_color, xstrokeWeight);
 }
 
 auto start_time = std::chrono::high_resolution_clock::now();
