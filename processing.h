@@ -190,23 +190,35 @@ void glFilledQuad(PVector t1, PVector t2, PVector t3, PVector t4, SDL_Color colo
    glFilledPoly( 4, points, color );
 }
 
-void line(float x1, float y1, float x2, float y2) {
+void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
-   PVector normal = PVector{x2-x1,y2-y1}.normal();
+   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
    normal.normalize();
-   normal.mult(xstrokeWeight/2.0);
+   normal.mult(weight/2.0);
 
-   PVector tl = PVector{x1,y1};
+   PVector tl = p1;
    tl.add(normal);
-   PVector bl =  PVector{x1,y1};
+   PVector bl =  p1;
    bl.sub(normal);
-   PVector tr = PVector{x2,y2};
+   PVector tr = p2;
    tr.add(normal);
-   PVector br =  PVector{x2,y2};
+   PVector br =  p2;
    br.sub(normal);
 
-   glFilledQuad(tl, tr, br, bl, stroke_color);
+   glFilledQuad(tl, tr, br, bl, color);
+}
 
+void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
+   if (color.a > 0) {
+      for (int i =1; i<points;++i) {
+         glLine(p[i-1], p[i], color, weight);
+      }
+      glLine(p[points-1], p[0], color, weight);
+   }
+}
+
+void line(float x1, float y1, float x2, float y2) {
+   glLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
 }
 
 void point(float x, float y) {
@@ -223,16 +235,9 @@ void point(float x, float y) {
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-   glFilledQuad(PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4}, fill_color);
-
-   // Alpha hack
-   if (stroke_color.a > 0) {
-      line( x1, y1, x2, y2 );
-      line( x2, y2, x3, y3 );
-      line( x3, y3, x4, y4 );
-      line( x4, y4, x1, y1 );
-   }
-
+   PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4} };
+   glFilledPoly(4,points, fill_color);
+   glLinePoly(4, points, stroke_color, xstrokeWeight );
 }
 
 
@@ -581,8 +586,6 @@ void size(int _width, int _height) {
    //  // Create a renderer
    // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-   // void setup_rect_texture();
-   // setup_rect_texture();
    // void setup_ellipse_texture();
    // setup_ellipse_texture();
 
@@ -649,22 +652,6 @@ void fill(class color color) {
    fill(color.r,color.g,color.b,color.a);
 }
 
-// Create a texture to render to
-SDL_Texture* rect_texture;
-
-void setup_rect_texture() {
-   rect_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 1,1);
-   SDL_SetTextureBlendMode(rect_texture, SDL_BLENDMODE_BLEND);
-   // Set the render target to the texture
-   SDL_SetRenderTarget(renderer, rect_texture);
-   SDL_SetRenderDrawColor(renderer,255,255,255,255);
-   SDL_RenderFillRect(renderer, NULL);
-}
-
-void destroy_rect_texture() {
-   SDL_DestroyTexture(rect_texture);
-}
-
 void rect(int x, int y, int _width, int _height) {
    if (xrect_mode == CORNERS) {
       _width = _width -x;
@@ -679,20 +666,7 @@ void rect(int x, int y, int _width, int _height) {
       y = y - _height / 2;
    }
 
-   PVector tl = PVector{x,y};
-   PVector tr = PVector{x+_width,y};
-   PVector bl = PVector{x,y+_height};
-   PVector br = PVector{x+_width,y+_height};
-
-   glFilledQuad(tl,tr,br,bl,fill_color);
-
-   // Alpha hack
-   if (stroke_color.a > 0) {
-      line( tl.x, tl.y, tr.x, tr.y );
-      line( tr.x, tr.y, br.x, br.y );
-      line( bl.x, br.y, bl.x, bl.y );
-      line( bl.x, bl.y, tl.x, tl.y );
-   }
+   quad(x,y, x+_width,y,  x+_width,y+_height,  x,y+_height);
 }
 
 
@@ -941,7 +915,6 @@ int main_2d()
       TTF_CloseFont(font.second);
    }
 
-   destroy_rect_texture();
    destroy_ellipse_texture();
    // Destroy the window and renderer
    SDL_DestroyRenderer(renderer);
