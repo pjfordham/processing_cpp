@@ -864,8 +864,8 @@ int main(int argc, char* argv[]) {
          if (xloop || frameCount == 0) {
             // Translate current coordinates system to OpenGL [-1,1]
             current_matrix = Matrix2D::Identity();
-            current_matrix = current_matrix.multiply(Matrix2D::translate(-1,-1));
-            current_matrix = current_matrix.multiply(Matrix2D::scale(2.0/width, 2.0/height));
+            current_matrix = current_matrix.multiply(Matrix2D::translate(-1,+1));
+            current_matrix = current_matrix.multiply(Matrix2D::scale(2.0/width, -2.0/height));
             draw();
             SDL_GL_SwapWindow(window);
             // Update the screen
