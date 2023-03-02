@@ -10,6 +10,7 @@
 #include <vector>
 #include <cmath>
 #include <map>
+#include <fmt/core.h>
 
 #include "PerlinNoise.h"
 #include "weak.h"
@@ -502,8 +503,10 @@ void loop() {
 void background(float r, float g, float b) {
    anything_drawn = true;
    auto color = flatten_color_mode(r,g,b,xcolorScaleA);
-   SDL_SetRenderDrawColor(renderer, color.r,color.g,color.b, color.a);
-   SDL_RenderClear(renderer);
+   // Set clear color
+   glClearColor(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
+   // Clear screen
+   glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void background(color c) {
@@ -523,46 +526,51 @@ int width = 0;
 int height = 0;
 
 using std::min;
+SDL_GLContext glContext = NULL;
 
 void size(int _width, int _height) {
    // Create a window
    width = _width;
    height = _height;
+
    window = SDL_CreateWindow("Proce++ing",
                              SDL_WINDOWPOS_UNDEFINED,
                              SDL_WINDOWPOS_UNDEFINED,
                              width,
                              height,
-                             SDL_WINDOW_SHOWN);
+                             SDL_WINDOW_OPENGL);
 
    if (window == nullptr) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
       abort();
    }
 
-   // Create a renderer
-   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-   if (renderer == nullptr) {
+   // Create OpenGL context
+   SDL_GLContext glContext = SDL_GL_CreateContext(window);
+   if (glContext == nullptr) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
       abort();
    }
 
-   void setup_rect_texture();
-   setup_rect_texture();
-   void setup_ellipse_texture();
-   setup_ellipse_texture();
+   //  // Create a renderer
+   // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-   backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
-   if (!backBuffer)
-   {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
-      abort();
-   }
+   // void setup_rect_texture();
+   // setup_rect_texture();
+   // void setup_ellipse_texture();
+   // setup_ellipse_texture();
 
-   SDL_SetTextureBlendMode(backBuffer, SDL_BLENDMODE_BLEND);
-   // Set the back buffer as the render target
-   SDL_SetRenderTarget(renderer, backBuffer);
-   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+   // backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
+   // if (!backBuffer)
+   // {
+   //    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
+   //    abort();
+   // }
+
+   // SDL_SetTextureBlendMode(backBuffer, SDL_BLENDMODE_BLEND);
+   // // Set the back buffer as the render target
+   // SDL_SetRenderTarget(renderer, backBuffer);
+   // SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
    background(255);
 
@@ -631,37 +639,48 @@ void destroy_rect_texture() {
    SDL_DestroyTexture(rect_texture);
 }
 
-void rect(int x, int y, int width, int height) {
+   void glv(float a, float b)
+   {
+      glVertex2f( 2*a/width-1, 2*b / height -1);
+   }
+
+void rect(int x, int y, int _width, int _height) {
    anything_drawn = true;
    if (xrect_mode == CORNERS) {
-      width = width -x;
-      height = height - y;
+      _width = _width -x;
+      _height = _height - y;
    } else if (xrect_mode == CENTER) {
-      x = x - width / 2;
-      y = y - height / 2;
+      x = x - _width / 2;
+      y = y - _height / 2;
    } else if (xrect_mode == RADIUS) {
-      width *= 2;
-      height *= 2;
-      x = x - width / 2;
-      y = y - height / 2;
+      _width *= 2;
+      _height *= 2;
+      x = x - _width / 2;
+      y = y - _height / 2;
    }
 
    PVector translation = current_matrix.get_translation();
    PVector scale = current_matrix.get_scale();
    float angle = current_matrix.get_angle();
 
-   SDL_SetTextureColorMod(rect_texture, fill_color.r,fill_color.g,fill_color.b);
-   SDL_SetTextureAlphaMod(rect_texture, fill_color.a);
+   PVector tl = current_matrix.multiply( PVector{x,y} );
+   PVector tr = current_matrix.multiply( PVector{x+_width,y} );
+   PVector bl = current_matrix.multiply( PVector{x,y+_height} );
+   PVector br = current_matrix.multiply( PVector{x+_width,y+_height} );
+   
+   glBegin(GL_TRIANGLES);
+   glColor3f(fill_color.r/255.0, fill_color.g/255.0, fill_color.b/255.0);
+   glv( tl.x,  tl.y );
+   glv( tr.x,  tr.y );
+   glv( bl.x,  bl.y );
+   glEnd();
+   glBegin(GL_TRIANGLES);
+   glColor3f(fill_color.r/255.0, fill_color.g/255.0, fill_color.b/255.0);
+   glv( br.x,  br.y );
+   glv( tr.x,  tr.y );
+   glv( bl.x,  bl.y );
+   glEnd();
 
-   SDL_Rect dstrect = {translation.x+scale.x*x,translation.y+scale.y*y,width*scale.x,height*scale.y};
-   SDL_RenderCopyEx(renderer,rect_texture,NULL,&dstrect, -angle * 180 /M_PI, NULL,SDL_FLIP_NONE);
-
-   rectangleRGBA(renderer,
-                 translation.x+scale.x*x,
-                 translation.y+scale.y*y,
-                 translation.x+scale.x*x + width*scale.x,
-                 translation.y+scale.y*y + height*scale.y,
-                 stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a );
 }
 
 
@@ -740,74 +759,16 @@ enum {
 };
 
 int main(int argc, char* argv[]) {
-    // Initialize SDL
-    SDL_Init(SDL_INIT_VIDEO);
-
-    // Set OpenGL attributes
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-    // Create window
-    SDL_Window* window = SDL_CreateWindow("OpenGL Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
-
-    // Create OpenGL context
-    SDL_GLContext glContext = SDL_GL_CreateContext(window);
-
-    // Set clear color
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-    // Main loop
-    bool quit = false;
-    while (!quit) {
-        // Handle events
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    quit = true;
-                    break;
-            }
-        }
-
-        // Clear screen
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // Draw triangle
-        glBegin(GL_TRIANGLES);
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glVertex2f(-0.5f, -0.5f);
-        glColor3f(0.0f, 1.0f, 0.0f);
-        glVertex2f(0.5f, -0.5f);
-        glColor3f(0.0f, 0.0f, 1.0f);
-        glVertex2f(0.0f, 0.5f);
-        glEnd();
-
-        // Swap buffers
-        SDL_GL_SwapWindow(window);
-    }
-
-    // Clean up
-    SDL_GL_DeleteContext(glContext);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    return 0;
-}
-
-int main_2d()
-{
    // Initialize SDL
    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
       return 1;
    }
 
-   TTF_Font* font = NULL;
-   if (TTF_Init() != 0) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
-      abort();
-   }
+   // Set OpenGL attributes
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
    setup();
 
@@ -819,8 +780,9 @@ int main_2d()
    Uint32 ticks = SDL_GetTicks();
 
    bool dragging = false;
-   while (!quit) {
 
+   while (!quit) {
+      // Handle events
       SDL_Event event;
       while (SDL_PollEvent(&event)) {
          if (event.type == SDL_QUIT) {
@@ -891,7 +853,8 @@ int main_2d()
          }
       }
 
-      // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
+
+    // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
       if (SDL_GetTicks() - ticks >= (1000 / setFrameRate))
       {
          // Print the frame rate every 10 seconds
@@ -906,13 +869,15 @@ int main_2d()
          if (xloop || frameCount == 0) {
             current_matrix = Matrix2D::Identity();
             draw();
+            SDL_GL_SwapWindow(window);
             // Update the screen
             if (anything_drawn) {
                // Set the default render target
-               SDL_SetRenderTarget(renderer, NULL);
-               SDL_RenderCopy(renderer, backBuffer, NULL, NULL);
-               SDL_SetRenderTarget(renderer, backBuffer);
-               SDL_RenderPresent(renderer);
+               // Swap buffers
+               // SDL_SetRenderTarget(renderer, NULL);
+               // SDL_RenderCopy(renderer, backBuffer, NULL, NULL);
+               // SDL_SetRenderTarget(renderer, backBuffer);
+               // SDL_RenderPresent(renderer);
                anything_drawn = false;
                frameCount++;
                zframeCount++;
@@ -924,7 +889,38 @@ int main_2d()
          }
          ticks = SDL_GetTicks();
       }
+      
    }
+   
+   // Clean up
+   SDL_GL_DeleteContext(glContext);
+   SDL_DestroyWindow(window);
+   SDL_Quit();
+
+   return 0;
+}
+
+int main_2d()
+{
+
+   TTF_Font* font = NULL;
+   if (TTF_Init() != 0) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
+      abort();
+   }
+
+
+   Uint32 clock = SDL_GetTicks();
+   Uint32 frameRateClock = clock;
+   bool quit = false;
+
+   // Set the initial tick count
+   Uint32 ticks = SDL_GetTicks();
+
+   bool dragging = false;
+   while (!quit) {
+
+     }
 
    for (auto font : fontMap) {
       TTF_CloseFont(font.second);
