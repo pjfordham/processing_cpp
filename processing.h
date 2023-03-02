@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
+#include <SDL2/SDL_opengl.h>
 #include <algorithm>
 #include <chrono>
 #include <vector>
@@ -738,7 +739,63 @@ enum {
    DOWN = 40,
 };
 
-int main()
+int main(int argc, char* argv[]) {
+    // Initialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
+
+    // Set OpenGL attributes
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+    // Create window
+    SDL_Window* window = SDL_CreateWindow("OpenGL Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
+
+    // Create OpenGL context
+    SDL_GLContext glContext = SDL_GL_CreateContext(window);
+
+    // Set clear color
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Main loop
+    bool quit = false;
+    while (!quit) {
+        // Handle events
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    quit = true;
+                    break;
+            }
+        }
+
+        // Clear screen
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Draw triangle
+        glBegin(GL_TRIANGLES);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex2f(-0.5f, -0.5f);
+        glColor3f(0.0f, 1.0f, 0.0f);
+        glVertex2f(0.5f, -0.5f);
+        glColor3f(0.0f, 0.0f, 1.0f);
+        glVertex2f(0.0f, 0.5f);
+        glEnd();
+
+        // Swap buffers
+        SDL_GL_SwapWindow(window);
+    }
+
+    // Clean up
+    SDL_GL_DeleteContext(glContext);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
+    return 0;
+}
+
+int main_2d()
 {
    // Initialize SDL
    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
