@@ -107,6 +107,83 @@ enum{
    CLOSE = 1,
 };
 
+unsigned int next_power_of_2(unsigned int v)
+{
+   v--;
+   v |= v >> 1;
+   v |= v >> 2;
+   v |= v >> 4;
+   v |= v >> 8;
+   v |= v >> 16;
+   v++;
+   return v;
+}
+
+void glTexturedQuad(PVector t0, PVector t1, PVector t2, PVector t3, SDL_Surface *surface) {
+   anything_drawn = true;
+
+   int newWidth = next_power_of_2(surface->w);
+   int newHeight = next_power_of_2(surface->h);
+
+   SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, newWidth, newHeight,
+                                                  surface->format->BitsPerPixel,
+                                                  surface->format->Rmask,
+                                                  surface->format->Gmask,
+                                                  surface->format->Bmask,
+                                                  surface->format->Amask);
+   if (newSurface == NULL) {
+      abort();
+   }
+
+   // clear new surface with a transparent color and blit existing surface to it
+   SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
+   SDL_BlitSurface(surface, NULL, newSurface, NULL);
+
+   // Calculate extends of texture to use
+   float xrange = (1.0 * surface->w) / newWidth;
+   float yrange = (1.0 * surface->h) / newHeight;
+
+   glEnable(GL_TEXTURE_2D);
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+   // Create an OpenGL texture from the SDL_Surface
+   GLuint textureID;
+   glGenTextures(1, &textureID);
+   glBindTexture(GL_TEXTURE_2D, textureID);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+
+   PVector p0 = current_matrix.multiply( t0 );
+   PVector p1 = current_matrix.multiply( t1 );
+   PVector p2 = current_matrix.multiply( t2 );
+   PVector p3 = current_matrix.multiply( t3 );
+
+   glBegin(GL_QUADS);
+   glTexCoord2f(0.0f, 0.0f);
+   glVertex2f(p0.x,p0.y);
+   glTexCoord2f(xrange, 0.0f);
+   glVertex2f(p1.x,p1.y);
+   glTexCoord2f(xrange, yrange);
+   glVertex2f(p2.x,p2.y);
+   glTexCoord2f(0.0f, yrange);
+   glVertex2f(p3.x,p3.y);
+   glEnd();
+
+   // Unbind the texture and free handle
+   glBindTexture(GL_TEXTURE_2D, 0);
+   glDeleteTextures(1, &textureID);
+
+   glDisable(GL_TEXTURE_2D);
+   SDL_FreeSurface(newSurface);
+}
+
 void glFilledPoly(int points, PVector *p, SDL_Color color) {
    anything_drawn = true;
    glBegin(GL_TRIANGLE_FAN);
@@ -519,21 +596,6 @@ void size(int _width, int _height) {
       abort();
    }
 
-   //  // Create a renderer
-   // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-   // backBuffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
-   // if (!backBuffer)
-   // {
-   //    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Texture could not be created! SDL_Error: %s\n", SDL_GetError());
-   //    abort();
-   // }
-
-   // SDL_SetTextureBlendMode(backBuffer, SDL_BLENDMODE_BLEND);
-   // // Set the back buffer as the render target
-   // SDL_SetRenderTarget(renderer, backBuffer);
-   // SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
    background(255);
 
 }
@@ -628,7 +690,7 @@ void textSize(int size) {
    currentFont = createFont(currentFont.first, size);
 }
 
-void text(std::string text, int x, int y, int width=-1, int height=-1) {
+void text(std::string text, float x, float y, int width=-1, int height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
                                                  (SDL_Color){ stroke_color.r,
                                                     stroke_color.g, stroke_color.b,
@@ -638,26 +700,12 @@ void text(std::string text, int x, int y, int width=-1, int height=-1) {
       abort();
    }
 
-   SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-   if (texture == NULL) {
-      printf("SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
-      abort();
-   }
+   glTexturedQuad(PVector{x,y},
+                  PVector{x +surface->w,y},
+                  PVector{x+surface->w,y+surface->h},
+                  PVector{x, y+ surface->h},
+                  surface );
 
-   // Get dimensions of text;
-   int textWidth = surface->w;
-   int textHeight = surface->h;
-   y = y - textHeight;
-
-   PVector translation = current_matrix.get_translation();
-   PVector scale = current_matrix.get_scale();
-   float angle = current_matrix.get_angle();
-
-   const SDL_Point center = { 0 , textHeight };
-   const SDL_Rect dstrect = {translation.x+scale.x*x,translation.y+scale.y*y,textWidth*scale.x,textHeight*scale.y};
-   SDL_RenderCopyEx(renderer,texture,NULL,&dstrect, -angle * 180 /M_PI, &center,SDL_FLIP_NONE);
-
-   SDL_DestroyTexture(texture);
    SDL_FreeSurface(surface);
 }
 
@@ -682,6 +730,13 @@ int main(int argc, char* argv[]) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
       return 1;
    }
+
+   TTF_Font* font = NULL;
+   if (TTF_Init() != 0) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
+      abort();
+   }
+
 
    // Set OpenGL attributes
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
@@ -772,7 +827,7 @@ int main(int argc, char* argv[]) {
       }
 
 
-    // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
+      // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
       if (SDL_GetTicks() - ticks >= (1000 / setFrameRate))
       {
          // Print the frame rate every 10 seconds
@@ -810,9 +865,13 @@ int main(int argc, char* argv[]) {
          }
          ticks = SDL_GetTicks();
       }
-      
+
    }
-   
+
+   for (auto font : fontMap) {
+      TTF_CloseFont(font.second);
+   }
+
    // Clean up
    SDL_GL_DeleteContext(glContext);
    SDL_DestroyWindow(window);
@@ -820,40 +879,5 @@ int main(int argc, char* argv[]) {
 
    return 0;
 }
-
-int main_2d()
-{
-
-   TTF_Font* font = NULL;
-   if (TTF_Init() != 0) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
-      abort();
-   }
-
-
-   Uint32 clock = SDL_GetTicks();
-   Uint32 frameRateClock = clock;
-   bool quit = false;
-
-   // Set the initial tick count
-   Uint32 ticks = SDL_GetTicks();
-
-   bool dragging = false;
-   while (!quit) {
-
-     }
-
-   for (auto font : fontMap) {
-      TTF_CloseFont(font.second);
-   }
-
-   // Destroy the window and renderer
-   SDL_DestroyRenderer(renderer);
-   SDL_DestroyWindow(window);
-
-   // Quit SDL
-   SDL_Quit();
-   return 0;
-};
 
 #endif
