@@ -166,6 +166,7 @@ void glTexturedQuad(PVector t0, PVector t1, PVector t2, PVector t3, SDL_Surface 
    PVector p3 = current_matrix.multiply( t3 );
 
    glBegin(GL_QUADS);
+   glColor4f(1,1,1,1);
    glTexCoord2f(0.0f, 0.0f);
    glVertex2f(p0.x,p0.y);
    glTexCoord2f(xrange, 0.0f);
@@ -258,16 +259,7 @@ void line(float x1, float y1, float x2, float y2) {
 }
 
 void point(float x, float y) {
-   anything_drawn = true;
-   PVector p = current_matrix.multiply(PVector{x,y});
-   if (xstrokeWeight == 1) {
-      SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-      SDL_RenderDrawPoint(renderer, p.x, p.y);
-   } else {
-      PVector scale = current_matrix.get_scale();
-      filledEllipseRGBA(renderer, x, y, scale.x * xstrokeWeight/2, scale.y * xstrokeWeight/2,
-                        stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-   }
+   glFilledEllipse(PVector{x,y},xstrokeWeight,xstrokeWeight, stroke_color);
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
@@ -293,16 +285,8 @@ void vertex(float x, float y) {
 void endShape(int type = OPEN) {
 
    if (shape_style == POINTS) {
-      anything_drawn = true;
       for (auto z : shape ) {
-         auto p = current_matrix.multiply( z );
-         if (xstrokeWeight == 1) {
-            SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-            SDL_RenderDrawPoint(renderer, p.x, p.y);
-         } else {
-            filledEllipseRGBA(renderer, p.x, p.y, xstrokeWeight/2, xstrokeWeight/2,
-                              stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-         }
+        glFilledEllipse(z, xstrokeWeight, xstrokeWeight, stroke_color);
       }
    } else if (type == CLOSE) {
       glFilledPoly( shape.size(), shape.data(), fill_color );
