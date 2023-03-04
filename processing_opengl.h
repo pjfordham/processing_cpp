@@ -112,6 +112,48 @@ void glFilledPoly(int points, PVector *p, SDL_Color color) {
    glEnd();
 }
 
+void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
+
+   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal.normalize();
+   normal.mult(weight/2.0);
+
+   int NUMBER_OF_VERTICES=32;
+   std::vector<PVector> vertexBuffer;
+
+   for(float i = 0; i < M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(p1.x + cos(i+M_PI/2) * weight/2, p1.y + sin(i+M_PI/2) * weight/2);
+   }
+
+   for(float i = M_PI; i < 2 * M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(p2.x + cos(i+M_PI/2) * weight/2, p2.y + sin(i+M_PI/2) * weight/2);
+   }
+
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+}
+
+void glCappedLine(PVector p1, PVector p2, SDL_Color color, int weight) {
+
+   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal.normalize();
+   normal.mult(weight/2.0);
+
+   PVector end_offset = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   end_offset.mult(weight/2.0);
+
+   PVector p[] = {p1,p1,p2,p2};
+   p[0].add(normal);
+   p[1].sub(normal);
+   p[2].sub(normal);
+   p[3].add(normal);
+   p[0].add(end_offset);
+   p[1].sub(end_offset);
+   p[2].sub(end_offset);
+   p[3].add(end_offset);
+   glFilledPoly(4, p, color);
+
+}
+
 void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
    PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
@@ -123,7 +165,6 @@ void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
    p[1].sub(normal);
    p[2].sub(normal);
    p[3].add(normal);
-
    glFilledPoly(4, p, color);
 
 }

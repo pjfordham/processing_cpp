@@ -103,6 +103,19 @@ enum{
    CLOSE = 1,
 };
 
+enum {
+   ROUND = 0,
+   SQUARE,
+   PROJECT,
+};
+
+int xendCap = ROUND;
+bool xSmoothing = true;
+
+void noSmooth() {
+   // Doesn't yet apply to actual graphics
+   xSmoothing = false;
+}
 
 void ellipse(float x, float y, float width, float height) {
    if (xellipse_mode != RADIUS ) {
@@ -113,8 +126,21 @@ void ellipse(float x, float y, float width, float height) {
    glLineEllipse(PVector{x,y}, width, width, stroke_color, xstrokeWeight);
 }
 
+void strokeCap(int cap) {
+   xendCap = cap;
+}
+
 void line(float x1, float y1, float x2, float y2) {
-   glLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
+   if (xendCap == ROUND) {
+      glRoundLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
+   } else if (xendCap == SQUARE) {
+      glLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
+   } else if (xendCap == PROJECT) {
+      // Untested implementation
+      glCappedLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
+   } else {
+      abort();
+   }
 }
 
 void point(float x, float y) {
