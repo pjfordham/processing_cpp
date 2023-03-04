@@ -22,6 +22,9 @@ public:
       x = x - b.x;
       y = y - b.y;
    }
+   float get_angle() {
+      return atan2(y, x);
+   }
    void add(PVector b) {
       x = x + b.x;
       y = y + b.y;
@@ -30,19 +33,19 @@ public:
       x*=a;
       y*=a;
    }
-     // Returns the magnitude (length) of the vector
-    double mag() const {
-        return std::sqrt(x * x + y * y);
-    }
+   // Returns the magnitude (length) of the vector
+   double mag() const {
+      return std::sqrt(x * x + y * y);
+   }
 
-    // Limits the magnitude of the vector to a specified value
-    void limit(double maxMag) {
-        double m = mag();
-        if (m > maxMag) {
-            x = x * maxMag / m;
-            y = y * maxMag / m;
-        }
-    }
+   // Limits the magnitude of the vector to a specified value
+   void limit(double maxMag) {
+      double m = mag();
+      if (m > maxMag) {
+         x = x * maxMag / m;
+         y = y * maxMag / m;
+      }
+   }
    // Method to normalize the vector
    void normalize() {
       float mag = sqrtf(x * x + y * y);
@@ -66,6 +69,7 @@ public:
       float y = sinf(a);
       return {x, y};
    }
+
    // Static method to create a PVector from an angle
    static PVector random2D() {
       // Ugly hack

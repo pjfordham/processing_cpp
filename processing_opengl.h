@@ -118,15 +118,19 @@ void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
    normal.normalize();
    normal.mult(weight/2.0);
 
-   int NUMBER_OF_VERTICES=32;
+   int NUMBER_OF_VERTICES=16;
    std::vector<PVector> vertexBuffer;
 
-   for(float i = 0; i < M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(p1.x + cos(i+M_PI/2) * weight/2, p1.y + sin(i+M_PI/2) * weight/2);
+   float start_angle = PVector{p2.x-p1.x,p2.y-p1.y}.get_angle() + HALF_PI;
+
+   for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(p1.x + cos(i + start_angle) * weight/2, p1.y + sin(i+start_angle) * weight/2);
    }
 
-   for(float i = M_PI; i < 2 * M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(p2.x + cos(i+M_PI/2) * weight/2, p2.y + sin(i+M_PI/2) * weight/2);
+   start_angle += PI;
+
+   for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(p2.x + cos(i+start_angle) * weight/2, p2.y + sin(i+start_angle) * weight/2);
    }
 
    glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
