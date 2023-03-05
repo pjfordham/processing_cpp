@@ -508,8 +508,6 @@ void size(int _width, int _height) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-   //glViewport(0, 0, width, height);
-
    background(255);
 
 }
@@ -756,8 +754,8 @@ int main(int argc, char* argv[]) {
          if (xloop || frameCount == 0) {
             // Translate current coordinates system to OpenGL [-1,1]
             current_matrix = Matrix2D::Identity();
-            current_matrix = current_matrix.multiply(Matrix2D::translate(-1,+1));
-            current_matrix = current_matrix.multiply(Matrix2D::scale(2.0/width, -2.0/height));
+            current_matrix = current_matrix.multiply(Matrix2D::translate(-1,-1));
+            current_matrix = current_matrix.multiply(Matrix2D::scale(2.0/width, 2.0/height));
             draw();
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -787,10 +785,10 @@ int main(int argc, char* argv[]) {
             };
 
             GLfloat texCoords[][2] = {
-               {0.0f, 0.0f},
-               {1.0f, 0.0f},
-               {1.0f, 1.0f},
                {0.0f, 1.0f},
+               {1.0f, 1.0f},
+               {1.0f, 0.0f},
+               {0.0f, 0.0f},
             };
 
             glBegin(GL_QUADS);

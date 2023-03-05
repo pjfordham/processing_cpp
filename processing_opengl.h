@@ -20,7 +20,7 @@ void glLoadMatrix() {
    glLoadIdentity();
    glTranslatef(t.x, t.y, 0);
    glScalef(s.x, s.y, 0);
-   glRotatef(r*(180.0/PI),0, 0,1);
+   glRotatef(-r*(180.0/PI),0, 0,1);
 }
 
 
@@ -108,7 +108,7 @@ void glFilledPoly(int points, PVector *p, SDL_Color color) {
    glBegin(GL_TRIANGLE_FAN);
    for (int i =0; i<points;++i) {
       glVertex2f(p[i].x, p[i].y);
-   };
+   }
    glEnd();
 }
 
