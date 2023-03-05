@@ -521,14 +521,14 @@ Uint32 *pixels; // pointer to the texture's pixel data in the desired format
 void loadPixels() {
    _pixels.resize(width*height);
    pixels =  _pixels.data();
-   int pitch = width * sizeof(Uint32);
-   SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_ARGB8888, pixels, pitch);
+   // Read the pixel data from the framebuffer into the array
+   glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
 
 void updatePixels() {
    anything_drawn = true;
-   int pitch = width * sizeof(Uint32);
-   SDL_UpdateTexture(backBuffer, NULL, (void*) pixels, pitch);
+   // Write the pixel data to the framebuffer
+   glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
    _pixels.clear();
    pixels = NULL;
 }
