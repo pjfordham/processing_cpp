@@ -1,6 +1,10 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
+#include <GL/glew.h>     // GLEW library header
+#include <GL/gl.h>       // OpenGL header
+#include <GL/glu.h>      // GLU header
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
@@ -450,6 +454,9 @@ int height = 0;
 using std::min;
 SDL_GLContext glContext = NULL;
 
+GLuint backBufferID;
+   GLuint fboID;
+
 void size(int _width, int _height) {
    // Create a window
    width = _width;
@@ -473,6 +480,35 @@ void size(int _width, int _height) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
       abort();
    }
+
+   // Initialize GLEW to load OpenGL extensions
+   // glewExperimental = GL_TRUE;
+   GLenum glewError = glewInit();
+   if (glewError != GLEW_OK)
+   {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
+      abort();
+   }
+
+   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
+      abort();
+   }
+
+   // Create a framebuffer object
+   glGenFramebuffers(1, &fboID);
+   glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+
+   // Create a texture to render to
+   glGenTextures(1, &backBufferID);
+   glBindTexture(GL_TEXTURE_2D, backBufferID);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backBufferID, 0);
+
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+   //glViewport(0, 0, width, height);
 
    background(255);
 
@@ -723,7 +759,52 @@ int main(int argc, char* argv[]) {
             current_matrix = current_matrix.multiply(Matrix2D::translate(-1,+1));
             current_matrix = current_matrix.multiply(Matrix2D::scale(2.0/width, -2.0/height));
             draw();
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // Load the identity matrices
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+
+            // Set the clear color and depth values
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClearDepth(1.0f);
+
+            glEnable(GL_TEXTURE_2D);
+            // Clear the color and depth buffers
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindTexture(GL_TEXTURE_2D, backBufferID);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_BLEND);
+            GLfloat vertices[][2] = {
+               { -1.0f, -1.0f},
+               {  1.0f, -1.0f},
+               {  1.0f,  1.0f},
+               { -1.0f,  1.0f},
+            };
+
+            GLfloat texCoords[][2] = {
+               {0.0f, 0.0f},
+               {1.0f, 0.0f},
+               {1.0f, 1.0f},
+               {0.0f, 1.0f},
+            };
+
+            glBegin(GL_QUADS);
+            glColor4f(1,1,1,1);
+            for (int i = 0 ; i< 4; ++i ){
+               glTexCoord2f(texCoords[i][0], texCoords[i][1]);
+               glVertex2f(vertices[i][0],vertices[i][1]);
+            }
+            glEnd();
+            glDisable(GL_TEXTURE_2D);
+
             SDL_GL_SwapWindow(window);
+            glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+
             // Update the screen
             if (anything_drawn) {
                // Set the default render target
