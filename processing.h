@@ -636,6 +636,8 @@ enum {
    DOWN = 40,
 };
 
+bool mousePressedb = false;
+
 int main(int argc, char* argv[]) {
    // Initialize SDL
    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -664,7 +666,6 @@ int main(int argc, char* argv[]) {
    // Set the initial tick count
    Uint32 ticks = SDL_GetTicks();
 
-   bool dragging = false;
 
    while (!quit) {
       // Handle events
@@ -675,19 +676,19 @@ int main(int argc, char* argv[]) {
          } else if (event.type == SDL_MOUSEMOTION ) {
             mouseX = event.motion.x;
             mouseY = event.motion.y;
-            if (dragging) {
+            if (mousePressedb) {
                mouseDragged();
             }
          } else if (event.type == SDL_MOUSEBUTTONDOWN) {
             if (event.button.button == SDL_BUTTON_LEFT) {
                mousePressed();
-               dragging = true;
+               mousePressedb = true;
             } else if (event.button.button == SDL_BUTTON_RIGHT) {
             }
          } else if (event.type == SDL_MOUSEBUTTONUP) {
             if (event.button.button == SDL_BUTTON_LEFT) {
                mouseReleased();
-               dragging = false;
+               mousePressedb = false;
             } else if (event.button.button == SDL_BUTTON_RIGHT) {
             }
          } else if (event.type == SDL_MOUSEWHEEL) {

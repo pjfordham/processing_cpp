@@ -7,18 +7,18 @@
  * different patterns in time are created.
  */
 
-float scale;
+float scalef;
 
 void setup() {
    size(640, 360);
    noStroke();
-   scale = width/20;
+   scalef = width/20;
 }
 
 void draw() {
-   for (int i = 0; i < scale; i++) {
-      colorMode(RGB, (i+1) * scale * 10);
-      fill( fmodf(millis(),((i+1) * scale * 10) ));
-      rect(i*scale, 0, scale, height);
+   for (int i = 0; i < scalef; i++) {
+      colorMode(RGB, (i+1) * scalef * 10);
+      fill( fmodf(millis(),((i+1) * scalef * 10) ));
+      rect(i*scalef, 0, scalef, height);
    }
 }
