@@ -66,7 +66,6 @@ void draw() {
 
   // draw base
   fill(200);
-  stroke(255);
   quad(base1.x, base1.y, base2.x, base2.y, base2.x, height, 0, height);
 
   // calculate base top normal
