@@ -90,7 +90,6 @@ void glFilledPoly(int points, PVector *p, SDL_Color color) {
    glBegin(GL_TRIANGLE_FAN);
    for (int i =0; i<points;++i) {
       glVertex3f(p[i].x, p[i].y, p[i].z);
-      p[i].print();
    }
    glEnd();
 }

@@ -23,6 +23,8 @@
 #include "processing_java_compatability.h"
 #include "processing_opengl.h"
 
+bool render_to_backbuffer = true;
+
 SDL_Texture* backBuffer;
 
 SDL_Window *window;
@@ -59,7 +61,7 @@ float noise(float x, float y = 0, float z = 0) {
 }
 
 Matrix3D get_projection_matrix(float angle, float a, float zMin, float zMax) {
-   float ang = tan((angle*.5)*PI/180);
+   float ang = tan(angle*.5);
    return {
         0.5f/ang, 0 , 0, 0,
         0, 0.5f*a/ang, 0, 0,
@@ -284,7 +286,8 @@ void box(float w, float h, float d) {
      {16,18,19},
      
      {20,21,22},
-     {20,22,23} };
+     {20,22,23}
+   };
 
    SDL_Color colors[]= {
       SDL_Color{  0,  0,255,255},
@@ -584,7 +587,7 @@ void background(float r, float g, float b) {
    // Set clear color
    glClearColor(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
    // Clear screen
-   glClear(GL_COLOR_BUFFER_BIT);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void background(color c) {
@@ -607,7 +610,7 @@ using std::min;
 SDL_GLContext glContext = NULL;
 
 GLuint backBufferID;
-   GLuint fboID;
+GLuint fboID;
 
 enum {
    P2D, P3D
@@ -615,7 +618,18 @@ enum {
 
 void lights() {
 
-};
+  };
+
+void perspective(float angle, float aspect, float minZ, float maxZ) {
+   projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
+   glTransform();
+}
+
+void perspective() {
+   float fov = PI/3.0;
+   float cameraZ = (height/2.0) / tan(fov/2.0);
+   perspective( fov, (float)width/(float)height, 1.0f/*cameraZ/10.0*/, cameraZ*10.0);
+}
 
 void camera( float eyeX, float eyeY, float eyeZ,
              float centerX, float centerY, float centerZ,
@@ -634,16 +648,15 @@ void camera( float eyeX, float eyeY, float eyeZ,
    up = right.cross(forward);
    up.normalize();
 
-   view_matrix = Matrix3D( right.x,    up.x,    -forward.x,    0 ,
-                           right.y,    up.y,    -forward.y,    0,
-                           right.z,    up.z,    -forward.z,    0,
-                           0      ,   0    ,       0      ,  1 );
+   view_matrix = Matrix3D(    right.x,    right.y,    right.z, 0 ,
+                                 up.x,       up.y,       up.z, 0,
+                           -forward.x, -forward.y, -forward.z, 0,
+                                    0,         0 ,          0, 1 );
 
    // Translate the camera to the origin
    view_matrix = view_matrix * Matrix3D::translate( PVector{-eyeX,-eyeY, -eyeZ} );
 
    glTransform();
-   // gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 }
 
 
@@ -671,45 +684,57 @@ void size(int _width, int _height, int MODE = P2D) {
       abort();
    }
 
-   // Initialize GLEW to load OpenGL extensions
-   // glewExperimental = GL_TRUE;
-   GLenum glewError = glewInit();
-   if (glewError != GLEW_OK)
-   {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
-      abort();
+   if (render_to_backbuffer) {
+      // Initialize GLEW to load OpenGL extensions
+      glewExperimental = GL_TRUE;
+      GLenum glewError = glewInit();
+      if (glewError != GLEW_OK)
+      {
+         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
+         abort();
+      }
+
+      if (!glewIsSupported("GL_EXT_framebuffer_object")) {
+         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
+         abort();
+      }
+
+      // Create a framebuffer object
+      glGenFramebuffers(1, &fboID);
+      glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+
+      // Create a texture to render to
+      glGenTextures(1, &backBufferID);
+      glBindTexture(GL_TEXTURE_2D, backBufferID);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backBufferID, 0);
+
+      // Create a renderbuffer for the depth buffer
+      GLuint depthBufferID;
+      glGenRenderbuffers(1, &depthBufferID);
+      glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+
+      // Attach the depth buffer to the framebuffer object
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    }
-
-   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
-      abort();
-   }
-
-   // Create a framebuffer object
-   glGenFramebuffers(1, &fboID);
-   glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-
-   // Create a texture to render to
-   glGenTextures(1, &backBufferID);
-   glBindTexture(GL_TEXTURE_2D, backBufferID);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backBufferID, 0);
-
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
    // Set the clear color and depth values
    glEnable(GL_DEPTH_TEST);
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    glDepthFunc(GL_LEQUAL);
+   glEnable(GL_BLEND);
 
    if (MODE == P2D) {
+      view_matrix = Matrix3D();
       view_matrix = view_matrix * Matrix3D::translate(PVector{-1,-1,0});
-      view_matrix = view_matrix * Matrix3D::scale(PVector{2.0f/width, 2.0f/height,2.0f/((width+height)/2)});
+      view_matrix = view_matrix * Matrix3D::scale(PVector{2.0f/width, 2.0f/height,1.0});
       projection_matrix = Matrix3D();
    } else {
-      view_matrix = Matrix3D::translate(PVector{0,0,-2});
-      projection_matrix = get_projection_matrix(45, (float)width/height, 1.0f, 1000.0f);
+      view_matrix = Matrix3D();
+      perspective();
    }
 
    background(255);
@@ -957,48 +982,56 @@ int main(int argc, char* argv[]) {
 
          if (xloop || frameCount == 0) {
 
+            glClear(GL_DEPTH_BUFFER_BIT);
             move_matrix = Matrix3D::identity();
             glTransform();
 
             draw();
 
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            if (render_to_backbuffer) {
+               glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-            // Load the identity matrices
-            glTransformClear();
+               // Load the identity matrices
+               glTransformClear();
 
-            glEnable(GL_TEXTURE_2D);
-            // Clear the color and depth buffers
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindTexture(GL_TEXTURE_2D, backBufferID);
-            glDisable(GL_BLEND);
+               glEnable(GL_TEXTURE_2D);
+               // Clear the color and depth buffers
+               glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+               glBindTexture(GL_TEXTURE_2D, backBufferID);
+               glDisable(GL_BLEND);
 
-            GLfloat vertices[][2] = {
-               { -1.0f, -1.0f},
-               {  1.0f, -1.0f},
-               {  1.0f,  1.0f},
-               { -1.0f,  1.0f},
-            };
+               GLfloat vertices[][2] = {
+                  { -1.0f, -1.0f},
+                  {  1.0f, -1.0f},
+                  {  1.0f,  1.0f},
+                  { -1.0f,  1.0f},
+               };
 
-            GLfloat texCoords[][2] = {
-               {0.0f, 1.0f},
-               {1.0f, 1.0f},
-               {1.0f, 0.0f},
-               {0.0f, 0.0f},
-            };
+               // Invert texture on y-axis to correct
+               GLfloat texCoords[][2] = {
+                  {0.0f, 1.0f},
+                  {1.0f, 1.0f},
+                  {1.0f, 0.0f},
+                  {0.0f, 0.0f},
+               };
 
-            glBegin(GL_QUADS);
-            glColor4f(1,1,1,1);
-            for (int i = 0 ; i< 4; ++i ){
-               glTexCoord2f(texCoords[i][0], texCoords[i][1]);
-               glVertex2f(vertices[i][0],vertices[i][1]);
+               glBegin(GL_QUADS);
+               glColor4f(1,1,1,1);
+               for (int i = 0 ; i< 4; ++i ){
+                  glTexCoord2f(texCoords[i][0], texCoords[i][1]);
+                  glVertex2f(vertices[i][0],vertices[i][1]);
+               }
+               glEnd();
+               glDisable(GL_TEXTURE_2D);
+               glEnable(GL_BLEND);
             }
-            glEnd();
-            glDisable(GL_TEXTURE_2D);
-            glEnable(GL_BLEND);
 
             SDL_GL_SwapWindow(window);
-            glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+
+            if (render_to_backbuffer) {
+               glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+               glBindTexture(GL_TEXTURE_2D, backBufferID);
+            }
 
             // Update the screen
             if (anything_drawn) {
