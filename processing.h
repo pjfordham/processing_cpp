@@ -66,20 +66,25 @@ void popMatrix() {
    matrix_stack.pop_back();
 }
 
-void translate(float x, float y) {
-   current_matrix = current_matrix.multiply( Matrix2D::translate(x,y) );
+void translate(float x, float y, float z=0) {
+   current_matrix = current_matrix * Matrix3D::translate(PVector{x,y,z});
 }
 
-void scale(float x, float y) {
-   current_matrix = current_matrix.multiply( Matrix2D::scale(x,y) );
+void scale(float x, float y,float z = 1) {
+   current_matrix = current_matrix * Matrix3D::scale(PVector{x,y,z});
 }
 
 void scale(float x) {
-   scale(x,x);
+   scale(x,x,x);
 }
 
+void rotate(float angle, PVector axis) {
+   current_matrix = current_matrix * Matrix3D::rotate(angle,axis);
+}
+
+
 void rotate(float angle) {
-   current_matrix = current_matrix.multiply( Matrix2D::rotate(angle) );
+   current_matrix = current_matrix * Matrix3D::rotate(angle,PVector{0,0,1});
 }
 
 int xellipse_mode = DIAMETER;
@@ -130,6 +135,10 @@ void ellipse(float x, float y, float width, float height) {
    glLineEllipse(PVector{x,y}, width, width, 0,TWO_PI,stroke_color, xstrokeWeight);
 }
 
+void ellipse(float x, float y, float radius) {
+   ellipse(x, y, radius, radius);
+}
+
 void arc(float x, float y, float width, float height, float start, float stop) {
    if (xellipse_mode != RADIUS ) {
       width /=2;
@@ -143,17 +152,67 @@ void strokeCap(int cap) {
    xendCap = cap;
 }
 
-void line(float x1, float y1, float x2, float y2) {
+void line(float x1, float y1, float x2, float y2, float z1 = 0, float z2 = 0) {
    if (xendCap == ROUND) {
-      glRoundLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
+      glRoundLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
    } else if (xendCap == SQUARE) {
-      glLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
+      glLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
    } else if (xendCap == PROJECT) {
       // Untested implementation
-      glCappedLine( PVector{x1,y1}, PVector{x2,y2}, stroke_color, xstrokeWeight );
+      glCappedLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
    } else {
       abort();
    }
+}
+
+void box(float w, float h, float d) {
+
+// Define the 8 vertices of the box
+   PVector vertices[] = {
+      {0.0f, 0.0f, 0.0f},  // 0: bottom-front-left
+      {w,     0.0f, 0.0f},  // 1: bottom-front-right
+      {w,     h,     0.0f},  // 2: top-front-right
+      {0.0f,  h,     0.0f},  // 3: top-front-left
+      {0.0f,  0.0f,  d},     // 4: bottom-back-left
+      {w,     0.0f,  d},     // 5: bottom-back-right
+      {w,     h,     d},     // 6: top-back-right
+      {0.0f,  h,     d}      // 7: top-back-left
+   };
+
+   // Define the indices for each face of the box
+   unsigned int indices[][3] = {// front face
+      {0, 1, 2},
+      {2, 3, 0},
+
+      // back face
+      {4, 6, 5},
+      {4, 7, 6},
+
+      // left face
+      {0, 3, 7},
+      {0, 7, 4},
+
+      // right face
+      {1, 5, 6},
+      {1, 6, 2},
+
+      // top face
+      {3, 2, 6},
+      {3, 6, 7},
+
+      // bottom face
+      {0, 4, 5},
+      {0, 5, 1}
+   };
+
+   for( auto triangle : indices ) {
+      PVector points[] = { vertices[triangle[0]],vertices[triangle[1]], vertices[triangle[2]] };
+      glFilledPoly(3, points, fill_color );
+   }
+}
+
+void box(float size) {
+   box(size, size, size);
 }
 
 void point(float x, float y) {
@@ -457,7 +516,21 @@ SDL_GLContext glContext = NULL;
 GLuint backBufferID;
    GLuint fboID;
 
-void size(int _width, int _height) {
+enum {
+   P2D, P3D
+};
+
+void lights() {
+
+};
+
+void camera( float eyeX, float eyeY, float eyeZ,
+             float centerX, float centerY, float centreZ,
+             float upX, float upY, float upZ ) {
+}
+
+
+void size(int _width, int _height, int MODE = P2D) {
    // Create a window
    width = _width;
    height = _height;
@@ -754,9 +827,9 @@ int main(int argc, char* argv[]) {
 
          if (xloop || frameCount == 0) {
             // Translate current coordinates system to OpenGL [-1,1]
-            current_matrix = Matrix2D::Identity();
-            current_matrix = current_matrix.multiply(Matrix2D::translate(-1,-1));
-            current_matrix = current_matrix.multiply(Matrix2D::scale(2.0/width, 2.0/height));
+            current_matrix = Matrix3D::identity();
+            current_matrix = current_matrix * Matrix3D::translate(PVector{-1,-1,0});
+            current_matrix = current_matrix * Matrix3D::scale(PVector{2.0f/width, 2.0f/height,1});
             draw();
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);

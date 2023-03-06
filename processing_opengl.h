@@ -8,19 +8,12 @@
 
 bool anything_drawn = false;
 
-std::vector<Matrix2D> matrix_stack;
-Matrix2D current_matrix = Matrix2D::Identity();
+std::vector<Matrix3D> matrix_stack;
+Matrix3D current_matrix; // Default is identity
 
 void glLoadMatrix() {
-   PVector t = current_matrix.get_translation();
-   PVector s = current_matrix.get_scale();
-   float r = current_matrix.get_angle();
-
    glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
-   glTranslatef(t.x, t.y, 0);
-   glScalef(s.x, s.y, 0);
-   glRotatef(-r*(180.0/PI),0, 0,1);
+   glLoadMatrixf(current_matrix.data());
 }
 
 
@@ -107,7 +100,7 @@ void glFilledPoly(int points, PVector *p, SDL_Color color) {
    glColor4f(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
    glBegin(GL_TRIANGLE_FAN);
    for (int i =0; i<points;++i) {
-      glVertex2f(p[i].x, p[i].y);
+      glVertex3f(p[i].x, p[i].y, p[i].z);
    }
    glEnd();
 }

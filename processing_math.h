@@ -15,12 +15,13 @@ const float HALF_PI = M_PI / 2.0;
 
 class PVector {
 public:
-   float x, y;
-   PVector() : x(0), y(0) {}
-   PVector(float _x, float _y) : x(_x), y(_y) {}
+   float x, y,z;
+   PVector() : x(0), y(0),z(0) {}
+   PVector(float _x, float _y, float _z=0.0) : x(_x), y(_y),z(_z) {}
    void sub(PVector b) {
       x = x - b.x;
       y = y - b.y;
+      z = z - b.z;
    }
    float get_angle() {
       return atan2(y, x);
@@ -28,14 +29,16 @@ public:
    void add(PVector b) {
       x = x + b.x;
       y = y + b.y;
+      z = z + b.z;
    }
    void mult(float a) {
       x*=a;
       y*=a;
+      z*=a;
    }
    // Returns the magnitude (length) of the vector
    double mag() const {
-      return std::sqrt(x * x + y * y);
+      return std::sqrt(x * x + y * y + z * z);
    }
 
    // Limits the magnitude of the vector to a specified value
@@ -44,14 +47,16 @@ public:
       if (m > maxMag) {
          x = x * maxMag / m;
          y = y * maxMag / m;
+         z = z * maxMag / m;
       }
    }
    // Method to normalize the vector
    void normalize() {
-      float mag = sqrtf(x * x + y * y);
+      float mag = sqrtf(x * x + y * y + z * z);
       if (mag != 0) {
          x /= mag;
          y /= mag;
+         z /= mag;
       }
    }
    PVector normal() {
@@ -62,6 +67,7 @@ public:
       normalize();
       x *= mag;
       y *= mag;
+      z *= mag;
    }
    // Static method to create a PVector from an angle
    static PVector fromAngle(float a) {
@@ -74,142 +80,123 @@ public:
    static PVector random2D() {
       // Ugly hack
       float random(float max);
-      return {random(1), random(1)};
+      return {random(1), random(1), 0};
+   }
+   static PVector random3D() {
+      // Ugly hack
+      float random(float max);
+      return {random(1), random(1), random(1)};
    }
    // Method to calculate the dot product of two vectors
    float dot(PVector v) {
-      return x * v.x + y * v.y;
+      return x * v.x + y * v.y + z * v.z;
    }
 
 // Method to calculate the distance between two vectors
    static float dist(PVector a, PVector b) {
       float dx = a.x - b.x;
       float dy = a.y - b.y;
-      return sqrtf(dx*dx + dy*dy);
+      float dz = a.z - b.z;
+      return sqrtf(dx*dx + dy*dy + dz*dz);
    }
    // Method to calculate the distance between two vectors
    static PVector sub(PVector a, PVector b) {
       float dx = a.x - b.x;
       float dy = a.y - b.y;
-      return {dx,dy};
+      float dz = a.z - b.z;
+      return {dx,dy,dz};
    }
    static PVector mult(PVector a, float q) {
       float dx = a.x * q;
       float dy = a.y * q;
-      return {dx,dy};
+      float dz = a.z * q;
+      return {dx,dy,dz};
    }
    static PVector add(PVector a, PVector b) {
       float dx = a.x + b.x;
       float dy = a.y + b.y;
-      return {dx,dy};
+      float dz = a.z + b.z;
+      return {dx,dy,dz};
    }
    // Method to calculate a point on a straight line between two vectors
    void lerp(PVector v, float amt) {
       x = x + (v.x - x) * amt;
       y = y + (v.y - y) * amt;
+      z = z + (v.z - z) * amt;
    }
 };
 
-class Matrix2D {
+class Matrix3D {
 private:
-   float m_matrix[3][3];
+    float m_data[16];
 public:
-   Matrix2D(float a, float b, float c, float d, float e, float f):
-      m_matrix{
-         {a,b,c},
-         {d,e,f},
-         {0,0,1} } {
-   }
-   Matrix2D(float a, float b, float c, float d, float e, float f, float g, float h, float i):
-      m_matrix{
-         {a,b,c},
-         {d,e,f},
-         {g,h,i} } {
+   const float *data() const {
+      return m_data;
    }
 
-   static Matrix2D Identity() {
-      return {
-         1,0,0,
-         0,1,0};
-   }
+   Matrix3D() :
+        m_data{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1} {}
 
-   static Matrix2D translate(float x, float y) {
-      return {
-         1,0,x,
-         0,1,y};
-   }
+    Matrix3D(float m00, float m01, float m02, float m03,
+             float m10, float m11, float m12, float m13,
+             float m20, float m21, float m22, float m23,
+             float m30, float m31, float m32, float m33) :
+        m_data{m00, m10, m20, m30, m01, m11, m21, m31,
+               m02, m12, m22, m32, m03, m13, m23, m33} {}
 
-   static Matrix2D rotate(float angle) {
-      return {
-         cosf(angle), -sinf(angle), 0,
-         sinf(angle), cosf(angle), 0 };
-   }
+    float operator() (int row, int col) {
+        return m_data[col * 4 + row];
+    }
 
-   static Matrix2D scale(float x, float y) {
-      return {
-         x, 0, 0,
-         0, y, 0 };
-   }
+    float operator() (int row, int col) const {
+        return m_data[col * 4 + row];
+    }
 
-   Matrix2D multiply(const Matrix2D& other) const {
-      return {
-         m_matrix[0][0] * other.m_matrix[0][0] + m_matrix[0][1] * other.m_matrix[1][0] + m_matrix[0][2] * other.m_matrix[2][0],
-         m_matrix[0][0] * other.m_matrix[0][1] + m_matrix[0][1] * other.m_matrix[1][1] + m_matrix[0][2] * other.m_matrix[2][1],
-         m_matrix[0][0] * other.m_matrix[0][2] + m_matrix[0][1] * other.m_matrix[1][2] + m_matrix[0][2] * other.m_matrix[2][2],
+    Matrix3D operator* (const Matrix3D& other) const {
+        Matrix3D result;
+        for (int col = 0; col < 4; ++col) {
+            for (int row = 0; row < 4; ++row) {
+                float sum = 0;
+                for (int i = 0; i < 4; ++i) {
+                    sum += m_data[i * 4 + row] * other.m_data[col * 4 + i];
+                }
+                result.m_data[col * 4 + row] = sum;
+            }
+        }
+        return result;
+    }
 
-         m_matrix[1][0] * other.m_matrix[0][0] + m_matrix[1][1] * other.m_matrix[1][0] + m_matrix[1][2] * other.m_matrix[2][0],
-         m_matrix[1][0] * other.m_matrix[0][1] + m_matrix[1][1] * other.m_matrix[1][1] + m_matrix[1][2] * other.m_matrix[2][1],
-         m_matrix[1][0] * other.m_matrix[0][2] + m_matrix[1][1] * other.m_matrix[1][2] + m_matrix[1][2] * other.m_matrix[2][2],
+    static Matrix3D identity() {
+        return Matrix3D();
+    }
 
-         m_matrix[2][0] * other.m_matrix[0][0] + m_matrix[2][1] * other.m_matrix[1][0] + m_matrix[2][2] * other.m_matrix[2][0],
-         m_matrix[2][0] * other.m_matrix[0][1] + m_matrix[2][1] * other.m_matrix[1][1] + m_matrix[2][2] * other.m_matrix[2][1],
-         m_matrix[2][0] * other.m_matrix[0][2] + m_matrix[2][1] * other.m_matrix[1][2] + m_matrix[2][2] * other.m_matrix[2][2] };
-   }
+    static Matrix3D translate(const PVector& v) {
+        return Matrix3D(1, 0, 0, v.x,
+                        0, 1, 0, v.y,
+                        0, 0, 1, v.z,
+                        0, 0, 0, 1);
+    }
 
-   PVector multiply(const PVector& v) const {
-      float x = m_matrix[0][0] * v.x + m_matrix[0][1] * v.y + m_matrix[0][2];
-      float y = m_matrix[1][0] * v.x + m_matrix[1][1] * v.y + m_matrix[1][2];
-      return {x, y};
-   }
+    static Matrix3D scale(const PVector& v) {
+        return Matrix3D(v.x, 0, 0, 0,
+                        0, v.y, 0, 0,
+                        0, 0, v.z, 0,
+                        0, 0, 0, 1);
+    }
 
-   PVector get_translation() const {
-      return {m_matrix[0][2], m_matrix[1][2]};
-   }
+    static Matrix3D rotate(float angle, const PVector& axis) {
+        float c = std::cos(angle);
+        float s = std::sin(angle);
+        float x = axis.x;
+        float y = axis.y;
+        float z = axis.z;
+        float omc = 1 - c;
 
-   PVector get_scale() const {
-      // Extract scaling and rotation
-      float a = m_matrix[0][0];
-      float b = m_matrix[0][1];
-      float c = m_matrix[1][0];
-      float d = m_matrix[1][1];
-
-      float sx = sqrt(a * a + b * b);
-      float sy = sqrt(c * c + d * d);
-      return {sx, sy};
-   }
-
-   float get_angle() const {
-      // Extract scaling and rotation
-      float a = m_matrix[0][0];
-      float b = m_matrix[0][1];
-      float c = m_matrix[1][0];
-      float d = m_matrix[1][1];
-
-      float sx = sqrt(a * a + b * b);
-      float sy = sqrt(c * c + d * d);
-      if (sx != 0) {
-         a /= sx;
-         b /= sx;
-      }
-
-      if (sy != 0) {
-         c /= sy;
-         d /= sy;
-      }
-      // Extract scaling and rotation
-      return atan2(m_matrix[0][1], m_matrix[0][0]);
-   }
-
+        return Matrix3D(x * x * omc + c, x * y * omc - z * s, x * z * omc + y * s, 0,
+                        x * y * omc + z * s, y * y * omc + c, y * z * omc - x * s, 0,
+                        x * z * omc - y * s, y * z * omc + x * s, z * z * omc + c, 0,
+                        0, 0, 0, 1);
+    }
 };
 
 inline float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
