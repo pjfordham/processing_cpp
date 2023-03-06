@@ -18,7 +18,10 @@ public:
    float x, y,z;
    PVector() : x(0), y(0),z(0) {}
    PVector(float _x, float _y, float _z=0.0) : x(_x), y(_y),z(_z) {}
-   void sub(PVector b) {
+   void print() {
+      fmt::print(" {:>8.2} {:>8.2} {:>8.2}\n",x,y,z);
+   }
+          void sub(PVector b) {
       x = x - b.x;
       y = y - b.y;
       z = z - b.z;
@@ -59,6 +62,13 @@ public:
          z /= mag;
       }
    }
+   PVector cross(PVector v) {
+      float crossX = y * v.z - z * v.y;
+      float crossY = z * v.x - x * v.z;
+      float crossZ = x * v.y - y * v.x;
+      return PVector{crossX, crossY, crossZ};
+    }
+
    PVector normal() {
       return PVector(-y, x);
    }
@@ -124,12 +134,35 @@ public:
       y = y + (v.y - y) * amt;
       z = z + (v.z - z) * amt;
    }
+
+   PVector operator+(const PVector &other) {
+      return PVector{
+         x + other.x,
+         y + other.y,
+         z + other.z};
+   }
+
+   PVector operator-(const PVector &other) {
+      return PVector{
+         x - other.x,
+         y - other.y,
+         z - other.z};
+   }
+   
 };
 
 class Matrix3D {
 private:
     float m_data[16];
 public:
+   void print() {
+      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n\n",
+                 m_data[0], m_data[1], m_data[2], m_data[3],
+                 m_data[4], m_data[5], m_data[6], m_data[7],
+                 m_data[8], m_data[9], m_data[10], m_data[11],
+                 m_data[12], m_data[13], m_data[14], m_data[15] );
+   }
+              
    const float *data() const {
       return m_data;
    }

@@ -8,14 +8,6 @@
 
 bool anything_drawn = false;
 
-std::vector<Matrix3D> matrix_stack;
-Matrix3D current_matrix; // Default is identity
-
-void glLoadMatrix() {
-   glMatrixMode(GL_MODELVIEW);
-   glLoadMatrixf(current_matrix.data());
-}
-
 
 unsigned int next_power_of_2(unsigned int v)
 {
@@ -52,8 +44,6 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
    // Calculate extends of texture to use
    float xrange = (1.0 * surface->w) / newWidth;
    float yrange = (1.0 * surface->h) / newHeight;
-
-   glLoadMatrix();
 
    glEnable(GL_TEXTURE_2D);
    glEnable(GL_BLEND);
@@ -94,13 +84,13 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
 
 void glFilledPoly(int points, PVector *p, SDL_Color color) {
    anything_drawn = true;
-   glLoadMatrix();
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    glColor4f(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
    glBegin(GL_TRIANGLE_FAN);
    for (int i =0; i<points;++i) {
       glVertex3f(p[i].x, p[i].y, p[i].z);
+      p[i].print();
    }
    glEnd();
 }

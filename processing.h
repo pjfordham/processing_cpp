@@ -4,6 +4,7 @@
 #include <GL/glew.h>     // GLEW library header
 #include <GL/gl.h>       // OpenGL header
 #include <GL/glu.h>      // GLU header
+#include <GL/glut.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -57,21 +58,54 @@ float noise(float x, float y = 0, float z = 0) {
    return perlin_noise.octave(x,y,z,perlin_octaves,perlin_falloff);
 }
 
+Matrix3D get_projection_matrix(float angle, float a, float zMin, float zMax) {
+   float ang = tan((angle*.5)*PI/180);
+   return {
+        0.5f/ang, 0 , 0, 0,
+        0, 0.5f*a/ang, 0, 0,
+        0, 0, -(zMax+zMin)/(zMax-zMin), -1,
+        0, 0, (-2*zMax*zMin)/(zMax-zMin), 0
+   };
+}
+
+std::vector<Matrix3D> matrix_stack;
+Matrix3D move_matrix; // Default is identity
+Matrix3D projection_matrix; // Default is identity
+Matrix3D view_matrix; // Default is identity
+
+void glTransform() {
+   auto transform = projection_matrix * view_matrix * move_matrix;
+   glMatrixMode(GL_MODELVIEW);
+   glLoadMatrixf(transform.data());
+   glMatrixMode(GL_PROJECTION);
+   glLoadIdentity();
+}
+
+void glTransformClear() {
+   glMatrixMode(GL_MODELVIEW);
+   glLoadIdentity();
+   glMatrixMode(GL_PROJECTION);
+   glLoadIdentity();
+}
+
 void pushMatrix() {
-   matrix_stack.push_back(current_matrix);
+   matrix_stack.push_back(move_matrix);
 }
 
 void popMatrix() {
-   current_matrix = matrix_stack.back();
+   move_matrix = matrix_stack.back();
    matrix_stack.pop_back();
+   glTransform();
 }
 
 void translate(float x, float y, float z=0) {
-   current_matrix = current_matrix * Matrix3D::translate(PVector{x,y,z});
+   move_matrix = move_matrix * Matrix3D::translate(PVector{x,y,z});
+   glTransform();
 }
 
 void scale(float x, float y,float z = 1) {
-   current_matrix = current_matrix * Matrix3D::scale(PVector{x,y,z});
+   move_matrix = move_matrix * Matrix3D::scale(PVector{x,y,z});
+   glTransform();
 }
 
 void scale(float x) {
@@ -79,12 +113,24 @@ void scale(float x) {
 }
 
 void rotate(float angle, PVector axis) {
-   current_matrix = current_matrix * Matrix3D::rotate(angle,axis);
+   move_matrix = move_matrix * Matrix3D::rotate(angle,axis);
+   glTransform();
 }
 
 
 void rotate(float angle) {
-   current_matrix = current_matrix * Matrix3D::rotate(angle,PVector{0,0,1});
+   move_matrix = move_matrix * Matrix3D::rotate(angle,PVector{0,0,1});
+   glTransform();
+}
+
+void rotateY(float angle) {
+   move_matrix = move_matrix * Matrix3D::rotate(angle,PVector{0,1,0});
+   glTransform();
+}
+
+void rotateX(float angle) {
+   move_matrix = move_matrix * Matrix3D::rotate(angle,PVector{1,0,0});
+   glTransform();
 }
 
 int xellipse_mode = DIAMETER;
@@ -152,7 +198,20 @@ void strokeCap(int cap) {
    xendCap = cap;
 }
 
-void line(float x1, float y1, float x2, float y2, float z1 = 0, float z2 = 0) {
+void line(float x1, float y1, float x2, float y2) {
+   if (xendCap == ROUND) {
+      glRoundLine( PVector{x1,y1,0}, PVector{x2,y2,0}, stroke_color, xstrokeWeight );
+   } else if (xendCap == SQUARE) {
+      glLine( PVector{x1,y1,0}, PVector{x2,y2,0}, stroke_color, xstrokeWeight );
+   } else if (xendCap == PROJECT) {
+      // Untested implementation
+      glCappedLine( PVector{x1,y1,0}, PVector{x2,y2,0}, stroke_color, xstrokeWeight );
+   } else {
+      abort();
+   }
+}
+
+void line(float x1, float y1, float z1, float x2, float y2, float z2) {
    if (xendCap == ROUND) {
       glRoundLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
    } else if (xendCap == SQUARE) {
@@ -166,48 +225,80 @@ void line(float x1, float y1, float x2, float y2, float z1 = 0, float z2 = 0) {
 }
 
 void box(float w, float h, float d) {
-
-// Define the 8 vertices of the box
+   w = w / 2;
+   h = h / 2;
+   d = d / 2;
    PVector vertices[] = {
-      {0.0f, 0.0f, 0.0f},  // 0: bottom-front-left
-      {w,     0.0f, 0.0f},  // 1: bottom-front-right
-      {w,     h,     0.0f},  // 2: top-front-right
-      {0.0f,  h,     0.0f},  // 3: top-front-left
-      {0.0f,  0.0f,  d},     // 4: bottom-back-left
-      {w,     0.0f,  d},     // 5: bottom-back-right
-      {w,     h,     d},     // 6: top-back-right
-      {0.0f,  h,     d}      // 7: top-back-left
+      // Front face
+      {-w, -h, d},
+      {w, -h, d},
+      {w, h, d},
+      {-w, h, d},
+      
+      // Back face
+      {-w, -h, -d},
+      {-w, h, -d},
+      {w, h, -d},
+      {w, -h, -d},
+      
+      // Top face
+      {-w, h, -d},
+      {-w, h, d},
+      {w, h, d},
+      {w, h, -d},
+      
+      // Bottom face
+      {-w, -h, -d},
+      {w, -h, -d},
+      {w, -h, d},
+      {-w, -h, d},
+      
+      // Right face
+      {w, -h, -d},
+      {w, h, -d},
+      {w, h, d},
+      {w, -h, d},
+      
+      // Left face
+      {-w, -h, -d},
+      {-w, -h, d},
+      {-w, h, d},
+      {-w, h, -d},
    };
 
    // Define the indices for each face of the box
-   unsigned int indices[][3] = {// front face
-      {0, 1, 2},
-      {2, 3, 0},
+   unsigned int indices[][3] = { // front face
+     {0, 1, 2},
+     {0, 2, 3},
 
-      // back face
-      {4, 6, 5},
-      {4, 7, 6},
+     {4, 5, 6},
+     {4, 6, 7},
 
-      // left face
-      {0, 3, 7},
-      {0, 7, 4},
+     {8, 9, 10},
+     {8, 10, 11},
 
-      // right face
-      {1, 5, 6},
-      {1, 6, 2},
+     {12, 13, 14},
+     {12, 14, 15},
 
-      // top face
-      {3, 2, 6},
-      {3, 6, 7},
+     {16,17,18},
+     {16,18,19},
+     
+     {20,21,22},
+     {20,22,23} };
 
-      // bottom face
-      {0, 4, 5},
-      {0, 5, 1}
-   };
-
+   SDL_Color colors[]= {
+      SDL_Color{  0,  0,255,255},
+      SDL_Color{  0,255,  0,255},
+      SDL_Color{  0,255,255,255},
+      SDL_Color{255,  0,  0,255},
+      SDL_Color{255,  0,255,255},
+      SDL_Color{255,255,  0,255},
+      SDL_Color{255,255,255,255} };
+      int i = 0;
    for( auto triangle : indices ) {
       PVector points[] = { vertices[triangle[0]],vertices[triangle[1]], vertices[triangle[2]] };
-      glFilledPoly(3, points, fill_color );
+      glFilledPoly(3, points, colors[i] );
+      i = (i + 1) % 7;
    }
 }
 
@@ -300,7 +391,9 @@ const color BLUE = color(0, 0, 255);
 const color YELLOW = color(255, 255, 0);
 const color CYAN = color(0, 255, 255);
 const color MAGENTA = color(255, 0, 255);
-
+color RANDOM_COLOR() {
+   return color(random(255),random(255),random(255),255);
+}
 
 color lerpColor(const color& c1, const color& c2, float amt) {
     float r = c1.r + (c2.r - c1.r) * amt;
@@ -525,8 +618,32 @@ void lights() {
 };
 
 void camera( float eyeX, float eyeY, float eyeZ,
-             float centerX, float centerY, float centreZ,
+             float centerX, float centerY, float centerZ,
              float upX, float upY, float upZ ) {
+
+   PVector center = PVector{centerX, centerY, centerZ};
+   PVector eye =  PVector{eyeX,eyeY,eyeZ};
+   PVector up = PVector{upX,upY,upZ};
+
+   PVector forward = center - eye;
+   forward.normalize();
+
+   auto right = forward.cross(up);
+   right.normalize();
+
+   up = right.cross(forward);
+   up.normalize();
+
+   view_matrix = Matrix3D( right.x,    up.x,    -forward.x,    0 ,
+                           right.y,    up.y,    -forward.y,    0,
+                           right.z,    up.z,    -forward.z,    0,
+                           0      ,   0    ,       0      ,  1 );
+
+   // Translate the camera to the origin
+   view_matrix = view_matrix * Matrix3D::translate( PVector{-eyeX,-eyeY, -eyeZ} );
+
+   glTransform();
+   // gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 }
 
 
@@ -581,8 +698,21 @@ void size(int _width, int _height, int MODE = P2D) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-   background(255);
+   // Set the clear color and depth values
+   glEnable(GL_DEPTH_TEST);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   glDepthFunc(GL_LEQUAL);
 
+   if (MODE == P2D) {
+      view_matrix = view_matrix * Matrix3D::translate(PVector{-1,-1,0});
+      view_matrix = view_matrix * Matrix3D::scale(PVector{2.0f/width, 2.0f/height,2.0f/((width+height)/2)});
+      projection_matrix = Matrix3D();
+   } else {
+      view_matrix = Matrix3D::translate(PVector{0,0,-2});
+      projection_matrix = get_projection_matrix(45, (float)width/height, 1.0f, 1000.0f);
+   }
+
+   background(255);
 }
 
 
@@ -826,31 +956,23 @@ int main(int argc, char* argv[]) {
          }
 
          if (xloop || frameCount == 0) {
-            // Translate current coordinates system to OpenGL [-1,1]
-            current_matrix = Matrix3D::identity();
-            current_matrix = current_matrix * Matrix3D::translate(PVector{-1,-1,0});
-            current_matrix = current_matrix * Matrix3D::scale(PVector{2.0f/width, 2.0f/height,1});
+
+            move_matrix = Matrix3D::identity();
+            glTransform();
+
             draw();
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             // Load the identity matrices
-            glMatrixMode(GL_MODELVIEW);
-            glLoadIdentity();
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-
-            // Set the clear color and depth values
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-            glClearDepth(1.0f);
+            glTransformClear();
 
             glEnable(GL_TEXTURE_2D);
             // Clear the color and depth buffers
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             glBindTexture(GL_TEXTURE_2D, backBufferID);
-            glDisable(GL_DEPTH_TEST);
             glDisable(GL_BLEND);
+
             GLfloat vertices[][2] = {
                { -1.0f, -1.0f},
                {  1.0f, -1.0f},
@@ -873,6 +995,7 @@ int main(int argc, char* argv[]) {
             }
             glEnd();
             glDisable(GL_TEXTURE_2D);
+            glEnable(GL_BLEND);
 
             SDL_GL_SwapWindow(window);
             glBindFramebuffer(GL_FRAMEBUFFER, fboID);
