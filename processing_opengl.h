@@ -96,6 +96,64 @@ void glFilledPoly(int points, PVector *p, SDL_Color color) {
 
 void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
+   // Compute direction vector of line
+   PVector direction = p2 - p1;
+   direction.normalize();
+
+   // Compute first orthogonal vector
+   PVector z_axis(0.0, 0.0, 1.0);
+   PVector orthogonal1 = direction.cross(z_axis);
+   orthogonal1.normalize();
+
+   // Compute second orthogonal vector
+   PVector orthogonal2 = direction.cross(orthogonal1);
+   orthogonal2.normalize();
+
+   if (orthogonal1 == PVector{0.0,0.0,0.0} ) {
+      orthogonal1 = PVector{1.0, 0.0, 0.0};
+      orthogonal2 = PVector{0.0, 1.0, 0.0};
+   }
+
+   // Compute dimensions of cuboid
+   float length = weight * 1;
+
+   // Construct vertices of cuboid
+   std::vector<PVector> vertices(8);
+   vertices[0] = p1 - orthogonal1 * length - orthogonal2 * length;
+   vertices[1] = p1 + orthogonal1 * length - orthogonal2 * length;
+   vertices[2] = p1 + orthogonal1 * length + orthogonal2 * length;
+   vertices[3] = p1 - orthogonal1 * length + orthogonal2 * length;
+   vertices[4] = p2 - orthogonal1 * length - orthogonal2 * length;
+   vertices[5] = p2 + orthogonal1 * length - orthogonal2 * length;
+   vertices[6] = p2 + orthogonal1 * length + orthogonal2 * length;
+   vertices[7] = p2 - orthogonal1 * length + orthogonal2 * length;
+
+
+   std::vector<PVector> vertexBuffer;
+
+   vertexBuffer = { vertices[0], vertices[1],vertices[2],vertices[3] };
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   vertexBuffer = { vertices[4], vertices[5],vertices[6],vertices[7] };
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   vertexBuffer = { vertices[0], vertices[1],vertices[4],vertices[5] };
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   vertexBuffer = { vertices[2], vertices[3],vertices[6],vertices[7] };
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   vertexBuffer = { vertices[1], vertices[5],vertices[6],vertices[2] };
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   vertexBuffer = { vertices[0], vertices[4],vertices[3],vertices[7] };
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+
+
+}
+
+void _glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
+
    PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
    normal.normalize();
    normal.mult(weight/2.0);

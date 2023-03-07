@@ -53,6 +53,9 @@ public:
          z = z * maxMag / m;
       }
    }
+   float norm() const {
+      return sqrtf(x * x + y * y + z * z);
+   }
    // Method to normalize the vector
    void normalize() {
       float mag = sqrtf(x * x + y * y + z * z);
@@ -148,7 +151,15 @@ public:
          y - other.y,
          z - other.z};
    }
-   
+   PVector operator*(const float &other) {
+      return PVector{
+         x * other,
+         y * other,
+         z * other};
+   }
+   bool operator==(const PVector &other) {
+      return x == other.x && y == other.y && z == other.z;
+   }
 };
 
 class Matrix3D {

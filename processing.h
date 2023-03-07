@@ -215,7 +215,7 @@ void line(float x1, float y1, float x2, float y2) {
 
 void line(float x1, float y1, float z1, float x2, float y2, float z2) {
    if (xendCap == ROUND) {
-      glRoundLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
+      glRoundLine( PVector{x1,y1,z1}, PVector{x2,y2,z2}, stroke_color, xstrokeWeight );
    } else if (xendCap == SQUARE) {
       glLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
    } else if (xendCap == PROJECT) {
@@ -227,40 +227,40 @@ void line(float x1, float y1, float z1, float x2, float y2, float z2) {
 }
 
 void box(float w, float h, float d) {
-   w = w / 2;
-   h = h / 2;
-   d = d / 2;
-   PVector vertices[] = {
+  w = w / 2;
+  h = h / 2;
+  d = d / 2;
+  PVector vertices[] = {
       // Front face
       {-w, -h, d},
       {w, -h, d},
       {w, h, d},
       {-w, h, d},
-      
+
       // Back face
       {-w, -h, -d},
       {-w, h, -d},
       {w, h, -d},
       {w, -h, -d},
-      
+
       // Top face
       {-w, h, -d},
       {-w, h, d},
       {w, h, d},
       {w, h, -d},
-      
+
       // Bottom face
       {-w, -h, -d},
       {w, -h, -d},
       {w, -h, d},
       {-w, -h, d},
-      
+
       // Right face
       {w, -h, -d},
       {w, h, -d},
       {w, h, d},
       {w, -h, d},
-      
+
       // Left face
       {-w, -h, -d},
       {-w, -h, d},
@@ -284,7 +284,7 @@ void box(float w, float h, float d) {
 
      {16,17,18},
      {16,18,19},
-     
+
      {20,21,22},
      {20,22,23}
    };
@@ -628,7 +628,7 @@ void perspective(float angle, float aspect, float minZ, float maxZ) {
 void perspective() {
    float fov = PI/3.0;
    float cameraZ = (height/2.0) / tan(fov/2.0);
-   perspective( fov, (float)width/(float)height, 1.0f/*cameraZ/10.0*/, cameraZ*10.0);
+   perspective( fov, (float)width/(float)height, 1.0f,100.0f);
 }
 
 void camera( float eyeX, float eyeY, float eyeZ,
@@ -718,7 +718,7 @@ void size(int _width, int _height, int MODE = P2D) {
       // Attach the depth buffer to the framebuffer object
       glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    }
 
