@@ -154,6 +154,7 @@ int xstrokeWeight = 1;
 enum{
    POINTS = 0,
    LINES = 1,
+   TRIANGLE_STRIP,
 };
 enum{
    OPEN = 0,
@@ -319,6 +320,12 @@ void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4,
    glLinePoly(4, points, stroke_color, xstrokeWeight );
 }
 
+void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
+   PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3} };
+   glFilledPoly(3,points, fill_color);
+   glLinePoly(3, points, stroke_color, xstrokeWeight );
+}
+
 
 std::vector<PVector> shape;
 
@@ -339,6 +346,9 @@ void endShape(int type = OPEN) {
       for (auto z : shape ) {
          glFilledEllipse(z, xstrokeWeight, xstrokeWeight,stroke_color);
       }
+   } else if (shape_style == TRIANGLE_STRIP) {
+      glFilledTriangleStrip( shape.size(), shape.data(), fill_color );
+      glTriangleStrip( shape.size(), shape.data(), stroke_color, xstrokeWeight);
    } else if (type == CLOSE) {
       glFilledPoly( shape.size(), shape.data(), fill_color );
       glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);

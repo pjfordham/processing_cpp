@@ -94,6 +94,18 @@ void glFilledPoly(int points, PVector *p, SDL_Color color) {
    glEnd();
 }
 
+void glFilledTriangleStrip(int points, PVector *p, SDL_Color color) {
+   anything_drawn = true;
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   glColor4f(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
+   glBegin(GL_TRIANGLE_STRIP);
+   for (int i =0; i<points;++i) {
+      glVertex3f(p[i].x, p[i].y, p[i].z);
+   }
+   glEnd();
+}
+
 void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
    // Compute direction vector of line
@@ -216,6 +228,14 @@ void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 void glLines(int points, PVector *p, SDL_Color color, int weight) {
    for (int i =1; i<points;++i) {
       glLine(p[i-1], p[i], color, weight);
+   }
+}
+
+void glTriangleStrip(int points, PVector *p, SDL_Color color,int weight) {
+   for (int i =2; i<points;++i) {
+      glLine(p[i-2], p[i-1], color, weight);
+      glLine(p[i-1], p[i], color, weight);
+      glLine(p[i], p[i-2], color, weight);
    }
 }
 
