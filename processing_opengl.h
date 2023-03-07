@@ -224,21 +224,43 @@ void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
    glLine(p[points-1], p[0], color, weight);
 }
 
-void glFilledEllipse( PVector center, float xradius, float yradius, float start, float end, SDL_Color color ) {
+void glFilledEllipse( PVector center, float xradius, float yradius, SDL_Color color ) {
    int NUMBER_OF_VERTICES=32;
    std::vector<PVector> vertexBuffer;
-   for(float i = start; i < end; i += 2 * M_PI / NUMBER_OF_VERTICES){
+   for(float i = 0; i < TWO_PI; i += TWO_PI / NUMBER_OF_VERTICES){
       vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
    }
    glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
 }
 
-void glLineEllipse( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int weight) {
+void glLineEllipse( PVector center, float xradius, float yradius, SDL_Color color, int weight) {
    int NUMBER_OF_VERTICES=32;
    std::vector<PVector> vertexBuffer;
-   for(float i = start; i < end; i += 2 * M_PI / NUMBER_OF_VERTICES){
+   for(float i = 0; i < TWO_PI; i += TWO_PI / NUMBER_OF_VERTICES){
       vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
    }
+   glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
+}
+
+void glFilledArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color ) {
+   int NUMBER_OF_VERTICES=32;
+   std::vector<PVector> vertexBuffer;
+   vertexBuffer.emplace_back(center.x, center.y);
+   for(float i = start; i < end; i += (end - start) / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
+   }
+   vertexBuffer.emplace_back(center.x + cos(end) * xradius, center.y + sin(end) * yradius);
+   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+}
+
+void glLineArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int weight) {
+   int NUMBER_OF_VERTICES=32;
+   std::vector<PVector> vertexBuffer;
+   vertexBuffer.emplace_back(center.x, center.y);
+   for(float i = start; i < end; i += (end - start) / NUMBER_OF_VERTICES){
+      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
+   }
+   vertexBuffer.emplace_back(center.x + cos(end) * xradius, center.y + sin(end) * yradius);
    glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
 }
 

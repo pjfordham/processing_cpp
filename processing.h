@@ -179,8 +179,8 @@ void ellipse(float x, float y, float width, float height) {
       width /=2;
       height /=2;
    }
-   glFilledEllipse(PVector{x,y}, width, width, 0,TWO_PI,fill_color);
-   glLineEllipse(PVector{x,y}, width, width, 0,TWO_PI,stroke_color, xstrokeWeight);
+   glFilledEllipse(PVector{x,y}, width, width, fill_color);
+   glLineEllipse(PVector{x,y}, width, width, stroke_color, xstrokeWeight);
 }
 
 void ellipse(float x, float y, float radius) {
@@ -192,8 +192,8 @@ void arc(float x, float y, float width, float height, float start, float stop) {
       width /=2;
       height /=2;
    }
-   glFilledEllipse(PVector{x,y}, width, width, start,stop,fill_color);
-   glLineEllipse(PVector{x,y}, width, width, start,stop,stroke_color, xstrokeWeight);
+   glFilledArc(PVector{x,y}, width, width, start,stop,fill_color);
+   glLineArc(PVector{x,y}, width, width, start,stop,stroke_color, xstrokeWeight);
 }
 
 void strokeCap(int cap) {
@@ -310,7 +310,7 @@ void box(float size) {
 }
 
 void point(float x, float y) {
-   glFilledEllipse(PVector{x,y},xstrokeWeight,xstrokeWeight, 0,TWO_PI,stroke_color);
+   glFilledEllipse(PVector{x,y},xstrokeWeight,xstrokeWeight, stroke_color);
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
@@ -337,7 +337,7 @@ void endShape(int type = OPEN) {
 
    if (shape_style == POINTS) {
       for (auto z : shape ) {
-         glFilledEllipse(z, xstrokeWeight, xstrokeWeight, 0,TWO_PI,stroke_color);
+         glFilledEllipse(z, xstrokeWeight, xstrokeWeight,stroke_color);
       }
    } else if (type == CLOSE) {
       glFilledPoly( shape.size(), shape.data(), fill_color );
