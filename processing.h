@@ -146,7 +146,7 @@ void rectMode(int mode){
    xrect_mode = mode;
 }
 
-SDL_Color stroke_color{255,255,255,255};
+SDL_Color stroke_color{0,0,0,255};
 SDL_Color fill_color{255,255,255,255};
 
 int xstrokeWeight = 1;
@@ -747,7 +747,7 @@ void size(int _width, int _height, int MODE = P2D) {
       perspective();
    }
 
-   background(255);
+   background(WHITE);
 }
 
 
