@@ -863,6 +863,8 @@ int frameCount = 0;
 int zframeCount = 0;
 int mouseX = 0;
 int mouseY = 0;
+int pmouseX = 0;
+int pmouseY = 0;
 
 char key = 0;
 int keyCode = 0;
@@ -912,6 +914,8 @@ int main(int argc, char* argv[]) {
          if (event.type == SDL_QUIT) {
             quit = true;
          } else if (event.type == SDL_MOUSEMOTION ) {
+            pmouseX = mouseX;
+            pmouseY = mouseY;
             mouseX = event.motion.x;
             mouseY = event.motion.y;
             if (mousePressedb) {
