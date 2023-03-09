@@ -6,6 +6,8 @@
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
 
+#include <Eigen/Dense>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
@@ -60,23 +62,27 @@ float noise(float x, float y = 0, float z = 0) {
    return perlin_noise.octave(x,y,z,perlin_octaves,perlin_falloff);
 }
 
-Matrix3D get_projection_matrix(float angle, float a, float zMin, float zMax) {
-   float ang = tan(angle*.5);
-   return {
-        0.5f/ang, 0 , 0, 0,
-        0, 0.5f*a/ang, 0, 0,
-        0, 0, -(zMax+zMin)/(zMax-zMin), -1,
-        0, 0, (-2*zMax*zMin)/(zMax-zMin), 0
+Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
+   float f = 1 / tan(0.5 * fov);
+   float rangeInv = 1.0 / (near - far);
+   float A = (near + far) * rangeInv;
+   float B = near * far * rangeInv * 2;
+   Eigen::Matrix4f ret = Eigen::Matrix4f{
+      { f/a,  0,  0,  0 },
+      {   0,  f,  0,  0 },
+      {   0,  0,  A,  B },
+      {   0,  0, -1,  0 }
    };
+   return ret;
 }
 
-std::vector<Matrix3D> matrix_stack;
-Matrix3D move_matrix; // Default is identity
-Matrix3D projection_matrix; // Default is identity
-Matrix3D view_matrix; // Default is identity
+std::vector<Eigen::Matrix4f> matrix_stack;
+Eigen::Matrix4f move_matrix; // Default is identity
+Eigen::Matrix4f projection_matrix; // Default is identity
+Eigen::Matrix4f view_matrix; // Default is identity
 
 void glTransform() {
-   auto transform = projection_matrix * view_matrix * move_matrix;
+   Eigen::Matrix4f transform = projection_matrix * view_matrix * move_matrix;
    glMatrixMode(GL_MODELVIEW);
    glLoadMatrixf(transform.data());
    glMatrixMode(GL_PROJECTION);
@@ -101,12 +107,12 @@ void popMatrix() {
 }
 
 void translate(float x, float y, float z=0) {
-   move_matrix = move_matrix * Matrix3D::translate(PVector{x,y,z});
+   move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
    glTransform();
 }
 
 void scale(float x, float y,float z = 1) {
-   move_matrix = move_matrix * Matrix3D::scale(PVector{x,y,z});
+   move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
    glTransform();
 }
 
@@ -115,23 +121,23 @@ void scale(float x) {
 }
 
 void rotate(float angle, PVector axis) {
-   move_matrix = move_matrix * Matrix3D::rotate(angle,axis);
+   move_matrix = move_matrix * RotateMatrix(angle,axis);
    glTransform();
 }
 
 
 void rotate(float angle) {
-   move_matrix = move_matrix * Matrix3D::rotate(angle,PVector{0,0,1});
+   move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
    glTransform();
 }
 
 void rotateY(float angle) {
-   move_matrix = move_matrix * Matrix3D::rotate(angle,PVector{0,1,0});
+   move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
    glTransform();
 }
 
 void rotateX(float angle) {
-   move_matrix = move_matrix * Matrix3D::rotate(angle,PVector{1,0,0});
+   move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
    glTransform();
 }
 
@@ -638,33 +644,35 @@ void perspective(float angle, float aspect, float minZ, float maxZ) {
 void perspective() {
    float fov = PI/3.0;
    float cameraZ = (height/2.0) / tan(fov/2.0);
-   perspective( fov, (float)width/(float)height, 1.0f,100.0f);
+   perspective( fov, (float)width/(float)height, cameraZ/10.0,  cameraZ*10.0);
 }
 
 void camera( float eyeX, float eyeY, float eyeZ,
              float centerX, float centerY, float centerZ,
              float upX, float upY, float upZ ) {
 
-   PVector center = PVector{centerX, centerY, centerZ};
-   PVector eye =  PVector{eyeX,eyeY,eyeZ};
-   PVector up = PVector{upX,upY,upZ};
+   Eigen::Vector3f center = Eigen::Vector3f{centerX, centerY, centerZ};
+   Eigen::Vector3f eye =  Eigen::Vector3f{eyeX,eyeY,eyeZ};
+   Eigen::Vector3f _up = Eigen::Vector3f{upX,upY,upZ};
 
-   PVector forward = center - eye;
-   forward.normalize();
+   Eigen::Vector3f forward = (center - eye).normalized();
+   Eigen::Vector3f side = forward.cross(_up).normalized();
+   Eigen::Vector3f up = side.cross(forward).normalized();
 
-   auto right = forward.cross(up);
-   right.normalize();
+   Eigen::Matrix4f view{
+      {    side[0],     side[1],     side[2], 0.0f},
+      {      up[0],       up[1],       up[2], 0.0f},
+      {-forward[0], -forward[1], -forward[2], 0.0f},
+      {       0.0f,        0.0f,        0.0f, 1.0f} };
 
-   up = right.cross(forward);
-   up.normalize();
-
-   view_matrix = Matrix3D(    right.x,    right.y,    right.z, 0 ,
-                                 up.x,       up.y,       up.z, 0,
-                           -forward.x, -forward.y, -forward.z, 0,
-                                    0,         0 ,          0, 1 );
+   Eigen::Matrix4f translate{
+      {1.0,    0,     0,    -eyeX} ,
+      {0,    1.0,     0,    -eyeY},
+      {0,      0,   1.0,    -eyeZ},
+      {0.0f, 0.0f,  0.0f,    1.0f} };
 
    // Translate the camera to the origin
-   view_matrix = view_matrix * Matrix3D::translate( PVector{-eyeX,-eyeY, -eyeZ} );
+   view_matrix = view * translate;
 
    glTransform();
 }
@@ -738,12 +746,12 @@ void size(int _width, int _height, int MODE = P2D) {
    glEnable(GL_BLEND);
 
    if (MODE == P2D) {
-      view_matrix = Matrix3D();
-      view_matrix = view_matrix * Matrix3D::translate(PVector{-1,-1,0});
-      view_matrix = view_matrix * Matrix3D::scale(PVector{2.0f/width, 2.0f/height,1.0});
-      projection_matrix = Matrix3D();
+      view_matrix = Eigen::Matrix4f::Identity();
+      view_matrix = view_matrix * TranslateMatrix(PVector{-1,-1,0});
+      view_matrix = view_matrix * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
+      projection_matrix = Eigen::Matrix4f::Identity();
    } else {
-      view_matrix = Matrix3D();
+      view_matrix = Eigen::Matrix4f::Identity();
       perspective();
    }
 
@@ -997,7 +1005,7 @@ int main(int argc, char* argv[]) {
          if (xloop || frameCount == 0) {
 
             glClear(GL_DEPTH_BUFFER_BIT);
-            move_matrix = Matrix3D::identity();
+            move_matrix = Eigen::Matrix4f::Identity();
             glTransform();
 
             draw();

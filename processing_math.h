@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <random>
+#include <Eigen/Dense>
 
 const float PI = M_PI;
 const float TWO_PI = M_PI * 2.0;
@@ -162,86 +163,39 @@ public:
    }
 };
 
-class Matrix3D {
-private:
-    float m_data[16];
-public:
-   void print() {
-      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n\n",
-                 m_data[0], m_data[1], m_data[2], m_data[3],
-                 m_data[4], m_data[5], m_data[6], m_data[7],
-                 m_data[8], m_data[9], m_data[10], m_data[11],
-                 m_data[12], m_data[13], m_data[14], m_data[15] );
-   }
-              
-   const float *data() const {
-      return m_data;
-   }
+Eigen::Matrix4f TranslateMatrix(const PVector &in) {
+  Eigen::Matrix4f ret {
+     {1.0,    0,     0,    in.x} ,
+     {0,    1.0,     0,    in.y},
+     {0,      0,   1.0,    in.z},
+     {0.0f, 0.0f,  0.0f,    1.0f} };
+  return ret;
+}
 
-   Matrix3D() :
-        m_data{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1} {}
+Eigen::Matrix4f ScaleMatrix(const PVector &in) {
+   Eigen::Matrix4f ret {
+      {in.x,    0,     0,    0} ,
+      {0,    in.y,     0,    0},
+      {0,      0,   in.z,   0},
+      {0.0f, 0.0f,  0.0f,    1.0f} };
+   return ret;
+}
 
-    Matrix3D(float m00, float m01, float m02, float m03,
-             float m10, float m11, float m12, float m13,
-             float m20, float m21, float m22, float m23,
-             float m30, float m31, float m32, float m33) :
-        m_data{m00, m10, m20, m30, m01, m11, m21, m31,
-               m02, m12, m22, m32, m03, m13, m23, m33} {}
+Eigen::Matrix4f RotateMatrix(const float angle, const PVector& in) {
+   float c = cos(angle);
+   float s = sin(angle);
+   float omc = 1.0f - c;
+   float x = in.x;
+   float y = in.y;
+   float z = in.z;
 
-    float operator() (int row, int col) {
-        return m_data[col * 4 + row];
-    }
-
-    float operator() (int row, int col) const {
-        return m_data[col * 4 + row];
-    }
-
-    Matrix3D operator* (const Matrix3D& other) const {
-        Matrix3D result;
-        for (int col = 0; col < 4; ++col) {
-            for (int row = 0; row < 4; ++row) {
-                float sum = 0;
-                for (int i = 0; i < 4; ++i) {
-                    sum += m_data[i * 4 + row] * other.m_data[col * 4 + i];
-                }
-                result.m_data[col * 4 + row] = sum;
-            }
-        }
-        return result;
-    }
-
-    static Matrix3D identity() {
-        return Matrix3D();
-    }
-
-    static Matrix3D translate(const PVector& v) {
-        return Matrix3D(1, 0, 0, v.x,
-                        0, 1, 0, v.y,
-                        0, 0, 1, v.z,
-                        0, 0, 0, 1);
-    }
-
-    static Matrix3D scale(const PVector& v) {
-        return Matrix3D(v.x, 0, 0, 0,
-                        0, v.y, 0, 0,
-                        0, 0, v.z, 0,
-                        0, 0, 0, 1);
-    }
-
-    static Matrix3D rotate(float angle, const PVector& axis) {
-        float c = std::cos(angle);
-        float s = std::sin(angle);
-        float x = axis.x;
-        float y = axis.y;
-        float z = axis.z;
-        float omc = 1 - c;
-
-        return Matrix3D(x * x * omc + c, x * y * omc - z * s, x * z * omc + y * s, 0,
-                        x * y * omc + z * s, y * y * omc + c, y * z * omc - x * s, 0,
-                        x * z * omc - y * s, y * z * omc + x * s, z * z * omc + c, 0,
-                        0, 0, 0, 1);
-    }
-};
+   Eigen::Matrix4f ret;
+   ret << x * x * omc + c, x * y * omc - z * s, x * z * omc + y * s, 0,
+      x * y * omc + z * s, y * y * omc + c, y * z * omc - x * s, 0,
+      x * z * omc - y * s, y * z * omc + x * s, z * z * omc + c, 0,
+      0, 0, 0, 1;
+   return ret;
+}
 
 inline float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
    float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
