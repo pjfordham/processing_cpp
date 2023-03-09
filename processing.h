@@ -1,10 +1,13 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
+
 #include <GL/glew.h>     // GLEW library header
 #include <GL/gl.h>       // OpenGL header
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
+
+#include "processing_opengl_shaders.h"
 
 #include <Eigen/Dense>
 
@@ -25,7 +28,7 @@
 #include "processing_java_compatability.h"
 #include "processing_opengl.h"
 
-bool render_to_backbuffer = true;
+bool render_to_backbuffer = false;
 
 SDL_Texture* backBuffer;
 
@@ -81,12 +84,16 @@ Eigen::Matrix4f move_matrix; // Default is identity
 Eigen::Matrix4f projection_matrix; // Default is identity
 Eigen::Matrix4f view_matrix; // Default is identity
 
+GLuint programID;
+GLuint Pmatrix;
+GLuint Vmatrix;
+GLuint Mmatrix;
+
 void glTransform() {
-   Eigen::Matrix4f transform = projection_matrix * view_matrix * move_matrix;
-   glMatrixMode(GL_MODELVIEW);
-   glLoadMatrixf(transform.data());
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
+   // Send our transformation to the currently bound shader,
+   glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+   glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+   glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 }
 
 void glTransformClear() {
@@ -234,82 +241,162 @@ void line(float x1, float y1, float z1, float x2, float y2, float z2) {
 }
 
 void box(float w, float h, float d) {
-  w = w / 2;
-  h = h / 2;
-  d = d / 2;
-  PVector vertices[] = {
+   w = w / 2;
+   h = h / 2;
+   d = d / 2;
+   std::vector<float> vertices = {
       // Front face
-      {-w, -h, d},
-      {w, -h, d},
-      {w, h, d},
-      {-w, h, d},
+      -w, -h, d,
+      w, -h, d,
+      w, h, d,
+      -w, h, d,
 
       // Back face
-      {-w, -h, -d},
-      {-w, h, -d},
-      {w, h, -d},
-      {w, -h, -d},
+      -w, -h, -d,
+      -w, h, -d,
+      w, h, -d,
+      w, -h, -d,
 
       // Top face
-      {-w, h, -d},
-      {-w, h, d},
-      {w, h, d},
-      {w, h, -d},
+      -w, h, -d,
+      -w, h, d,
+      w, h, d,
+      w, h, -d,
 
       // Bottom face
-      {-w, -h, -d},
-      {w, -h, -d},
-      {w, -h, d},
-      {-w, -h, d},
+      -w, -h, -d,
+      w, -h, -d,
+      w, -h, d,
+      -w, -h, d,
 
       // Right face
-      {w, -h, -d},
-      {w, h, -d},
-      {w, h, d},
-      {w, -h, d},
+      w, -h, -d,
+      w, h, -d,
+      w, h, d,
+      w, -h, d,
 
       // Left face
-      {-w, -h, -d},
-      {-w, -h, d},
-      {-w, h, d},
-      {-w, h, -d},
+      -w, -h, -d,
+      -w, -h, d,
+      -w, h, d,
+      -w, h, -d,
    };
 
-   // Define the indices for each face of the box
-   unsigned int indices[][3] = { // front face
-     {0, 1, 2},
-     {0, 2, 3},
+   std::vector<float> normals = {
+      // Front
+      0.0,  0.0,  1.0,
+      0.0,  0.0,  1.0,
+      0.0,  0.0,  1.0,
+      0.0,  0.0,  1.0,
 
-     {4, 5, 6},
-     {4, 6, 7},
+      // Back
+      0.0,  0.0, -1.0,
+      0.0,  0.0, -1.0,
+      0.0,  0.0, -1.0,
+      0.0,  0.0, -1.0,
 
-     {8, 9, 10},
-     {8, 10, 11},
+      // Top
+      0.0,  1.0,  0.0,
+      0.0,  1.0,  0.0,
+      0.0,  1.0,  0.0,
+      0.0,  1.0,  0.0,
 
-     {12, 13, 14},
-     {12, 14, 15},
+      // Bottom
+      0.0, -1.0,  0.0,
+      0.0, -1.0,  0.0,
+      0.0, -1.0,  0.0,
+      0.0, -1.0,  0.0,
 
-     {16,17,18},
-     {16,18,19},
+      // Right
+      1.0,  0.0,  0.0,
+      1.0,  0.0,  0.0,
+      1.0,  0.0,  0.0,
+      1.0,  0.0,  0.0,
 
-     {20,21,22},
-     {20,22,23}
+      // Left
+      -1.0,  0.0,  0.0,
+      -1.0,  0.0,  0.0,
+      -1.0,  0.0,  0.0,
+      -1.0,  0.0,  0.0
    };
 
-   SDL_Color colors[]= {
-      SDL_Color{  0,  0,255,255},
-      SDL_Color{  0,255,  0,255},
-      SDL_Color{  0,255,255,255},
-      SDL_Color{255,  0,  0,255},
-      SDL_Color{255,  0,255,255},
-      SDL_Color{255,255,  0,255},
-      SDL_Color{255,255,255,255} };
-      int i = 0;
-   for( auto triangle : indices ) {
-      PVector points[] = { vertices[triangle[0]],vertices[triangle[1]], vertices[triangle[2]] };
-      glFilledPoly(3, points, colors[i] );
-      i = (i + 1) % 7;
-   }
+   std::vector<float> colors = {
+      5,3,7, 5,3,7, 5,3,7, 5,3,7,
+      1,1,3, 1,1,3, 1,1,3, 1,1,3,
+      0,0,1, 0,0,1, 0,0,1, 0,0,1,
+      1,0,0, 1,0,0, 1,0,0, 1,0,0,
+      1,1,0, 1,1,0, 1,1,0, 1,1,0,
+      0,1,0, 0,1,0, 0,1,0, 0,1,0
+   };
+
+   std::vector<unsigned short>  triagnles = {
+      0,1,2, 0,2,3, 4,5,6, 4,6,7,
+      8,9,10, 8,10,11, 12,13,14, 12,14,15,
+      16,17,18, 16,18,19, 20,21,22, 20,22,23
+   };
+
+  GLuint VAO;
+   glGenVertexArrays(1, &VAO);
+   glBindVertexArray(VAO);
+
+   GLuint vertexbuffer;
+   glGenBuffers(1, &vertexbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+   GLuint indexbuffer;
+   glGenBuffers(1, &indexbuffer);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, triagnles.size() * sizeof(unsigned short), triagnles.data(), GL_STATIC_DRAW);
+
+   GLuint normalbuffer;
+   glGenBuffers(1, &normalbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+   glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
+
+   GLuint colorbuffer;
+   glGenBuffers(1, &colorbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+
+    GLuint attribId = glGetAttribLocation(programID, "position");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      attribId = glGetAttribLocation(programID, "color");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      attribId = glGetAttribLocation(programID, "normal");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      glDrawElements(GL_TRIANGLES, triagnles.size(), GL_UNSIGNED_SHORT, 0);
+
 }
 
 void box(float size) {
@@ -634,7 +721,7 @@ enum {
 
 void lights() {
 
-  };
+};
 
 void perspective(float angle, float aspect, float minZ, float maxZ) {
    projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
@@ -702,16 +789,22 @@ void size(int _width, int _height, int MODE = P2D) {
       abort();
    }
 
-   if (render_to_backbuffer) {
-      // Initialize GLEW to load OpenGL extensions
-      glewExperimental = GL_TRUE;
-      GLenum glewError = glewInit();
-      if (glewError != GLEW_OK)
-      {
-         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
-         abort();
-      }
+   // Initialize GLEW
+   glewExperimental = true; // Needed for core profile
+   if (glewInit() != GLEW_OK) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
+      abort();
+   }
 
+   programID = LoadShaders();
+   glUseProgram(programID);
+
+   // Get a handle for our "MVP" uniform
+   Pmatrix = glGetUniformLocation(programID, "Pmatrix");
+   Vmatrix = glGetUniformLocation(programID, "Vmatrix");
+   Mmatrix = glGetUniformLocation(programID, "Mmatrix");
+
+   if (render_to_backbuffer) {
       if (!glewIsSupported("GL_EXT_framebuffer_object")) {
          SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
          abort();
@@ -901,8 +994,8 @@ int main(int argc, char* argv[]) {
 
 
    // Set OpenGL attributes
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
    setup();
