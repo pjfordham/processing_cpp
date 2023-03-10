@@ -36,15 +36,15 @@ SDL_Window *window;
 SDL_Renderer *renderer;
 
 enum {
-  DIAMETER = 1,
+   DIAMETER = 1,
 //  RADIUS = 3,
-  };
+};
 
 enum {
-  CORNERS = 0,
-  CORNER = 1,
-  CENTER = 2,
-  RADIUS = 3,
+   CORNERS = 0,
+   CORNER = 1,
+   CENTER = 2,
+   RADIUS = 3,
 };
 
 
@@ -320,22 +320,21 @@ void box(float w, float h, float d) {
       -1.0,  0.0,  0.0
    };
 
-   std::vector<float> colors = {
-      5,3,7, 5,3,7, 5,3,7, 5,3,7,
-      1,1,3, 1,1,3, 1,1,3, 1,1,3,
-      0,0,1, 0,0,1, 0,0,1, 0,0,1,
-      1,0,0, 1,0,0, 1,0,0, 1,0,0,
-      1,1,0, 1,1,0, 1,1,0, 1,1,0,
-      0,1,0, 0,1,0, 0,1,0, 0,1,0
-   };
-
    std::vector<unsigned short>  triagnles = {
       0,1,2, 0,2,3, 4,5,6, 4,6,7,
       8,9,10, 8,10,11, 12,13,14, 12,14,15,
       16,17,18, 16,18,19, 20,21,22, 20,22,23
    };
 
-  GLuint VAO;
+   std::vector<float> colors;
+
+   for (int i = 0; i< triagnles.size() / 3; ++i ) {
+      colors.push_back(fill_color.r / 255.0);
+      colors.push_back(fill_color.g / 255.0);
+      colors.push_back(fill_color.b / 255.0);
+   }
+
+   GLuint VAO;
    glGenVertexArrays(1, &VAO);
    glBindVertexArray(VAO);
 
@@ -359,43 +358,53 @@ void box(float w, float h, float d) {
    glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
 
-    GLuint attribId = glGetAttribLocation(programID, "position");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
-         );
+   GLuint attribId = glGetAttribLocation(programID, "position");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
 
-      attribId = glGetAttribLocation(programID, "color");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
-         );
+   attribId = glGetAttribLocation(programID, "color");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
 
-      attribId = glGetAttribLocation(programID, "normal");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
-         );
+   attribId = glGetAttribLocation(programID, "normal");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
 
-      glDrawElements(GL_TRIANGLES, triagnles.size(), GL_UNSIGNED_SHORT, 0);
+   glDrawElements(GL_TRIANGLES, triagnles.size(), GL_UNSIGNED_SHORT, 0);
+
+   glDeleteBuffers(1, &vertexbuffer);
+   glDeleteBuffers(1, &indexbuffer);
+   glDeleteBuffers(1, &normalbuffer);
+   glDeleteBuffers(1, &colorbuffer);
+
+   // Unbind the buffer objects and VAO
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+   glBindVertexArray(0);
 
 }
 
@@ -456,8 +465,8 @@ void frameRate(int rate) {
 }
 
 enum {
-  RGB = 0,
-  HSB = 1,
+   RGB = 0,
+   HSB = 1,
 };
 
 int xcolorMode = RGB;
@@ -467,7 +476,7 @@ int xcolorScaleB = 255;
 int xcolorScaleA = 255;
 
 class color {
- public:
+public:
    float r,g,b,a;
    color(float _r, float _g, float _b,float _a) : r(_r), g(_g), b(_b), a(_a) {
    }
@@ -502,19 +511,19 @@ color RANDOM_COLOR() {
 }
 
 color lerpColor(const color& c1, const color& c2, float amt) {
-    float r = c1.r + (c2.r - c1.r) * amt;
-    float g = c1.g + (c2.g - c1.g) * amt;
-    float b = c1.b + (c2.b - c1.b) * amt;
-    float a = c1.a + (c2.a - c1.a) * amt;
-    return color(r, g, b, a);
+   float r = c1.r + (c2.r - c1.r) * amt;
+   float g = c1.g + (c2.g - c1.g) * amt;
+   float b = c1.b + (c2.b - c1.b) * amt;
+   float a = c1.a + (c2.a - c1.a) * amt;
+   return color(r, g, b, a);
 }
 
 void colorMode(int mode, float r, float g, float b, float a) {
-  xcolorMode = mode;
-  xcolorScaleR = r;
-  xcolorScaleG = g;
-  xcolorScaleB = b;
-  xcolorScaleA = a;
+   xcolorMode = mode;
+   xcolorScaleR = r;
+   xcolorScaleG = g;
+   xcolorScaleB = b;
+   xcolorScaleA = a;
 }
 
 void colorMode(int mode, float scale) {
@@ -527,27 +536,27 @@ void colorMode(int mode, float r, float g, float b) {
 
 SDL_Color HSBtoRGB(float h, float s, float v, float a)
 {
-    int i = floorf(h * 6);
-    auto f = h * 6.0 - i;
-    auto p = v * (1.0 - s);
-    auto q = v * (1.0 - f * s);
-    auto t = v * (1.0 - (1.0 - f) * s);
+   int i = floorf(h * 6);
+   auto f = h * 6.0 - i;
+   auto p = v * (1.0 - s);
+   auto q = v * (1.0 - f * s);
+   auto t = v * (1.0 - (1.0 - f) * s);
 
-    float r,g,b;
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
-    }
-    return {
-       (unsigned char)roundf(r * 255),
-       (unsigned char)roundf(g * 255),
-       (unsigned char)roundf(b * 255) ,
-       (unsigned char)a
-    };
+   float r,g,b;
+   switch (i % 6) {
+   case 0: r = v, g = t, b = p; break;
+   case 1: r = q, g = v, b = p; break;
+   case 2: r = p, g = v, b = t; break;
+   case 3: r = p, g = q, b = v; break;
+   case 4: r = t, g = p, b = v; break;
+   case 5: r = v, g = p, b = q; break;
+   }
+   return {
+      (unsigned char)roundf(r * 255),
+      (unsigned char)roundf(g * 255),
+      (unsigned char)roundf(b * 255) ,
+      (unsigned char)a
+   };
 }
 
 SDL_Color flatten_color_mode(float r, float g, float b, float a) {
@@ -558,12 +567,12 @@ SDL_Color flatten_color_mode(float r, float g, float b, float a) {
    if (xcolorMode == HSB) {
       return HSBtoRGB(r/255.0,g/255.0,b/255.0,a);
    }
-    return {
-       (unsigned char)r,
-       (unsigned char)g,
-       (unsigned char)b,
-       (unsigned char)a
-    };
+   return {
+      (unsigned char)r,
+      (unsigned char)g,
+      (unsigned char)b,
+      (unsigned char)a
+   };
 }
 
 void stroke(float r,float g,  float b, float a) {
@@ -628,50 +637,50 @@ unsigned long millis() {
 
 int second() {
    // Get the current wall clock time
-    auto now = std::chrono::system_clock::now();
+   auto now = std::chrono::system_clock::now();
 
-    // Convert to time_t and then to tm structure in local time
-    std::time_t time = std::chrono::system_clock::to_time_t(now);
-    std::tm local_time = *std::localtime(&time);
+   // Convert to time_t and then to tm structure in local time
+   std::time_t time = std::chrono::system_clock::to_time_t(now);
+   std::tm local_time = *std::localtime(&time);
 
-    // Extract hours, minutes, and seconds from the tm structure
-    int hours = local_time.tm_hour;
-    int minutes = local_time.tm_min;
-    int seconds = local_time.tm_sec;
+   // Extract hours, minutes, and seconds from the tm structure
+   int hours = local_time.tm_hour;
+   int minutes = local_time.tm_min;
+   int seconds = local_time.tm_sec;
 
-    return seconds;
+   return seconds;
 }
 
 int minute() {
    // Get the current wall clock time
-    auto now = std::chrono::system_clock::now();
+   auto now = std::chrono::system_clock::now();
 
-    // Convert to time_t and then to tm structure in local time
-    std::time_t time = std::chrono::system_clock::to_time_t(now);
-    std::tm local_time = *std::localtime(&time);
+   // Convert to time_t and then to tm structure in local time
+   std::time_t time = std::chrono::system_clock::to_time_t(now);
+   std::tm local_time = *std::localtime(&time);
 
-    // Extract hours, minutes, and seconds from the tm structure
-    int hours = local_time.tm_hour;
-    int minutes = local_time.tm_min;
-    int seconds = local_time.tm_sec;
+   // Extract hours, minutes, and seconds from the tm structure
+   int hours = local_time.tm_hour;
+   int minutes = local_time.tm_min;
+   int seconds = local_time.tm_sec;
 
-    return minutes;
+   return minutes;
 }
 
 int hour() {
    // Get the current wall clock time
-    auto now = std::chrono::system_clock::now();
+   auto now = std::chrono::system_clock::now();
 
-    // Convert to time_t and then to tm structure in local time
-    std::time_t time = std::chrono::system_clock::to_time_t(now);
-    std::tm local_time = *std::localtime(&time);
+   // Convert to time_t and then to tm structure in local time
+   std::time_t time = std::chrono::system_clock::to_time_t(now);
+   std::tm local_time = *std::localtime(&time);
 
-    // Extract hours, minutes, and seconds from the tm structure
-    int hours = local_time.tm_hour;
-    int minutes = local_time.tm_min;
-    int seconds = local_time.tm_sec;
+   // Extract hours, minutes, and seconds from the tm structure
+   int hours = local_time.tm_hour;
+   int minutes = local_time.tm_min;
+   int seconds = local_time.tm_sec;
 
-    return hours;
+   return hours;
 }
 
 bool xloop = true;
@@ -796,7 +805,15 @@ void size(int _width, int _height, int MODE = P2D) {
       abort();
    }
 
-   programID = LoadShaders();
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   if (MODE == P2D) {
+      glDisable(GL_DEPTH_TEST);
+      programID = LoadShaders(ShadersFlat());
+   } else {
+      glEnable(GL_DEPTH_TEST);
+      programID = LoadShaders(Shaders3D());
+   }
    glUseProgram(programID);
 
    // Get a handle for our "MVP" uniform
@@ -820,28 +837,23 @@ void size(int _width, int _height, int MODE = P2D) {
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backBufferID, 0);
 
-      // Create a renderbuffer for the depth buffer
-      GLuint depthBufferID;
-      glGenRenderbuffers(1, &depthBufferID);
-      glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+      if (MODE == P3D) {
+         // Create a renderbuffer for the depth buffer
+         GLuint depthBufferID;
+         glGenRenderbuffers(1, &depthBufferID);
+         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
 
-      // Attach the depth buffer to the framebuffer object
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+         // Attach the depth buffer to the framebuffer object
+         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+      }
 
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    }
 
-   // Set the clear color and depth values
-   glEnable(GL_DEPTH_TEST);
-   glDepthFunc(GL_LEQUAL);
-   glEnable(GL_BLEND);
-
    if (MODE == P2D) {
-      view_matrix = Eigen::Matrix4f::Identity();
-      view_matrix = view_matrix * TranslateMatrix(PVector{-1,-1,0});
-      view_matrix = view_matrix * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
+      view_matrix = TranslateMatrix(PVector{-1,+1,0}) * ScaleMatrix(PVector{2.0f/width, -2.0f/height,1.0});
       projection_matrix = Eigen::Matrix4f::Identity();
    } else {
       view_matrix = Eigen::Matrix4f::Identity();

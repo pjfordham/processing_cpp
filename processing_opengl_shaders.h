@@ -7,10 +7,57 @@
 #include <GL/glut.h>
 
 #include <vector>
+#include <tuple>
 
 #include <fmt/core.h>
 
-inline GLuint LoadShaders(){
+inline std::tuple<const char*, const char*, const char*> ShadersFlat() {
+   const char *vertexShader = R"glsl(
+      #version 330
+      in vec3 position;
+      in vec4 color;
+      uniform mat4 Pmatrix;
+      uniform mat4 Vmatrix;
+      uniform mat4 Mmatrix;
+      out vec4 gColor;
+      void main()
+      {
+          gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.0);
+          gColor = color;
+      }
+)glsl";
+
+   const char *geometryShader = R"glsl(
+      #version 330
+      in vec4 gColor[];
+      layout(triangles) in;
+      layout(triangle_strip, max_vertices=6) out;
+      out vec4 vColor;
+
+      void main() {
+          for(int i = 0; i < 3; i++) {
+              gl_Position = gl_in[i].gl_Position;
+              vColor = gColor[i];
+              EmitVertex();
+          }
+          EndPrimitive();
+      }
+)glsl";
+
+   const char *fragmentShader = R"glsl(
+      #version 330
+      in vec4 vColor;
+      out vec4 fragColor;
+      void main()
+      {
+          fragColor = vColor;
+      }
+)glsl";
+
+   return { vertexShader, geometryShader, fragmentShader };
+}
+
+inline std::tuple<const char*, const char*, const char*> Shaders3D() {
 
    const char *vertexShader = R"glsl(
       #version 330
@@ -73,6 +120,12 @@ inline GLuint LoadShaders(){
           fragColor = vec4(vLighting * vColor, 1.0);
       }
 )glsl";
+   return { vertexShader, geometryShader, fragmentShader };
+}
+
+inline GLuint LoadShaders(std::tuple<const char*, const char*, const char*> in){
+
+   auto [vertexShader, geometryShader, fragmentShader] = in;
 
    // Create the shaders
    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);

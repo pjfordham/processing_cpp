@@ -1,10 +1,16 @@
 #ifndef PROCESSING_OPENGL_H
 #define PROCESSING_OPENGL_H
 
+#include <GL/glew.h>     // GLEW library header
+#include <GL/gl.h>       // OpenGL header
+#include <GL/glu.h>      // GLU header
+#include <GL/glut.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
 #include "processing_math.h"
+#include <fmt/core.h>
 
 bool anything_drawn = false;
 
@@ -82,29 +88,113 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
    SDL_FreeSurface(newSurface);
 }
 
-void glFilledPoly(int points, PVector *p, SDL_Color color) {
+extern GLuint programID;
+
+void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color color) {
    anything_drawn = true;
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   glColor4f(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
-   glBegin(GL_TRIANGLE_FAN);
-   for (int i =0; i<points;++i) {
-      glVertex3f(p[i].x, p[i].y, p[i].z);
-   }
-   glEnd();
+
+   std::vector<float> colors;
+   std::vector<float> vertices;
+   std::vector<float> normals;
+   std::vector<unsigned short> indices;
+
+   for (int i = 0; i< points; ++i ) {
+      colors.push_back(color.r / 255.0);
+      colors.push_back(color.g / 255.0);
+      colors.push_back(color.b / 255.0);
+      colors.push_back(color.a / 255.0);
+      vertices.push_back(p[i].x);
+      vertices.push_back(p[i].y);
+      vertices.push_back(p[i].z);
+      normals.push_back(1);
+      normals.push_back(1);
+      normals.push_back(1);
+      indices.push_back(i);
+   };
+
+   GLuint VAO;
+   glGenVertexArrays(1, &VAO);
+   glBindVertexArray(VAO);
+
+   GLuint vertexbuffer;
+   glGenBuffers(1, &vertexbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+   GLuint indexbuffer;
+   glGenBuffers(1, &indexbuffer);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+
+   GLuint normalbuffer;
+   glGenBuffers(1, &normalbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+   glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
+
+   GLuint colorbuffer;
+   glGenBuffers(1, &colorbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+
+   GLuint attribId = glGetAttribLocation(programID, "position");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(programID, "color");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      4,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(programID, "normal");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   glDrawElements(element_type, indices.size(), GL_UNSIGNED_SHORT, 0);
+
+   glDeleteBuffers(1, &vertexbuffer);
+   glDeleteBuffers(1, &indexbuffer);
+   glDeleteBuffers(1, &normalbuffer);
+   glDeleteBuffers(1, &colorbuffer);
+
+   // Unbind the buffer objects and VAO
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+   glBindVertexArray(0);
+
+
 }
 
 void glFilledTriangleStrip(int points, PVector *p, SDL_Color color) {
-   anything_drawn = true;
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   glColor4f(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
-   glBegin(GL_TRIANGLE_STRIP);
-   for (int i =0; i<points;++i) {
-      glVertex3f(p[i].x, p[i].y, p[i].z);
-   }
-   glEnd();
+   glFilledElement(GL_TRIANGLE_STRIP, points, p, color);
 }
+
+void glFilledPoly(int points, PVector *p, SDL_Color color) {
+   glFilledElement(GL_TRIANGLE_FAN,points,p,color);
+}
+
 
 void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
