@@ -168,6 +168,7 @@ enum{
    POINTS = 0,
    LINES = 1,
    TRIANGLE_STRIP,
+   TRIANGLE_FAN,
 };
 enum{
    OPEN = 0,
@@ -418,13 +419,13 @@ void point(float x, float y) {
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
    PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4} };
-   glFilledPoly(4,points, fill_color);
+   glFilledTriangleFan(4,points, fill_color);
    glLinePoly(4, points, stroke_color, xstrokeWeight );
 }
 
 void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
    PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3} };
-   glFilledPoly(3,points, fill_color);
+   glFilledTriangleFan(3,points, fill_color);
    glLinePoly(3, points, stroke_color, xstrokeWeight );
 }
 
@@ -444,18 +445,23 @@ void vertex(float x, float y) {
 
 void endShape(int type = OPEN) {
 
-   if (shape_style == POINTS) {
-      for (auto z : shape ) {
-         glFilledEllipse(z, xstrokeWeight, xstrokeWeight,stroke_color);
+   if (shape.size() > 0) {
+      if (shape_style == POINTS) {
+         for (auto z : shape ) {
+            glFilledEllipse(z, xstrokeWeight, xstrokeWeight,stroke_color);
+         }
+      } else if (shape_style == TRIANGLE_STRIP) {
+         glFilledTriangleStrip( shape.size(), shape.data(), fill_color );
+         glTriangleStrip( shape.size(), shape.data(), stroke_color, xstrokeWeight);
+      } else if (shape_style == TRIANGLE_FAN) {
+         glFilledTriangleFan( shape.size(), shape.data(), fill_color );
+         glTriangleFan( shape.size(), shape.data(), stroke_color, xstrokeWeight);
+      } else if (type == CLOSE) {
+         glFilledPoly( shape.size(), shape.data(), fill_color );
+         //glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
+      } else if (shape_style == LINES) {
+         glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
       }
-   } else if (shape_style == TRIANGLE_STRIP) {
-      glFilledTriangleStrip( shape.size(), shape.data(), fill_color );
-      glTriangleStrip( shape.size(), shape.data(), stroke_color, xstrokeWeight);
-   } else if (type == CLOSE) {
-      glFilledPoly( shape.size(), shape.data(), fill_color );
-      glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
-   } else if (shape_style == LINES) {
-      glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
    }
 }
 

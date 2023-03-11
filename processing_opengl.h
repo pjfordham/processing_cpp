@@ -10,6 +10,8 @@
 #include <SDL2/SDL_opengl.h>
 
 #include "processing_math.h"
+#include "processing_earclipping.h"
+
 #include <fmt/core.h>
 
 bool anything_drawn = false;
@@ -192,6 +194,11 @@ void glFilledTriangleStrip(int points, PVector *p, SDL_Color color) {
 }
 
 void glFilledPoly(int points, PVector *p, SDL_Color color) {
+   std::vector<PVector> triangles = triangulatePolygon({p,p+points});
+   glFilledElement(GL_TRIANGLES,triangles.size(), triangles.data(),color);
+}
+
+void glFilledTriangleFan(int points, PVector *p, SDL_Color color) {
    glFilledElement(GL_TRIANGLE_FAN,points,p,color);
 }
 
@@ -234,22 +241,22 @@ void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
    std::vector<PVector> vertexBuffer;
 
    vertexBuffer = { vertices[0], vertices[1],vertices[2],vertices[3] };
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 
    vertexBuffer = { vertices[4], vertices[5],vertices[6],vertices[7] };
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 
    vertexBuffer = { vertices[0], vertices[1],vertices[4],vertices[5] };
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 
    vertexBuffer = { vertices[2], vertices[3],vertices[6],vertices[7] };
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 
    vertexBuffer = { vertices[1], vertices[5],vertices[6],vertices[2] };
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 
    vertexBuffer = { vertices[0], vertices[4],vertices[3],vertices[7] };
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 
 
 }
@@ -275,7 +282,7 @@ void _glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
       vertexBuffer.emplace_back(p2.x + cos(i+start_angle) * weight/2, p2.y + sin(i+start_angle) * weight/2);
    }
 
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 }
 
 void glCappedLine(PVector p1, PVector p2, SDL_Color color, int weight) {
@@ -296,7 +303,7 @@ void glCappedLine(PVector p1, PVector p2, SDL_Color color, int weight) {
    p[1].sub(end_offset);
    p[2].sub(end_offset);
    p[3].add(end_offset);
-   glFilledPoly(4, p, color);
+   glFilledTriangleFan(4, p, color);
 
 }
 
@@ -311,7 +318,7 @@ void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
    p[1].sub(normal);
    p[2].sub(normal);
    p[3].add(normal);
-   glFilledPoly(4, p, color);
+   glFilledTriangleFan(4, p, color);
 
 }
 
@@ -329,6 +336,14 @@ void glTriangleStrip(int points, PVector *p, SDL_Color color,int weight) {
    }
 }
 
+void glTriangleFan(int points, PVector *p, SDL_Color color,int weight) {
+   glLine( p[0], p[1], color, weight );
+   for (int i =2; i<points;++i) {
+      glLine( p[i-1], p[i], color, weight);
+      glLine( p[0], p[i], color, weight);
+   }
+}
+
 void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
    glLines(points, p, color, weight);
    glLine(p[points-1], p[0], color, weight);
@@ -340,7 +355,7 @@ void glFilledEllipse( PVector center, float xradius, float yradius, SDL_Color co
    for(float i = 0; i < TWO_PI; i += TWO_PI / NUMBER_OF_VERTICES){
       vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
    }
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 }
 
 void glLineEllipse( PVector center, float xradius, float yradius, SDL_Color color, int weight) {
@@ -360,7 +375,7 @@ void glFilledArc( PVector center, float xradius, float yradius, float start, flo
       vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
    }
    vertexBuffer.emplace_back(center.x + cos(end) * xradius, center.y + sin(end) * yradius);
-   glFilledPoly(vertexBuffer.size(), vertexBuffer.data(), color );
+   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 }
 
 void glLineArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int weight) {
