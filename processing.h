@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
+#include <SDL2/SDL_image.h>
 #include <algorithm>
 #include <chrono>
 #include <vector>
@@ -14,6 +15,7 @@
 #include "weak.h"
 #include "processing_math.h"
 #include "processing_java_compatability.h"
+#include "processing_pimage.h"
 
 SDL_Texture* backBuffer;
 
@@ -295,7 +297,7 @@ class color {
 
 const color BLACK = color(0);
 const color WHITE = color(255);
-const color GRAY = color(127);
+//const color GRAY = color(127);
 const color LIGHT_GRAY = color(192);
 const color DARK_GRAY = color(64);
 const color RED = color(255, 0, 0);
@@ -582,8 +584,8 @@ void updatePixels() {
    anything_drawn = true;
    int pitch = width * sizeof(Uint32);
    SDL_UpdateTexture(backBuffer, NULL, (void*) pixels, pitch);
-   _pixels.clear();
-   pixels = NULL;
+   //_pixels.clear();
+   //pixels = NULL;
 }
 
 void fill(float r,float g,  float b, float a) {
@@ -723,6 +725,17 @@ void text(std::string text, int x, int y, int width=-1, int height=-1) {
    SDL_FreeSurface(surface);
 }
 
+void image(const PImage &image, int x, int y) {
+   // Create a texture from the surface
+   SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, image.surface);
+   if (texture == nullptr) {
+      abort();
+    }
+   const SDL_Rect dstrect{x,y,image.width,image.height};
+   SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+}
+
+
 int frameCount = 0;
 int zframeCount = 0;
 int mouseX = 0;
@@ -749,6 +762,12 @@ int main()
    TTF_Font* font = NULL;
    if (TTF_Init() != 0) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
+      abort();
+   }
+
+   // initialize SDL_image
+   if (IMG_Init(IMG_INIT_JPG) != IMG_INIT_JPG) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init JPG failed: %s\n", TTF_GetError());
       abort();
    }
 
