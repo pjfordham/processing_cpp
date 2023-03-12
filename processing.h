@@ -15,6 +15,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_image.h>
 #include <algorithm>
 #include <chrono>
 #include <vector>
@@ -27,6 +28,7 @@
 #include "processing_math.h"
 #include "processing_java_compatability.h"
 #include "processing_opengl.h"
+#include "processing_pimage.h"
 
 bool render_to_backbuffer = true;
 
@@ -503,7 +505,7 @@ public:
 
 const color BLACK = color(0);
 const color WHITE = color(255);
-const color GRAY = color(127);
+//const color GRAY = color(127);
 const color LIGHT_GRAY = color(192);
 const color DARK_GRAY = color(64);
 const color RED = color(255, 0, 0);
@@ -779,6 +781,7 @@ void camera( float eyeX, float eyeY, float eyeZ,
    glTransform();
 }
 
+GLuint flatTextureShader;
 GLuint backBufferShader;
 GLuint backBufferVAO;
 
@@ -798,6 +801,11 @@ void size(int _width, int _height, int MODE = P2D) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
       abort();
    }
+
+   // Set OpenGL attributes
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
    // Create OpenGL context
    SDL_GLContext glContext = SDL_GL_CreateContext(window);
@@ -828,6 +836,8 @@ void size(int _width, int _height, int MODE = P2D) {
    Pmatrix = glGetUniformLocation(programID, "Pmatrix");
    Vmatrix = glGetUniformLocation(programID, "Vmatrix");
    Mmatrix = glGetUniformLocation(programID, "Mmatrix");
+
+   flatTextureShader = LoadShaders(ShadersFlatTexture());
 
    if (render_to_backbuffer) {
       if (!glewIsSupported("GL_EXT_framebuffer_object")) {
@@ -963,8 +973,8 @@ void updatePixels() {
    anything_drawn = true;
    // Write the pixel data to the framebuffer
    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-   _pixels.clear();
-   pixels = NULL;
+   // _pixels.clear();
+   // pixels = NULL;
 }
 
 void fill(float r,float g,  float b, float a) {
@@ -1038,7 +1048,7 @@ void textSize(int size) {
    currentFont = createFont(currentFont.first, size);
 }
 
-void text(std::string text, float x, float y, int width=-1, int height=-1) {
+void text(std::string text, float x, float y, float width=-1, float height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
                                                  (SDL_Color){ stroke_color.r,
                                                     stroke_color.g, stroke_color.b,
@@ -1047,15 +1057,26 @@ void text(std::string text, float x, float y, int width=-1, int height=-1) {
       printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
       abort();
    }
+   SDL_Surface* surface2 = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
+   if (surface2 == NULL) {
+      abort();
+   }
 
-   glTexturedQuad(PVector{x,y},
-                  PVector{x +surface->w,y},
-                  PVector{x+surface->w,y+surface->h},
-                  PVector{x, y+ surface->h},
-                  surface );
+   width = surface2->w;
+   height = surface2->h;
+
+   glTexturedQuad({x,y},{x+width,y},{x+width,y+height}, {x,y+height}, surface2);
 
    SDL_FreeSurface(surface);
+   SDL_FreeSurface(surface2);
 }
+
+void image(const PImage &image, float x, float y) {
+   float width = image.width;
+   float height = image.height;
+   glTexturedQuad({x,y},{x+width,y},{x+width,y+height}, {x,y+height}, image.surface);
+}
+
 
 int frameCount = 0;
 int zframeCount = 0;
@@ -1089,11 +1110,11 @@ int main(int argc, char* argv[]) {
       abort();
    }
 
-
-   // Set OpenGL attributes
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+   // initialize SDL_image
+   if (IMG_Init(IMG_INIT_JPG) != IMG_INIT_JPG) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init JPG failed: %s\n", TTF_GetError());
+      abort();
+   }
 
    setup();
 
@@ -1206,19 +1227,18 @@ int main(int argc, char* argv[]) {
                // Clear the color and depth buffers
                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+               glBindTexture(GL_TEXTURE_2D, backBufferID);
                glUseProgram(backBufferShader);
                glBindVertexArray(backBufferVAO);
                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
                glBindVertexArray(0);
+
+               glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+               glUseProgram(programID);
+
             }
 
             SDL_GL_SwapWindow(window);
-
-            if (render_to_backbuffer) {
-               glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-               glBindTexture(GL_TEXTURE_2D, backBufferID);
-               glUseProgram(programID);
-            }
 
             // Update the screen
             if (anything_drawn) {

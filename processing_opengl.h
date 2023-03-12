@@ -29,6 +29,19 @@ unsigned int next_power_of_2(unsigned int v)
    return v;
 }
 
+extern GLuint programID;
+extern GLuint flatTextureShader;
+extern Eigen::Matrix4f move_matrix; // Default is identity
+extern Eigen::Matrix4f projection_matrix; // Default is identity
+extern Eigen::Matrix4f view_matrix; // Default is identity
+
+void printMatrix4f(const Eigen::Matrix4f& mat) {
+    printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(0, 0), mat(0, 1), mat(0, 2), mat(0, 3));
+    printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(1, 0), mat(1, 1), mat(1, 2), mat(1, 3));
+    printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(2, 0), mat(2, 1), mat(2, 2), mat(2, 3));
+    printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
+}
+
 void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface *surface) {
    anything_drawn = true;
 
@@ -53,11 +66,6 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
    float xrange = (1.0 * surface->w) / newWidth;
    float yrange = (1.0 * surface->h) / newHeight;
 
-   glEnable(GL_TEXTURE_2D);
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-
    // Create an OpenGL texture from the SDL_Surface
    GLuint textureID;
    glGenTextures(1, &textureID);
@@ -70,24 +78,100 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
                 GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
 
-   glBegin(GL_QUADS);
-   glColor4f(1,1,1,1);
-   glTexCoord2f(0.0f, 0.0f);
-   glVertex2f(p0.x,p0.y);
-   glTexCoord2f(xrange, 0.0f);
-   glVertex2f(p1.x,p1.y);
-   glTexCoord2f(xrange, yrange);
-   glVertex2f(p2.x,p2.y);
-   glTexCoord2f(0.0f, yrange);
-   glVertex2f(p3.x,p3.y);
-   glEnd();
+   GLuint uSampler = glGetUniformLocation(flatTextureShader, "uSampler");
 
-   // Unbind the texture and free handle
+   int textureUnitIndex = 0;
+   glUniform1i(uSampler,0);
+   glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
+
+   Eigen::Vector4f vert0 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p0.x,p0.y,0,1};
+   Eigen::Vector4f vert1 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p1.x,p1.y,0,1};
+   Eigen::Vector4f vert2 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p2.x,p2.y,0,1};
+   Eigen::Vector4f vert3 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p3.x,p3.y,0,1};
+
+   std::vector<float> vertices{
+      vert0[0],  vert0[1], 0.0f,
+      vert1[0],  vert1[1], 0.0f,
+      vert2[0],  vert2[1], 0.0f,
+      vert3[0],  vert3[1], 0.0f,
+   };
+
+   std::vector<float> coords{
+      0.0f, 0.0f,
+      xrange, 0.0f,
+      xrange, yrange,
+      0.0f, yrange,
+   };
+
+   std::vector<unsigned short>  indices = {
+      0,1,2, 0,2,3,
+   };
+
+   GLuint localVAO;
+   // Create a vertex array object (VAO)
+   glGenVertexArrays(1, &localVAO);
+   glBindVertexArray(localVAO);
+
+   GLuint indexbuffer;
+   glGenBuffers(1, &indexbuffer);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+
+   GLuint vertexbuffer;
+   glGenBuffers(1, &vertexbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+   GLuint coordsbuffer;
+   glGenBuffers(1, &coordsbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+   glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(float), coords.data(), GL_STATIC_DRAW);
+
+
+   GLuint attribId = glGetAttribLocation(flatTextureShader, "position");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(flatTextureShader, "coords");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      2,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   glUseProgram(flatTextureShader);
+   glBindVertexArray(localVAO);
+   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+   glBindVertexArray(0);
    glBindTexture(GL_TEXTURE_2D, 0);
+
    glDeleteTextures(1, &textureID);
 
-   glDisable(GL_TEXTURE_2D);
+   glDeleteBuffers(1, &vertexbuffer);
+   glDeleteBuffers(1, &indexbuffer);
+
+   // Unbind the buffer objects and VAO
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+   glBindVertexArray(0);
+
    SDL_FreeSurface(newSurface);
+
+   glUseProgram(programID);
+
 }
 
 extern GLuint programID;
