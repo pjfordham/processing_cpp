@@ -16,6 +16,7 @@
 #include "processing_math.h"
 #include "processing_java_compatability.h"
 #include "processing_pimage.h"
+#include "processing_pshape.h"
 
 SDL_Texture* backBuffer;
 
@@ -108,14 +109,6 @@ SDL_Color fill_color{255,255,255,255};
 
 int xstrokeWeight = 1;
 
-enum{
-   POINTS = 0,
-   LINES = 1,
-};
-enum{
-   OPEN = 0,
-   CLOSE = 1,
-};
 
 
 void DrawAntialiasedCircle(SDL_Renderer* renderer, int x, int y, int r) {
@@ -210,53 +203,21 @@ void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4,
 }
 
 
-std::vector<PVector> shape;
-
-int shape_style = LINES;
+PShape _shape;
 
 void beginShape(int points = LINES) {
-   shape_style = points;
-   shape.clear();
+   _shape.style = points;
+   _shape.clear();
 }
 
 void vertex(float x, float y) {
-   shape.push_back({x, y});
+   _shape.vertices.push_back({x, y});
 }
 
 void endShape(int type = OPEN) {
    anything_drawn = true;
-
-   if (shape_style == POINTS) {
-      for (auto z : shape ) {
-         auto p = current_matrix.multiply( z );
-         if (xstrokeWeight == 1) {
-            SDL_SetRenderDrawColor(renderer, stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-            SDL_RenderDrawPoint(renderer, p.x, p.y);
-         } else {
-            filledEllipseRGBA(renderer, p.x, p.y, xstrokeWeight/2, xstrokeWeight/2,
-                              stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-         }
-      }
-   } else if (type == CLOSE) {
-      std::vector<Sint16> xs, ys;
-      for (auto z : shape ) {
-         auto p = current_matrix.multiply( z );
-         xs.push_back(p.x);
-         ys.push_back(p.y);
-      }
-
-      filledPolygonRGBA(renderer,xs.data(),ys.data(),xs.size(),
-                        fill_color.r,fill_color.g,fill_color.b,fill_color.a);
-      polygonRGBA(renderer,xs.data(),ys.data(),xs.size(),
-                  stroke_color.r,stroke_color.g,stroke_color.b,stroke_color.a);
-   } else if (shape_style == LINES) {
-      for (std::size_t i = 1; i < shape.size(); ++i) {
-         line(shape[i-1].x, shape[i-1].y, shape[i].x, shape[i].y);
-      }
-      if (type == CLOSE) {
-         line(shape[shape.size()-1].x, shape[shape.size()-1].y, shape[0].x, shape[0].y);
-      }
-   }
+   _shape.type = type;
+   _shape.draw();
 }
 
 int setFrameRate = 60;
@@ -733,6 +694,10 @@ void image(const PImage &image, int x, int y) {
     }
    const SDL_Rect dstrect{x,y,image.width,image.height};
    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+}
+
+void background(const PImage &bg) {
+   image(bg,0,0);
 }
 
 

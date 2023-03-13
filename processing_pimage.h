@@ -101,6 +101,10 @@ public:
       pixels =  (Uint32*)surface->pixels;
    }
 
+   int pixels_length() {
+      return width * height;
+   }
+
    void updatePixels() {
    }
    
