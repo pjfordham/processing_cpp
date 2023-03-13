@@ -29,6 +29,7 @@
 #include "processing_java_compatability.h"
 #include "processing_opengl.h"
 #include "processing_pimage.h"
+#include "processing_pshape.h"
 
 bool render_to_backbuffer = true;
 
@@ -164,24 +165,13 @@ void rectMode(int mode){
 SDL_Color stroke_color{255,255,255,255};
 SDL_Color fill_color{255,255,255,255};
 
-int xstrokeWeight = 1;
-
-enum{
-   POINTS = 0,
-   LINES = 1,
-   TRIANGLE_STRIP,
-   TRIANGLE_FAN,
-};
-enum{
-   OPEN = 0,
-   CLOSE = 1,
-};
-
 enum {
    ROUND = 0,
    SQUARE,
    PROJECT,
 };
+
+int xstrokeWeight = 1;
 
 int xendCap = ROUND;
 bool xSmoothing = true;
@@ -432,39 +422,20 @@ void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
 }
 
 
-std::vector<PVector> shape;
-
-int shape_style = LINES;
+PShape _shape;
 
 void beginShape(int points = LINES) {
-   shape_style = points;
-   shape.clear();
+   _shape.style = points;
+   _shape.clear();
 }
 
 void vertex(float x, float y) {
-   shape.push_back({x, y});
+   _shape.vertices.push_back({x, y});
 }
 
 void endShape(int type = OPEN) {
-
-   if (shape.size() > 0) {
-      if (shape_style == POINTS) {
-         for (auto z : shape ) {
-            glFilledEllipse(z, xstrokeWeight, xstrokeWeight,stroke_color);
-         }
-      } else if (shape_style == TRIANGLE_STRIP) {
-         glFilledTriangleStrip( shape.size(), shape.data(), fill_color );
-         glTriangleStrip( shape.size(), shape.data(), stroke_color, xstrokeWeight);
-      } else if (shape_style == TRIANGLE_FAN) {
-         glFilledTriangleFan( shape.size(), shape.data(), fill_color );
-         glTriangleFan( shape.size(), shape.data(), stroke_color, xstrokeWeight);
-      } else if (type == CLOSE) {
-         glFilledPoly( shape.size(), shape.data(), fill_color );
-         //glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
-      } else if (shape_style == LINES) {
-         glLinePoly( shape.size(), shape.data(), stroke_color, xstrokeWeight);
-      }
-   }
+   _shape.type = type;
+   _shape.draw();
 }
 
 int setFrameRate = 60;
@@ -1075,6 +1046,10 @@ void image(const PImage &image, float x, float y) {
    float width = image.width;
    float height = image.height;
    glTexturedQuad({x,y},{x+width,y},{x+width,y+height}, {x,y+height}, image.surface);
+}
+
+void background(const PImage &bg) {
+   image(bg,0,0);
 }
 
 
