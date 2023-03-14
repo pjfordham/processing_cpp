@@ -11,6 +11,36 @@
 
 #include <fmt/core.h>
 
+inline std::tuple<const char*, const char*, const char*> ShadersFlatTexture() {
+   const char *vertexShader = R"glsl(
+      #version 330
+      in vec3 position;
+      in vec2 coords;
+      out vec2 vTexture;
+      void main()
+      {
+          gl_Position = vec4(position, 1.0);
+          vTexture = coords;
+      }
+)glsl";
+
+   const char *geometryShader = NULL;
+
+   const char *fragmentShader = R"glsl(
+      #version 330
+      in vec2 vTexture;
+      uniform sampler2D uSampler;
+      out vec4 fragColor;
+      void main()
+      {
+          vec4 texelColor = texture2D(uSampler, vTexture);
+          fragColor = vec4(texelColor.rgb, 1.0);
+      }
+)glsl";
+
+   return { vertexShader, geometryShader, fragmentShader };
+}
+
 inline std::tuple<const char*, const char*, const char*> ShadersFlat() {
    const char *vertexShader = R"glsl(
       #version 330
@@ -136,10 +166,11 @@ inline GLuint LoadShaders(std::tuple<const char*, const char*, const char*> in){
    glShaderSource(VertexShaderID, 1, &vertexShader , NULL);
    glCompileShader(VertexShaderID);
 
-   // fmt::print("Compiling geometry shader\n");
-   glShaderSource(GeometryShaderID, 1, &geometryShader , NULL);
-   glCompileShader(GeometryShaderID);
-
+   if (geometryShader) {
+      // fmt::print("Compiling geometry shader\n");
+      glShaderSource(GeometryShaderID, 1, &geometryShader , NULL);
+      glCompileShader(GeometryShaderID);
+   }
    // fmt::print("Compiling fragment shader\n");
    glShaderSource(FragmentShaderID, 1, &fragmentShader , NULL);
    glCompileShader(FragmentShaderID);
@@ -156,13 +187,15 @@ inline GLuint LoadShaders(std::tuple<const char*, const char*, const char*> in){
       fmt::print("{}\n", &VertexShaderErrorMessage[0]);
    }
 
-   // Check Geometry Shader
-   glGetShaderiv(GeometryShaderID, GL_COMPILE_STATUS, &Result);
-   glGetShaderiv(GeometryShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-   if ( InfoLogLength > 0 ){
-      std::vector<char> GeometryShaderErrorMessage(InfoLogLength+1);
-      glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &GeometryShaderErrorMessage[0]);
-      fmt::print("{}\n", &GeometryShaderErrorMessage[0]);
+   if (geometryShader) {
+      // Check Geometry Shader
+      glGetShaderiv(GeometryShaderID, GL_COMPILE_STATUS, &Result);
+      glGetShaderiv(GeometryShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+      if ( InfoLogLength > 0 ){
+         std::vector<char> GeometryShaderErrorMessage(InfoLogLength+1);
+         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &GeometryShaderErrorMessage[0]);
+         fmt::print("{}\n", &GeometryShaderErrorMessage[0]);
+      }
    }
 
    // Check Fragment Shader
@@ -178,7 +211,9 @@ inline GLuint LoadShaders(std::tuple<const char*, const char*, const char*> in){
    // fmt::print("Linking program\n");
    GLuint ProgramID = glCreateProgram();
    glAttachShader(ProgramID, VertexShaderID);
-   glAttachShader(ProgramID, GeometryShaderID);
+   if (geometryShader) {
+      glAttachShader(ProgramID, GeometryShaderID);
+   }
    glAttachShader(ProgramID, FragmentShaderID);
    glLinkProgram(ProgramID);
 
@@ -196,7 +231,9 @@ inline GLuint LoadShaders(std::tuple<const char*, const char*, const char*> in){
    glDetachShader(ProgramID, FragmentShaderID);
 
    glDeleteShader(VertexShaderID);
-   glDeleteShader(GeometryShaderID);
+   if (geometryShader) {
+      glDeleteShader(GeometryShaderID);
+   }
    glDeleteShader(FragmentShaderID);
 
    return ProgramID;

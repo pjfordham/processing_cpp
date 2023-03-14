@@ -28,7 +28,7 @@
 #include "processing_java_compatability.h"
 #include "processing_opengl.h"
 
-bool render_to_backbuffer = false;
+bool render_to_backbuffer = true;
 
 SDL_Texture* backBuffer;
 
@@ -779,6 +779,8 @@ void camera( float eyeX, float eyeY, float eyeZ,
    glTransform();
 }
 
+GLuint backBufferShader;
+GLuint backBufferVAO;
 
 void size(int _width, int _height, int MODE = P2D) {
    // Create a window
@@ -833,6 +835,8 @@ void size(int _width, int _height, int MODE = P2D) {
          abort();
       }
 
+      backBufferShader = LoadShaders(ShadersFlatTexture());
+
       // Create a framebuffer object
       glGenFramebuffers(1, &fboID);
       glBindFramebuffer(GL_FRAMEBUFFER, fboID);
@@ -856,10 +860,85 @@ void size(int _width, int _height, int MODE = P2D) {
 
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+      GLuint uSampler = glGetUniformLocation(backBufferShader, "uSampler");
+
+      int textureUnitIndex = 0;
+      glUniform1i(uSampler,0);
+      glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
+      glBindTexture(GL_TEXTURE_2D, backBufferID);
+
+      std::vector<float> vertices{
+         -1.0f, -1.0f, 0.0f,
+         1.0f, -1.0f, 0.0f,
+         1.0f,  1.0f, 0.0f,
+         -1.0f,  1.0f, 0.0f,
+      };
+
+      // might not need this either
+      // Invert texture on y-axis to correct
+      std::vector<float> coords{
+         0.0f, 1.0f,
+         1.0f, 1.0f,
+         1.0f, 0.0f,
+         0.0f, 0.0f,
+      };
+
+      std::vector<unsigned short>  indices = {
+         0,1,2, 0,2,3,
+      };
+
+      // Create a vertex array object (VAO)
+      glGenVertexArrays(1, &backBufferVAO);
+      glBindVertexArray(backBufferVAO);
+
+      GLuint indexbuffer;
+      glGenBuffers(1, &indexbuffer);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+
+      GLuint vertexbuffer;
+      glGenBuffers(1, &vertexbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+      GLuint coordsbuffer;
+      glGenBuffers(1, &coordsbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+      glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(float), coords.data(), GL_STATIC_DRAW);
+
+
+      GLuint attribId = glGetAttribLocation(backBufferShader, "position");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      attribId = glGetAttribLocation(backBufferShader, "coords");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         2,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      //glDeleteBuffers(1, &vertexbuffer);
+      //glDeleteBuffers(1, &indexbuffer);
+
    }
 
    if (MODE == P2D) {
-      view_matrix = TranslateMatrix(PVector{-1,+1,0}) * ScaleMatrix(PVector{2.0f/width, -2.0f/height,1.0});
+      view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
       projection_matrix = Eigen::Matrix4f::Identity();
    } else {
       view_matrix = Eigen::Matrix4f::Identity();
@@ -877,13 +956,13 @@ void loadPixels() {
    _pixels.resize(width*height);
    pixels =  _pixels.data();
    // Read the pixel data from the framebuffer into the array
-   glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 }
 
 void updatePixels() {
    anything_drawn = true;
    // Write the pixel data to the framebuffer
-   glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
    _pixels.clear();
    pixels = NULL;
 }
@@ -1124,39 +1203,13 @@ int main(int argc, char* argv[]) {
             if (render_to_backbuffer) {
                glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-               // Load the identity matrices
-               glTransformClear();
-
-               glEnable(GL_TEXTURE_2D);
                // Clear the color and depth buffers
                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-               glBindTexture(GL_TEXTURE_2D, backBufferID);
-               glDisable(GL_BLEND);
 
-               GLfloat vertices[][2] = {
-                  { -1.0f, -1.0f},
-                  {  1.0f, -1.0f},
-                  {  1.0f,  1.0f},
-                  { -1.0f,  1.0f},
-               };
-
-               // Invert texture on y-axis to correct
-               GLfloat texCoords[][2] = {
-                  {0.0f, 1.0f},
-                  {1.0f, 1.0f},
-                  {1.0f, 0.0f},
-                  {0.0f, 0.0f},
-               };
-
-               glBegin(GL_QUADS);
-               glColor4f(1,1,1,1);
-               for (int i = 0 ; i< 4; ++i ){
-                  glTexCoord2f(texCoords[i][0], texCoords[i][1]);
-                  glVertex2f(vertices[i][0],vertices[i][1]);
-               }
-               glEnd();
-               glDisable(GL_TEXTURE_2D);
-               glEnable(GL_BLEND);
+               glUseProgram(backBufferShader);
+               glBindVertexArray(backBufferVAO);
+               glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+               glBindVertexArray(0);
             }
 
             SDL_GL_SwapWindow(window);
@@ -1164,6 +1217,7 @@ int main(int argc, char* argv[]) {
             if (render_to_backbuffer) {
                glBindFramebuffer(GL_FRAMEBUFFER, fboID);
                glBindTexture(GL_TEXTURE_2D, backBufferID);
+               glUseProgram(programID);
             }
 
             // Update the screen
