@@ -287,7 +287,7 @@ void glFilledTriangleFan(int points, PVector *p, SDL_Color color) {
 }
 
 
-void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
+void _glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
    // Compute direction vector of line
    PVector direction = p2 - p1;
@@ -345,7 +345,7 @@ void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
 }
 
-void _glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
+void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
    PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
    normal.normalize();
