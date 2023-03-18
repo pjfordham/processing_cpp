@@ -1052,13 +1052,16 @@ void background(const PImage &bg) {
    image(bg,0,0);
 }
 
-
 int frameCount = 0;
 int zframeCount = 0;
 int mouseX = 0;
 int mouseY = 0;
 int pmouseX = 0;
 int pmouseY = 0;
+
+void redraw() {
+   frameCount = 0;
+}
 
 char key = 0;
 int keyCode = 0;
