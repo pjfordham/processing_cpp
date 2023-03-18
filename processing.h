@@ -468,9 +468,9 @@ public:
    operator unsigned int() {
       return
          ((unsigned char)a << 24) |
-         ((unsigned char)r << 16) |
+         ((unsigned char)b << 16) |
          ((unsigned char)g <<  8) |
-         ((unsigned char)b <<  0);
+         ((unsigned char)r <<  0);
    }
 };
 

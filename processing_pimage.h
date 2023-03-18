@@ -33,6 +33,8 @@ float alpha(unsigned int pixel) {
    return (pixel >> 24) & 0xFF;
 }
 
+enum { /*RGB=0,*/ ARGB = 1,  ALPHA=2 };
+
 class PImage {
 public:
    int width;
@@ -93,7 +95,7 @@ public:
          abort();
       }
       // Clear the surface to black
-      SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 255, 255, 255));
+      SDL_FillRect(surface, NULL, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
       pixels =  (Uint32*)surface->pixels;
    }
 
