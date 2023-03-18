@@ -452,8 +452,7 @@ void glLineEllipse( PVector center, float xradius, float yradius, SDL_Color colo
    for(float i = 0; i < TWO_PI; i += TWO_PI / NUMBER_OF_VERTICES){
       vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
    }
-   vertexBuffer.push_back(vertexBuffer[0]);
-   glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
+   glClosedLinePoly(vertexBuffer.size(),vertexBuffer.data(),color,weight);
 }
 
 void glFilledArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color ) {
