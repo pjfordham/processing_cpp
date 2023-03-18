@@ -1028,7 +1028,7 @@ void text(std::string text, float x, float y, float width=-1, float height=-1) {
       printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
       abort();
    }
-   SDL_Surface* surface2 = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
+   SDL_Surface* surface2 = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
    if (surface2 == NULL) {
       abort();
    }

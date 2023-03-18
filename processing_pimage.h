@@ -51,7 +51,7 @@ public:
    PImage(const PImage &x){
       width = x.width;
       height = x.height;
-      surface = SDL_ConvertSurfaceFormat(x.surface, SDL_PIXELFORMAT_ARGB8888, 0);
+      surface = SDL_ConvertSurfaceFormat(x.surface, SDL_PIXELFORMAT_ABGR8888, 0);
       pixels = (Uint32 *)surface->pixels;
    }
 
@@ -77,7 +77,7 @@ public:
       if (loaded == NULL) {
          abort();
       }
-      surface = SDL_ConvertSurfaceFormat(loaded, SDL_PIXELFORMAT_ARGB8888, 0);
+      surface = SDL_ConvertSurfaceFormat(loaded, SDL_PIXELFORMAT_ABGR8888, 0);
       if (surface == NULL) {
          abort();
       }
@@ -88,7 +88,7 @@ public:
    }
 
    PImage(int w, int h, int mode) : width(w), height(h){
-      surface = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_ARGB8888);
+      surface = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_ABGR8888);
       if (surface == NULL) {
          abort();
       }
