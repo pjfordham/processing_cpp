@@ -1108,9 +1108,7 @@ int main(int argc, char* argv[]) {
          if (event.type == SDL_QUIT) {
             quit = true;
          } else if (event.type == SDL_MOUSEMOTION ) {
-            pmouseX = mouseX;
-            pmouseY = mouseY;
-            mouseX = event.motion.x;
+           mouseX = event.motion.x;
             mouseY = event.motion.y;
             if (mousePressedb) {
                mouseDragged();
@@ -1195,6 +1193,10 @@ int main(int argc, char* argv[]) {
             glTransform();
 
             draw();
+
+            // Only update once per frame so we don't miss positions
+            pmouseX = mouseX;
+            pmouseY = mouseY;
 
             if (render_to_backbuffer) {
                glBindFramebuffer(GL_FRAMEBUFFER, 0);
