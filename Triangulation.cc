@@ -74,6 +74,6 @@ void draw() {
    for (int i = 0 ; i<polygon.size() ; i++) {
       vertex(polygon[i].x,polygon[i].y);
    }
-   endShape();
+   endShape(CLOSE);
 
 }
