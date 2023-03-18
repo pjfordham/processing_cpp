@@ -412,13 +412,13 @@ void point(float x, float y) {
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
    PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4} };
    glFilledTriangleFan(4,points, fill_color);
-   glLinePoly(4, points, stroke_color, xstrokeWeight );
+   glClosedLinePoly(4, points, stroke_color, xstrokeWeight );
 }
 
 void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
    PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3} };
    glFilledTriangleFan(3,points, fill_color);
-   glLinePoly(3, points, stroke_color, xstrokeWeight );
+   glClosedLinePoly(3, points, stroke_color, xstrokeWeight );
 }
 
 

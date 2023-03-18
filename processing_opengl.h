@@ -428,9 +428,13 @@ void glTriangleFan(int points, PVector *p, SDL_Color color,int weight) {
    }
 }
 
-void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
+void glClosedLinePoly(int points, PVector *p, SDL_Color color, int weight) {
    glLines(points, p, color, weight);
    glLine(p[points-1], p[0], color, weight);
+}
+
+void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
+   glLines(points, p, color, weight);
 }
 
 void glFilledEllipse( PVector center, float xradius, float yradius, SDL_Color color ) {

@@ -70,11 +70,13 @@ public:
          } else if (style == TRIANGLE_FAN) {
             glFilledTriangleFan( vertices.size(), vertices.data(), fill_color );
             glTriangleFan( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
-         } else if (type == CLOSE) {
-            glFilledPoly( vertices.size(), vertices.data(), fill_color );
-            //glLinePoly( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
          } else if (style == LINES) {
-            glLinePoly( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
+            if (type == CLOSE) {
+               glFilledPoly( vertices.size(), vertices.data(), fill_color );
+               glClosedLinePoly( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
+            } else {
+               glLinePoly( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
+            }
          }
       }
    }
