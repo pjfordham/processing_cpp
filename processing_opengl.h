@@ -437,13 +437,114 @@ void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
    glLines(points, p, color, weight);
 }
 
-void glFilledEllipse( PVector center, float xradius, float yradius, SDL_Color color ) {
-   int NUMBER_OF_VERTICES=32;
-   std::vector<PVector> vertexBuffer;
-   for(float i = 0; i < TWO_PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
-   }
-   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+extern GLuint circleID;
+
+void glEllipse( PVector center, float xradius, float yradius, SDL_Color color, SDL_Color stroke_color, int stroke_weight ) {
+   anything_drawn = true;
+
+   std::vector<float> colors{ color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
+   std::vector<float> vertices{ center.x, center.y, center.z };
+   std::vector<float> radius{ xradius, yradius };
+   std::vector<unsigned short> indices{ 0 };
+
+   GLuint VAO;
+   glGenVertexArrays(1, &VAO);
+   glBindVertexArray(VAO);
+
+   GLuint vertexbuffer;
+   glGenBuffers(1, &vertexbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+   GLuint radiusbuffer;
+   glGenBuffers(1, &radiusbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, radiusbuffer);
+   glBufferData(GL_ARRAY_BUFFER, radius.size() * sizeof(float), radius.data(), GL_STATIC_DRAW);
+
+   GLuint indexbuffer;
+   glGenBuffers(1, &indexbuffer);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+
+   GLuint colorbuffer;
+   glGenBuffers(1, &colorbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+
+   GLuint attribId = glGetAttribLocation(circleID, "radius");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, radiusbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      2,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(circleID, "position");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(circleID, "color");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      4,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   glUseProgram(circleID);
+
+   // Get a handle for our "MVP" uniform
+   GLuint Pmatrix = glGetUniformLocation(circleID, "Pmatrix");
+   GLuint Vmatrix = glGetUniformLocation(circleID, "Vmatrix");
+   GLuint Mmatrix = glGetUniformLocation(circleID, "Mmatrix");
+
+   GLuint StrokeWeight = glGetUniformLocation(circleID, "strokeWeight");
+   GLuint StrokeColor = glGetUniformLocation(circleID, "strokeColor");
+
+   float strokeColor[4] = {
+      stroke_color.r/255.0f,
+      stroke_color.g/255.0f,
+      stroke_color.b/255.0f,
+      stroke_color.a/255.0f
+   };
+   float strokeWeight = stroke_weight ;
+
+   glUniform4fv(StrokeColor, 1, &strokeColor[0]);
+   glUniform1fv(StrokeWeight, 1,&strokeWeight);
+
+   // Send our transformation to the currently bound shader,
+   glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+   glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+   glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+
+   glDrawElements(GL_POINTS, indices.size(), GL_UNSIGNED_SHORT, 0);
+   glUseProgram(programID);
+
+   glDeleteBuffers(1, &vertexbuffer);
+   glDeleteBuffers(1, &indexbuffer);
+   glDeleteBuffers(1, &colorbuffer);
+   glDeleteBuffers(1, &radiusbuffer);
+
+   // Unbind the buffer objects and VAO
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+   glBindVertexArray(0);
 }
 
 void glLineEllipse( PVector center, float xradius, float yradius, SDL_Color color, int weight) {

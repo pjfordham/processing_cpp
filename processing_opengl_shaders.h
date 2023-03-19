@@ -11,6 +11,101 @@
 
 #include <fmt/core.h>
 
+inline std::tuple<const char*, const char*, const char*> CircleShaderFlat() {
+  const char *vertexShader = R"glsl(
+      #version 330
+      in vec2 radius;
+      in vec3 position;
+      in vec4 color;
+      out vec4 gColor;
+      out vec2 gRadius;
+      void main()
+      {
+          gl_Position = vec4(position, 1.0);
+          gColor = color;
+          gRadius = radius;
+      }
+)glsl";
+
+  const char *geometryShader = R"glsl(
+      #version 330
+      #define PI_BY_32 (3.1415926535897932384626433832795/16.0)
+      in vec4 gColor[];
+      in vec2 gRadius[];
+      layout(points) in;
+      layout(triangle_strip, max_vertices=150) out;
+      out vec4 vColor;
+      uniform mat4 Pmatrix;
+      uniform mat4 Vmatrix;
+      uniform mat4 Mmatrix;
+      uniform vec4 strokeColor;
+      uniform float strokeWeight;
+
+      vec4 ellipse_point(vec4 center, int index, vec2 radius) {
+          float angle = float(index) * PI_BY_32;
+          return vec4( center.x + radius.x * sin(angle),
+                       center.y + radius.y * cos(angle),
+                       center.zw);
+      }
+
+      void main() {
+           mat4 Tmatrix = Pmatrix * Vmatrix * Mmatrix;
+           vec4 center = Tmatrix * gl_in[0].gl_Position;
+
+           for(int i = 0; i < 32; i++) {
+               gl_Position = center;
+               vColor = gColor[0];
+               EmitVertex();
+
+               vColor = gColor[0];
+               gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, gRadius[0]);
+               EmitVertex();
+           }
+
+           gl_Position = center;
+           vColor = gColor[0];
+           EmitVertex();
+
+           gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, 0, gRadius[0]);
+           vColor = gColor[0];
+           EmitVertex();
+
+           EndPrimitive();
+
+           if (strokeWeight > 0 && strokeColor != gColor[0]) {
+
+               vec2 outerRadius = gRadius[0] + strokeWeight / 2.0;
+               vec2 innerRadius = gRadius[0] - strokeWeight / 2.0;
+
+               for(int i = 0; i <= 32; i++) {
+                   gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, outerRadius);
+                   vColor = strokeColor;
+                   EmitVertex();
+
+                   gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, innerRadius);
+                   vColor = strokeColor;
+                   EmitVertex();
+               }
+
+               EndPrimitive();
+          }
+
+      }
+)glsl";
+
+   const char *fragmentShader = R"glsl(
+      #version 330
+      in vec4 vColor;
+      out vec4 fragColor;
+      void main()
+      {
+          fragColor = vColor;
+      }
+)glsl";
+
+   return { vertexShader, geometryShader, fragmentShader };
+}
+
 inline std::tuple<const char*, const char*, const char*> ShadersFlatTexture() {
    const char *vertexShader = R"glsl(
       #version 330

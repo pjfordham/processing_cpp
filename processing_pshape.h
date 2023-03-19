@@ -62,7 +62,7 @@ public:
       if (vertices.size() > 0) {
          if (style == POINTS) {
             for (auto z : vertices ) {
-               glFilledEllipse(z, xstrokeWeight, xstrokeWeight,stroke_color);
+               glEllipse(z, xstrokeWeight, xstrokeWeight,stroke_color,stroke_color,0);
             }
          } else if (style == TRIANGLE_STRIP) {
             glFilledTriangleStrip( vertices.size(), vertices.data(), fill_color );

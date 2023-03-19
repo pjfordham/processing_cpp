@@ -87,6 +87,8 @@ Eigen::Matrix4f move_matrix; // Default is identity
 Eigen::Matrix4f projection_matrix; // Default is identity
 Eigen::Matrix4f view_matrix; // Default is identity
 
+GLuint circleID;
+
 GLuint programID;
 GLuint Pmatrix;
 GLuint Vmatrix;
@@ -186,8 +188,7 @@ void ellipse(float x, float y, float width, float height) {
       width /=2;
       height /=2;
    }
-   glFilledEllipse(PVector{x,y}, width, width, fill_color);
-   glLineEllipse(PVector{x,y}, width, width, stroke_color, xstrokeWeight);
+   glEllipse(PVector{x,y}, width, width, fill_color, stroke_color, xstrokeWeight);
 }
 
 void ellipse(float x, float y, float radius) {
@@ -406,7 +407,7 @@ void box(float size) {
 }
 
 void point(float x, float y) {
-   glFilledEllipse(PVector{x,y},xstrokeWeight,xstrokeWeight, stroke_color);
+   glEllipse(PVector{x,y},xstrokeWeight,xstrokeWeight, stroke_color, stroke_color,0);
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
@@ -797,6 +798,7 @@ void size(int _width, int _height, int MODE = P2D) {
    if (MODE == P2D) {
       glDisable(GL_DEPTH_TEST);
       programID = LoadShaders(ShadersFlat());
+      circleID = LoadShaders(CircleShaderFlat());
    } else {
       glEnable(GL_DEPTH_TEST);
       programID = LoadShaders(Shaders3D());
