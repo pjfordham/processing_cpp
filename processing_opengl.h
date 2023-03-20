@@ -439,13 +439,25 @@ void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
 
 extern GLuint circleID;
 
-void glEllipse( PVector center, float xradius, float yradius, SDL_Color color, SDL_Color stroke_color, int stroke_weight ) {
-   anything_drawn = true;
+std::vector<float> circle_fill_color;
+std::vector<float> circle_stroke_color;
+std::vector<float> circle_vertices;
+std::vector<float> circle_radius;
+std::vector<float> circle_stroke_weight;
+std::vector<unsigned short> circle_indices;
 
-   std::vector<float> colors{ color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
-   std::vector<float> vertices{ center.x, center.y, center.z };
-   std::vector<float> radius{ xradius, yradius };
-   std::vector<unsigned short> indices{ 0 };
+void glEllipse( PVector center, float xradius, float yradius, SDL_Color fill_color, SDL_Color stroke_color, int stroke_weight ) {
+   circle_stroke_color.insert(circle_stroke_color.end(), { stroke_color.r / 255.0f, stroke_color.g / 255.0f, stroke_color.b / 255.0f, stroke_color.a / 255.0f });
+   circle_fill_color.insert(circle_fill_color.end(), { fill_color.r / 255.0f, fill_color.g / 255.0f, fill_color.b / 255.0f, fill_color.a / 255.0f });
+   circle_vertices.insert(circle_vertices.end(),{ center.x, center.y, center.z });
+   circle_radius.insert(circle_radius.end(),{ xradius, yradius });
+   circle_stroke_weight.insert(circle_stroke_weight.end(),{ stroke_weight * 1.0f });
+   circle_indices.insert(circle_indices.end(),{ (unsigned short) circle_indices.size() });
+   return;
+}
+
+void glEllipseDump() {
+   anything_drawn = true;
 
    GLuint VAO;
    glGenVertexArrays(1, &VAO);
@@ -454,22 +466,32 @@ void glEllipse( PVector center, float xradius, float yradius, SDL_Color color, S
    GLuint vertexbuffer;
    glGenBuffers(1, &vertexbuffer);
    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+   glBufferData(GL_ARRAY_BUFFER, circle_vertices.size() * sizeof(float), circle_vertices.data(), GL_STATIC_DRAW);
 
    GLuint radiusbuffer;
    glGenBuffers(1, &radiusbuffer);
    glBindBuffer(GL_ARRAY_BUFFER, radiusbuffer);
-   glBufferData(GL_ARRAY_BUFFER, radius.size() * sizeof(float), radius.data(), GL_STATIC_DRAW);
+   glBufferData(GL_ARRAY_BUFFER, circle_radius.size() * sizeof(float), circle_radius.data(), GL_STATIC_DRAW);
+
+   GLuint strokeweightbuffer;
+   glGenBuffers(1, &strokeweightbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, strokeweightbuffer);
+   glBufferData(GL_ARRAY_BUFFER, circle_stroke_weight.size() * sizeof(float), circle_stroke_weight.data(), GL_STATIC_DRAW);
 
    GLuint indexbuffer;
    glGenBuffers(1, &indexbuffer);
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, circle_indices.size() * sizeof(unsigned short), circle_indices.data(), GL_STATIC_DRAW);
 
-   GLuint colorbuffer;
-   glGenBuffers(1, &colorbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+   GLuint fillcolorbuffer;
+   glGenBuffers(1, &fillcolorbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, fillcolorbuffer);
+   glBufferData(GL_ARRAY_BUFFER, circle_fill_color.size() * sizeof(float), circle_fill_color.data(), GL_STATIC_DRAW);
+
+   GLuint strokecolorbuffer;
+   glGenBuffers(1, &strokecolorbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, strokecolorbuffer);
+   glBufferData(GL_ARRAY_BUFFER, circle_stroke_color.size() * sizeof(float), circle_stroke_color.data(), GL_STATIC_DRAW);
 
    GLuint attribId = glGetAttribLocation(circleID, "radius");
    glEnableVertexAttribArray(attribId);
@@ -495,9 +517,33 @@ void glEllipse( PVector center, float xradius, float yradius, SDL_Color color, S
       (void*)0                          // array buffer offset
       );
 
-   attribId = glGetAttribLocation(circleID, "color");
+   attribId = glGetAttribLocation(circleID, "strokeWeight");
    glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, strokeweightbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      1,                                // size
+      GL_FLOAT,                           // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(circleID, "fillColor");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, fillcolorbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      4,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(circleID, "strokeColor");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, strokecolorbuffer);
    glVertexAttribPointer(
       attribId,                         // attribute
       4,                                // size
@@ -514,37 +560,32 @@ void glEllipse( PVector center, float xradius, float yradius, SDL_Color color, S
    GLuint Vmatrix = glGetUniformLocation(circleID, "Vmatrix");
    GLuint Mmatrix = glGetUniformLocation(circleID, "Mmatrix");
 
-   GLuint StrokeWeight = glGetUniformLocation(circleID, "strokeWeight");
-   GLuint StrokeColor = glGetUniformLocation(circleID, "strokeColor");
-
-   float strokeColor[4] = {
-      stroke_color.r/255.0f,
-      stroke_color.g/255.0f,
-      stroke_color.b/255.0f,
-      stroke_color.a/255.0f
-   };
-   float strokeWeight = stroke_weight ;
-
-   glUniform4fv(StrokeColor, 1, &strokeColor[0]);
-   glUniform1fv(StrokeWeight, 1,&strokeWeight);
-
    // Send our transformation to the currently bound shader,
    glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
    glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
    glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 
-   glDrawElements(GL_POINTS, indices.size(), GL_UNSIGNED_SHORT, 0);
+   glDrawElements(GL_POINTS, circle_indices.size(), GL_UNSIGNED_SHORT, 0);
    glUseProgram(programID);
 
    glDeleteBuffers(1, &vertexbuffer);
    glDeleteBuffers(1, &indexbuffer);
-   glDeleteBuffers(1, &colorbuffer);
+   glDeleteBuffers(1, &fillcolorbuffer);
+   glDeleteBuffers(1, &strokecolorbuffer);
+   glDeleteBuffers(1, &strokeweightbuffer);
    glDeleteBuffers(1, &radiusbuffer);
 
    // Unbind the buffer objects and VAO
    glBindBuffer(GL_ARRAY_BUFFER, 0);
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
    glBindVertexArray(0);
+
+   circle_fill_color.clear();
+   circle_stroke_color.clear();
+   circle_stroke_weight.clear();
+   circle_vertices.clear();
+   circle_radius.clear();
+   circle_indices.clear();
 }
 
 void glLineEllipse( PVector center, float xradius, float yradius, SDL_Color color, int weight) {

@@ -16,13 +16,20 @@ inline std::tuple<const char*, const char*, const char*> CircleShaderFlat() {
       #version 330
       in vec2 radius;
       in vec3 position;
-      in vec4 color;
-      out vec4 gColor;
+      in vec4 fillColor;
+      in vec4 strokeColor;
+      in float strokeWeight;
+      out vec4 gFillColor;
+      out vec4 gStrokeColor;
       out vec2 gRadius;
+      out float gStrokeWeight;
+
       void main()
       {
           gl_Position = vec4(position, 1.0);
-          gColor = color;
+          gFillColor = fillColor;
+          gStrokeColor = strokeColor;
+          gStrokeWeight = strokeWeight;
           gRadius = radius;
       }
 )glsl";
@@ -30,16 +37,16 @@ inline std::tuple<const char*, const char*, const char*> CircleShaderFlat() {
   const char *geometryShader = R"glsl(
       #version 330
       #define PI_BY_32 (3.1415926535897932384626433832795/16.0)
-      in vec4 gColor[];
+      in vec4 gFillColor[];
+      in vec4 gStrokeColor[];
       in vec2 gRadius[];
+      in float gStrokeWeight[];
       layout(points) in;
       layout(triangle_strip, max_vertices=150) out;
       out vec4 vColor;
       uniform mat4 Pmatrix;
       uniform mat4 Vmatrix;
       uniform mat4 Mmatrix;
-      uniform vec4 strokeColor;
-      uniform float strokeWeight;
 
       vec4 ellipse_point(vec4 center, int index, vec2 radius) {
           float angle = float(index) * PI_BY_32;
@@ -52,43 +59,35 @@ inline std::tuple<const char*, const char*, const char*> CircleShaderFlat() {
            mat4 Tmatrix = Pmatrix * Vmatrix * Mmatrix;
            vec4 center = Tmatrix * gl_in[0].gl_Position;
 
-           for(int i = 0; i < 32; i++) {
+           for(int i = 0; i <= 32; i++) {
+               vColor = gFillColor[0];
                gl_Position = center;
-               vColor = gColor[0];
                EmitVertex();
 
-               vColor = gColor[0];
+               vColor = gFillColor[0];
                gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, gRadius[0]);
                EmitVertex();
            }
 
-           gl_Position = center;
-           vColor = gColor[0];
-           EmitVertex();
-
-           gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, 0, gRadius[0]);
-           vColor = gColor[0];
-           EmitVertex();
-
            EndPrimitive();
 
-           if (strokeWeight > 0 && strokeColor != gColor[0]) {
+           if (gStrokeWeight[0] > 0 && gStrokeColor[0] != gFillColor[0]) {
 
-               vec2 outerRadius = gRadius[0] + strokeWeight / 2.0;
-               vec2 innerRadius = gRadius[0] - strokeWeight / 2.0;
+               vec2 outerRadius = gRadius[0] + gStrokeWeight[0] / 2.0;
+               vec2 innerRadius = gRadius[0] - gStrokeWeight[0] / 2.0;
 
-               for(int i = 0; i <= 32; i++) {
-                   gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, outerRadius);
-                   vColor = strokeColor;
-                   EmitVertex();
+                for(int i = 0; i <= 32; i++) {
+                    gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, outerRadius);
+                    vColor = gStrokeColor[0];
+                    EmitVertex();
 
-                   gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, innerRadius);
-                   vColor = strokeColor;
-                   EmitVertex();
-               }
+                    gl_Position = Tmatrix * ellipse_point(gl_in[0].gl_Position, i, innerRadius);
+                    vColor = gStrokeColor[0];
+                    EmitVertex();
+                }
 
-               EndPrimitive();
-          }
+                EndPrimitive();
+           }
 
       }
 )glsl";

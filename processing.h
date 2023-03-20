@@ -101,29 +101,25 @@ void glTransform() {
    glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 }
 
-void glTransformClear() {
-   glMatrixMode(GL_MODELVIEW);
-   glLoadIdentity();
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
-}
-
 void pushMatrix() {
    matrix_stack.push_back(move_matrix);
 }
 
 void popMatrix() {
+   glEllipseDump();
    move_matrix = matrix_stack.back();
    matrix_stack.pop_back();
    glTransform();
 }
 
 void translate(float x, float y, float z=0) {
+   glEllipseDump();
    move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
    glTransform();
 }
 
 void scale(float x, float y,float z = 1) {
+   glEllipseDump();
    move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
    glTransform();
 }
@@ -133,22 +129,26 @@ void scale(float x) {
 }
 
 void rotate(float angle, PVector axis) {
+   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,axis);
    glTransform();
 }
 
 
 void rotate(float angle) {
+   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
    glTransform();
 }
 
 void rotateY(float angle) {
+   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
    glTransform();
 }
 
 void rotateX(float angle) {
+   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
    glTransform();
 }
@@ -1199,6 +1199,7 @@ int main(int argc, char* argv[]) {
 
             draw();
 
+            glEllipseDump();
             // Only update once per frame so we don't miss positions
             pmouseX = mouseX;
             pmouseY = mouseY;
