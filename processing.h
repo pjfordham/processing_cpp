@@ -322,7 +322,7 @@ void box(float w, float h, float d) {
 
    std::vector<float> colors;
 
-   for (int i = 0; i< triagnles.size() / 3; ++i ) {
+   for (int i = 0; i< vertices.size(); ++i ) {
       colors.push_back(fill_color.r / 255.0);
       colors.push_back(fill_color.g / 255.0);
       colors.push_back(fill_color.b / 255.0);
@@ -708,9 +708,37 @@ enum {
    P2D, P3D
 };
 
-void lights() {
+std::array<float,3> xambientLight;
+std::array<float,3> xdirectionLightColor;
+std::array<float,3> xdirectionLightVector;
 
+GLuint AmbientLight;
+GLuint DirectionLightColor;
+GLuint DirectionLightVector;
+
+void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
+   xdirectionLightColor = {r/255.0f, r/255.0f, r/255.0f};
+   xdirectionLightVector = {nx, ny, nz};
+   glUniform3fv(DirectionLightColor, 1, xdirectionLightColor.data() );
+   glUniform3fv(DirectionLightVector, 1,xdirectionLightVector.data() );
+}
+
+void ambientLight(float r, float g, float b) {
+   xambientLight = { r/255.0f, g/255.0f, b/255.0f };
+   glUniform3fv(AmbientLight, 1, xambientLight.data() );
+}
+
+void lights() {
+   ambientLight(128, 128, 128);
+   directionalLight(128, 128, 128, 0, 0, -1);
+   //lightFalloff(1, 0, 0);
+   //lightSpecular(0, 0, 0);
 };
+
+void noLights() {
+   ambientLight(255.0, 255.0, 255.0);
+   directionalLight(0.0,0.0,0.0, 0.0,0.0,-1.0);
+}
 
 void perspective(float angle, float aspect, float minZ, float maxZ) {
    projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
@@ -751,6 +779,11 @@ void camera( float eyeX, float eyeY, float eyeZ,
    view_matrix = view * translate;
 
    glTransform();
+}
+
+void camera() {
+   camera(width / 2.0, height / 2.0, (height / 2.0) / tan(PI * 30.0 / 180.0),
+          width / 2.0, height / 2.0, 0, 0, 1, 0);
 }
 
 GLuint flatTextureShader;
@@ -809,6 +842,10 @@ void size(int _width, int _height, int MODE = P2D) {
    Pmatrix = glGetUniformLocation(programID, "Pmatrix");
    Vmatrix = glGetUniformLocation(programID, "Vmatrix");
    Mmatrix = glGetUniformLocation(programID, "Mmatrix");
+
+   AmbientLight = glGetUniformLocation(programID, "ambientLight");
+   DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
+   DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
 
    flatTextureShader = LoadShaders(ShadersFlatTexture());
 
@@ -926,6 +963,7 @@ void size(int _width, int _height, int MODE = P2D) {
    } else {
       view_matrix = Eigen::Matrix4f::Identity();
       perspective();
+      camera();
    }
 
    background(WHITE);
@@ -1196,6 +1234,7 @@ int main(int argc, char* argv[]) {
             glClear(GL_DEPTH_BUFFER_BIT);
             move_matrix = Eigen::Matrix4f::Identity();
             glTransform();
+            noLights();
 
             draw();
 
