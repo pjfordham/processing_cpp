@@ -234,6 +234,85 @@ void line(float x1, float y1, float z1, float x2, float y2, float z2) {
    }
 }
 
+void drawGeometry( const std::vector<float> &vertices,
+                   const std::vector<float> &normals,
+                   const std::vector<unsigned short> &triangles,
+                   const std::vector<float> &colors) {
+
+   GLuint VAO;
+   glGenVertexArrays(1, &VAO);
+   glBindVertexArray(VAO);
+
+   GLuint vertexbuffer;
+   glGenBuffers(1, &vertexbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+   GLuint indexbuffer;
+   glGenBuffers(1, &indexbuffer);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size() * sizeof(unsigned short), triangles.data(), GL_STATIC_DRAW);
+
+   GLuint normalbuffer;
+   glGenBuffers(1, &normalbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+   glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
+
+   GLuint colorbuffer;
+   glGenBuffers(1, &colorbuffer);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+
+   GLuint attribId = glGetAttribLocation(programID, "position");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(programID, "color");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   attribId = glGetAttribLocation(programID, "normal");
+   glEnableVertexAttribArray(attribId);
+   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+   glVertexAttribPointer(
+      attribId,                         // attribute
+      3,                                // size
+      GL_FLOAT,                         // type
+      GL_FALSE,                         // normalized?
+      0,                                // stride
+      (void*)0                          // array buffer offset
+      );
+
+   glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_SHORT, 0);
+
+   glDeleteBuffers(1, &vertexbuffer);
+   glDeleteBuffers(1, &indexbuffer);
+   glDeleteBuffers(1, &normalbuffer);
+   glDeleteBuffers(1, &colorbuffer);
+
+   // Unbind the buffer objects and VAO
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+   glBindVertexArray(0);
+
+}
+
 void box(float w, float h, float d) {
    w = w / 2;
    h = h / 2;
@@ -314,7 +393,7 @@ void box(float w, float h, float d) {
       -1.0,  0.0,  0.0
    };
 
-   std::vector<unsigned short>  triagnles = {
+   std::vector<unsigned short>  triangles = {
       0,1,2, 0,2,3, 4,5,6, 4,6,7,
       8,9,10, 8,10,11, 12,13,14, 12,14,15,
       16,17,18, 16,18,19, 20,21,22, 20,22,23
@@ -328,82 +407,80 @@ void box(float w, float h, float d) {
       colors.push_back(fill_color.b / 255.0);
    }
 
-   GLuint VAO;
-   glGenVertexArrays(1, &VAO);
-   glBindVertexArray(VAO);
-
-   GLuint vertexbuffer;
-   glGenBuffers(1, &vertexbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-   GLuint indexbuffer;
-   glGenBuffers(1, &indexbuffer);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, triagnles.size() * sizeof(unsigned short), triagnles.data(), GL_STATIC_DRAW);
-
-   GLuint normalbuffer;
-   glGenBuffers(1, &normalbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-   glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
-
-   GLuint colorbuffer;
-   glGenBuffers(1, &colorbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
-
-   GLuint attribId = glGetAttribLocation(programID, "position");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
-   attribId = glGetAttribLocation(programID, "color");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
-   attribId = glGetAttribLocation(programID, "normal");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
-   glDrawElements(GL_TRIANGLES, triagnles.size(), GL_UNSIGNED_SHORT, 0);
-
-   glDeleteBuffers(1, &vertexbuffer);
-   glDeleteBuffers(1, &indexbuffer);
-   glDeleteBuffers(1, &normalbuffer);
-   glDeleteBuffers(1, &colorbuffer);
-
-   // Unbind the buffer objects and VAO
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-   glBindVertexArray(0);
-
-}
+   drawGeometry(vertices, normals, triangles, colors);
+};
 
 void box(float size) {
    box(size, size, size);
+}
+
+float xsphere_ures = 30;
+float xsphere_vres = 30;
+
+void sphereDetail(float ures, float vres) {
+   xsphere_ures = ures;
+   xsphere_vres = vres;
+}
+
+void sphereDetail(float res) {
+   sphereDetail(res, res);
+}
+
+void sphere(float radius) {
+
+   std::vector<float> vertices;
+   std::vector<float> normals;
+
+   float latStep = M_PI / xsphere_ures;
+   float lonStep = 2 * M_PI / xsphere_vres;
+
+   for (int i = 0; i <= xsphere_ures; i++) {
+      float lat = i * latStep;
+      float cosLat = std::cos(lat);
+      float sinLat = std::sin(lat);
+
+      for (int j = 0; j <= xsphere_vres; j++) {
+         float lon = j * lonStep;
+         float cosLon = std::cos(lon);
+         float sinLon = std::sin(lon);
+
+         float x = sinLat * cosLon;
+         float y = sinLat * sinLon;
+         float z = cosLat;
+
+         normals.push_back( x );
+         normals.push_back( y );
+         normals.push_back( z );
+         vertices.push_back( x * radius);
+         vertices.push_back( y * radius);
+         vertices.push_back( z * radius);
+      }
+   }
+
+   std::vector<unsigned short> indices;
+   for (int i = 0; i < xsphere_ures; i++) {
+      for (int j = 0; j < xsphere_vres; j++) {
+         int idx0 = i * (xsphere_vres+1) + j;
+         int idx1 = idx0 + 1;
+         int idx2 = (i+1) * (xsphere_vres+1) + j;
+         int idx3 = idx2 + 1;
+         indices.push_back(idx0);
+         indices.push_back(idx2);
+         indices.push_back(idx1);
+         indices.push_back(idx1);
+         indices.push_back(idx2);
+         indices.push_back(idx3);
+      }
+   }
+
+   std::vector<float> colors;
+
+   for (int i = 0; i< vertices.size(); ++i ) {
+      colors.push_back(fill_color.r / 255.0);
+      colors.push_back(fill_color.g / 255.0);
+      colors.push_back(fill_color.b / 255.0);
+   }
+   drawGeometry(vertices, normals, indices, colors);
 }
 
 void point(float x, float y) {
