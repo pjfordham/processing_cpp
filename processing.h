@@ -430,6 +430,7 @@ void sphere(float radius) {
 
    std::vector<float> vertices;
    std::vector<float> normals;
+   std::vector<float> colors;
 
    float latStep = M_PI / xsphere_ures;
    float lonStep = 2 * M_PI / xsphere_vres;
@@ -454,6 +455,9 @@ void sphere(float radius) {
          vertices.push_back( x * radius);
          vertices.push_back( y * radius);
          vertices.push_back( z * radius);
+         colors.push_back(fill_color.r / 255.0);
+         colors.push_back(fill_color.g / 255.0);
+         colors.push_back(fill_color.b / 255.0);
       }
    }
 
@@ -473,13 +477,6 @@ void sphere(float radius) {
       }
    }
 
-   std::vector<float> colors;
-
-   for (int i = 0; i< vertices.size(); ++i ) {
-      colors.push_back(fill_color.r / 255.0);
-      colors.push_back(fill_color.g / 255.0);
-      colors.push_back(fill_color.b / 255.0);
-   }
    drawGeometry(vertices, normals, indices, colors);
 }
 
