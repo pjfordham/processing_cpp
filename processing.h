@@ -740,6 +740,28 @@ void noLights() {
    directionalLight(0.0,0.0,0.0, 0.0,0.0,-1.0);
 }
 
+void ortho(float left, float right, float bottom, float top, float near, float far) {
+   float tx = -(right + left) / (right - left);
+   float ty = -(top + bottom) / (top - bottom);
+   float tz = -(far + near) / (far - near);
+
+   projection_matrix = Eigen::Matrix4f{
+      { 2/(right-left),               0,              0,  tx },
+      {              0,  2/(top-bottom),              0,  ty },
+      {              0,               0, -2/(far - near), tz },
+      {              0,               0,              0,   1 }
+   };
+   glTransform();
+}
+
+void ortho(float left, float right, float bottom, float top) {
+   ortho(-width / 2, width / 2, -height / 2, height / 2,-10,10);
+}
+
+void ortho() {
+   ortho(-width / 2, width / 2, -height / 2, height / 2);
+}
+
 void perspective(float angle, float aspect, float minZ, float maxZ) {
    projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
    glTransform();
