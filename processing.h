@@ -195,13 +195,13 @@ void ellipse(float x, float y, float radius) {
    ellipse(x, y, radius, radius);
 }
 
-void arc(float x, float y, float width, float height, float start, float stop) {
+void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
    if (xellipse_mode != RADIUS ) {
       width /=2;
       height /=2;
    }
-   glFilledArc(PVector{x,y}, width, width, start,stop,fill_color);
-   glLineArc(PVector{x,y}, width, width, start,stop,stroke_color, xstrokeWeight);
+   glFilledArc(PVector{x,y}, width, width, start,stop,fill_color, mode);
+   glLineArc(PVector{x,y}, width, width, start,stop,stroke_color, xstrokeWeight, mode);
 }
 
 void strokeCap(int cap) {

@@ -176,12 +176,14 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
 
 extern GLuint programID;
 
+void glEllipseDump();
+
 void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color color) {
    anything_drawn = true;
+   glEllipseDump();
 
    std::vector<float> colors;
    std::vector<float> vertices;
-   std::vector<float> normals;
    std::vector<unsigned short> indices;
 
    for (int i = 0; i< points; ++i ) {
@@ -192,9 +194,6 @@ void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color colo
       vertices.push_back(p[i].x);
       vertices.push_back(p[i].y);
       vertices.push_back(p[i].z);
-      normals.push_back(1);
-      normals.push_back(1);
-      normals.push_back(1);
       indices.push_back(i);
    };
 
@@ -211,11 +210,6 @@ void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color colo
    glGenBuffers(1, &indexbuffer);
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
-
-   GLuint normalbuffer;
-   glGenBuffers(1, &normalbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-   glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
 
    GLuint colorbuffer;
    glGenBuffers(1, &colorbuffer);
@@ -246,23 +240,10 @@ void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color colo
       (void*)0                          // array buffer offset
       );
 
-   attribId = glGetAttribLocation(programID, "normal");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
    glDrawElements(element_type, indices.size(), GL_UNSIGNED_SHORT, 0);
 
    glDeleteBuffers(1, &vertexbuffer);
    glDeleteBuffers(1, &indexbuffer);
-   glDeleteBuffers(1, &normalbuffer);
    glDeleteBuffers(1, &colorbuffer);
 
    // Unbind the buffer objects and VAO
@@ -375,18 +356,23 @@ void glCappedLine(PVector p1, PVector p2, SDL_Color color, int weight) {
    normal.normalize();
    normal.mult(weight/2.0);
 
-   PVector end_offset = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   PVector end_offset = PVector{p2.x-p1.x,p2.y-p1.y};
+   end_offset.normalize();
    end_offset.mult(weight/2.0);
 
    PVector p[] = {p1,p1,p2,p2};
    p[0].add(normal);
+   p[0].sub(end_offset);
+
    p[1].sub(normal);
-   p[2].sub(normal);
-   p[3].add(normal);
-   p[0].add(end_offset);
    p[1].sub(end_offset);
-   p[2].sub(end_offset);
+
+   p[2].sub(normal);
+   p[2].add(end_offset);
+
+   p[3].add(normal);
    p[3].add(end_offset);
+
    glFilledTriangleFan(4, p, color);
 
 }
@@ -445,16 +431,6 @@ std::vector<float> circle_vertices;
 std::vector<float> circle_radius;
 std::vector<float> circle_stroke_weight;
 std::vector<unsigned short> circle_indices;
-
-void glEllipse( PVector center, float xradius, float yradius, SDL_Color fill_color, SDL_Color stroke_color, int stroke_weight ) {
-   circle_stroke_color.insert(circle_stroke_color.end(), { stroke_color.r / 255.0f, stroke_color.g / 255.0f, stroke_color.b / 255.0f, stroke_color.a / 255.0f });
-   circle_fill_color.insert(circle_fill_color.end(), { fill_color.r / 255.0f, fill_color.g / 255.0f, fill_color.b / 255.0f, fill_color.a / 255.0f });
-   circle_vertices.insert(circle_vertices.end(),{ center.x, center.y, center.z });
-   circle_radius.insert(circle_radius.end(),{ xradius, yradius });
-   circle_stroke_weight.insert(circle_stroke_weight.end(),{ stroke_weight * 1.0f });
-   circle_indices.insert(circle_indices.end(),{ (unsigned short) circle_indices.size() });
-   return;
-}
 
 void glEllipseDump() {
    anything_drawn = true;
@@ -588,34 +564,51 @@ void glEllipseDump() {
    circle_indices.clear();
 }
 
-void glLineEllipse( PVector center, float xradius, float yradius, SDL_Color color, int weight) {
-   int NUMBER_OF_VERTICES=32;
-   std::vector<PVector> vertexBuffer;
-   for(float i = 0; i < TWO_PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
-   }
-   glClosedLinePoly(vertexBuffer.size(),vertexBuffer.data(),color,weight);
+void glEllipse( PVector center, float xradius, float yradius, SDL_Color fill_color, SDL_Color stroke_color, int stroke_weight ) {
+   circle_stroke_color.insert(circle_stroke_color.end(), { stroke_color.r / 255.0f, stroke_color.g / 255.0f, stroke_color.b / 255.0f, stroke_color.a / 255.0f });
+   circle_fill_color.insert(circle_fill_color.end(), { fill_color.r / 255.0f, fill_color.g / 255.0f, fill_color.b / 255.0f, fill_color.a / 255.0f });
+   circle_vertices.insert(circle_vertices.end(),{ center.x, center.y, center.z });
+   circle_radius.insert(circle_radius.end(),{ xradius, yradius });
+   circle_stroke_weight.insert(circle_stroke_weight.end(),{ stroke_weight * 1.0f });
+   circle_indices.insert(circle_indices.end(),{ (unsigned short) circle_indices.size() });
+   return;
 }
 
-void glFilledArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color ) {
+PVector ellipse_point(const PVector &center, int index, float start, float end, float xradius, float yradius) {
+   float angle = map( index, 0, 32, start, end);
+   return PVector( center.x + xradius * sin(-angle + HALF_PI),
+                   center.y + yradius * cos(-angle + HALF_PI),
+                   center.z);
+}
+
+enum { /*OPEN == 0,*/ CHORD = 1, PIE=2, DEFAULT=3 };
+
+void glFilledArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int mode ) {
    int NUMBER_OF_VERTICES=32;
    std::vector<PVector> vertexBuffer;
-   vertexBuffer.emplace_back(center.x, center.y);
-   for(float i = start; i < end; i += (end - start) / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
+   if ( mode == DEFAULT || mode == PIE ) {
+      vertexBuffer.push_back(center);
    }
-   vertexBuffer.emplace_back(center.x + cos(end) * xradius, center.y + sin(end) * yradius);
+   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+      vertexBuffer.push_back( ellipse_point( center, i, start, end, xradius, yradius ) );
+   }
+   vertexBuffer.push_back( ellipse_point( center, 32, start, end, xradius, yradius ) );
    glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 }
 
-void glLineArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int weight) {
+void glLineArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int weight, int mode) {
    int NUMBER_OF_VERTICES=32;
    std::vector<PVector> vertexBuffer;
-   vertexBuffer.emplace_back(center.x, center.y);
-   for(float i = start; i < end; i += (end - start) / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(center.x + cos(i) * xradius, center.y + sin(i) * yradius);
+   if ( mode == PIE ) {
+      vertexBuffer.push_back(center);
    }
-   vertexBuffer.emplace_back(center.x + cos(end) * xradius, center.y + sin(end) * yradius);
+   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+      vertexBuffer.push_back( ellipse_point( center, i, start, end, xradius, yradius ) );
+   }
+   vertexBuffer.push_back( ellipse_point( center, 32, start, end, xradius, yradius ) );
+   if ( mode == CHORD || mode == PIE ) {
+      vertexBuffer.push_back( vertexBuffer[0] );
+   }
    glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
 }
 
