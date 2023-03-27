@@ -184,19 +184,10 @@ void ellipse(float x, float y, float width, float height) {
       height /=2;
    }
 
-   float color_vec[] = {
-      fill_color.r / 255.0f,
-      fill_color.g / 255.0f,
-      fill_color.b / 255.0f,
-      fill_color.a / 255.0f };
-   glUniform4fv(Color, 1, color_vec);
-
    pushMatrix();
    translate(x,y);
    scale(width,height);
-   glBindVertexArray(circleVAO);
-   glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
-   glBindVertexArray(0);
+   glUnitCircle( fill_color );
    popMatrix();
 }
 
@@ -490,19 +481,10 @@ void sphere(float radius) {
 }
 
 void point(float x, float y) {
-   float color_vec[] = {
-      stroke_color.r / 255.0f,
-      stroke_color.g / 255.0f,
-      stroke_color.b / 255.0f,
-      stroke_color.a / 255.0f };
-   glUniform4fv(Color, 1, color_vec);
-
    pushMatrix();
    translate(x,y);
    scale(xstrokeWeight,xstrokeWeight);
-   glBindVertexArray(circleVAO);
-   glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
-   glBindVertexArray(0);
+   glUnitCircle( stroke_color );
    popMatrix();
 }
 

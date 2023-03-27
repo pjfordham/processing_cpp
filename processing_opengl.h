@@ -442,10 +442,24 @@ void glLineArc( PVector center, float xradius, float yradius, float start, float
    glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
 }
 
+extern GLuint circleVAO;
+
+void glUnitCircle(SDL_Color color) {
+   float color_vec[] = {
+      color.r / 255.0f,
+      color.g / 255.0f,
+      color.b / 255.0f,
+      color.a / 255.0f };
+   glUniform4fv(Color, 1, color_vec);
+
+   glBindVertexArray(circleVAO);
+   glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
+   glBindVertexArray(0);
+}
+
 GLuint unitCircleVAO(int NUMBER_OF_VERTICES=32) {
    GLuint circleVAO;
 
- 
    std::vector<float> vertices;
    std::vector<unsigned short> indices;
 
