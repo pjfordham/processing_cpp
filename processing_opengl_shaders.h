@@ -139,42 +139,24 @@ inline std::tuple<const char*, const char*, const char*> ShadersFlat() {
    const char *vertexShader = R"glsl(
       #version 330
       in vec3 position;
-      in vec4 color;
       uniform mat4 Pmatrix;
       uniform mat4 Vmatrix;
       uniform mat4 Mmatrix;
-      out vec4 gColor;
       void main()
       {
           gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.0);
-          gColor = color;
       }
 )glsl";
 
-   const char *geometryShader = R"glsl(
-      #version 330
-      in vec4 gColor[];
-      layout(triangles) in;
-      layout(triangle_strip, max_vertices=6) out;
-      out vec4 vColor;
-
-      void main() {
-          for(int i = 0; i < 3; i++) {
-              gl_Position = gl_in[i].gl_Position;
-              vColor = gColor[i];
-              EmitVertex();
-          }
-          EndPrimitive();
-      }
-)glsl";
+   const char *geometryShader = NULL;
 
    const char *fragmentShader = R"glsl(
       #version 330
-      in vec4 vColor;
+      uniform vec4 color;
       out vec4 fragColor;
       void main()
       {
-          fragColor = vColor;
+          fragColor = color;
       }
 )glsl";
 

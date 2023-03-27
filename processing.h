@@ -88,6 +88,7 @@ Eigen::Matrix4f projection_matrix; // Default is identity
 Eigen::Matrix4f view_matrix; // Default is identity
 
 GLuint circleID;
+GLuint Color;
 
 GLuint programID;
 GLuint Pmatrix;
@@ -106,20 +107,17 @@ void pushMatrix() {
 }
 
 void popMatrix() {
-   glEllipseDump();
    move_matrix = matrix_stack.back();
    matrix_stack.pop_back();
    glTransform();
 }
 
 void translate(float x, float y, float z=0) {
-   glEllipseDump();
    move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
    glTransform();
 }
 
 void scale(float x, float y,float z = 1) {
-   glEllipseDump();
    move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
    glTransform();
 }
@@ -129,26 +127,22 @@ void scale(float x) {
 }
 
 void rotate(float angle, PVector axis) {
-   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,axis);
    glTransform();
 }
 
 
 void rotate(float angle) {
-   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
    glTransform();
 }
 
 void rotateY(float angle) {
-   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
    glTransform();
 }
 
 void rotateX(float angle) {
-   glEllipseDump();
    move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
    glTransform();
 }
@@ -183,12 +177,27 @@ void noSmooth() {
    xSmoothing = false;
 }
 
+GLuint circleVAO;
 void ellipse(float x, float y, float width, float height) {
    if (xellipse_mode != RADIUS ) {
       width /=2;
       height /=2;
    }
-   glEllipse(PVector{x,y}, width, width, fill_color, stroke_color, xstrokeWeight);
+
+   float color_vec[] = {
+      fill_color.r / 255.0f,
+      fill_color.g / 255.0f,
+      fill_color.b / 255.0f,
+      fill_color.a / 255.0f };
+   glUniform4fv(Color, 1, color_vec);
+
+   pushMatrix();
+   translate(x,y);
+   scale(width,height);
+   glBindVertexArray(circleVAO);
+   glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
+   glBindVertexArray(0);
+   popMatrix();
 }
 
 void ellipse(float x, float y, float radius) {
@@ -481,7 +490,20 @@ void sphere(float radius) {
 }
 
 void point(float x, float y) {
-   glEllipse(PVector{x,y},xstrokeWeight,xstrokeWeight, stroke_color, stroke_color,0);
+   float color_vec[] = {
+      stroke_color.r / 255.0f,
+      stroke_color.g / 255.0f,
+      stroke_color.b / 255.0f,
+      stroke_color.a / 255.0f };
+   glUniform4fv(Color, 1, color_vec);
+
+   pushMatrix();
+   translate(x,y);
+   scale(xstrokeWeight,xstrokeWeight);
+   glBindVertexArray(circleVAO);
+   glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
+   glBindVertexArray(0);
+   popMatrix();
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
@@ -938,6 +960,7 @@ void size(int _width, int _height, int MODE = P2D) {
    Pmatrix = glGetUniformLocation(programID, "Pmatrix");
    Vmatrix = glGetUniformLocation(programID, "Vmatrix");
    Mmatrix = glGetUniformLocation(programID, "Mmatrix");
+   Color = glGetUniformLocation(programID, "color");
 
    AmbientLight = glGetUniformLocation(programID, "ambientLight");
    DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
@@ -1052,7 +1075,8 @@ void size(int _width, int _height, int MODE = P2D) {
       //glDeleteBuffers(1, &indexbuffer);
 
    }
-
+   circleVAO = unitCircleVAO();
+   
    if (MODE == P2D) {
       view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
       projection_matrix = Eigen::Matrix4f::Identity();
@@ -1334,7 +1358,6 @@ int main(int argc, char* argv[]) {
 
             draw();
 
-            glEllipseDump();
             // Only update once per frame so we don't miss positions
             pmouseX = mouseX;
             pmouseY = mouseY;
