@@ -1157,20 +1157,28 @@ PFont createFont(const char *filename, int size) {
    return key;
 }
 
+int xTextAlign;
+int yTextAlign;
+
+void textAlign(int x, int y) {
+   xTextAlign = x;
+   yTextAlign = y;
+}
+
 void textSize(int size) {
    currentFont = createFont(currentFont.first, size);
 }
 
 void text(std::string text, float x, float y, float width=-1, float height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
-                                                 (SDL_Color){ stroke_color.r,
-                                                    stroke_color.g, stroke_color.b,
-                                                    stroke_color.a });
+                                                 (SDL_Color){ fill_color.r,
+                                                    fill_color.g, fill_color.b,
+                                                    fill_color.a });
    if (surface == NULL) {
       printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
       abort();
    }
-   SDL_Surface* surface2 = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
+   SDL_Surface* surface2 = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_BGRA8888, 0);
    if (surface2 == NULL) {
       abort();
    }
@@ -1178,10 +1186,23 @@ void text(std::string text, float x, float y, float width=-1, float height=-1) {
    width = surface2->w;
    height = surface2->h;
 
+   // this works well enough for the Letters.cc example but it's not really general
+   if ( xTextAlign == CENTER ) {
+      x = x - width / 2;
+   }
+   if ( yTextAlign == CENTER ) {
+      y = y - height / 2;
+   }
+
    glTexturedQuad({x,y},{x+width,y},{x+width,y+height}, {x,y+height}, surface2);
 
    SDL_FreeSurface(surface);
    SDL_FreeSurface(surface2);
+}
+
+void text(char c, float x, float y, float width = -1, float height = -1) {
+   std::string s(&c,1);
+   text(s,x,y,width,height);
 }
 
 void image(const PImage &image, float x, float y) {

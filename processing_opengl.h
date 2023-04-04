@@ -160,8 +160,11 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
 
    glDeleteTextures(1, &textureID);
 
+   glDeleteVertexArrays(1, &localVAO);
+
    glDeleteBuffers(1, &vertexbuffer);
    glDeleteBuffers(1, &indexbuffer);
+   glDeleteBuffers(1, &coordsbuffer);
 
    // Unbind the buffer objects and VAO
    glBindBuffer(GL_ARRAY_BUFFER, 0);
