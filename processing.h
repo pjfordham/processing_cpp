@@ -140,10 +140,10 @@ void rotateX(float angle) {
    glTransform();
 }
 
-int xellipse_mode = DIAMETER;
+int PShape::ellipse_mode = DIAMETER;
 
 void ellipseMode(int mode) {
-   xellipse_mode = mode;
+   PShape::ellipse_mode = mode;
 }
 
 SDL_Color stroke_color{255,255,255,255};
@@ -167,7 +167,7 @@ void noSmooth() {
 
 GLuint circleVAO;
 void ellipse(float x, float y, float width, float height) {
-   if (xellipse_mode != RADIUS ) {
+   if (PShape::ellipse_mode != RADIUS ) {
       width /=2;
       height /=2;
    }
@@ -184,12 +184,7 @@ void ellipse(float x, float y, float radius) {
 }
 
 void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
-   if (xellipse_mode != RADIUS ) {
-      width /=2;
-      height /=2;
-   }
-   glFilledArc(PVector{x,y}, width, width, start,stop,fill_color, mode);
-   glLineArc(PVector{x,y}, width, width, start,stop,stroke_color, xstrokeWeight, mode);
+   createArc(x, y, width, height, start, stop, mode).draw(); 
 }
 
 void strokeCap(int cap) {

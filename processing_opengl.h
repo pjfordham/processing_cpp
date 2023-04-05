@@ -406,6 +406,7 @@ void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
 }
 
 extern GLuint circleID;
+extern GLuint circleVAO;
 
 PVector ellipse_point(const PVector &center, int index, float start, float end, float xradius, float yradius) {
    float angle = map( index, 0, 32, start, end);
@@ -413,39 +414,6 @@ PVector ellipse_point(const PVector &center, int index, float start, float end, 
                    center.y + yradius * cos(-angle + HALF_PI),
                    center.z);
 }
-
-enum { /*OPEN == 0,*/ CHORD = 1, PIE=2, DEFAULT=3 };
-
-void glFilledArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int mode ) {
-   int NUMBER_OF_VERTICES=32;
-   std::vector<PVector> vertexBuffer;
-   if ( mode == DEFAULT || mode == PIE ) {
-      vertexBuffer.push_back(center);
-   }
-   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-      vertexBuffer.push_back( ellipse_point( center, i, start, end, xradius, yradius ) );
-   }
-   vertexBuffer.push_back( ellipse_point( center, 32, start, end, xradius, yradius ) );
-   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
-}
-
-void glLineArc( PVector center, float xradius, float yradius, float start, float end, SDL_Color color, int weight, int mode) {
-   int NUMBER_OF_VERTICES=32;
-   std::vector<PVector> vertexBuffer;
-   if ( mode == PIE ) {
-      vertexBuffer.push_back(center);
-   }
-   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-      vertexBuffer.push_back( ellipse_point( center, i, start, end, xradius, yradius ) );
-   }
-   vertexBuffer.push_back( ellipse_point( center, 32, start, end, xradius, yradius ) );
-   if ( mode == CHORD || mode == PIE ) {
-      vertexBuffer.push_back( vertexBuffer[0] );
-   }
-   glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
-}
-
-extern GLuint circleVAO;
 
 void glUnitCircle(SDL_Color color) {
    float color_vec[] = {
