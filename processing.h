@@ -504,16 +504,15 @@ void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
 PShape _shape;
 
 void beginShape(int points = LINES) {
-   _shape.style = points;
-   _shape.clear();
+   _shape.beginShape(points);
 }
 
-void vertex(float x, float y) {
-   _shape.vertices.push_back({x, y});
+void vertex(float x, float y, float z = 0.0) {
+   _shape.vertex(x, y, z);
 }
 
 void endShape(int type = OPEN) {
-   _shape.type = type;
+   _shape.endShape(type);
    _shape.draw();
 }
 

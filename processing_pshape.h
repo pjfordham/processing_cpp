@@ -58,6 +58,19 @@ public:
       }
    }
 
+   void beginShape(int points = LINES) {
+      style = points;
+      clear();
+   }
+
+   void vertex(float x, float y, float z = 0.0) {
+      vertices.push_back({x, y, z});
+   }
+
+   void endShape(int type_ = OPEN) {
+      type = type_;
+   }
+
    void draw() {
       if (vertices.size() > 0) {
          if (style == POINTS) {
