@@ -32,6 +32,8 @@ enum {
 
 class PShape {
 public:
+   static int rect_mode;
+   
    std::vector<PVector> vertices;
 
    int style = LINES;
@@ -42,20 +44,6 @@ public:
    }
 
    void loadShape(const char *filename) {
-   }
-
-   void createShape(int type, float x, float y, float width, float height) {
-      switch(type) {
-      case RECT:
-         vertices.clear();
-         vertices.push_back({x,y});
-         vertices.push_back({x+width,y});
-         vertices.push_back({x+width,y+height});
-         vertices.push_back({x,y+height});
-         break;
-      default:
-         break;
-      }
    }
 
    void beginShape(int points = LINES) {
@@ -96,6 +84,54 @@ public:
    }
 
 };
+
+enum {
+   CORNERS = 0,
+   CORNER = 1,
+   CENTER = 2,
+   RADIUS = 3,
+};
+
+PShape createRect(float x, float y, float width, float height) {
+   if (PShape::rect_mode == CORNERS) {
+      width = width -x;
+      height = height - y;
+   } else if (PShape::rect_mode == CENTER) {
+      x = x - width / 2;
+      y = y - height / 2;
+   } else if (PShape::rect_mode == RADIUS) {
+      width *= 2;
+      height *= 2;
+      x = x - width / 2;
+      y = y - height / 2;
+   }
+   PShape shape;
+   shape.style = LINES;
+   shape.type = CLOSE;
+   shape.vertices = {
+      {x,y},
+      {x+width,y},
+      {x+width,y+height},
+      {x,y+height}
+   };
+   return shape;
+}
+
+PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
+   PShape shape;
+   shape.style = LINES;
+   shape.type = CLOSE;
+   shape.vertices = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4} };
+   return shape;
+}
+
+PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
+   PShape shape;
+   shape.style = TRIANGLE_FAN;
+   shape.type = CLOSE;
+   shape.vertices ={ PVector{x1,y1},PVector{x2,y2},PVector{x3,y3} };
+   return shape;
+}
 
 void shape(const PShape &shape, float x, float y, float width, float height) {
 

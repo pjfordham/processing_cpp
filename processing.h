@@ -43,13 +43,6 @@ enum {
 //  RADIUS = 3,
 };
 
-enum {
-   CORNERS = 0,
-   CORNER = 1,
-   CENTER = 2,
-   RADIUS = 3,
-};
-
 
 PerlinNoise perlin_noise;
 int perlin_octaves = 4 ;
@@ -148,14 +141,9 @@ void rotateX(float angle) {
 }
 
 int xellipse_mode = DIAMETER;
-int xrect_mode = CORNER;
 
 void ellipseMode(int mode) {
    xellipse_mode = mode;
-}
-
-void rectMode(int mode){
-   xrect_mode = mode;
 }
 
 SDL_Color stroke_color{255,255,255,255};
@@ -489,17 +477,12 @@ void point(float x, float y) {
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-   PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4} };
-   glFilledTriangleFan(4,points, fill_color);
-   glClosedLinePoly(4, points, stroke_color, xstrokeWeight );
+   createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw();
 }
 
 void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
-   PVector points[] = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3} };
-   glFilledTriangleFan(3,points, fill_color);
-   glClosedLinePoly(3, points, stroke_color, xstrokeWeight );
+   createTriangle( x1, y1, x2, y2, x3, y3 ).draw();
 }
-
 
 PShape _shape;
 
@@ -1129,20 +1112,14 @@ void fill(class color color) {
    fill(color.r,color.g,color.b,color.a);
 }
 
+int PShape::rect_mode = CORNER;
+
+void rectMode(int mode){
+   PShape::rect_mode = mode;
+}
+
 void rect(int x, int y, int _width, int _height) {
-   if (xrect_mode == CORNERS) {
-      _width = _width -x;
-      _height = _height - y;
-   } else if (xrect_mode == CENTER) {
-      x = x - _width / 2;
-      y = y - _height / 2;
-   } else if (xrect_mode == RADIUS) {
-      _width *= 2;
-      _height *= 2;
-      x = x - _width / 2;
-      y = y - _height / 2;
-   }
-   quad(x,y, x+_width,y,  x+_width,y+_height,  x,y+_height);
+    createRect(x,y,_width,_height).draw();
 }
 
 
