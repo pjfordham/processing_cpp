@@ -568,6 +568,18 @@ color RANDOM_COLOR() {
    return color(random(255),random(255),random(255),255);
 }
 
+template <typename Container>
+typename Container::value_type random(const Container& c) {
+   auto random_it = std::next(std::begin(c), random(std::size(c)));
+   return *random_it;
+}
+
+template <typename T>
+T random(const std::initializer_list<T>& c) {
+   auto random_it = std::next(std::begin(c), random(std::size(c)));
+   return *random_it;
+}
+
 color lerpColor(const color& c1, const color& c2, float amt) {
    float r = c1.r + (c2.r - c1.r) * amt;
    float g = c1.g + (c2.g - c1.g) * amt;
