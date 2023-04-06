@@ -165,8 +165,9 @@ void noSmooth() {
    xSmoothing = false;
 }
 
-GLuint circleVAO;
 void ellipse(float x, float y, float width, float height) {
+   static PShape unitCircle = createUnitCircle();
+
    if (PShape::ellipse_mode != RADIUS ) {
       width /=2;
       height /=2;
@@ -175,7 +176,7 @@ void ellipse(float x, float y, float width, float height) {
    pushMatrix();
    translate(x,y);
    scale(width,height);
-   glUnitCircle( fill_color );
+   unitCircle.draw();
    popMatrix();
 }
 
@@ -464,10 +465,12 @@ void sphere(float radius) {
 }
 
 void point(float x, float y) {
+   static PShape unitCircle = createUnitCircle();
    pushMatrix();
    translate(x,y);
    scale(xstrokeWeight,xstrokeWeight);
-   glUnitCircle( stroke_color );
+   // should be stroke color
+   unitCircle.draw();
    popMatrix();
 }
 
@@ -1046,8 +1049,7 @@ void size(int _width, int _height, int MODE = P2D) {
       //glDeleteBuffers(1, &indexbuffer);
 
    }
-   circleVAO = unitCircleVAO();
-   
+
    if (MODE == P2D) {
       view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
       projection_matrix = Eigen::Matrix4f::Identity();

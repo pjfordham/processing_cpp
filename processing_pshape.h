@@ -100,7 +100,21 @@ public:
       type = type_;
    }
 
-   void draw() {
+   void draw( ) {
+      if ( VAO ) {
+         float color_vec[] = {
+            fill_color.r / 255.0f,
+            fill_color.g / 255.0f,
+            fill_color.b / 255.0f,
+            fill_color.a / 255.0f };
+         glUniform4fv(Color, 1, color_vec);
+         
+         glBindVertexArray(VAO);
+         glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
+         glBindVertexArray(0);
+         return;
+      }
+
       if (vertices.size() > 0) {
          if (style == POINTS) {
             for (auto z : vertices ) {
@@ -224,6 +238,7 @@ PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
       shape.vertices.push_back( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
  }
+   shape.createVAO();
    return shape;
 }
 

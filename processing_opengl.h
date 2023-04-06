@@ -405,20 +405,5 @@ void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
    glLines(points, p, color, weight);
 }
 
-extern GLuint circleVAO;
-
-void glUnitCircle(SDL_Color color) {
-   float color_vec[] = {
-      color.r / 255.0f,
-      color.g / 255.0f,
-      color.b / 255.0f,
-      color.a / 255.0f };
-   glUniform4fv(Color, 1, color_vec);
-
-   glBindVertexArray(circleVAO);
-   glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
-   glBindVertexArray(0);
-}
-
 
 #endif
