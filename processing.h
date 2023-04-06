@@ -512,24 +512,26 @@ T random(const std::initializer_list<T>& c) {
 }
 
 color lerpColor(const color& c1, const color& c2, float amt) {
-   float r = c1.r + (c2.r - c1.r) * amt;
-   float g = c1.g + (c2.g - c1.g) * amt;
-   float b = c1.b + (c2.b - c1.b) * amt;
-   float a = c1.a + (c2.a - c1.a) * amt;
-   return color(r, g, b, a);
+   return {
+      c1.r + (c2.r - c1.r) * amt,
+      c1.g + (c2.g - c1.g) * amt,
+      c1.b + (c2.b - c1.b) * amt,
+      c1.a + (c2.a - c1.a) * amt};
 }
 
 
 void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-   // Compute the Bezier curve points
-   std::vector<PVector> curve;
+   PShape bezier;
+   bezier.beginShape();
    for (float t = 0; t <= 1; t += 0.01) {
+      // Compute the Bezier curve points
       float t_ = 1 - t;
       float x = t_ * t_ * t_ * x1 + 3 * t_ * t_ * t * x2 + 3 * t_ * t * t * x3 + t * t * t * x4;
       float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
-      curve.emplace_back(x, y);
+      bezier.vertex(x, y);
    }
-   glLines(curve.size(), curve.data(), PShape::stroke_color, PShape::stroke_weight);
+   bezier.endShape();
+   bezier.draw();
 }
 
 auto start_time = std::chrono::high_resolution_clock::now();
