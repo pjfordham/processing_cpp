@@ -166,22 +166,11 @@ void noSmooth() {
 }
 
 void ellipse(float x, float y, float width, float height) {
-   static PShape unitCircle = createUnitCircle();
-
-   if (PShape::ellipse_mode != RADIUS ) {
-      width /=2;
-      height /=2;
-   }
-
-   pushMatrix();
-   translate(x,y);
-   scale(width,height);
-   unitCircle.draw();
-   popMatrix();
+   createEllipse(x, y, width, height).draw();
 }
 
 void ellipse(float x, float y, float radius) {
-   ellipse(x, y, radius, radius);
+   createEllipse(x, y, radius, radius).draw();
 }
 
 void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {

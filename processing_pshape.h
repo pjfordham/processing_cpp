@@ -35,7 +35,7 @@ public:
    static int rect_mode;
    static int ellipse_mode;
    GLuint VAO = 0;
-   
+   Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
    std::vector<PVector> vertices;
 
    int style = LINES;
@@ -43,6 +43,14 @@ public:
 
    void clear() {
       vertices.clear();
+   }
+
+   void translate(float x, float y, float z=0) {
+      shape_matrix = shape_matrix * TranslateMatrix(PVector{x,y,z});
+   }
+
+   void scale(float x, float y,float z = 1) {
+      shape_matrix = shape_matrix * ScaleMatrix(PVector{x,y,z});
    }
 
    void loadShape(const char *filename) {
@@ -101,6 +109,7 @@ public:
    }
 
    void draw( ) {
+      extern GLuint Mmatrix;
       if ( VAO ) {
          float color_vec[] = {
             fill_color.r / 255.0f,
@@ -108,10 +117,13 @@ public:
             fill_color.b / 255.0f,
             fill_color.a / 255.0f };
          glUniform4fv(Color, 1, color_vec);
-         
+
+         Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
+         glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
          glBindVertexArray(VAO);
          glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
          glBindVertexArray(0);
+         glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
          return;
       }
 
@@ -242,9 +254,18 @@ PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    return shape;
 }
 
-GLuint unitCircleVAO(int NUMBER_OF_VERTICES=32) {
-   PShape shape = createUnitCircle( NUMBER_OF_VERTICES );
-   return shape.createVAO();
+PShape createEllipse(float x, float y, float width, float height) {
+   static PShape unitCircle = createUnitCircle();
+
+   PShape ellipse;
+   ellipse.VAO = unitCircle.VAO;
+   if (PShape::ellipse_mode != RADIUS ) {
+      width /=2;
+      height /=2;
+   }
+   ellipse.translate(x,y);
+   ellipse.scale(width,height);
+   return ellipse;
 }
 
 
