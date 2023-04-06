@@ -80,7 +80,6 @@ Eigen::Matrix4f move_matrix; // Default is identity
 Eigen::Matrix4f projection_matrix; // Default is identity
 Eigen::Matrix4f view_matrix; // Default is identity
 
-GLuint circleID;
 GLuint Color;
 
 GLuint programID;
@@ -912,7 +911,6 @@ void size(int _width, int _height, int MODE = P2D) {
    if (MODE == P2D) {
       glDisable(GL_DEPTH_TEST);
       programID = LoadShaders(ShadersFlat());
-      circleID = LoadShaders(CircleShaderFlat());
    } else {
       glEnable(GL_DEPTH_TEST);
       programID = LoadShaders(Shaders3D());
