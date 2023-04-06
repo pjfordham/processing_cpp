@@ -38,11 +38,6 @@ SDL_Texture* backBuffer;
 SDL_Window *window;
 SDL_Renderer *renderer;
 
-enum {
-   DIAMETER = 1,
-//  RADIUS = 3,
-};
-
 
 PerlinNoise perlin_noise;
 int perlin_octaves = 4 ;
@@ -139,47 +134,11 @@ void rotateX(float angle) {
    glTransform();
 }
 
-int PShape::ellipse_mode = DIAMETER;
-
-void ellipseMode(int mode) {
-   PShape::ellipse_mode = mode;
-}
-
-SDL_Color stroke_color{255,255,255,255};
-SDL_Color fill_color{255,255,255,255};
-
-int PShape::stroke_weight = 1;
-int PShape::line_end_cap = ROUND;
-
 bool xSmoothing = true;
 
 void noSmooth() {
    // Doesn't yet apply to actual graphics
    xSmoothing = false;
-}
-
-void ellipse(float x, float y, float width, float height) {
-   createEllipse(x, y, width, height).draw();
-}
-
-void ellipse(float x, float y, float radius) {
-   createEllipse(x, y, radius, radius).draw();
-}
-
-void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
-   createArc(x, y, width, height, start, stop, mode).draw();
-}
-
-void strokeCap(int cap) {
-   PShape::line_end_cap = cap;
-}
-
-void line(float x1, float y1, float x2, float y2) {
-   createLine( x1, y1, x2, y2).draw();
-}
-
-void line(float x1, float y1, float z1, float x2, float y2, float z2) {
-  abort();
 }
 
 void drawGeometry( const std::vector<float> &vertices,
@@ -350,9 +309,9 @@ void box(float w, float h, float d) {
    std::vector<float> colors;
 
    for (int i = 0; i< vertices.size(); ++i ) {
-      colors.push_back(fill_color.r / 255.0);
-      colors.push_back(fill_color.g / 255.0);
-      colors.push_back(fill_color.b / 255.0);
+      colors.push_back(PShape::fill_color.r / 255.0);
+      colors.push_back(PShape::fill_color.g / 255.0);
+      colors.push_back(PShape::fill_color.b / 255.0);
    }
 
    drawGeometry(vertices, normals, triangles, colors);
@@ -403,9 +362,9 @@ void sphere(float radius) {
          vertices.push_back( x * radius);
          vertices.push_back( y * radius);
          vertices.push_back( z * radius);
-         colors.push_back(fill_color.r / 255.0);
-         colors.push_back(fill_color.g / 255.0);
-         colors.push_back(fill_color.b / 255.0);
+         colors.push_back(PShape::fill_color.r / 255.0);
+         colors.push_back(PShape::fill_color.g / 255.0);
+         colors.push_back(PShape::fill_color.b / 255.0);
       }
    }
 
@@ -428,38 +387,9 @@ void sphere(float radius) {
    drawGeometry(vertices, normals, indices, colors);
 }
 
-void point(float x, float y) {
-   createPoint(x, y).draw();
-}
-
-void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-   createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw();
-}
-
-void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
-   createTriangle( x1, y1, x2, y2, x3, y3 ).draw();
-}
-
-PShape _shape;
-
-void beginShape(int points = LINES) {
-   _shape.beginShape(points);
-}
-
-void vertex(float x, float y, float z = 0.0) {
-   _shape.vertex(x, y, z);
-}
-
-void endShape(int type = OPEN) {
-   _shape.endShape(type);
-   _shape.draw();
-}
-
-int setFrameRate = 60;
-void frameRate(int rate) {
-   setFrameRate = rate;
-}
-
+// ----
+// Begin color handling.
+// ----
 enum {
    RGB = 0,
    HSB = 1,
@@ -505,27 +435,6 @@ const color MAGENTA = color(255, 0, 255);
 color RANDOM_COLOR() {
    return color(random(255),random(255),random(255),255);
 }
-
-template <typename Container>
-typename Container::value_type random(const Container& c) {
-   auto random_it = std::next(std::begin(c), random(std::size(c)));
-   return *random_it;
-}
-
-template <typename T>
-T random(const std::initializer_list<T>& c) {
-   auto random_it = std::next(std::begin(c), random(std::size(c)));
-   return *random_it;
-}
-
-color lerpColor(const color& c1, const color& c2, float amt) {
-   float r = c1.r + (c2.r - c1.r) * amt;
-   float g = c1.g + (c2.g - c1.g) * amt;
-   float b = c1.b + (c2.b - c1.b) * amt;
-   float a = c1.a + (c2.a - c1.a) * amt;
-   return color(r, g, b, a);
-}
-
 void colorMode(int mode, float r, float g, float b, float a) {
    xcolorMode = mode;
    xcolorScaleR = r;
@@ -582,9 +491,16 @@ SDL_Color flatten_color_mode(float r, float g, float b, float a) {
       (unsigned char)a
    };
 }
+// ----
+// End color handling.
+// ----
 
+
+// ----
+// Begin shapes managed by Pshape.
+// ----
 void stroke(float r,float g,  float b, float a) {
-   stroke_color = flatten_color_mode(r,g,b,a);
+   PShape::stroke_color = flatten_color_mode(r,g,b,a);
 }
 
 void stroke(float r,float g, float b) {
@@ -616,12 +532,99 @@ void strokeWeight(int x) {
 }
 
 void noStroke() {
-   stroke_color = {0,0,0,0};
+   PShape::stroke_color = {0,0,0,0};
 }
 
 void noFill() {
-   fill_color = {0,0,0,0};
+   PShape::fill_color = {0,0,0,0};
 }
+
+void ellipseMode(int mode) {
+   PShape::ellipse_mode = mode;
+}
+
+void ellipse(float x, float y, float width, float height) {
+   createEllipse(x, y, width, height).draw();
+}
+
+void ellipse(float x, float y, float radius) {
+   createEllipse(x, y, radius, radius).draw();
+}
+
+void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
+   createArc(x, y, width, height, start, stop, mode).draw();
+}
+
+void strokeCap(int cap) {
+   PShape::line_end_cap = cap;
+}
+
+void line(float x1, float y1, float x2, float y2) {
+   createLine( x1, y1, x2, y2).draw();
+}
+
+void line(float x1, float y1, float z1, float x2, float y2, float z2) {
+  abort();
+}
+
+void point(float x, float y) {
+   createPoint(x, y).draw();
+}
+
+void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
+   createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw();
+}
+
+void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
+   createTriangle( x1, y1, x2, y2, x3, y3 ).draw();
+}
+
+PShape _shape;
+
+void beginShape(int points = LINES) {
+   _shape = PShape();
+   _shape.beginShape(points);
+}
+
+void vertex(float x, float y, float z = 0.0) {
+   _shape.vertex(x, y, z);
+}
+
+void endShape(int type = OPEN) {
+   _shape.endShape(type);
+   _shape.draw();
+}
+// ----
+// End shapes managed by Pshape.
+// ----
+
+
+int setFrameRate = 60;
+void frameRate(int rate) {
+   setFrameRate = rate;
+}
+
+
+template <typename Container>
+typename Container::value_type random(const Container& c) {
+   auto random_it = std::next(std::begin(c), random(std::size(c)));
+   return *random_it;
+}
+
+template <typename T>
+T random(const std::initializer_list<T>& c) {
+   auto random_it = std::next(std::begin(c), random(std::size(c)));
+   return *random_it;
+}
+
+color lerpColor(const color& c1, const color& c2, float amt) {
+   float r = c1.r + (c2.r - c1.r) * amt;
+   float g = c1.g + (c2.g - c1.g) * amt;
+   float b = c1.b + (c2.b - c1.b) * amt;
+   float a = c1.a + (c2.a - c1.a) * amt;
+   return color(r, g, b, a);
+}
+
 
 void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
    // Compute the Bezier curve points
@@ -632,7 +635,7 @@ void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4
       float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
       curve.emplace_back(x, y);
    }
-   glLines(curve.size(), curve.data(), stroke_color, PShape::stroke_weight);
+   glLines(curve.size(), curve.data(), PShape::stroke_color, PShape::stroke_weight);
 }
 
 auto start_time = std::chrono::high_resolution_clock::now();
@@ -1039,7 +1042,7 @@ void updatePixels() {
 }
 
 void fill(float r,float g,  float b, float a) {
-   fill_color = flatten_color_mode(r,g,b,a);
+   PShape::fill_color = flatten_color_mode(r,g,b,a);
 }
 
 void fill(float r,float g, float b) {
@@ -1065,8 +1068,6 @@ void fill(float r) {
 void fill(class color color) {
    fill(color.r,color.g,color.b,color.a);
 }
-
-int PShape::rect_mode = CORNER;
 
 void rectMode(int mode){
    PShape::rect_mode = mode;
@@ -1113,9 +1114,9 @@ void textSize(int size) {
 
 void text(std::string text, float x, float y, float width=-1, float height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
-                                                 (SDL_Color){ fill_color.r,
-                                                    fill_color.g, fill_color.b,
-                                                    fill_color.a });
+                                                 (SDL_Color){ PShape::fill_color.r,
+                                                    PShape::fill_color.g, PShape::fill_color.b,
+                                                    PShape::fill_color.a });
    if (surface == NULL) {
       printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
       abort();

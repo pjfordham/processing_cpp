@@ -2,18 +2,10 @@
 #define PROCESSING_PSHAPE_H
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL2_gfxPrimitives.h>
 #include "processing_math.h"
 #include "processing_opengl.h"
 
-extern SDL_Renderer *renderer;
-extern SDL_Color stroke_color;
-extern SDL_Color fill_color;
-
-void line(float x1, float y1, float x2, float y2);
-
-
-enum{
+enum {
    POINTS = 0,
    LINES = 1,
    TRIANGLE_STRIP,
@@ -24,13 +16,35 @@ enum{
    OPEN = 0,
    CLOSE = 1,
 };
+enum {
+   CORNERS = 0,
+   CORNER = 1,
+   CENTER = 2,
+   RADIUS = 3,
+};
 
 enum {
-  RECT,
+   ROUND = 0,
+   SQUARE,
+   PROJECT,
 };
+
+enum {
+   /*OPEN == 0,*/
+   CHORD = 1,
+   PIE=2,
+   DEFAULT=3
+};
+enum {
+   DIAMETER = 1,
+//  RADIUS = 3,
+};
+
 
 class PShape {
 public:
+   static SDL_Color stroke_color;
+   static SDL_Color fill_color;
    static int rect_mode;
    static int ellipse_mode;
    static int stroke_weight;
@@ -42,7 +56,7 @@ public:
    int style = LINES;
    int type = OPEN;
    bool stroke_only = false;
-   
+
    void clear() {
       vertices.clear();
    }
@@ -166,12 +180,15 @@ public:
    }
 };
 
-enum {
-   CORNERS = 0,
-   CORNER = 1,
-   CENTER = 2,
-   RADIUS = 3,
-};
+SDL_Color PShape::stroke_color{255,255,255,255};
+SDL_Color PShape::fill_color{255,255,255,255};
+int PShape::stroke_weight = 1;
+int PShape::line_end_cap = ROUND;
+int PShape::ellipse_mode = DIAMETER;
+int PShape::rect_mode = CORNER;
+
+
+
 
 PShape createRect(float x, float y, float width, float height) {
    if (PShape::rect_mode == CORNERS) {
@@ -206,11 +223,6 @@ PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, f
    return shape;
 }
 
-enum {
-   ROUND = 0,
-   SQUARE,
-   PROJECT,
-};
 
 PShape createLine(float x1, float y1, float x2, float y2) {
    PVector p[] = {{x1,y1},{x1,y1},{x2,y2},{x2,y2}};
@@ -280,7 +292,6 @@ PVector ellipse_point(const PVector &center, int index, float start, float end, 
                    center.z);
 }
 
-enum { /*OPEN == 0,*/ CHORD = 1, PIE=2, DEFAULT=3 };
 PShape createArc(float x, float y, float width, float height, float start,
                  float stop, int mode = DEFAULT) {
 
