@@ -11,6 +11,7 @@
 
 #include "processing_math.h"
 #include "processing_earclipping.h"
+#include "processing_color.h"
 
 #include <fmt/core.h>
 
@@ -180,7 +181,7 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
 extern GLuint programID;
 extern GLuint Color;
 
-void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color color) {
+void glFilledElement(GLuint element_type, int points, PVector *p, color color) {
    anything_drawn = true;
 
    std::vector<float> vertices;
@@ -236,21 +237,21 @@ void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color colo
 
 }
 
-void glFilledTriangleStrip(int points, PVector *p, SDL_Color color) {
+void glFilledTriangleStrip(int points, PVector *p, color color) {
    glFilledElement(GL_TRIANGLE_STRIP, points, p, color);
 }
 
-void glFilledPoly(int points, PVector *p, SDL_Color color) {
+void glFilledPoly(int points, PVector *p, color color) {
    std::vector<PVector> triangles = triangulatePolygon({p,p+points});
    glFilledElement(GL_TRIANGLES,triangles.size(), triangles.data(),color);
 }
 
-void glFilledTriangleFan(int points, PVector *p, SDL_Color color) {
+void glFilledTriangleFan(int points, PVector *p, color color) {
    glFilledElement(GL_TRIANGLE_FAN,points,p,color);
 }
 
 
-void _glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
+void _glRoundLine(PVector p1, PVector p2, color color, int weight) {
 
    // Compute direction vector of line
    PVector direction = p2 - p1;
@@ -309,7 +310,7 @@ void _glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 }
 
 
-void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
+void glLine(PVector p1, PVector p2, color color, int weight) {
 
    PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
    normal.normalize();
@@ -324,13 +325,13 @@ void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
 }
 
-void glLines(int points, PVector *p, SDL_Color color, int weight) {
+void glLines(int points, PVector *p, color color, int weight) {
    for (int i =1; i<points;++i) {
       glLine(p[i-1], p[i], color, weight);
    }
 }
 
-void glTriangleStrip(int points, PVector *p, SDL_Color color,int weight) {
+void glTriangleStrip(int points, PVector *p, color color,int weight) {
    for (int i =2; i<points;++i) {
       glLine(p[i-2], p[i-1], color, weight);
       glLine(p[i-1], p[i], color, weight);
@@ -338,7 +339,7 @@ void glTriangleStrip(int points, PVector *p, SDL_Color color,int weight) {
    }
 }
 
-void glTriangleFan(int points, PVector *p, SDL_Color color,int weight) {
+void glTriangleFan(int points, PVector *p, color color,int weight) {
    glLine( p[0], p[1], color, weight );
    for (int i =2; i<points;++i) {
       glLine( p[i-1], p[i], color, weight);
@@ -346,12 +347,12 @@ void glTriangleFan(int points, PVector *p, SDL_Color color,int weight) {
    }
 }
 
-void glClosedLinePoly(int points, PVector *p, SDL_Color color, int weight) {
+void glClosedLinePoly(int points, PVector *p, color color, int weight) {
    glLines(points, p, color, weight);
    glLine(p[points-1], p[0], color, weight);
 }
 
-void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
+void glLinePoly(int points, PVector *p, color color, int weight) {
    glLines(points, p, color, weight);
 }
 

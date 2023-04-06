@@ -26,6 +26,7 @@
 #include "PerlinNoise.h"
 #include "weak.h"
 #include "processing_math.h"
+#include "processing_color.h"
 #include "processing_java_compatability.h"
 #include "processing_opengl.h"
 #include "processing_pimage.h"
@@ -387,113 +388,6 @@ void sphere(float radius) {
    drawGeometry(vertices, normals, indices, colors);
 }
 
-// ----
-// Begin color handling.
-// ----
-enum {
-   RGB = 0,
-   HSB = 1,
-};
-
-int xcolorMode = RGB;
-int xcolorScaleR = 255;
-int xcolorScaleG = 255;
-int xcolorScaleB = 255;
-int xcolorScaleA = 255;
-
-class color {
-public:
-   float r,g,b,a;
-   color(float _r, float _g, float _b,float _a) : r(_r), g(_g), b(_b), a(_a) {
-   }
-   color(float _r, float _g, float _b) : r(_r), g(_g), b(_b), a(xcolorScaleA) {
-   }
-   color(float _r) : r(_r), g(_r), b(_r), a(xcolorScaleA) {
-   }
-   color()  {
-   }
-   operator unsigned int() {
-      return
-         ((unsigned char)a << 24) |
-         ((unsigned char)b << 16) |
-         ((unsigned char)g <<  8) |
-         ((unsigned char)r <<  0);
-   }
-};
-
-const color BLACK = color(0);
-const color WHITE = color(255);
-//const color GRAY = color(127);
-const color LIGHT_GRAY = color(192);
-const color DARK_GRAY = color(64);
-const color RED = color(255, 0, 0);
-const color GREEN = color(0, 255, 0);
-const color BLUE = color(0, 0, 255);
-const color YELLOW = color(255, 255, 0);
-const color CYAN = color(0, 255, 255);
-const color MAGENTA = color(255, 0, 255);
-color RANDOM_COLOR() {
-   return color(random(255),random(255),random(255),255);
-}
-void colorMode(int mode, float r, float g, float b, float a) {
-   xcolorMode = mode;
-   xcolorScaleR = r;
-   xcolorScaleG = g;
-   xcolorScaleB = b;
-   xcolorScaleA = a;
-}
-
-void colorMode(int mode, float scale) {
-   colorMode(mode, scale, scale, scale, scale);
-}
-
-void colorMode(int mode, float r, float g, float b) {
-   colorMode(mode, r,g,b,255);
-}
-
-SDL_Color HSBtoRGB(float h, float s, float v, float a)
-{
-   int i = floorf(h * 6);
-   auto f = h * 6.0 - i;
-   auto p = v * (1.0 - s);
-   auto q = v * (1.0 - f * s);
-   auto t = v * (1.0 - (1.0 - f) * s);
-
-   float r,g,b;
-   switch (i % 6) {
-   case 0: r = v, g = t, b = p; break;
-   case 1: r = q, g = v, b = p; break;
-   case 2: r = p, g = v, b = t; break;
-   case 3: r = p, g = q, b = v; break;
-   case 4: r = t, g = p, b = v; break;
-   case 5: r = v, g = p, b = q; break;
-   }
-   return {
-      (unsigned char)roundf(r * 255),
-      (unsigned char)roundf(g * 255),
-      (unsigned char)roundf(b * 255) ,
-      (unsigned char)a
-   };
-}
-
-SDL_Color flatten_color_mode(float r, float g, float b, float a) {
-   r = map(r,0,xcolorScaleR,0,255);
-   g = map(g,0,xcolorScaleG,0,255);
-   b = map(b,0,xcolorScaleB,0,255);
-   a = map(a,0,xcolorScaleA,0,255);
-   if (xcolorMode == HSB) {
-      return HSBtoRGB(r/255.0,g/255.0,b/255.0,a);
-   }
-   return {
-      (unsigned char)r,
-      (unsigned char)g,
-      (unsigned char)b,
-      (unsigned char)a
-   };
-}
-// ----
-// End color handling.
-// ----
 
 
 // ----
@@ -504,11 +398,11 @@ void stroke(float r,float g,  float b, float a) {
 }
 
 void stroke(float r,float g, float b) {
-   stroke(r,g,b,xcolorScaleA);
+   stroke(r,g,b,color::scaleA);
 }
 
 void stroke(float r,float a) {
-   if (xcolorMode == HSB) {
+   if (color::mode == HSB) {
       stroke(0,0,r,a);
    } else {
       stroke(r,r,r,a);
@@ -516,10 +410,10 @@ void stroke(float r,float a) {
 }
 
 void stroke(float r) {
-   if (xcolorMode == HSB) {
-      stroke(r,0,0,xcolorScaleA);
+   if (color::mode == HSB) {
+      stroke(r,0,0,color::scaleA);
    } else {
-      stroke(r,r,r,xcolorScaleA);
+      stroke(r,r,r,color::scaleA);
    }
 }
 
@@ -706,7 +600,7 @@ void loop() {
 
 void background(float r, float g, float b) {
    anything_drawn = true;
-   auto color = flatten_color_mode(r,g,b,xcolorScaleA);
+   auto color = flatten_color_mode(r,g,b,color::scaleA);
    // Set clear color
    glClearColor(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
    // Clear screen
@@ -718,7 +612,7 @@ void background(color c) {
 }
 
 void background(float gray) {
-   if (xcolorMode == HSB) {
+   if (color::mode == HSB) {
       background(0,0,gray);
    } else {
       background(gray,gray,gray);
@@ -786,11 +680,11 @@ void ortho(float left, float right, float bottom, float top, float near, float f
 }
 
 void ortho(float left, float right, float bottom, float top) {
-   ortho(-width / 2, width / 2, -height / 2, height / 2,-10,10);
+   ortho(-width / 2.0, width / 2.0, -height / 2.0, height / 2.0,-10,10);
 }
 
 void ortho() {
-   ortho(-width / 2, width / 2, -height / 2, height / 2);
+   ortho(-width / 2.0, width / 2.0, -height / 2.0, height / 2.0);
 }
 
 void perspective(float angle, float aspect, float minZ, float maxZ) {
@@ -1046,11 +940,11 @@ void fill(float r,float g,  float b, float a) {
 }
 
 void fill(float r,float g, float b) {
-   fill(r,g,b,xcolorScaleA);
+   fill(r,g,b,color::scaleA);
 }
 
 void fill(float r,float a) {
-   if (xcolorMode == HSB) {
+   if (color::mode == HSB) {
       fill(0,0,r,a);
    } else {
       fill(r,r,r,a);
@@ -1058,10 +952,10 @@ void fill(float r,float a) {
 }
 
 void fill(float r) {
-   if (xcolorMode == HSB) {
-      fill(0,0,r,xcolorScaleA);
+   if (color::mode == HSB) {
+      fill(0,0,r,color::scaleA);
    } else {
-      fill(r,r,r,xcolorScaleA);
+      fill(r,r,r,color::scaleA);
    }
 }
 
@@ -1114,9 +1008,10 @@ void textSize(int size) {
 
 void text(std::string text, float x, float y, float width=-1, float height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
-                                                 (SDL_Color){ PShape::fill_color.r,
-                                                    PShape::fill_color.g, PShape::fill_color.b,
-                                                    PShape::fill_color.a });
+                                                 { (unsigned char)PShape::fill_color.r,
+                                                   (unsigned char)PShape::fill_color.g,
+                                                   (unsigned char)PShape::fill_color.b,
+                                                   (unsigned char)PShape::fill_color.a });
    if (surface == NULL) {
       printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
       abort();

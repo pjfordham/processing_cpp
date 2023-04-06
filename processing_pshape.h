@@ -1,9 +1,9 @@
 #ifndef PROCESSING_PSHAPE_H
 #define PROCESSING_PSHAPE_H
 
-#include <SDL2/SDL.h>
 #include "processing_math.h"
 #include "processing_opengl.h"
+#include "processing_color.h"
 
 enum {
    POINTS = 0,
@@ -43,8 +43,8 @@ enum {
 
 class PShape {
 public:
-   static SDL_Color stroke_color;
-   static SDL_Color fill_color;
+   static color stroke_color;
+   static color fill_color;
    static int rect_mode;
    static int ellipse_mode;
    static int stroke_weight;
@@ -180,8 +180,8 @@ public:
    }
 };
 
-SDL_Color PShape::stroke_color{255,255,255,255};
-SDL_Color PShape::fill_color{255,255,255,255};
+color PShape::stroke_color{255,255,255,255};
+color PShape::fill_color{255,255,255,255};
 int PShape::stroke_weight = 1;
 int PShape::line_end_cap = ROUND;
 int PShape::ellipse_mode = DIAMETER;
