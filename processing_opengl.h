@@ -405,15 +405,7 @@ void glLinePoly(int points, PVector *p, SDL_Color color, int weight) {
    glLines(points, p, color, weight);
 }
 
-extern GLuint circleID;
 extern GLuint circleVAO;
-
-PVector ellipse_point(const PVector &center, int index, float start, float end, float xradius, float yradius) {
-   float angle = map( index, 0, 32, start, end);
-   return PVector( center.x + xradius * sin(-angle + HALF_PI),
-                   center.y + yradius * cos(-angle + HALF_PI),
-                   center.z);
-}
 
 void glUnitCircle(SDL_Color color) {
    float color_vec[] = {
@@ -426,50 +418,6 @@ void glUnitCircle(SDL_Color color) {
    glBindVertexArray(circleVAO);
    glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
    glBindVertexArray(0);
-}
-
-GLuint unitCircleVAO(int NUMBER_OF_VERTICES=32) {
-   GLuint circleVAO;
-
-   std::vector<float> vertices;
-   std::vector<unsigned short> indices;
-
-   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-      PVector vertex =  ellipse_point( PVector{0,0}, i, 0 , TWO_PI, 1.0, 1.0);
-      vertices.push_back( vertex.x );
-      vertices.push_back( vertex.y );
-      vertices.push_back( 0 );
-      indices.push_back(indices.size());
-   }
-
-   // Create a vertex array object (VAO)
-   glGenVertexArrays(1, &circleVAO);
-   glBindVertexArray(circleVAO);
-
-   GLuint indexbuffer;
-   glGenBuffers(1, &indexbuffer);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
-
-   GLuint vertexbuffer;
-   glGenBuffers(1, &vertexbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-
-   GLuint attribId = glGetAttribLocation(programID, "position");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
-   return circleVAO;
 }
 
 
