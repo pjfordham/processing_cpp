@@ -7,7 +7,6 @@
 #include "processing_opengl.h"
 
 extern SDL_Renderer *renderer;
-extern int xstrokeWeight;
 extern SDL_Color stroke_color;
 extern SDL_Color fill_color;
 
@@ -34,13 +33,16 @@ class PShape {
 public:
    static int rect_mode;
    static int ellipse_mode;
+   static int stroke_weight;
+   static int line_end_cap;
    GLuint VAO = 0;
    Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
    std::vector<PVector> vertices;
 
    int style = LINES;
    int type = OPEN;
-
+   bool stroke_only = false;
+   
    void clear() {
       vertices.clear();
    }
@@ -111,12 +113,21 @@ public:
    void draw( ) {
       extern GLuint Mmatrix;
       if ( VAO ) {
-         float color_vec[] = {
-            fill_color.r / 255.0f,
-            fill_color.g / 255.0f,
-            fill_color.b / 255.0f,
-            fill_color.a / 255.0f };
-         glUniform4fv(Color, 1, color_vec);
+         if (stroke_only) {
+            float color_vec[] = {
+               stroke_color.r / 255.0f,
+               stroke_color.g / 255.0f,
+               stroke_color.b / 255.0f,
+               stroke_color.a / 255.0f };
+            glUniform4fv(Color, 1, color_vec);
+        } else {
+            float color_vec[] = {
+               fill_color.r / 255.0f,
+               fill_color.g / 255.0f,
+               fill_color.b / 255.0f,
+               fill_color.a / 255.0f };
+            glUniform4fv(Color, 1, color_vec);
+         }
 
          Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
          glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
@@ -135,21 +146,24 @@ public:
             }
          } else if (style == TRIANGLE_STRIP) {
             glFilledTriangleStrip( vertices.size(), vertices.data(), fill_color );
-            glTriangleStrip( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
+            glTriangleStrip( vertices.size(), vertices.data(), stroke_color, stroke_weight);
          } else if (style == TRIANGLE_FAN) {
             glFilledTriangleFan( vertices.size(), vertices.data(), fill_color );
-            glTriangleFan( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
+            glTriangleFan( vertices.size(), vertices.data(), stroke_color, stroke_weight);
          } else if (style == LINES) {
             if (type == CLOSE) {
-               glFilledPoly( vertices.size(), vertices.data(), fill_color );
-               glClosedLinePoly( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
+               if (stroke_only) {
+                  glFilledPoly( vertices.size(), vertices.data(), stroke_color );
+               } else {
+                  glFilledPoly( vertices.size(), vertices.data(), fill_color );
+                  glClosedLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight);
+               }
             } else {
-               glLinePoly( vertices.size(), vertices.data(), stroke_color, xstrokeWeight);
+               glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight);
             }
          }
       }
    }
- 
 };
 
 enum {
@@ -190,6 +204,64 @@ PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, f
    shape.type = CLOSE;
    shape.vertices = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4} };
    return shape;
+}
+
+enum {
+   ROUND = 0,
+   SQUARE,
+   PROJECT,
+};
+
+PShape createLine(float x1, float y1, float x2, float y2) {
+   PVector p[] = {{x1,y1},{x1,y1},{x2,y2},{x2,y2}};
+
+   float half_stroke = PShape::stroke_weight/2.0;
+
+   PVector direction = PVector{x2-x1,y2-y1};
+   PVector normal = direction.normal();
+   normal.normalize();
+   normal.mult(half_stroke);
+
+   if (PShape::line_end_cap == ROUND ) {
+      PShape shape;
+      shape.stroke_only = true;
+      shape.style = LINES;
+      shape.type = CLOSE;
+      int NUMBER_OF_VERTICES=16;
+
+      float start_angle = direction.get_angle() + HALF_PI;
+
+      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+         shape.vertices.emplace_back(x1 + cos(i + start_angle) * half_stroke,
+                                     y1 + sin(i + start_angle) * half_stroke);
+      }
+
+      start_angle += PI;
+
+      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+         shape.vertices.emplace_back(x2 + cos(i + start_angle) * half_stroke,
+                                     y2 + sin(i + start_angle) * half_stroke);
+      }
+      return shape;
+   } else {
+      p[0].add(normal);
+      p[1].sub(normal);
+      p[2].sub(normal);
+      p[3].add(normal);
+
+      if (PShape::line_end_cap == PROJECT) {
+         direction.normalize();
+         direction.mult(half_stroke);
+         p[0].sub(direction);
+         p[1].sub(direction);
+         p[2].add(direction);
+         p[3].add(direction);
+      }
+
+    auto shape =  createQuad( p[0].x, p[0].y, p[1].x, p[1].y, p[2].x, p[2].y, p[3].x, p[3].y);
+    shape.stroke_only = true;
+    return shape;
+   }
 }
 
 PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
@@ -249,7 +321,7 @@ PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    PShape shape;
    for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
       shape.vertices.push_back( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
- }
+   }
    shape.createVAO();
    return shape;
 }
@@ -259,7 +331,7 @@ PShape createEllipse(float x, float y, float width, float height) {
 
    PShape ellipse;
    ellipse.VAO = unitCircle.VAO;
-   if (PShape::ellipse_mode != RADIUS ) {
+   if (PShape::ellipse_mode != RADIUS) {
       width /=2;
       height /=2;
    }
@@ -267,6 +339,17 @@ PShape createEllipse(float x, float y, float width, float height) {
    ellipse.scale(width,height);
    return ellipse;
 }
+
+PShape createPoint(float x, float y) {
+   static PShape unitCircle = createUnitCircle();
+   PShape shape;
+   shape.VAO = unitCircle.VAO;
+   shape.translate(x,y);
+   shape.scale(PShape::stroke_weight,PShape::stroke_weight);
+   shape.stroke_only = true;
+   return shape;
+}
+
 
 
 void shape(const PShape &shape, float x, float y, float width, float height) {

@@ -148,15 +148,9 @@ void ellipseMode(int mode) {
 SDL_Color stroke_color{255,255,255,255};
 SDL_Color fill_color{255,255,255,255};
 
-enum {
-   ROUND = 0,
-   SQUARE,
-   PROJECT,
-};
+int PShape::stroke_weight = 1;
+int PShape::line_end_cap = ROUND;
 
-int xstrokeWeight = 1;
-
-int xendCap = ROUND;
 bool xSmoothing = true;
 
 void noSmooth() {
@@ -173,37 +167,19 @@ void ellipse(float x, float y, float radius) {
 }
 
 void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
-   createArc(x, y, width, height, start, stop, mode).draw(); 
+   createArc(x, y, width, height, start, stop, mode).draw();
 }
 
 void strokeCap(int cap) {
-   xendCap = cap;
+   PShape::line_end_cap = cap;
 }
 
 void line(float x1, float y1, float x2, float y2) {
-   if (xendCap == ROUND) {
-      glRoundLine( PVector{x1,y1,0}, PVector{x2,y2,0}, stroke_color, xstrokeWeight );
-   } else if (xendCap == SQUARE) {
-      glLine( PVector{x1,y1,0}, PVector{x2,y2,0}, stroke_color, xstrokeWeight );
-   } else if (xendCap == PROJECT) {
-      // Untested implementation
-      glCappedLine( PVector{x1,y1,0}, PVector{x2,y2,0}, stroke_color, xstrokeWeight );
-   } else {
-      abort();
-   }
+   createLine( x1, y1, x2, y2).draw();
 }
 
 void line(float x1, float y1, float z1, float x2, float y2, float z2) {
-   if (xendCap == ROUND) {
-      glRoundLine( PVector{x1,y1,z1}, PVector{x2,y2,z2}, stroke_color, xstrokeWeight );
-   } else if (xendCap == SQUARE) {
-      glLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
-   } else if (xendCap == PROJECT) {
-      // Untested implementation
-      glCappedLine( PVector{x1,y1,z1}, PVector{x2,y2,z1}, stroke_color, xstrokeWeight );
-   } else {
-      abort();
-   }
+  abort();
 }
 
 void drawGeometry( const std::vector<float> &vertices,
@@ -453,13 +429,7 @@ void sphere(float radius) {
 }
 
 void point(float x, float y) {
-   static PShape unitCircle = createUnitCircle();
-   pushMatrix();
-   translate(x,y);
-   scale(xstrokeWeight,xstrokeWeight);
-   // should be stroke color
-   unitCircle.draw();
-   popMatrix();
+   createPoint(x, y).draw();
 }
 
 void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
@@ -642,7 +612,7 @@ void stroke(color c) {
 }
 
 void strokeWeight(int x) {
-   xstrokeWeight = x;
+   PShape::stroke_weight = x;
 }
 
 void noStroke() {
@@ -662,7 +632,7 @@ void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4
       float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
       curve.emplace_back(x, y);
    }
-   glLines(curve.size(), curve.data(), stroke_color, xstrokeWeight);
+   glLines(curve.size(), curve.data(), stroke_color, PShape::stroke_weight);
 }
 
 auto start_time = std::chrono::high_resolution_clock::now();

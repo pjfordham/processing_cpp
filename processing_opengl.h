@@ -178,7 +178,7 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
 }
 
 extern GLuint programID;
-   extern GLuint Color;
+extern GLuint Color;
 
 void glFilledElement(GLuint element_type, int points, PVector *p, SDL_Color color) {
    anything_drawn = true;
@@ -308,56 +308,6 @@ void _glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
 }
 
-void glRoundLine(PVector p1, PVector p2, SDL_Color color, int weight) {
-
-   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-   normal.normalize();
-   normal.mult(weight/2.0);
-
-   int NUMBER_OF_VERTICES=16;
-   std::vector<PVector> vertexBuffer;
-
-   float start_angle = PVector{p2.x-p1.x,p2.y-p1.y}.get_angle() + HALF_PI;
-
-   for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(p1.x + cos(i + start_angle) * weight/2, p1.y + sin(i+start_angle) * weight/2);
-   }
-
-   start_angle += PI;
-
-   for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      vertexBuffer.emplace_back(p2.x + cos(i+start_angle) * weight/2, p2.y + sin(i+start_angle) * weight/2);
-   }
-
-   glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
-}
-
-void glCappedLine(PVector p1, PVector p2, SDL_Color color, int weight) {
-
-   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-   normal.normalize();
-   normal.mult(weight/2.0);
-
-   PVector end_offset = PVector{p2.x-p1.x,p2.y-p1.y};
-   end_offset.normalize();
-   end_offset.mult(weight/2.0);
-
-   PVector p[] = {p1,p1,p2,p2};
-   p[0].add(normal);
-   p[0].sub(end_offset);
-
-   p[1].sub(normal);
-   p[1].sub(end_offset);
-
-   p[2].sub(normal);
-   p[2].add(end_offset);
-
-   p[3].add(normal);
-   p[3].add(end_offset);
-
-   glFilledTriangleFan(4, p, color);
-
-}
 
 void glLine(PVector p1, PVector p2, SDL_Color color, int weight) {
 
