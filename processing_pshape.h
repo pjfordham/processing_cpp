@@ -50,12 +50,49 @@ public:
    static int stroke_weight;
    static int line_end_cap;
    GLuint VAO = 0;
+   GLuint indexbuffer = 0;
+   GLuint vertexbuffer = 0;
    Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
    std::vector<PVector> vertices;
 
    int style = LINES;
    int type = OPEN;
    bool stroke_only = false;
+
+   PShape(const PShape& other) = delete;
+   PShape& operator=(const PShape& other) = delete;
+
+   PShape() {
+   }
+
+   PShape(PShape&& other) noexcept {
+      fprintf(stderr,"MOVE constructor!\n");
+      VAO = other.VAO;
+      other.VAO = 0;
+      indexbuffer = other.indexbuffer;
+      other.indexbuffer = 0;
+      vertexbuffer = other.vertexbuffer;
+      other.vertexbuffer = 0;
+      vertices = std::move(other.vertices);
+      other.vertices.clear();
+   }
+
+   PShape& operator=(PShape&& other) noexcept {
+      fprintf(stderr,"MOVE assignment!\n");
+      VAO = other.VAO;
+      other.VAO = 0;
+      indexbuffer = other.indexbuffer;
+      other.indexbuffer = 0;
+      vertexbuffer = other.vertexbuffer;
+      other.vertexbuffer = 0;
+      vertices = std::move(other.vertices);
+      other.vertices.clear();
+      return *this;
+   }
+
+   ~PShape() {
+      releaseVAO();
+   }
 
    void clear() {
       vertices.clear();
@@ -91,12 +128,10 @@ public:
          indices.push_back(indices.size());
       }
 
-      GLuint indexbuffer;
       glGenBuffers(1, &indexbuffer);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
 
-      GLuint vertexbuffer;
       glGenBuffers(1, &vertexbuffer);
       glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
       glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(float), vertex.data(), GL_STATIC_DRAW);
@@ -114,6 +149,18 @@ public:
          );
 
       return VAO;
+   }
+
+   void releaseVAO() {
+      // sometimes we borrow a VAO, but we'd never have the vertexbuffer if we did
+      if (vertexbuffer) {
+         glDeleteBuffers(1, &vertexbuffer);
+         glDeleteBuffers(1, &indexbuffer);
+         glDeleteVertexArrays(1, &VAO);
+         VAO = 0;
+         vertexbuffer = 0;
+         indexbuffer = 0;
+      }
    }
 
    void vertex(float x, float y, float z = 0.0) {

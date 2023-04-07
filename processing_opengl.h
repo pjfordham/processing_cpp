@@ -178,6 +178,7 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
 
 }
 
+// EVERYTHIING BELOW HERE IS ONLY USED BY PSHAPE
 extern GLuint programID;
 extern GLuint Color;
 
