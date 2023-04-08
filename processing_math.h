@@ -164,6 +164,32 @@ public:
    }
 };
 
+struct PLine {
+   PVector start, end;
+
+   PLine offset(float value) {
+      PVector l1_norm = (end - start).normal();
+      l1_norm.normalize();
+      return { start + l1_norm * value , end + l1_norm * value };
+   }
+
+   PVector intersect(PLine other) {
+      PVector d1 = end - start;
+      float a1 = d1.x;
+      float b1 = -d1.y;
+      float c1 = d1.x * start.y - d1.y * start.x;
+
+      PVector d2 = other.end - other.start;
+      float a2 = d2.x;
+      float b2 = -d2.y;
+      float c2 = d2.x * other.start.y - d2.y * other.start.x;
+
+   return {  (a1*c2 - a2*c1) / (a1*b2 - a2*b1), (b2*c1 - b1*c2) / (a1*b2 - a2*b1) };
+
+}
+
+};
+
 Eigen::Matrix4f TranslateMatrix(const PVector &in) {
   Eigen::Matrix4f ret {
      {1.0,    0,     0,    in.x} ,

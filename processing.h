@@ -461,6 +461,15 @@ void line(float x1, float y1, float z1, float x2, float y2, float z2) {
   abort();
 }
 
+
+void line(PVector start, PVector end) {
+   line(start.x,start.y, end.x,end.y);
+}
+
+void line(PLine l) {
+   line(l.start, l.end);
+}
+
 void point(float x, float y) {
    createPoint(x, y).draw();
 }
