@@ -66,7 +66,6 @@ public:
    }
 
    PShape(PShape&& other) noexcept {
-      fprintf(stderr,"MOVE constructor!\n");
       VAO = other.VAO;
       other.VAO = 0;
       indexbuffer = other.indexbuffer;
@@ -75,11 +74,13 @@ public:
       other.vertexbuffer = 0;
       vertices = std::move(other.vertices);
       other.vertices.clear();
-   }
+      style = other.style;
+      type = other.type;
+      stroke_only = other.stroke_only;
+ }
 
    PShape& operator=(PShape&& other) noexcept {
-      fprintf(stderr,"MOVE assignment!\n");
-      VAO = other.VAO;
+       VAO = other.VAO;
       other.VAO = 0;
       indexbuffer = other.indexbuffer;
       other.indexbuffer = 0;
@@ -87,6 +88,9 @@ public:
       other.vertexbuffer = 0;
       vertices = std::move(other.vertices);
       other.vertices.clear();
+      style = other.style;
+      type = other.type;
+      stroke_only = other.stroke_only;
       return *this;
    }
 
