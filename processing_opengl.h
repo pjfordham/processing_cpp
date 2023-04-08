@@ -326,12 +326,6 @@ void glLine(PVector p1, PVector p2, color color, int weight) {
 
 }
 
-void glLines(int points, PVector *p, color color, int weight) {
-   for (int i =1; i<points;++i) {
-      glLine(p[i-1], p[i], color, weight);
-   }
-}
-
 void glTriangleStrip(int points, PVector *p, color color,int weight) {
    for (int i =2; i<points;++i) {
       glLine(p[i-2], p[i-1], color, weight);
@@ -348,13 +342,55 @@ void glTriangleFan(int points, PVector *p, color color,int weight) {
    }
 }
 
-void glClosedLinePoly(int points, PVector *p, color color, int weight) {
-   glLines(points, p, color, weight);
-   glLine(p[points-1], p[0], color, weight);
+PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
+   PLine l1{ p1, p2 };
+   PLine l2{ p2, p3 };
+   PLine low_l1 = l1.offset(-half_weight);
+   PLine high_l1 = l1.offset(half_weight);
+   PLine low_l2 = l2.offset(-half_weight);
+   PLine high_l2 = l2.offset(half_weight);
+   return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
 }
 
-void glLinePoly(int points, PVector *p, color color, int weight) {
-   glLines(points, p, color, weight);
+void glLinePoly(int points, PVector *p, color color, int weight, bool closed) {
+   PLine start;
+   PLine end;
+
+   std::vector<PVector> triangle_strip;
+
+   float half_weight = weight / 2.0;
+   if (closed) {
+      start = glLineMitred(p[points-1], p[0], p[1], half_weight );
+      end = start;
+   } else {
+      PVector normal = (p[1] - p[0]).normal();
+      normal.normalize();
+      normal.mult(half_weight);
+      start = {  p[0] + normal, p[0] - normal };
+      normal = (p[points-1] - p[points-2]).normal();
+      normal.normalize();
+      normal.mult(half_weight);
+      end = { p[points-1] + normal, p[points-1] - normal };
+   }
+
+   triangle_strip.push_back( start.start );
+   triangle_strip.push_back( start.end );
+
+   for (int i =0; i<points-2;++i) {
+      PLine next = glLineMitred(p[i], p[i+1], p[i+2], half_weight);
+      triangle_strip.push_back( next.start );
+      triangle_strip.push_back( next.end );
+   }
+   if (closed) {
+      PLine next = glLineMitred(p[points-2], p[points-1], p[0], half_weight);
+      triangle_strip.push_back( next.start );
+      triangle_strip.push_back( next.end );
+   }
+
+   triangle_strip.push_back( end.start );
+   triangle_strip.push_back( end.end );
+
+   glFilledTriangleStrip(triangle_strip.size(), triangle_strip.data(), color);
 }
 
 

@@ -15,39 +15,50 @@ void draw() {
 
   PVector p1{50,height/2};
   PVector p2{mouseX,mouseY};
-  PVector p3{width-50,height/2};
-
-  PLine a{p1, p2};
-  PLine b{p2, p3};
+  PVector p3{width-mouseX,height - mouseY};
+  PVector p4{width-50,height/2};
 
   strokeWeight(10);
   stroke(255, 160);
-  line(a);
-  line(b);
+  beginShape();
+  vertex(p1.x,p1.y);
+  vertex(p2.x,p2.y);
+  vertex(p3.x,p3.y);
+  vertex(p4.x,p4.y);
+  endShape();
 
-  PLine low_a = a.offset(-50);
-  PLine high_a = a.offset(50);
+  std::vector<PLine> lines = { {p1, p2}, {p2, p3} , {p3, p4} };
 
-  PLine low_b = b.offset(-50);
-  PLine high_b = b.offset(50);
+  float offset = 50;
 
-  strokeWeight(1);
+  for (int i = 0; i < lines.size() -1; ++i) {
+     auto &a = lines[i];
+     auto &b = lines[i+1];
 
-  stroke(255,0,0, 160);
-  line(low_a);
-  line(low_b);
+     PLine low_a = a.offset(-offset);
+     PLine high_a = a.offset(offset);
 
-  stroke(0,255,0, 160);
-  line(high_a);
-  line(high_b);
+     PLine low_b = b.offset(-offset);
+     PLine high_b = b.offset(offset);
 
-  PVector i_upper = high_a.intersect(high_b);
-  stroke(RED);
-  strokeWeight(5);
-  point(i_upper.x,i_upper.y);
+     strokeWeight(1);
 
-  PVector i_lower = low_a.intersect(low_b);
-  stroke(RED);
-  strokeWeight(5);
-  point(i_lower.x,i_lower.y);
+     stroke(255,0,0, 160);
+     line(low_a);
+     line(low_b);
+
+     stroke(0,255,0, 160);
+     line(high_a);
+     line(high_b);
+
+     PVector i_upper = high_a.intersect(high_b);
+     stroke(RED);
+     strokeWeight(5);
+     point(i_upper.x,i_upper.y);
+
+     PVector i_lower = low_a.intersect(low_b);
+     stroke(RED);
+     strokeWeight(5);
+     point(i_lower.x,i_lower.y);
+  }
 }

@@ -221,10 +221,10 @@ public:
                   glFilledPoly( vertices.size(), vertices.data(), stroke_color );
                } else {
                   glFilledPoly( vertices.size(), vertices.data(), fill_color );
-                  glClosedLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight);
+                  glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, true);
                }
             } else {
-               glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight);
+               glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, false);
             }
          }
       }
