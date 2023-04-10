@@ -50,8 +50,8 @@ public:
    static int stroke_weight;
    static int line_end_cap;
    GLuint VAO = 0;
-   GLuint indexbuffer = 0;
    GLuint vertexbuffer = 0;
+   int vertexbuffer_size = 0;
    Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
    std::vector<PVector> vertices;
 
@@ -68,8 +68,8 @@ public:
    PShape(PShape&& other) noexcept {
       VAO = other.VAO;
       other.VAO = 0;
-      indexbuffer = other.indexbuffer;
-      other.indexbuffer = 0;
+      vertexbuffer_size = other.vertexbuffer_size;
+      other.vertexbuffer_size = 0;
       vertexbuffer = other.vertexbuffer;
       other.vertexbuffer = 0;
       vertices = std::move(other.vertices);
@@ -80,10 +80,10 @@ public:
  }
 
    PShape& operator=(PShape&& other) noexcept {
-       VAO = other.VAO;
+      VAO = other.VAO;
       other.VAO = 0;
-      indexbuffer = other.indexbuffer;
-      other.indexbuffer = 0;
+      vertexbuffer_size = other.vertexbuffer_size;
+      other.vertexbuffer_size = 0;
       vertexbuffer = other.vertexbuffer;
       other.vertexbuffer = 0;
       vertices = std::move(other.vertices);
@@ -123,22 +123,11 @@ public:
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
 
-      std::vector<unsigned short> indices;
-      std::vector<float> vertex;
-      for(int i = 0; i < vertices.size(); ++i) {
-         vertex.push_back( vertices[i].x );
-         vertex.push_back( vertices[i].y );
-         vertex.push_back( vertices[i].z );
-         indices.push_back(indices.size());
-      }
-
-      glGenBuffers(1, &indexbuffer);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+      vertexbuffer_size = vertices.size();
 
       glGenBuffers(1, &vertexbuffer);
       glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glBufferData(GL_ARRAY_BUFFER, vertex.size() * sizeof(float), vertex.data(), GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float) * 3, vertices.data(), GL_STATIC_DRAW);
 
       GLuint attribId = glGetAttribLocation(programID, "position");
       glEnableVertexAttribArray(attribId);
@@ -148,22 +137,25 @@ public:
          3,                                // size
          GL_FLOAT,                         // type
          GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
+         sizeof(PVector),                  // stride
+         (void*)offsetof(PVector,x)        // array buffer offset
          );
 
       return VAO;
+   }
+
+   void borrowVAO( const PShape &shape ) {
+      VAO = shape.VAO;
+      vertexbuffer_size = shape.vertexbuffer_size;
    }
 
    void releaseVAO() {
       // sometimes we borrow a VAO, but we'd never have the vertexbuffer if we did
       if (vertexbuffer) {
          glDeleteBuffers(1, &vertexbuffer);
-         glDeleteBuffers(1, &indexbuffer);
          glDeleteVertexArrays(1, &VAO);
          VAO = 0;
          vertexbuffer = 0;
-         indexbuffer = 0;
       }
    }
 
@@ -185,7 +177,7 @@ public:
                stroke_color.b / 255.0f,
                stroke_color.a / 255.0f };
             glUniform4fv(Color, 1, color_vec);
-        } else {
+         } else {
             float color_vec[] = {
                fill_color.r / 255.0f,
                fill_color.g / 255.0f,
@@ -197,13 +189,15 @@ public:
          Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
          glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
          glBindVertexArray(VAO);
-         glDrawElements(GL_TRIANGLE_FAN, 32, GL_UNSIGNED_SHORT, 0);
+         glDrawArrays(GL_TRIANGLE_FAN, 0, vertexbuffer_size);
          glBindVertexArray(0);
          glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
          return;
       }
 
       if (vertices.size() > 0) {
+         // Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
+         // glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
          if (style == POINTS) {
             for (auto z : vertices ) {
                void point(float x, float y);
@@ -218,7 +212,9 @@ public:
          } else if (style == LINES) {
             if (type == CLOSE) {
                if (stroke_only) {
-                  glFilledPoly( vertices.size(), vertices.data(), stroke_color );
+                  // It's one of our own shapes so we known it's convex and
+                  // we don't need to triangulate.
+                  glFilledTriangleFan( vertices.size(), vertices.data(), stroke_color );
                } else {
                   glFilledPoly( vertices.size(), vertices.data(), fill_color );
                   glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, true);
@@ -227,6 +223,7 @@ public:
                glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, false);
             }
          }
+         // glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
       }
    }
 };
@@ -392,7 +389,7 @@ PShape createEllipse(float x, float y, float width, float height) {
    static PShape unitCircle = createUnitCircle();
 
    PShape ellipse;
-   ellipse.VAO = unitCircle.VAO;
+   ellipse.borrowVAO( unitCircle );
    if (PShape::ellipse_mode != RADIUS) {
       width /=2;
       height /=2;
@@ -405,7 +402,7 @@ PShape createEllipse(float x, float y, float width, float height) {
 PShape createPoint(float x, float y) {
    static PShape unitCircle = createUnitCircle();
    PShape shape;
-   shape.VAO = unitCircle.VAO;
+   shape.borrowVAO( unitCircle );
    shape.translate(x,y);
    shape.scale(PShape::stroke_weight,PShape::stroke_weight);
    shape.stroke_only = true;

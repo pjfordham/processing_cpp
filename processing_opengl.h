@@ -185,16 +185,6 @@ extern GLuint Color;
 void glFilledElement(GLuint element_type, int points, PVector *p, color color) {
    anything_drawn = true;
 
-   std::vector<float> vertices;
-   std::vector<unsigned short> indices;
-
-   for (int i = 0; i< points; ++i ) {
-      vertices.push_back(p[i].x);
-      vertices.push_back(p[i].y);
-      vertices.push_back(p[i].z);
-      indices.push_back(i);
-   };
-
    GLuint VAO;
    glGenVertexArrays(1, &VAO);
    glBindVertexArray(VAO);
@@ -202,12 +192,7 @@ void glFilledElement(GLuint element_type, int points, PVector *p, color color) {
    GLuint vertexbuffer;
    glGenBuffers(1, &vertexbuffer);
    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-   GLuint indexbuffer;
-   glGenBuffers(1, &indexbuffer);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+   glBufferData(GL_ARRAY_BUFFER, points * 3 * sizeof(float), p, GL_STATIC_DRAW);
 
    GLuint attribId = glGetAttribLocation(programID, "position");
    glEnableVertexAttribArray(attribId);
@@ -217,25 +202,21 @@ void glFilledElement(GLuint element_type, int points, PVector *p, color color) {
       3,                                // size
       GL_FLOAT,                         // type
       GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
+      sizeof(PVector),                  // stride
+      (void*)offsetof(PVector,x)        // array buffer offset
       );
-
 
    float color_vec[] = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
    glUniform4fv(Color, 1, color_vec);
 
-   glDrawElements(element_type, indices.size(), GL_UNSIGNED_SHORT, 0);
+   glDrawArrays(element_type, 0, points);
 
    glDeleteBuffers(1, &vertexbuffer);
-   glDeleteBuffers(1, &indexbuffer);
 
    // Unbind the buffer objects and VAO
    glBindBuffer(GL_ARRAY_BUFFER, 0);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
    glBindVertexArray(0);
-
-
+   glDeleteVertexArrays(1, &VAO);
 }
 
 void glFilledTriangleStrip(int points, PVector *p, color color) {
@@ -311,6 +292,8 @@ void _glRoundLine(PVector p1, PVector p2, color color, int weight) {
 }
 
 
+// only used by glTriangleStrip and glTriangleFan, as mitred line probably
+// wouldn't work.
 void glLine(PVector p1, PVector p2, color color, int weight) {
 
    PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
