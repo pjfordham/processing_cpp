@@ -173,7 +173,7 @@ public:
       type = type_;
    }
 
-   void glFilledElement(GLuint element_type, int points, PVector *p, color color) {
+   void glFilledElement(GLuint element_type, int points, const PVector *p, color color) const {
       anything_drawn = true;
 
       GLuint VAO;
@@ -210,21 +210,21 @@ public:
       glDeleteVertexArrays(1, &VAO);
    }
 
-   void glFilledTriangleStrip(int points, PVector *p, color color) {
+   void glFilledTriangleStrip(int points, const PVector *p, color color) const {
       glFilledElement(GL_TRIANGLE_STRIP, points, p, color);
    }
 
-   void glFilledPoly(int points, PVector *p, color color) {
+   void glFilledPoly(int points, const PVector *p, color color) const {
       std::vector<PVector> triangles = triangulatePolygon({p,p+points});
       glFilledElement(GL_TRIANGLES,triangles.size(), triangles.data(),color);
    }
 
-   void glFilledTriangleFan(int points, PVector *p, color color) {
+   void glFilledTriangleFan(int points, const PVector *p, color color) const {
       glFilledElement(GL_TRIANGLE_FAN,points,p,color);
    }
 
 
-   void _glRoundLine(PVector p1, PVector p2, color color, int weight) {
+   void _glRoundLine(PVector p1, PVector p2, color color, int weight) const {
 
       // Compute direction vector of line
       PVector direction = p2 - p1;
@@ -285,7 +285,7 @@ public:
 
 // only used by glTriangleStrip and glTriangleFan, as mitred line probably
 // wouldn't work.
-   void glLine(PVector p1, PVector p2, color color, int weight) {
+   void glLine(PVector p1, PVector p2, color color, int weight) const {
 
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
@@ -300,7 +300,7 @@ public:
 
    }
 
-   void glTriangleStrip(int points, PVector *p, color color,int weight) {
+   void glTriangleStrip(int points, const PVector *p, color color,int weight) const {
       for (int i =2; i<points;++i) {
          glLine(p[i-2], p[i-1], color, weight);
          glLine(p[i-1], p[i], color, weight);
@@ -308,7 +308,7 @@ public:
       }
    }
 
-   void glTriangleFan(int points, PVector *p, color color,int weight) {
+   void glTriangleFan(int points, const PVector *p, color color,int weight) const {
       glLine( p[0], p[1], color, weight );
       for (int i =2; i<points;++i) {
          glLine( p[i-1], p[i], color, weight);
@@ -316,7 +316,7 @@ public:
       }
    }
 
-   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
+   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
       PLine l1{ p1, p2 };
       PLine l2{ p2, p3 };
       PLine low_l1 = l1.offset(-half_weight);
@@ -326,7 +326,7 @@ public:
       return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
    }
 
-   void glLinePoly(int points, PVector *p, color color, int weight, bool closed) {
+   void glLinePoly(int points, const PVector *p, color color, int weight, bool closed) const {
       PLine start;
       PLine end;
 
@@ -367,7 +367,7 @@ public:
       glFilledTriangleStrip(triangle_strip.size(), triangle_strip.data(), color);
    }
 
-   void draw( ) {
+   void draw( ) const {
       extern GLuint Mmatrix;
       if ( VAO ) {
          if (stroke_only) {
@@ -609,7 +609,4 @@ PShape createPoint(float x, float y) {
 
 
 
-void shape(const PShape &shape, float x, float y, float width, float height) {
-
-}
 #endif

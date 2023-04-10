@@ -140,26 +140,26 @@ public:
       z = z + (v.z - z) * amt;
    }
 
-   PVector operator+(const PVector &other) {
+   PVector operator+(const PVector &other) const {
       return PVector{
          x + other.x,
          y + other.y,
          z + other.z};
    }
 
-   PVector operator-(const PVector &other) {
+   PVector operator-(const PVector &other) const {
       return PVector{
          x - other.x,
          y - other.y,
          z - other.z};
    }
-   PVector operator*(const float &other) {
+   PVector operator*(const float &other) const {
       return PVector{
          x * other,
          y * other,
          z * other};
    }
-   bool operator==(const PVector &other) {
+   bool operator==(const PVector &other) const {
       return x == other.x && y == other.y && z == other.z;
    }
 };
