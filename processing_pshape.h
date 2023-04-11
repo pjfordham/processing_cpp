@@ -128,11 +128,11 @@ public:
       clear();
    }
 
-   GLuint createVAO() {
-      return createVAO( vertices );
+   void createVAO() {
+      createVAO( vertices );
    }
 
-   GLuint createVAO( std::vector<PVector> &vertices ) {
+   void createVAO( std::vector<PVector> &vertices ) {
       // Create a vertex array object (VAO)
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
@@ -154,8 +154,6 @@ public:
          sizeof(PVector),                  // stride
          (void*)offsetof(PVector,x)        // array buffer offset
          );
-
-      return VAO;
    }
 
    void borrowVAO( const PShape &shape ) {
