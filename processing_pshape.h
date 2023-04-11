@@ -55,6 +55,8 @@ public:
    static int ellipse_mode;
    static int stroke_weight;
    static int line_end_cap;
+
+private:
    GLuint VAO = 0;
    GLuint vertexbuffer = 0;
    int vertexbuffer_size = 0;
@@ -63,6 +65,8 @@ public:
 
    int style = LINES;
    int type = OPEN;
+
+public:
    bool stroke_only = false;
 
    PShape(const PShape& other) = delete;
@@ -124,6 +128,10 @@ public:
       clear();
    }
 
+   GLuint createVAO() {
+      return createVAO( vertices );
+   }
+
    GLuint createVAO( std::vector<PVector> &vertices ) {
       // Create a vertex array object (VAO)
       glGenVertexArrays(1, &VAO);
@@ -167,6 +175,10 @@ public:
 
    void vertex(float x, float y, float z = 0.0) {
       vertices.push_back({x, y, z});
+   }
+
+   void vertex(PVector p) {
+      vertices.push_back(p);
    }
 
    void endShape(int type_ = OPEN) {
@@ -234,7 +246,7 @@ public:
 
    // only used by glTriangleStrip and glTriangleFan, as mitred line probably
    // wouldn't work.
-   void glLine(std::vector<PVector> &triangles, PVector p1, PVector p2, color color, int weight)  {
+   void glLine(std::vector<PVector> &triangles, PVector p1, PVector p2, color color, int weight) const {
 
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
@@ -250,7 +262,7 @@ public:
 
    }
 
-   void glTriangleStrip(int points, const PVector *p, color color,int weight)  {
+   void glTriangleStrip(int points, const PVector *p, color color,int weight) {
       std::vector<PVector> triangles;
       glLine(triangles, p[0], p[1], color, weight);
       for (int i=2;i<points;++i) {
@@ -259,11 +271,11 @@ public:
       }
       stroke_only = true;
       createVAO( triangles );
-      draw( GL_TRIANGLES );
+      drawVAO( color, GL_TRIANGLES );
       releaseVAO();
    }
 
-   void glTriangleFan(int points, const PVector *p, color color,int weight)  {
+   void glTriangleFan(int points, const PVector *p, color color,int weight) {
       std::vector<PVector> triangles;
       glLine(triangles, p[0], p[1], color, weight );
       for (int i=2;i<points;++i) {
@@ -272,11 +284,11 @@ public:
       }
       stroke_only = true;
       createVAO( triangles );
-      draw( GL_TRIANGLES );
+      drawVAO( color, GL_TRIANGLES );
       releaseVAO();
    }
 
-   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight)  {
+   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
       PLine l1{ p1, p2 };
       PLine l2{ p2, p3 };
       PLine low_l1 = l1.offset(-half_weight);
@@ -326,35 +338,30 @@ public:
 
       stroke_only = true;
       createVAO( triangle_strip );
-      draw( GL_TRIANGLE_STRIP );
+      drawVAO( color, GL_TRIANGLE_STRIP );
       releaseVAO();
    }
 
-   void draw(GLuint element_type = GL_TRIANGLE_FAN ) {
+   void drawVAO(color color, GLuint element_type) {
       extern GLuint Mmatrix;
-      if ( VAO ) {
-         if (stroke_only) {
-            float color_vec[] = {
-               stroke_color.r / 255.0f,
-               stroke_color.g / 255.0f,
-               stroke_color.b / 255.0f,
-               stroke_color.a / 255.0f };
-            glUniform4fv(Color, 1, color_vec);
-         } else {
-            float color_vec[] = {
-               fill_color.r / 255.0f,
-               fill_color.g / 255.0f,
-               fill_color.b / 255.0f,
-               fill_color.a / 255.0f };
-            glUniform4fv(Color, 1, color_vec);
-         }
+      float color_vec[] = {
+         color.r / 255.0f,
+         color.g / 255.0f,
+         color.b / 255.0f,
+         color.a / 255.0f };
+      glUniform4fv(Color, 1, color_vec);
+      Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
+      glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
+      glBindVertexArray(VAO);
+      glDrawArrays(element_type, 0, vertexbuffer_size);
+      glBindVertexArray(0);
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+      return;
+   }
 
-         Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
-         glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
-         glBindVertexArray(VAO);
-         glDrawArrays(element_type, 0, vertexbuffer_size);
-         glBindVertexArray(0);
-         glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   void draw() {
+      if ( VAO ) {
+         drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLE_FAN );
          return;
       }
 
@@ -366,13 +373,13 @@ public:
                createPoint( z.x, z.y ).draw();
             }
          } else if (style == TRIANGLE_STRIP) {
-            createVAO( vertices );
-            draw( GL_TRIANGLE_STRIP );
+            createVAO();
+            drawVAO( fill_color, GL_TRIANGLE_STRIP );
             releaseVAO();
             glTriangleStrip( vertices.size(), vertices.data(), stroke_color, stroke_weight);
          } else if (style == TRIANGLE_FAN) {
-            createVAO( vertices );
-            draw( GL_TRIANGLE_FAN );
+            createVAO();
+            drawVAO( fill_color, GL_TRIANGLE_FAN );
             releaseVAO();
             glTriangleFan( vertices.size(), vertices.data(), stroke_color, stroke_weight);
          } else if (style == LINES) {
@@ -380,13 +387,13 @@ public:
                if (stroke_only) {
                   // It's one of our own shapes so we known it's convex and
                   // we don't need to triangulate. ( this is dodgy, this is never a poly, but it might be two messed up triangles. 
-                  createVAO( vertices );
-                  draw();
+                  createVAO();
+                  drawVAO( stroke_color, GL_TRIANGLE_FAN );
                   releaseVAO();
                } else {
                   std::vector<PVector> triangles = triangulatePolygon({vertices.begin(),vertices.end()});
                   createVAO( triangles );
-                  draw( GL_TRIANGLES );
+                  drawVAO( fill_color, GL_TRIANGLES );
                   releaseVAO();
                   glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, true);
                }
@@ -411,7 +418,7 @@ int PShape::rect_mode = CORNER;
 
 PShape createRect(float x, float y, float width, float height) {
    if (PShape::rect_mode == CORNERS) {
-      width = width -x;
+      width = width - x;
       height = height - y;
    } else if (PShape::rect_mode == CENTER) {
       x = x - width / 2;
@@ -423,22 +430,23 @@ PShape createRect(float x, float y, float width, float height) {
       y = y - height / 2;
    }
    PShape shape;
-   shape.style = LINES;
-   shape.type = CLOSE;
-   shape.vertices = {
-      {x,y},
-      {x+width,y},
-      {x+width,y+height},
-      {x,y+height}
-   };
+   shape.beginShape(LINES);
+   shape.vertex(x,y);
+   shape.vertex(x+width,y);
+   shape.vertex(x+width,y+height);
+   shape.vertex(x,y+height);
+   shape.endShape(CLOSE);
    return shape;
 }
 
 PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
    PShape shape;
-   shape.style = LINES;
-   shape.type = CLOSE;
-   shape.vertices = { PVector{x1,y1},PVector{x2,y2},PVector{x3,y3},PVector{x4,y4} };
+   shape.beginShape(LINES);
+   shape.vertex(x1, y1);
+   shape.vertex(x2, y2);
+   shape.vertex(x3, y3);
+   shape.vertex(x4, y4);
+   shape.endShape(CLOSE);
    return shape;
 }
 
@@ -450,8 +458,7 @@ PShape createLine(float x1, float y1, float x2, float y2) {
 
    PShape shape;
    shape.stroke_only = true;
-   shape.type = CLOSE;
-   shape.style = LINES;
+   shape.beginShape(LINES);
 
    PVector direction = PVector{x2-x1,y2-y1};
    PVector normal = direction.normal();
@@ -464,15 +471,15 @@ PShape createLine(float x1, float y1, float x2, float y2) {
       float start_angle = direction.get_angle() + HALF_PI;
 
       for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertices.emplace_back(x1 + cos(i + start_angle) * half_stroke,
-                                     y1 + sin(i + start_angle) * half_stroke);
+         shape.vertex(x1 + cos(i + start_angle) * half_stroke,
+                      y1 + sin(i + start_angle) * half_stroke);
       }
 
       start_angle += PI;
 
       for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertices.emplace_back(x2 + cos(i + start_angle) * half_stroke,
-                                     y2 + sin(i + start_angle) * half_stroke);
+         shape.vertex(x2 + cos(i + start_angle) * half_stroke,
+                      y2 + sin(i + start_angle) * half_stroke);
       }
    } else {
       p[0].add(normal);
@@ -489,16 +496,22 @@ PShape createLine(float x1, float y1, float x2, float y2) {
          p[3].add(direction);
       }
 
-      shape.vertices = { p[0], p[1], p[2], p[3] };
+      shape.vertex( p[0] );
+      shape.vertex( p[1] );
+      shape.vertex( p[2] );
+      shape.vertex( p[3] );
    }
+   shape.endShape(CLOSE);
    return shape;
 }
 
 PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
    PShape shape;
-   shape.style = TRIANGLE_FAN;
-   shape.type = CLOSE;
-   shape.vertices ={ PVector{x1,y1},PVector{x2,y2},PVector{x3,y3} };
+   shape.beginShape(TRIANGLE_FAN);
+   shape.vertex(x1, y1);
+   shape.vertex(x2, y2);
+   shape.vertex(x3, y3);
+   shape.endShape(CLOSE);
    return shape;
 }
 
@@ -518,18 +531,18 @@ PShape createArc(float x, float y, float width, float height, float start,
       height /=2;
    }
    PShape shape;
-   shape.style = LINES;
-   shape.type = CLOSE;
+   shape.beginShape(LINES);
    int NUMBER_OF_VERTICES=32;
    if ( mode == DEFAULT || mode == PIE ) {
-      shape.vertices.push_back({x,y});
+      shape.vertex(x,y);
    }
    for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-      shape.vertices.push_back( ellipse_point( {x,y}, i, start, stop, width, height ) );
+      shape.vertex( ellipse_point( {x,y}, i, start, stop, width, height ) );
    }
-   shape.vertices.push_back( ellipse_point( {x,y}, 32, start, stop, width, height ) );
+   shape.vertex( ellipse_point( {x,y}, 32, start, stop, width, height ) );
+   shape.endShape(CLOSE);
    return shape;
-// NEED to tweak outline see Arc.cc
+   // NEED to tweak outline see Arc.cc
    // int NUMBER_OF_VERTICES=32;
    // std::vector<PVector> vertexBuffer;
    // if ( mode == PIE ) {
@@ -548,10 +561,12 @@ PShape createArc(float x, float y, float width, float height, float start,
 
 PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    PShape shape;
+   shape.beginShape(LINES);
    for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-      shape.vertices.push_back( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
+      shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
    }
-   shape.createVAO( shape.vertices );
+   shape.endShape(CLOSE);
+   shape.createVAO();
    return shape;
 }
 
