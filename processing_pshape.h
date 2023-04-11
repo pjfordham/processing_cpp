@@ -10,9 +10,10 @@ enum {
    LINES = 1,
    TRIANGLE_STRIP,
    TRIANGLE_FAN,
+   TRIANGLES,
 };
 
-enum{
+enum {
    OPEN = 0,
    CLOSE = 1,
 };
@@ -62,8 +63,12 @@ private:
    int vertexbuffer_size = 0;
    Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
    std::vector<PVector> vertices;
+   std::vector<PShape> children;
 
+public:
    int style = LINES;
+
+private:
    int type = OPEN;
 
 public:
@@ -84,9 +89,12 @@ public:
       other.vertexbuffer = 0;
       vertices = std::move(other.vertices);
       other.vertices.clear();
+      children = std::move(other.children);
+      other.children.clear();
       style = other.style;
       type = other.type;
       stroke_only = other.stroke_only;
+      shape_matrix = other.shape_matrix;
    }
 
    PShape& operator=(PShape&& other) noexcept {
@@ -98,9 +106,12 @@ public:
       other.vertexbuffer = 0;
       vertices = std::move(other.vertices);
       other.vertices.clear();
+      children = std::move(other.children);
+      other.children.clear();
       style = other.style;
       type = other.type;
       stroke_only = other.stroke_only;
+      shape_matrix = other.shape_matrix;
       return *this;
    }
 
@@ -181,6 +192,37 @@ public:
 
    void endShape(int type_ = OPEN) {
       type = type_;
+
+      if (vertices.size() > 0) {
+         if (style == POINTS) {
+            for (auto z : vertices ) {
+               children.emplace_back(createPoint( z.x, z.y ));
+            }
+         } else if (style == TRIANGLE_STRIP) {
+            createVAO();
+            if (!stroke_only)
+               glTriangleStrip( vertices.size(), vertices.data(), stroke_weight);
+         } else if (style == TRIANGLE_FAN) {
+            createVAO();
+            if (!stroke_only)
+               glTriangleFan( vertices.size(), vertices.data(), stroke_weight);
+         } else if (style == TRIANGLES) {
+            createVAO();
+            if (!stroke_only) {
+               abort();
+            }
+         } else if (style == LINES) {
+            if (type == CLOSE) {
+               std::vector<PVector> triangles = triangulatePolygon({vertices.begin(),vertices.end()});
+               style = TRIANGLES;
+               createVAO( triangles );
+            }
+            if (!stroke_only)
+               glLinePoly( vertices.size(), vertices.data(), stroke_weight, type == CLOSE);
+         } else {
+            abort();
+         }
+      }
    }
 
    // void _glRoundLine(PVector p1, PVector p2, color color, int weight) const {
@@ -244,46 +286,47 @@ public:
 
    // only used by glTriangleStrip and glTriangleFan, as mitred line probably
    // wouldn't work.
-   void glLine(std::vector<PVector> &triangles, PVector p1, PVector p2, color color, int weight) const {
+   void glLine(PShape &triangles, PVector p1, PVector p2, int weight) const {
 
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
       normal.mult(weight/2.0);
 
-      triangles.push_back(p1 + normal);
-      triangles.push_back(p1 - normal);
-      triangles.push_back(p2 + normal);
+      triangles.vertex(p1 + normal);
+      triangles.vertex(p1 - normal);
+      triangles.vertex(p2 + normal);
 
-      triangles.push_back(p2 + normal);
-      triangles.push_back(p2 - normal);
-      triangles.push_back(p1 - normal);
+      triangles.vertex(p2 + normal);
+      triangles.vertex(p2 - normal);
+      triangles.vertex(p1 - normal);
 
    }
 
-   void glTriangleStrip(int points, const PVector *p, color color,int weight) {
-      std::vector<PVector> triangles;
-      glLine(triangles, p[0], p[1], color, weight);
+   // MAke this make a new phsape and shove it in children
+   void glTriangleStrip(int points, const PVector *p,int weight) {
+      PShape triangles;
+      triangles.beginShape(TRIANGLES);
+      glLine(triangles, p[0], p[1], weight);
       for (int i=2;i<points;++i) {
-         glLine(triangles, p[i-1], p[i], color, weight);
-         glLine(triangles, p[i], p[i-2], color, weight);
+         glLine(triangles, p[i-1], p[i], weight);
+         glLine(triangles, p[i], p[i-2], weight);
       }
-      stroke_only = true;
-      createVAO( triangles );
-      drawVAO( color, GL_TRIANGLES );
-      releaseVAO();
+      triangles.stroke_only = true;
+      triangles.endShape();
+      children.push_back(std::move(triangles));
    }
 
-   void glTriangleFan(int points, const PVector *p, color color,int weight) {
-      std::vector<PVector> triangles;
-      glLine(triangles, p[0], p[1], color, weight );
+   void glTriangleFan(int points, const PVector *p, int weight) {
+      PShape triangles;
+      triangles.beginShape(TRIANGLES);
+      glLine(triangles, p[0], p[1], weight );
       for (int i=2;i<points;++i) {
-         glLine(triangles, p[i-1], p[i], color, weight);
-         glLine(triangles, p[i],   p[0], color, weight);
+         glLine(triangles, p[i-1], p[i], weight);
+         glLine(triangles, p[i],   p[0], weight);
       }
-      stroke_only = true;
-      createVAO( triangles );
-      drawVAO( color, GL_TRIANGLES );
-      releaseVAO();
+      triangles.stroke_only = true;
+      triangles.endShape();
+      children.push_back(std::move(triangles));
    }
 
    PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
@@ -296,11 +339,12 @@ public:
       return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
    }
 
-   void glLinePoly(int points, const PVector *p, color color, int weight, bool closed)  {
+   void glLinePoly(int points, const PVector *p, int weight, bool closed)  {
       PLine start;
       PLine end;
 
-      std::vector<PVector> triangle_strip;
+      PShape triangle_strip;
+      triangle_strip.beginShape(TRIANGLE_STRIP);
 
       float half_weight = weight / 2.0;
       if (closed) {
@@ -317,27 +361,26 @@ public:
          end = { p[points-1] + normal, p[points-1] - normal };
       }
 
-      triangle_strip.push_back( start.start );
-      triangle_strip.push_back( start.end );
+      triangle_strip.vertex( start.start );
+      triangle_strip.vertex( start.end );
 
       for (int i =0; i<points-2;++i) {
          PLine next = glLineMitred(p[i], p[i+1], p[i+2], half_weight);
-         triangle_strip.push_back( next.start );
-         triangle_strip.push_back( next.end );
+         triangle_strip.vertex( next.start );
+         triangle_strip.vertex( next.end );
       }
       if (closed) {
          PLine next = glLineMitred(p[points-2], p[points-1], p[0], half_weight);
-         triangle_strip.push_back( next.start );
-         triangle_strip.push_back( next.end );
+         triangle_strip.vertex( next.start );
+         triangle_strip.vertex( next.end );
       }
 
-      triangle_strip.push_back( end.start );
-      triangle_strip.push_back( end.end );
+      triangle_strip.vertex( end.start );
+      triangle_strip.vertex( end.end );
 
-      stroke_only = true;
-      createVAO( triangle_strip );
-      drawVAO( color, GL_TRIANGLE_STRIP );
-      releaseVAO();
+      triangle_strip.stroke_only = true;
+      triangle_strip.endShape(closed ? CLOSE : OPEN);
+      children.push_back(std::move(triangle_strip));
    }
 
    void drawVAO(color color, GLuint element_type) {
@@ -359,47 +402,22 @@ public:
 
    void draw() {
       if ( VAO ) {
-         drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLE_FAN );
-         return;
-      }
-
-      if (vertices.size() > 0) {
-         // Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
-         // glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
-         if (style == POINTS) {
-            for (auto z : vertices ) {
-               createPoint( z.x, z.y ).draw();
-            }
-         } else if (style == TRIANGLE_STRIP) {
-            createVAO();
-            drawVAO( fill_color, GL_TRIANGLE_STRIP );
-            releaseVAO();
-            glTriangleStrip( vertices.size(), vertices.data(), stroke_color, stroke_weight);
-         } else if (style == TRIANGLE_FAN) {
-            createVAO();
-            drawVAO( fill_color, GL_TRIANGLE_FAN );
-            releaseVAO();
-            glTriangleFan( vertices.size(), vertices.data(), stroke_color, stroke_weight);
-         } else if (style == LINES) {
-            if (type == CLOSE) {
-               if (stroke_only) {
-                  // It's one of our own shapes so we known it's convex and
-                  // we don't need to triangulate. ( this is dodgy, this is never a poly, but it might be two messed up triangles. 
-                  createVAO();
-                  drawVAO( stroke_color, GL_TRIANGLE_FAN );
-                  releaseVAO();
-               } else {
-                  std::vector<PVector> triangles = triangulatePolygon({vertices.begin(),vertices.end()});
-                  createVAO( triangles );
-                  drawVAO( fill_color, GL_TRIANGLES );
-                  releaseVAO();
-                  glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, true);
-               }
-            } else {
-               glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, false);
-            }
+         switch( style ) {
+         case TRIANGLE_FAN:
+            drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLE_FAN );
+            break;
+         case TRIANGLE_STRIP:
+            drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLE_STRIP );
+            break;
+         case TRIANGLES:
+            drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLES );
+            break;
+         default:
+            abort();
          }
-         // glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+      }
+      for (auto &&child : children) {
+         child.draw();
       }
    }
 };
@@ -505,7 +523,7 @@ PShape createLine(float x1, float y1, float x2, float y2) {
 
 PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
    PShape shape;
-   shape.beginShape(TRIANGLE_FAN);
+   shape.beginShape(TRIANGLE_STRIP);
    shape.vertex(x1, y1);
    shape.vertex(x2, y2);
    shape.vertex(x3, y3);
@@ -564,7 +582,6 @@ PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
       shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
    }
    shape.endShape(CLOSE);
-   shape.createVAO();
    return shape;
 }
 
@@ -577,6 +594,7 @@ PShape createEllipse(float x, float y, float width, float height) {
       width /=2;
       height /=2;
    }
+   ellipse.style = TRIANGLE_FAN;
    ellipse.translate(x,y);
    ellipse.scale(width,height);
    return ellipse;
@@ -586,6 +604,7 @@ PShape createPoint(float x, float y) {
    static PShape unitCircle = createUnitCircle();
    PShape shape;
    shape.borrowVAO( unitCircle );
+   shape.style = TRIANGLE_FAN;
    shape.translate(x,y);
    shape.scale(PShape::stroke_weight,PShape::stroke_weight);
    shape.stroke_only = true;
