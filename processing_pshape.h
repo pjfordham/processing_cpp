@@ -210,113 +210,125 @@ public:
       glDeleteVertexArrays(1, &VAO);
    }
 
-   void glFilledTriangleStrip(int points, const PVector *p, color color) const {
-      glFilledElement(GL_TRIANGLE_STRIP, points, p, color);
-   }
-
-   void glFilledPoly(int points, const PVector *p, color color) const {
+   void glFilledPoly(int points, const PVector *p, color color)  {
       std::vector<PVector> triangles = triangulatePolygon({p,p+points});
-      glFilledElement(GL_TRIANGLES,triangles.size(), triangles.data(),color);
-   }
+      glFilledElement(GL_TRIANGLES,triangles.size(), triangles.data(),BLUE);
 
-   void glFilledTriangleFan(int points, const PVector *p, color color) const {
-      glFilledElement(GL_TRIANGLE_FAN,points,p,color);
-   }
-
-
-   void _glRoundLine(PVector p1, PVector p2, color color, int weight) const {
-
-      // Compute direction vector of line
-      PVector direction = p2 - p1;
-      direction.normalize();
-
-      // Compute first orthogonal vector
-      PVector z_axis(0.0, 0.0, 1.0);
-      PVector orthogonal1 = direction.cross(z_axis);
-      orthogonal1.normalize();
-
-      // Compute second orthogonal vector
-      PVector orthogonal2 = direction.cross(orthogonal1);
-      orthogonal2.normalize();
-
-      if (orthogonal1 == PVector{0.0,0.0,0.0} ) {
-         orthogonal1 = PVector{1.0, 0.0, 0.0};
-         orthogonal2 = PVector{0.0, 1.0, 0.0};
-      }
-
-      // Compute dimensions of cuboid
-      float length = weight * 1;
-
-      // Construct vertices of cuboid
-      std::vector<PVector> vertices(8);
-      vertices[0] = p1 - orthogonal1 * length - orthogonal2 * length;
-      vertices[1] = p1 + orthogonal1 * length - orthogonal2 * length;
-      vertices[2] = p1 + orthogonal1 * length + orthogonal2 * length;
-      vertices[3] = p1 - orthogonal1 * length + orthogonal2 * length;
-      vertices[4] = p2 - orthogonal1 * length - orthogonal2 * length;
-      vertices[5] = p2 + orthogonal1 * length - orthogonal2 * length;
-      vertices[6] = p2 + orthogonal1 * length + orthogonal2 * length;
-      vertices[7] = p2 - orthogonal1 * length + orthogonal2 * length;
+      // This would works ut we overwrite the original data before we draw the outline
+      // vertices = triangles;
+      // stroke_only = true;
+      // createVAO();
+      // draw( GL_TRIANGLES );
+      // releaseVAO();
+  }
 
 
-      std::vector<PVector> vertexBuffer;
+   // void _glRoundLine(PVector p1, PVector p2, color color, int weight) const {
 
-      vertexBuffer = { vertices[0], vertices[1],vertices[2],vertices[3] };
-      glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+   //    // Compute direction vector of line
+   //    PVector direction = p2 - p1;
+   //    direction.normalize();
 
-      vertexBuffer = { vertices[4], vertices[5],vertices[6],vertices[7] };
-      glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+   //    // Compute first orthogonal vector
+   //    PVector z_axis(0.0, 0.0, 1.0);
+   //    PVector orthogonal1 = direction.cross(z_axis);
+   //    orthogonal1.normalize();
 
-      vertexBuffer = { vertices[0], vertices[1],vertices[4],vertices[5] };
-      glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+   //    // Compute second orthogonal vector
+   //    PVector orthogonal2 = direction.cross(orthogonal1);
+   //    orthogonal2.normalize();
 
-      vertexBuffer = { vertices[2], vertices[3],vertices[6],vertices[7] };
-      glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+   //    if (orthogonal1 == PVector{0.0,0.0,0.0} ) {
+   //       orthogonal1 = PVector{1.0, 0.0, 0.0};
+   //       orthogonal2 = PVector{0.0, 1.0, 0.0};
+   //    }
 
-      vertexBuffer = { vertices[1], vertices[5],vertices[6],vertices[2] };
-      glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+   //    // Compute dimensions of cuboid
+   //    float length = weight * 1;
 
-      vertexBuffer = { vertices[0], vertices[4],vertices[3],vertices[7] };
-      glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+   //    // Construct vertices of cuboid
+   //    std::vector<PVector> vertices(8);
+   //    vertices[0] = p1 - orthogonal1 * length - orthogonal2 * length;
+   //    vertices[1] = p1 + orthogonal1 * length - orthogonal2 * length;
+   //    vertices[2] = p1 + orthogonal1 * length + orthogonal2 * length;
+   //    vertices[3] = p1 - orthogonal1 * length + orthogonal2 * length;
+   //    vertices[4] = p2 - orthogonal1 * length - orthogonal2 * length;
+   //    vertices[5] = p2 + orthogonal1 * length - orthogonal2 * length;
+   //    vertices[6] = p2 + orthogonal1 * length + orthogonal2 * length;
+   //    vertices[7] = p2 - orthogonal1 * length + orthogonal2 * length;
 
 
-   }
+   //    std::vector<PVector> vertexBuffer;
+
+   //    vertexBuffer = { vertices[0], vertices[1],vertices[2],vertices[3] };
+   //    glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   //    vertexBuffer = { vertices[4], vertices[5],vertices[6],vertices[7] };
+   //    glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   //    vertexBuffer = { vertices[0], vertices[1],vertices[4],vertices[5] };
+   //    glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   //    vertexBuffer = { vertices[2], vertices[3],vertices[6],vertices[7] };
+   //    glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   //    vertexBuffer = { vertices[1], vertices[5],vertices[6],vertices[2] };
+   //    glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
+
+   //    vertexBuffer = { vertices[0], vertices[4],vertices[3],vertices[7] };
+   //    glFilledTriangleFan(vertexBuffer.size(), vertexBuffer.data(), color );
 
 
-// only used by glTriangleStrip and glTriangleFan, as mitred line probably
-// wouldn't work.
-   void glLine(PVector p1, PVector p2, color color, int weight) const {
+   // }
+
+
+   // only used by glTriangleStrip and glTriangleFan, as mitred line probably
+   // wouldn't work.
+   void glLine(std::vector<PVector> &triangles, PVector p1, PVector p2, color color, int weight)  {
 
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
       normal.mult(weight/2.0);
 
-      PVector p[] = {p1,p1,p2,p2};
-      p[0].add(normal);
-      p[1].sub(normal);
-      p[2].sub(normal);
-      p[3].add(normal);
-      glFilledTriangleFan(4, p, color);
+      triangles.push_back(p1 + normal);
+      triangles.push_back(p1 - normal);
+      triangles.push_back(p2 + normal);
+
+      triangles.push_back(p2 + normal);
+      triangles.push_back(p2 - normal);
+      triangles.push_back(p1 - normal);
 
    }
 
-   void glTriangleStrip(int points, const PVector *p, color color,int weight) const {
+   void glTriangleStrip(int points, const PVector *p, color color,int weight)  {
+      std::vector<PVector> triangles;
       for (int i =2; i<points;++i) {
-         glLine(p[i-2], p[i-1], color, weight);
-         glLine(p[i-1], p[i], color, weight);
-         glLine(p[i], p[i-2], color, weight);
+         glLine(triangles, p[i-2], p[i-1], color, weight);
+         glLine(triangles, p[i-1], p[i], color, weight);
+         glLine(triangles, p[i], p[i-2], color, weight);
       }
+      vertices = triangles;
+      stroke_only = true;
+      createVAO();
+      draw( GL_TRIANGLES );
+      releaseVAO();
    }
 
-   void glTriangleFan(int points, const PVector *p, color color,int weight) const {
-      glLine( p[0], p[1], color, weight );
+   void glTriangleFan(int points, const PVector *p, color color,int weight)  {
+      std::vector<PVector> triangles;
+      glLine(triangles, p[0], p[1], color, weight );
       for (int i =2; i<points;++i) {
-         glLine( p[i-1], p[i], color, weight);
-         glLine( p[0], p[i], color, weight);
+         glLine(triangles, p[i-1], p[i], color, weight);
+         glLine(triangles, p[0], p[i], color, weight);
       }
+      vertices = triangles;
+      stroke_only = true;
+      createVAO();
+      draw( GL_TRIANGLES );
+      releaseVAO();
    }
 
-   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
+   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight)  {
       PLine l1{ p1, p2 };
       PLine l2{ p2, p3 };
       PLine low_l1 = l1.offset(-half_weight);
@@ -326,7 +338,7 @@ public:
       return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
    }
 
-   void glLinePoly(int points, const PVector *p, color color, int weight, bool closed) const {
+   void glLinePoly(int points, const PVector *p, color color, int weight, bool closed)  {
       PLine start;
       PLine end;
 
@@ -364,10 +376,14 @@ public:
       triangle_strip.push_back( end.start );
       triangle_strip.push_back( end.end );
 
-      glFilledTriangleStrip(triangle_strip.size(), triangle_strip.data(), color);
+      vertices = triangle_strip;
+      stroke_only = true;
+      createVAO();
+      draw( GL_TRIANGLE_STRIP );
+      releaseVAO();
    }
 
-   void draw( ) const {
+   void draw(GLuint element_type = GL_TRIANGLE_FAN ) {
       extern GLuint Mmatrix;
       if ( VAO ) {
          if (stroke_only) {
@@ -389,7 +405,7 @@ public:
          Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
          glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
          glBindVertexArray(VAO);
-         glDrawArrays(GL_TRIANGLE_FAN, 0, vertexbuffer_size);
+         glDrawArrays(element_type, 0, vertexbuffer_size);
          glBindVertexArray(0);
          glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
          return;
@@ -403,17 +419,23 @@ public:
                createPoint( z.x, z.y ).draw();
             }
          } else if (style == TRIANGLE_STRIP) {
-            glFilledTriangleStrip( vertices.size(), vertices.data(), fill_color );
+            createVAO();
+            draw( GL_TRIANGLE_STRIP );
+            releaseVAO();
             glTriangleStrip( vertices.size(), vertices.data(), stroke_color, stroke_weight);
          } else if (style == TRIANGLE_FAN) {
-            glFilledTriangleFan( vertices.size(), vertices.data(), fill_color );
+            createVAO();
+            draw( GL_TRIANGLE_FAN );
+            releaseVAO();
             glTriangleFan( vertices.size(), vertices.data(), stroke_color, stroke_weight);
          } else if (style == LINES) {
             if (type == CLOSE) {
                if (stroke_only) {
                   // It's one of our own shapes so we known it's convex and
                   // we don't need to triangulate.
-                  glFilledTriangleFan( vertices.size(), vertices.data(), stroke_color );
+                  createVAO();
+                  draw();
+                  releaseVAO();
                } else {
                   glFilledPoly( vertices.size(), vertices.data(), fill_color );
                   glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, true);
