@@ -124,7 +124,7 @@ public:
       clear();
    }
 
-   GLuint createVAO() {
+   GLuint createVAO( std::vector<PVector> &vertices ) {
       // Create a vertex array object (VAO)
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
@@ -160,9 +160,9 @@ public:
       if (vertexbuffer) {
          glDeleteBuffers(1, &vertexbuffer);
          glDeleteVertexArrays(1, &VAO);
-         VAO = 0;
          vertexbuffer = 0;
       }
+      VAO = 0;
    }
 
    void vertex(float x, float y, float z = 0.0) {
@@ -172,56 +172,6 @@ public:
    void endShape(int type_ = OPEN) {
       type = type_;
    }
-
-   void glFilledElement(GLuint element_type, int points, const PVector *p, color color) const {
-      anything_drawn = true;
-
-      GLuint VAO;
-      glGenVertexArrays(1, &VAO);
-      glBindVertexArray(VAO);
-
-      GLuint vertexbuffer;
-      glGenBuffers(1, &vertexbuffer);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glBufferData(GL_ARRAY_BUFFER, points * 3 * sizeof(float), p, GL_STATIC_DRAW);
-
-      GLuint attribId = glGetAttribLocation(programID, "position");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         sizeof(PVector),                  // stride
-         (void*)offsetof(PVector,x)        // array buffer offset
-         );
-
-      float color_vec[] = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
-      glUniform4fv(Color, 1, color_vec);
-
-      glDrawArrays(element_type, 0, points);
-
-      glDeleteBuffers(1, &vertexbuffer);
-
-      // Unbind the buffer objects and VAO
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glBindVertexArray(0);
-      glDeleteVertexArrays(1, &VAO);
-   }
-
-   void glFilledPoly(int points, const PVector *p, color color)  {
-      std::vector<PVector> triangles = triangulatePolygon({p,p+points});
-      glFilledElement(GL_TRIANGLES,triangles.size(), triangles.data(),BLUE);
-
-      // This would works ut we overwrite the original data before we draw the outline
-      // vertices = triangles;
-      // stroke_only = true;
-      // createVAO();
-      // draw( GL_TRIANGLES );
-      // releaseVAO();
-  }
-
 
    // void _glRoundLine(PVector p1, PVector p2, color color, int weight) const {
 
@@ -302,14 +252,13 @@ public:
 
    void glTriangleStrip(int points, const PVector *p, color color,int weight)  {
       std::vector<PVector> triangles;
-      for (int i =2; i<points;++i) {
-         glLine(triangles, p[i-2], p[i-1], color, weight);
+      glLine(triangles, p[0], p[1], color, weight);
+      for (int i=2;i<points;++i) {
          glLine(triangles, p[i-1], p[i], color, weight);
          glLine(triangles, p[i], p[i-2], color, weight);
       }
-      vertices = triangles;
       stroke_only = true;
-      createVAO();
+      createVAO( triangles );
       draw( GL_TRIANGLES );
       releaseVAO();
    }
@@ -317,13 +266,12 @@ public:
    void glTriangleFan(int points, const PVector *p, color color,int weight)  {
       std::vector<PVector> triangles;
       glLine(triangles, p[0], p[1], color, weight );
-      for (int i =2; i<points;++i) {
+      for (int i=2;i<points;++i) {
          glLine(triangles, p[i-1], p[i], color, weight);
-         glLine(triangles, p[0], p[i], color, weight);
+         glLine(triangles, p[i],   p[0], color, weight);
       }
-      vertices = triangles;
       stroke_only = true;
-      createVAO();
+      createVAO( triangles );
       draw( GL_TRIANGLES );
       releaseVAO();
    }
@@ -376,9 +324,8 @@ public:
       triangle_strip.push_back( end.start );
       triangle_strip.push_back( end.end );
 
-      vertices = triangle_strip;
       stroke_only = true;
-      createVAO();
+      createVAO( triangle_strip );
       draw( GL_TRIANGLE_STRIP );
       releaseVAO();
    }
@@ -419,12 +366,12 @@ public:
                createPoint( z.x, z.y ).draw();
             }
          } else if (style == TRIANGLE_STRIP) {
-            createVAO();
+            createVAO( vertices );
             draw( GL_TRIANGLE_STRIP );
             releaseVAO();
             glTriangleStrip( vertices.size(), vertices.data(), stroke_color, stroke_weight);
          } else if (style == TRIANGLE_FAN) {
-            createVAO();
+            createVAO( vertices );
             draw( GL_TRIANGLE_FAN );
             releaseVAO();
             glTriangleFan( vertices.size(), vertices.data(), stroke_color, stroke_weight);
@@ -432,12 +379,15 @@ public:
             if (type == CLOSE) {
                if (stroke_only) {
                   // It's one of our own shapes so we known it's convex and
-                  // we don't need to triangulate.
-                  createVAO();
+                  // we don't need to triangulate. ( this is dodgy, this is never a poly, but it might be two messed up triangles. 
+                  createVAO( vertices );
                   draw();
                   releaseVAO();
                } else {
-                  glFilledPoly( vertices.size(), vertices.data(), fill_color );
+                  std::vector<PVector> triangles = triangulatePolygon({vertices.begin(),vertices.end()});
+                  createVAO( triangles );
+                  draw( GL_TRIANGLES );
+                  releaseVAO();
                   glLinePoly( vertices.size(), vertices.data(), stroke_color, stroke_weight, true);
                }
             } else {
@@ -601,7 +551,7 @@ PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
       shape.vertices.push_back( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
    }
-   shape.createVAO();
+   shape.createVAO( shape.vertices );
    return shape;
 }
 
