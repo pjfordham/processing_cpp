@@ -4,6 +4,7 @@
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_earclipping.h"
+#include "processing_transforms.h"
 
 #include <GL/glew.h>     // GLEW library header
 #include <GL/gl.h>       // OpenGL header
@@ -33,8 +34,6 @@ enum {
 
 extern GLuint programID;
 extern GLuint Color;
-extern GLuint Mmatrix;
-extern Eigen::Matrix4f move_matrix; // Default is identity
 
 class PShape;
 PShape createPoint(float x, float y);
@@ -388,8 +387,8 @@ public:
    }
 
    void draw() {
-      Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
-      glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
+      pushMatrix();
+      transform( shape_matrix );
       if ( VAO ) {
          switch( style ) {
          case TRIANGLE_FAN:
@@ -408,7 +407,11 @@ public:
       for (auto &&child : children) {
          child.draw();
       }
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+      popMatrix();
+   }
+
+   void addChild(PShape &&shape) {
+      children.emplace_back( std::move(shape) );
    }
 };
 
@@ -587,6 +590,14 @@ PShape createEllipse(float x, float y, float width, float height) {
    ellipse.style = TRIANGLE_FAN;
    ellipse.translate(x,y);
    ellipse.scale(width,height);
+   PShape shape;
+   shape.beginShape(LINES);
+   shape.stroke_only = true;
+   for(int i = 0; i < 32; ++i) {
+      shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
+   }
+   shape.endShape(CLOSE);
+   ellipse.addChild( std::move(shape) );
    return ellipse;
 }
 

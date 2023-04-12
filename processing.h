@@ -26,6 +26,7 @@
 #include "PerlinNoise.h"
 #include "weak.h"
 #include "processing_math.h"
+#include "processing_transforms.h"
 #include "processing_color.h"
 #include "processing_java_compatability.h"
 #include "processing_opengl.h"
@@ -71,8 +72,6 @@ Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far)
    return ret;
 }
 
-std::vector<Eigen::Matrix4f> matrix_stack;
-Eigen::Matrix4f move_matrix; // Default is identity
 Eigen::Matrix4f projection_matrix; // Default is identity
 Eigen::Matrix4f view_matrix; // Default is identity
 
@@ -81,59 +80,6 @@ GLuint Color;
 GLuint programID;
 GLuint Pmatrix;
 GLuint Vmatrix;
-GLuint Mmatrix;
-
-void glTransform() {
-   // Send our transformation to the currently bound shader,
-   glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-   glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
-   glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-}
-
-void pushMatrix() {
-   matrix_stack.push_back(move_matrix);
-}
-
-void popMatrix() {
-   move_matrix = matrix_stack.back();
-   matrix_stack.pop_back();
-   glTransform();
-}
-
-void translate(float x, float y, float z=0) {
-   move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
-   glTransform();
-}
-
-void scale(float x, float y,float z = 1) {
-   move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
-   glTransform();
-}
-
-void scale(float x) {
-   scale(x,x,x);
-}
-
-void rotate(float angle, PVector axis) {
-   move_matrix = move_matrix * RotateMatrix(angle,axis);
-   glTransform();
-}
-
-
-void rotate(float angle) {
-   move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
-   glTransform();
-}
-
-void rotateY(float angle) {
-   move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
-   glTransform();
-}
-
-void rotateX(float angle) {
-   move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
-   glTransform();
-}
 
 bool xSmoothing = true;
 
@@ -695,7 +641,7 @@ void ortho(float left, float right, float bottom, float top, float near, float f
       {              0,               0, -2/(far - near), tz },
       {              0,               0,              0,   1 }
    };
-   glTransform();
+   glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
 }
 
 void ortho(float left, float right, float bottom, float top) {
@@ -708,7 +654,7 @@ void ortho() {
 
 void perspective(float angle, float aspect, float minZ, float maxZ) {
    projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
-   glTransform();
+   glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
 }
 
 void perspective() {
@@ -743,8 +689,7 @@ void camera( float eyeX, float eyeY, float eyeZ,
 
    // Translate the camera to the origin
    view_matrix = view * translate;
-
-   glTransform();
+   glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
 }
 
 void camera() {
@@ -926,8 +871,9 @@ void size(int _width, int _height, int MODE = P2D) {
    if (MODE == P2D) {
       view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
       projection_matrix = Eigen::Matrix4f::Identity();
+      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+      glUniformMatrix4fv(Pmatrix, 1, false, projection_matrix.data());
    } else {
-      view_matrix = Eigen::Matrix4f::Identity();
       perspective();
       camera();
    }
@@ -1213,7 +1159,7 @@ int main(int argc, char* argv[]) {
 
             glClear(GL_DEPTH_BUFFER_BIT);
             move_matrix = Eigen::Matrix4f::Identity();
-            glTransform();
+            glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
             noLights();
 
             draw();
