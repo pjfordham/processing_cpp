@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <random>
 #include <Eigen/Dense>
+#include <fmt/core.h>
 
 const float PI = M_PI;
 const float TWO_PI = M_PI * 2.0;
@@ -23,7 +24,7 @@ public:
    void print() {
       fmt::print(" {:>8.2} {:>8.2} {:>8.2}\n",x,y,z);
    }
-          void sub(PVector b) {
+   void sub(PVector b) {
       x = x - b.x;
       y = y - b.y;
       z = z - b.z;

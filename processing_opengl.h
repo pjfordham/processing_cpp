@@ -10,10 +10,6 @@
 #include <SDL2/SDL_opengl.h>
 
 #include "processing_math.h"
-#include "processing_earclipping.h"
-#include "processing_color.h"
-
-#include <fmt/core.h>
 
 bool anything_drawn = false;
 

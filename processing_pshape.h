@@ -2,48 +2,39 @@
 #define PROCESSING_PSHAPE_H
 
 #include "processing_math.h"
-#include "processing_opengl.h"
 #include "processing_color.h"
+#include "processing_earclipping.h"
+
+#include <GL/glew.h>     // GLEW library header
+#include <GL/gl.h>       // OpenGL header
+#include <GL/glu.h>      // GLU header
+#include <GL/glut.h>
 
 enum {
-   POINTS = 0,
-   LINES = 1,
+   POINTS,
+   LINES,
    TRIANGLE_STRIP,
    TRIANGLE_FAN,
    TRIANGLES,
-};
-
-enum {
-   OPEN = 0,
-   CLOSE = 1,
-};
-enum {
-   CORNERS = 0,
-   CORNER = 1,
-   CENTER = 2,
-   RADIUS = 3,
-};
-
-enum {
-   ROUND = 0,
+   OPEN,
+   CLOSE,
+   CORNERS,
+   CORNER,
+   CENTER,
+   RADIUS,
+   ROUND,
    SQUARE,
    PROJECT,
+   CHORD,
+   PIE,
+   DEFAULT,
+   DIAMETER,
 };
 
-enum {
-   /*OPEN == 0,*/
-   CHORD = 1,
-   PIE=2,
-   DEFAULT=3
-};
-enum {
-   DIAMETER = 1,
-//  RADIUS = 3,
-};
-
-// EVERYTHIING BELOW HERE IS ONLY USED BY PSHAPE
 extern GLuint programID;
 extern GLuint Color;
+extern GLuint Mmatrix;
+extern Eigen::Matrix4f move_matrix; // Default is identity
 
 class PShape;
 PShape createPoint(float x, float y);
@@ -397,7 +388,6 @@ public:
    }
 
    void draw() {
-      extern GLuint Mmatrix;
       Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
       glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
       if ( VAO ) {
