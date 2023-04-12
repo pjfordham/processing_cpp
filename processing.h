@@ -438,7 +438,7 @@ void shape(PShape shape, float x, float y, float width, float height) {
 
 PShape _shape;
 
-void beginShape(int points = LINES) {
+void beginShape(int points = POLYGON) {
    _shape = PShape();
    _shape.beginShape(points);
 }

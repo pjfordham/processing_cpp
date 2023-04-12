@@ -13,7 +13,9 @@
 
 enum {
    POINTS,
+   POLYGON,
    LINES,
+   GROUP,
    TRIANGLE_STRIP,
    TRIANGLE_FAN,
    TRIANGLES,
@@ -56,7 +58,7 @@ private:
    std::vector<PShape> children;
 
 public:
-   int style = LINES;
+   int style = POLYGON;
 
 private:
    int type = OPEN;
@@ -124,7 +126,7 @@ public:
    void loadShape(const char *filename) {
    }
 
-   void beginShape(int points = LINES) {
+   void beginShape(int points = POLYGON) {
       style = points;
       clear();
    }
@@ -155,6 +157,10 @@ public:
          sizeof(PVector),                  // stride
          (void*)offsetof(PVector,x)        // array buffer offset
          );
+   }
+
+   static bool stroke_on() {
+      return stroke_color.a != 0;
    }
 
    void borrowVAO( const PShape &shape ) {
@@ -201,7 +207,7 @@ public:
             if (!stroke_only) {
                abort();
             }
-         } else if (style == LINES) {
+         } else if (style == POLYGON) {
             if (type == CLOSE) {
                std::vector<PVector> triangles = triangulatePolygon({vertices.begin(),vertices.end()});
                style = TRIANGLES;
@@ -209,6 +215,8 @@ public:
             }
             if (!stroke_only)
                glLinePoly( vertices.size(), vertices.data(), stroke_weight, type == CLOSE);
+         } else if (style == LINES) {
+            glLinePoly( vertices.size(), vertices.data(), stroke_weight, type == CLOSE);
          } else {
             abort();
          }
@@ -439,7 +447,7 @@ PShape createRect(float x, float y, float width, float height) {
       y = y - height / 2;
    }
    PShape shape;
-   shape.beginShape(LINES);
+   shape.beginShape(POLYGON);
    shape.vertex(x,y);
    shape.vertex(x+width,y);
    shape.vertex(x+width,y+height);
@@ -450,7 +458,7 @@ PShape createRect(float x, float y, float width, float height) {
 
 PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
    PShape shape;
-   shape.beginShape(LINES);
+   shape.beginShape(POLYGON);
    shape.vertex(x1, y1);
    shape.vertex(x2, y2);
    shape.vertex(x3, y3);
@@ -467,7 +475,7 @@ PShape createLine(float x1, float y1, float x2, float y2) {
 
    PShape shape;
    shape.stroke_only = true;
-   shape.beginShape(LINES);
+   shape.beginShape(POLYGON);
 
    PVector direction = PVector{x2-x1,y2-y1};
    PVector normal = direction.normal();
@@ -540,7 +548,7 @@ PShape createArc(float x, float y, float width, float height, float start,
       height /=2;
    }
    PShape shape;
-   shape.beginShape(LINES);
+   shape.beginShape(POLYGON);
    int NUMBER_OF_VERTICES=32;
    if ( mode == DEFAULT || mode == PIE ) {
       shape.vertex(x,y);
@@ -570,7 +578,7 @@ PShape createArc(float x, float y, float width, float height, float start,
 
 PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    PShape shape;
-   shape.beginShape(LINES);
+   shape.beginShape(POLYGON);
    for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
       shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
    }
@@ -580,7 +588,6 @@ PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
 
 PShape createEllipse(float x, float y, float width, float height) {
    static PShape unitCircle = createUnitCircle();
-
    PShape ellipse;
    ellipse.borrowVAO( unitCircle );
    if (PShape::ellipse_mode != RADIUS) {
@@ -590,14 +597,24 @@ PShape createEllipse(float x, float y, float width, float height) {
    ellipse.style = TRIANGLE_FAN;
    ellipse.translate(x,y);
    ellipse.scale(width,height);
-   PShape shape;
-   shape.beginShape(LINES);
-   shape.stroke_only = true;
-   for(int i = 0; i < 32; ++i) {
-      shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
+
+   if ( PShape::stroke_on() ) {
+      PShape group;
+      group.beginShape(GROUP);
+
+      PShape shape;
+      shape.beginShape(LINES);
+      shape.stroke_only = true;
+      for(int i = 0; i < 32; ++i) {
+         shape.vertex( ellipse_point( {x,y,0}, i, 0, TWO_PI, width, height ) );
+      }
+      shape.endShape(CLOSE);
+
+      group.addChild( std::move(ellipse) );
+      group.addChild( std::move(shape) );
+      group.endShape(OPEN);
+      return group;
    }
-   shape.endShape(CLOSE);
-   ellipse.addChild( std::move(shape) );
    return ellipse;
 }
 
