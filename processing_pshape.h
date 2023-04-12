@@ -384,23 +384,22 @@ public:
    }
 
    void drawVAO(color color, GLuint element_type) {
-      extern GLuint Mmatrix;
       float color_vec[] = {
          color.r / 255.0f,
          color.g / 255.0f,
          color.b / 255.0f,
          color.a / 255.0f };
       glUniform4fv(Color, 1, color_vec);
-      Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
-      glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
       glBindVertexArray(VAO);
       glDrawArrays(element_type, 0, vertexbuffer_size);
       glBindVertexArray(0);
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
       return;
    }
 
    void draw() {
+      extern GLuint Mmatrix;
+      Eigen::Matrix4f new_matrix = move_matrix * shape_matrix;
+      glUniformMatrix4fv(Mmatrix, 1,false, new_matrix.data());
       if ( VAO ) {
          switch( style ) {
          case TRIANGLE_FAN:
@@ -419,6 +418,7 @@ public:
       for (auto &&child : children) {
          child.draw();
       }
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 };
 
