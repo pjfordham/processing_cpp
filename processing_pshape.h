@@ -485,7 +485,7 @@ PShape createLine(float x1, float y1, float x2, float y2) {
    if (PShape::line_end_cap == ROUND ) {
       int NUMBER_OF_VERTICES=16;
 
-      float start_angle = direction.get_angle() + HALF_PI;
+      float start_angle = direction.heading() + HALF_PI;
 
       for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
          shape.vertex(x1 + cos(i + start_angle) * half_stroke,

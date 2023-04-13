@@ -29,7 +29,7 @@ public:
       y = y - b.y;
       z = z - b.z;
    }
-   float get_angle() {
+   float heading() {
       return atan2(y, x);
    }
    void add(PVector b) {
@@ -37,14 +37,29 @@ public:
       y = y + b.y;
       z = z + b.z;
    }
-   void mult(float a) {
+   PVector &mult(float a) {
       x*=a;
       y*=a;
       z*=a;
+      return *this;
+   }
+   void div(float a) {
+      x/=a;
+      y/=a;
+      z/=a;
    }
    // Returns the magnitude (length) of the vector
    double mag() const {
       return std::sqrt(x * x + y * y + z * z);
+   }
+
+   void rotate(float angle) {
+      float cosAngle = cos(angle);
+      float sinAngle = sin(angle);
+      float newX = x * cosAngle - y * sinAngle;
+      float newY = x * sinAngle + y * cosAngle;
+      x = newX;
+      y = newY;
    }
 
    // Limits the magnitude of the vector to a specified value
@@ -60,13 +75,14 @@ public:
       return sqrtf(x * x + y * y + z * z);
    }
    // Method to normalize the vector
-   void normalize() {
+   PVector &normalize() {
       float mag = sqrtf(x * x + y * y + z * z);
       if (mag != 0) {
          x /= mag;
          y /= mag;
          z /= mag;
       }
+      return *this;
    }
    PVector cross(PVector v) {
       float crossX = y * v.z - z * v.y;
@@ -277,6 +293,10 @@ inline float constrain(float value, float lower, float upper) {
    } else {
       return value;
    }
+}
+
+float sq(float a) {
+   return a * a;
 }
 
 #endif
