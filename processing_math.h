@@ -152,6 +152,12 @@ public:
       float dz = a.z * q;
       return {dx,dy,dz};
    }
+   static PVector div(PVector a, float q) {
+      float dx = a.x / q;
+      float dy = a.y / q;
+      float dz = a.z / q;
+      return {dx,dy,dz};
+   }
    static PVector add(PVector a, PVector b) {
       float dx = a.x + b.x;
       float dy = a.y + b.y;
