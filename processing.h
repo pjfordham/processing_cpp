@@ -970,6 +970,10 @@ void textAlign(int x, int y) {
    yTextAlign = y;
 }
 
+void textAlign(int x) {
+   xTextAlign = x;
+}
+
 void textSize(int size) {
    currentFont = createFont(currentFont.first, size);
 }

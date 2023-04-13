@@ -1,5 +1,3 @@
-#include "processing.h"
-
 /**
  * Forces (Gravity and Fluid Resistence) with Vectors
  * by Daniel Shiffman.

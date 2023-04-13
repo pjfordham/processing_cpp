@@ -47,20 +47,19 @@ public:
       pixels = (Uint32 *)surface->pixels;
    }
 
-   PImage(PImage &&other) = delete;
-   constexpr PImage& operator=(const PImage&) = delete;
-   constexpr PImage& operator=(PImage&&x){
-      if (surface) {
-         SDL_FreeSurface(surface);
-      }
-      width = x.width;
-      height = x.height;
-      pixels = x.pixels;
-      surface = x.surface;
-      x.width = 0;
-      x.height = 0;
-      x.pixels = NULL;
-      x.surface = NULL;
+   PImage(PImage &&x) {
+      std::swap(surface, x.surface);
+      std::swap(width, x.width);
+      std::swap(height, x.height);
+      std::swap(pixels, x.pixels);
+   }
+
+   PImage& operator=(const PImage&) = delete;
+   PImage& operator=(PImage&&x){
+      std::swap(surface, x.surface);
+      std::swap(width, x.width);
+      std::swap(height, x.height);
+      std::swap(pixels, x.pixels);
       return *this;
    }
 
@@ -111,7 +110,7 @@ public:
 
    void updatePixels() {
    }
-   
+
    void filter(int x) {
       if (x == GRAY) {
          for(int i = 0; i< width * height; ++i) {
