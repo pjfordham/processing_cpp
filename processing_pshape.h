@@ -73,37 +73,27 @@ public:
    }
 
    PShape(PShape&& other) noexcept {
-      VAO = other.VAO;
-      other.VAO = 0;
-      vertexbuffer_size = other.vertexbuffer_size;
-      other.vertexbuffer_size = 0;
-      vertexbuffer = other.vertexbuffer;
-      other.vertexbuffer = 0;
-      vertices = std::move(other.vertices);
-      other.vertices.clear();
-      children = std::move(other.children);
-      other.children.clear();
-      style = other.style;
-      type = other.type;
-      stroke_only = other.stroke_only;
-      shape_matrix = other.shape_matrix;
+      std::swap(VAO, other.VAO);
+      std::swap(vertexbuffer_size, other.vertexbuffer_size);
+      std::swap(vertexbuffer, other.vertexbuffer);
+      std::swap(vertices, other.vertices);
+      std::swap(children, other.children);
+      std::swap(style, other.style);
+      std::swap(type, other.type);
+      std::swap(stroke_only, other.stroke_only);
+      std::swap(shape_matrix, other.shape_matrix);
    }
 
    PShape& operator=(PShape&& other) noexcept {
-      VAO = other.VAO;
-      other.VAO = 0;
-      vertexbuffer_size = other.vertexbuffer_size;
-      other.vertexbuffer_size = 0;
-      vertexbuffer = other.vertexbuffer;
-      other.vertexbuffer = 0;
-      vertices = std::move(other.vertices);
-      other.vertices.clear();
-      children = std::move(other.children);
-      other.children.clear();
-      style = other.style;
-      type = other.type;
-      stroke_only = other.stroke_only;
-      shape_matrix = other.shape_matrix;
+      std::swap(VAO, other.VAO);
+      std::swap(vertexbuffer_size, other.vertexbuffer_size);
+      std::swap(vertexbuffer, other.vertexbuffer);
+      std::swap(vertices, other.vertices);
+      std::swap(children, other.children);
+      std::swap(style, other.style);
+      std::swap(type, other.type);
+      std::swap(stroke_only, other.stroke_only);
+      std::swap(shape_matrix, other.shape_matrix);
       return *this;
    }
 
@@ -205,7 +195,7 @@ public:
          } else if (style == TRIANGLES) {
             createVAO();
             if (!stroke_only) {
-               abort();
+               glTriangleStrip( vertices.size(), vertices.data(), stroke_weight);
             }
          } else if (style == POLYGON) {
             if (type == CLOSE) {

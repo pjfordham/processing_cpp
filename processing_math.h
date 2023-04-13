@@ -16,6 +16,16 @@ const float TWO_PI = M_PI * 2.0;
 const float HALF_PI = M_PI / 2.0;
 const float QUARTER_PI = M_PI / 4.0;
 
+std::mt19937 randomNumbers( 1 );
+inline float random(float min, float max) {
+   std::uniform_real_distribution<float> randomLocationRange(min, max);
+   return randomLocationRange( randomNumbers );
+}
+
+inline float random(float max) {
+   return random(0,max);
+}
+
 class PVector {
 public:
    float x, y,z;
@@ -110,13 +120,11 @@ public:
 
    // Static method to create a PVector from an angle
    static PVector random2D() {
-      // Ugly hack
-      float random(float max);
-      return {random(1), random(1), 0};
+      return PVector::fromAngle(random(TWO_PI));
    }
+
    static PVector random3D() {
       // Ugly hack
-      float random(float max);
       return {random(1), random(1), random(1)};
    }
    // Method to calculate the dot product of two vectors
@@ -254,16 +262,6 @@ inline float dist(float x1, float y1, float x2, float y2) {
    float dx = x2 - x1;
    float dy = y2 - y1;
    return std::sqrt(dx * dx + dy * dy);
-}
-
-std::mt19937 randomNumbers( 1 );
-inline float random(float min, float max) {
-   std::uniform_real_distribution<float> randomLocationRange(min, max);
-   return randomLocationRange( randomNumbers );
-}
-
-inline float random(float max) {
-   return random(0,max);
 }
 
 inline float randomGaussian()
