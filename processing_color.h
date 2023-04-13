@@ -12,6 +12,22 @@ enum {
 };
 
 
+float red(unsigned int pixel) {
+   return (pixel >>  0) & 0xFF;
+}
+
+float green(unsigned int pixel) {
+   return (pixel >>  8) & 0xFF;
+}
+
+float blue(unsigned int pixel) {
+   return (pixel >> 16) & 0xFF;
+}
+
+float alpha(unsigned int pixel) {
+   return (pixel >> 24) & 0xFF;
+}
+
 class color {
 public:
    static int mode;
@@ -19,7 +35,14 @@ public:
    static float scaleG;
    static float scaleB;
    static float scaleA;
-   
+
+   operator unsigned int() const {
+      return
+         ((unsigned char)r) << 0|
+         ((unsigned char)g) << 8 |
+         ((unsigned char)b) << 16 |
+         ((unsigned char)a) << 24;
+   }
    float r,g,b,a;
    color(float _r, float _g, float _b,float _a) : r(_r), g(_g), b(_b), a(_a) {
    }
@@ -27,7 +50,12 @@ public:
    }
    color(float _r) : r(_r), g(_r), b(_r), a(scaleA) {
    }
+   color(unsigned int c, bool) : r( red(c) ), g(green(c)), b(blue(c)), a(alpha(c))  {
+   }
    color()  {
+   }
+   void print() {
+      fprintf(stderr,"R%xG%xB%xA%x\n",(int)r,(int)g,(int)b,(int)a);
    }
 };
 

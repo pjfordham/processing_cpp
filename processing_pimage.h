@@ -4,6 +4,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
+// Just for enum
+#include "processing_pshape.h"
+#include "processing_color.h"
+
 #include <vector>
 
 enum {
@@ -15,23 +19,7 @@ enum {
   BLUR,
   ERODE,
   DILATE,
-  };
-
-float red(unsigned int pixel) {
-   return (pixel >>  0) & 0xFF;
-}
-
-float green(unsigned int pixel) {
-   return (pixel >>  8) & 0xFF;
-}
-
-float blue(unsigned int pixel) {
-   return (pixel >> 16) & 0xFF;
-}
-
-float alpha(unsigned int pixel) {
-   return (pixel >> 24) & 0xFF;
-}
+};
 
 enum { /*RGB=0,*/ ARGB = 1,  ALPHA=2 };
 
@@ -42,6 +30,8 @@ public:
    unsigned int *pixels;
    SDL_Surface *surface;
 
+   static color tint;
+   static int mode;
    PImage() : width(0), height(0), pixels{NULL}, surface{NULL} {}
 
    ~PImage() {
@@ -72,6 +62,18 @@ public:
       x.pixels = NULL;
       x.surface = NULL;
       return *this;
+   }
+
+   void mask(const PImage &mask) {
+      for(int i = 0; i< width * height; ++i) {
+         Uint32 p = pixels[i];
+         Uint32 q = mask.pixels[i];
+         pixels[i] = (p & 0x00FFFFFF) | ( (0xFF - ( q & 0xFF)) << 24 );
+      }
+   }
+
+   color get(int x, int y) {
+      return { pixels[y * width + x], false };
    }
 
    PImage(const char *filename) {
@@ -121,6 +123,9 @@ public:
       }
    }
 };
+
+int PImage::mode = CORNER;
+color PImage::tint = WHITE;
 
 PImage loadImage(const char *filename) {
    return {filename};

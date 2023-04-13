@@ -128,7 +128,7 @@ inline std::tuple<const char*, const char*, const char*> ShadersFlatTexture() {
       void main()
       {
           vec4 texelColor = texture2D(uSampler, vTexture);
-          fragColor = vec4(texelColor.rgb, 1.0);
+          fragColor = vec4(texelColor.rgba);
       }
 )glsl";
 
