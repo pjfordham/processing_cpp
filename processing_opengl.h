@@ -39,7 +39,7 @@ void printMatrix4f(const Eigen::Matrix4f& mat) {
     printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
 }
 
-void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID) {
+void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID, bool flip=false) {
    GLuint uSampler = glGetUniformLocation(flatTextureShader, "uSampler");
 
    int textureUnitIndex = 0;
@@ -60,12 +60,22 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange
       vert3[0],  vert3[1], 0.0f,
    };
 
-   std::vector<float> coords{
-      0.0f, 0.0f,
-      xrange, 0.0f,
-      xrange, yrange,
-      0.0f, yrange,
-   };
+   std::vector<float> coords;
+   if (flip) {
+      coords = {
+         0.0f, yrange,
+         xrange, yrange,
+         xrange, 0.0f,
+         0.0f, 0.0f,
+      };
+   } else {
+      coords = {
+         0.0f, 0.0f,
+         xrange, 0.0f,
+         xrange, yrange,
+         0.0f, yrange,
+      };
+   }
 
    std::vector<unsigned short>  indices = {
       0,1,2, 0,2,3,

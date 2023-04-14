@@ -16,7 +16,7 @@ PGraphics pg;
 
 void setup() {
    size(640, 360);
-   pg = PGraphics(400, 200);
+   pg = createGraphics(400, 200);
    background(BLACK);
 }
 

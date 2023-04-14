@@ -33,10 +33,6 @@
 #include "processing_pshape.h"
 #include "processing_pgraphics.h"
 
-bool render_to_backbuffer = true;
-
-SDL_Texture* backBuffer;
-
 SDL_Window *window;
 SDL_Renderer *renderer;
 
@@ -339,40 +335,36 @@ void sphere(float radius) {
 // ----
 // Begin shapes managed by Pshape.
 // ----
-void stroke(float r,float g,  float b, float a) {
-   PShape::stroke_color = flatten_color_mode(r,g,b,a);
+PGraphics g;
+
+template<typename... Args>
+void background(Args... args) {
+    g.background(args...);
 }
 
-void stroke(float r,float g, float b) {
-   stroke(r,g,b,color::scaleA);
+template<typename... Args>
+void fill(Args... args) {
+    g.fill(args...);
 }
 
-void stroke(float r,float a) {
-   if (color::mode == HSB) {
-      stroke(0,0,r,a);
-   } else {
-      stroke(r,r,r,a);
-   }
+template<typename... Args>
+void rect(Args... args) {
+    g.rect(args...);
 }
 
-void stroke(float r) {
-   if (color::mode == HSB) {
-      stroke(r,0,0,color::scaleA);
-   } else {
-      stroke(r,r,r,color::scaleA);
-   }
+template<typename... Args>
+void noStroke(Args... args) {
+    g.noStroke(args...);
 }
 
-void stroke(color c) {
-   stroke(c.r,c.g,c.b,c.a);
+template<typename... Args>
+void stroke(Args... args) {
+    g.stroke(args...);
 }
+
 
 void strokeWeight(int x) {
    PShape::stroke_weight = x;
-}
-
-void noStroke() {
-   PShape::stroke_color = {0,0,0,0};
 }
 
 void noFill() {
@@ -383,14 +375,10 @@ void ellipseMode(int mode) {
    PShape::ellipse_mode = mode;
 }
 
-void ellipse(float x, float y, float width, float height) {
-   createEllipse(x, y, width, height).draw();
+template<typename... Args>
+void ellipse(Args... args) {
+    g.ellipse(args...);
 }
-
-void ellipse(float x, float y, float radius) {
-   createEllipse(x, y, radius, radius).draw();
-}
-
 void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
    createArc(x, y, width, height, start, stop, mode).draw();
 }
@@ -563,40 +551,11 @@ void loop() {
    xloop = true;
 }
 
-void background(float r, float g, float b) {
-   anything_drawn = true;
-   auto color = flatten_color_mode(r,g,b,color::scaleA);
-   // Set clear color
-   glClearColor(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
-   // Clear screen
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void background(color c) {
-   background(c.r,c.g,c.b);
-}
-
-void background(float gray) {
-   if (color::mode == HSB) {
-      background(0,0,gray);
-   } else {
-      background(gray,gray,gray);
-   }
-};
-
-
 int width = 0;
 int height = 0;
 
 using std::min;
 SDL_GLContext glContext = NULL;
-
-GLuint backBufferID;
-GLuint fboID;
-
-enum {
-   P2D, P3D
-};
 
 std::array<float,3> xambientLight;
 std::array<float,3> xdirectionLightColor;
@@ -698,10 +657,8 @@ void camera() {
 }
 
 GLuint flatTextureShader;
-GLuint backBufferShader;
-GLuint backBufferVAO;
 
-void size(int _width, int _height, int MODE = P2D) {
+void size(int _width, int _height, int mode = P2D) {
    // Create a window
    width = _width;
    height = _height;
@@ -739,7 +696,7 @@ void size(int _width, int _height, int MODE = P2D) {
 
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   if (MODE == P2D) {
+   if (mode == P2D) {
       glDisable(GL_DEPTH_TEST);
       programID = LoadShaders(ShadersFlat());
    } else {
@@ -760,115 +717,15 @@ void size(int _width, int _height, int MODE = P2D) {
 
    flatTextureShader = LoadShaders(ShadersFlatTexture());
 
-   if (render_to_backbuffer) {
       if (!glewIsSupported("GL_EXT_framebuffer_object")) {
          SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
          abort();
       }
 
-      backBufferShader = LoadShaders(ShadersFlatTexture());
-
-      // Create a framebuffer object
-      glGenFramebuffers(1, &fboID);
-      glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-
-      // Create a texture to render to
-      glGenTextures(1, &backBufferID);
-      glBindTexture(GL_TEXTURE_2D, backBufferID);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, backBufferID, 0);
-
-      if (MODE == P3D) {
-         // Create a renderbuffer for the depth buffer
-         GLuint depthBufferID;
-         glGenRenderbuffers(1, &depthBufferID);
-         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-
-         // Attach the depth buffer to the framebuffer object
-         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
-      }
-
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-      GLuint uSampler = glGetUniformLocation(backBufferShader, "uSampler");
-
-      int textureUnitIndex = 0;
-      glUniform1i(uSampler,0);
-      glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
-      glBindTexture(GL_TEXTURE_2D, backBufferID);
-
-      std::vector<float> vertices{
-         -1.0f, -1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f,
-         1.0f,  1.0f, 0.0f,
-         -1.0f,  1.0f, 0.0f,
-      };
-
-      // might not need this either
-      // Invert texture on y-axis to correct
-      std::vector<float> coords{
-         0.0f, 1.0f,
-         1.0f, 1.0f,
-         1.0f, 0.0f,
-         0.0f, 0.0f,
-      };
-
-      std::vector<unsigned short>  indices = {
-         0,1,2, 0,2,3,
-      };
-
-      // Create a vertex array object (VAO)
-      glGenVertexArrays(1, &backBufferVAO);
-      glBindVertexArray(backBufferVAO);
-
-      GLuint indexbuffer;
-      glGenBuffers(1, &indexbuffer);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
-
-      GLuint vertexbuffer;
-      glGenBuffers(1, &vertexbuffer);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-      GLuint coordsbuffer;
-      glGenBuffers(1, &coordsbuffer);
-      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
-      glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(float), coords.data(), GL_STATIC_DRAW);
+      g = PGraphics(width, height, mode);
 
 
-      GLuint attribId = glGetAttribLocation(backBufferShader, "position");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
-         );
-
-      attribId = glGetAttribLocation(backBufferShader, "coords");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         2,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
-         );
-
-      //glDeleteBuffers(1, &vertexbuffer);
-      //glDeleteBuffers(1, &indexbuffer);
-
-   }
-
-   if (MODE == P2D) {
+   if (mode == P2D) {
       view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
       projection_matrix = Eigen::Matrix4f::Identity();
       glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
@@ -900,44 +757,9 @@ void updatePixels() {
    // pixels = NULL;
 }
 
-void fill(float r,float g,  float b, float a) {
-   PShape::fill_color = flatten_color_mode(r,g,b,a);
-}
-
-void fill(float r,float g, float b) {
-   fill(r,g,b,color::scaleA);
-}
-
-void fill(float r,float a) {
-   if (color::mode == HSB) {
-      fill(0,0,r,a);
-   } else {
-      fill(r,r,r,a);
-   }
-}
-
-void fill(float r) {
-   if (color::mode == HSB) {
-      fill(0,0,r,color::scaleA);
-   } else {
-      fill(r,r,r,color::scaleA);
-   }
-}
-
-void fill(class color color) {
-   fill(color.r,color.g,color.b,color.a);
-}
-
-void fill(class color color, float a) {
-   fill(color.r,color.g,color.b,a);
-}
 
 void rectMode(int mode){
    PShape::rect_mode = mode;
-}
-
-void rect(int x, int y, int _width, int _height) {
-    createRect(x,y,_width,_height).draw();
 }
 
 
@@ -1058,9 +880,9 @@ void image(const PImage &pimage, float x, float y) {
    }
 }
 
-void background(const PImage &bg) {
-   image(bg,0,0);
-}
+// void background(const PImage &bg) {
+//    image(bg,0,0);
+// }
 
 int frameCount = 0;
 int zframeCount = 0;
@@ -1212,22 +1034,12 @@ int main(int argc, char* argv[]) {
             pmouseX = mouseX;
             pmouseY = mouseY;
 
-            if (render_to_backbuffer) {
-               glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-               // Clear the color and depth buffers
-               glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-               glBindTexture(GL_TEXTURE_2D, backBufferID);
-               glUseProgram(backBufferShader);
-               glBindVertexArray(backBufferVAO);
-               glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-               glBindVertexArray(0);
-
-               glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-               glUseProgram(programID);
-
-            }
+            // bind the real frame buffer
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            // Clear the color and depth buffers
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // Draw the flipped PGraphics context
+            g.draw(0,0,true);
 
             SDL_GL_SwapWindow(window);
 
@@ -1236,8 +1048,6 @@ int main(int argc, char* argv[]) {
                // Set the default render target
                // Swap buffers
                // SDL_SetRenderTarget(renderer, NULL);
-               // SDL_RenderCopy(renderer, backBuffer, NULL, NULL);
-               // SDL_SetRenderTarget(renderer, backBuffer);
                // SDL_RenderPresent(renderer);
                anything_drawn = false;
                frameCount++;

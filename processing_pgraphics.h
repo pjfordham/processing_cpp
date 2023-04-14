@@ -9,9 +9,11 @@
 #include "processing_math.h"
 #include "processing_opengl.h"
 #include "processing_color.h"
+#include "processing_pshape.h"
 
-void ellipse(float x, float y, float width, float height);
-void background(float gray);
+enum {
+   P2D, P3D
+};
 
 class PGraphics {
 public:
@@ -54,10 +56,21 @@ public:
       if (bufferID)
          glDeleteTextures(1, &bufferID);
    }
-   PGraphics(int width, int height) {
+   PGraphics(int width, int height, int mode) {
       // Create a framebuffer object
       glGenFramebuffers(1, &localFboID);
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+
+      if (mode == P3D) {
+         // Create a renderbuffer for the depth buffer
+         GLuint depthBufferID;
+         glGenRenderbuffers(1, &depthBufferID);
+         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+
+         // Attach the depth buffer to the framebuffer object
+         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+      }
 
       gfx_width = width;
       gfx_height = height;
@@ -72,43 +85,219 @@ public:
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    }
 
-   void background(float c) {
-      extern GLuint fboID;
+   void background(float r, float g, float b) {
+      anything_drawn = true;
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      ::background(c);
-      glBindFramebuffer(GL_FRAMEBUFFER, fboID);
-  }
+      auto color = flatten_color_mode(r,g,b,color::scaleA);
+      // Set clear color
+      glClearColor(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
+      // Clear screen
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   }
+
+   void background(color c) {
+      background(c.r,c.g,c.b);
+   }
+
+   void background(float gray) {
+      if (color::mode == HSB) {
+         background(0,0,gray);
+      } else {
+         background(gray,gray,gray);
+      }
+   }
+
+
+   // ----
+   // Begin shapes managed by Pshape.
+   // ----
+   void fill(float r,float g,  float b, float a) {
+      PShape::fill_color = flatten_color_mode(r,g,b,a);
+   }
+
+   void fill(float r,float g, float b) {
+      fill(r,g,b,color::scaleA);
+   }
+
+   void fill(float r,float a) {
+      if (color::mode == HSB) {
+         fill(0,0,r,a);
+      } else {
+         fill(r,r,r,a);
+      }
+   }
+
+   void fill(float r) {
+      if (color::mode == HSB) {
+         fill(0,0,r,color::scaleA);
+      } else {
+         fill(r,r,r,color::scaleA);
+      }
+   }
+
+   void fill(class color color) {
+      fill(color.r,color.g,color.b,color.a);
+   }
+
+   void fill(class color color, float a) {
+      fill(color.r,color.g,color.b,a);
+   }
+
+   void stroke(float r,float g,  float b, float a) {
+      PShape::stroke_color = flatten_color_mode(r,g,b,a);
+   }
+
+   void stroke(float r,float g, float b) {
+      stroke(r,g,b,color::scaleA);
+   }
+
+   void stroke(float r,float a) {
+      if (color::mode == HSB) {
+         stroke(0,0,r,a);
+      } else {
+         stroke(r,r,r,a);
+      }
+   }
+
+ void rect(int x, int y, int _width, int _height) {
+     glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+     createRect(x,y,_width,_height).draw();
+}
+
+  void stroke(float r) {
+      if (color::mode == HSB) {
+         stroke(r,0,0,color::scaleA);
+      } else {
+         stroke(r,r,r,color::scaleA);
+      }
+   }
+
+   void stroke(color c) {
+      stroke(c.r,c.g,c.b,c.a);
+   }
+
+   void strokeWeight(int x) {
+      PShape::stroke_weight = x;
+   }
+
+   void noStroke() {
+      PShape::stroke_color = {0,0,0,0};
+   }
+
    void noFill() {
-      fill_color = {0,0,0,0};
+      PShape::fill_color = {0,0,0,0};
    }
-   void stroke(float c) {
-      stroke_color = {c,c,c,255};
+
+   void ellipseMode(int mode) {
+      PShape::ellipse_mode = mode;
    }
+
    void ellipse(float x, float y, float width, float height) {
-      extern GLuint fboID;
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      ::ellipse(x,y,width,height);
-      glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+      createEllipse(x, y, width, height).draw();
    }
+
+   void ellipse(float x, float y, float radius) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      createEllipse(x, y, radius, radius).draw();
+   }
+
+   void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      createArc(x, y, width, height, start, stop, mode).draw();
+   }
+
+   void strokeCap(int cap) {
+      PShape::line_end_cap = cap;
+   }
+
+   void line(float x1, float y1, float x2, float y2) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      createLine( x1, y1, x2, y2).draw();
+   }
+
+   void line(float x1, float y1, float z1, float x2, float y2, float z2) {
+      abort();
+   }
+
+
+   void line(PVector start, PVector end) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      line(start.x,start.y, end.x,end.y);
+   }
+
+   void line(PLine l) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      line(l.start, l.end);
+   }
+
+   void point(float x, float y) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      createPoint(x, y).draw();
+   }
+
+   void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw();
+   }
+
+   void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      createTriangle( x1, y1, x2, y2, x3, y3 ).draw();
+   }
+
+   void shape(PShape shape, float x, float y, float width, float height) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      pushMatrix();
+      translate(x,y);
+      scale(1,1); // Need to fix this properly
+      shape.draw();
+      popMatrix();
+   }
+
+   PShape _shape;
+
+   void beginShape(int points = POLYGON) {
+      _shape = PShape();
+      _shape.beginShape(points);
+   }
+
+   void vertex(float x, float y, float z = 0.0) {
+      _shape.vertex(x, y, z);
+   }
+
+   void endShape(int type = OPEN) {
+      _shape.endShape(type);
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      _shape.draw();
+   }
+
+// ----
+// End shapes managed by Pshape.
+// ----
+
    void beginDraw() {}
    void endDraw() {}
 
-   void draw(float x, float y) {
+   void draw(float x, float y, bool flip=false) {
       glTexturedQuad( {x, y},
                       {x+gfx_width,y},
                       {x+gfx_width,y+gfx_height},
                       {x,y+gfx_height},
-                      1.0,1.0, bufferID );
+                      1.0,1.0, bufferID,flip );
       return;
    }
 };
 
 
-PGraphics createGraphics(int width, int height) {
-   return { width, height };
+PGraphics createGraphics(int width, int height, int mode = P2D) {
+   return { width, height, mode };
 }
 
+extern PGraphics g;
+
 void image(PGraphics &gfx, int x, int y) {
+   glBindFramebuffer(GL_FRAMEBUFFER, g.localFboID);
    gfx.draw(x,y);
 }
 
