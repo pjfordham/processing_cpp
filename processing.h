@@ -31,6 +31,7 @@
 #include "processing_opengl.h"
 #include "processing_pimage.h"
 #include "processing_pshape.h"
+#include "processing_pgraphics.h"
 
 bool render_to_backbuffer = true;
 

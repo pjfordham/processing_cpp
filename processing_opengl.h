@@ -39,47 +39,14 @@ void printMatrix4f(const Eigen::Matrix4f& mat) {
     printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
 }
 
-void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface *surface) {
-   anything_drawn = true;
-
-   int newWidth = next_power_of_2(surface->w);
-   int newHeight = next_power_of_2(surface->h);
-
-   SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, newWidth, newHeight,
-                                                  surface->format->BitsPerPixel,
-                                                  surface->format->Rmask,
-                                                  surface->format->Gmask,
-                                                  surface->format->Bmask,
-                                                  surface->format->Amask);
-   if (newSurface == NULL) {
-      abort();
-   }
-
-   // clear new surface with a transparent color and blit existing surface to it
-   SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
-   SDL_BlitSurface(surface, NULL, newSurface, NULL);
-
-   // Calculate extends of texture to use
-   float xrange = (1.0 * surface->w) / newWidth;
-   float yrange = (1.0 * surface->h) / newHeight;
-
-   // Create an OpenGL texture from the SDL_Surface
-   GLuint textureID;
-   glGenTextures(1, &textureID);
-   glBindTexture(GL_TEXTURE_2D, textureID);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
-                GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
-
+void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID) {
    GLuint uSampler = glGetUniformLocation(flatTextureShader, "uSampler");
 
    int textureUnitIndex = 0;
+   glBindTexture(GL_TEXTURE_2D, textureID);
    glUniform1i(uSampler,0);
    glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
+
 
    Eigen::Vector4f vert0 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p0.x,p0.y,0,1};
    Eigen::Vector4f vert1 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p1.x,p1.y,0,1};
@@ -153,9 +120,6 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
    glBindVertexArray(localVAO);
    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
    glBindVertexArray(0);
-   glBindTexture(GL_TEXTURE_2D, 0);
-
-   glDeleteTextures(1, &textureID);
 
    glDeleteVertexArrays(1, &localVAO);
 
@@ -168,9 +132,52 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface 
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
    glBindVertexArray(0);
 
+   glUseProgram(programID);
+   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface *surface) {
+   anything_drawn = true;
+
+   int newWidth = next_power_of_2(surface->w);
+   int newHeight = next_power_of_2(surface->h);
+
+   SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, newWidth, newHeight,
+                                                  surface->format->BitsPerPixel,
+                                                  surface->format->Rmask,
+                                                  surface->format->Gmask,
+                                                  surface->format->Bmask,
+                                                  surface->format->Amask);
+   if (newSurface == NULL) {
+      abort();
+   }
+
+   // clear new surface with a transparent color and blit existing surface to it
+   SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
+   SDL_BlitSurface(surface, NULL, newSurface, NULL);
+
+   // Calculate extends of texture to use
+   float xrange = (1.0 * surface->w) / newWidth;
+   float yrange = (1.0 * surface->h) / newHeight;
+
+   // Create an OpenGL texture from the SDL_Surface
+   GLuint textureID;
+   glGenTextures(1, &textureID);
+   glBindTexture(GL_TEXTURE_2D, textureID);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
+                GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+
+   glBindTexture(GL_TEXTURE_2D, 0);
+   glTexturedQuad(p0,p1,p2,p3,xrange, yrange, textureID);
+
+   glDeleteTextures(1, &textureID);
    SDL_FreeSurface(newSurface);
 
-   glUseProgram(programID);
 
 }
 
