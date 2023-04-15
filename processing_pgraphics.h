@@ -222,6 +222,89 @@ public:
       dm.ellipse_mode = mode;
    }
 
+   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
+      PLine l1{ p1, p2 };
+      PLine l2{ p2, p3 };
+      PLine low_l1 = l1.offset(-half_weight);
+      PLine high_l1 = l1.offset(half_weight);
+      PLine low_l2 = l2.offset(-half_weight);
+      PLine high_l2 = l2.offset(half_weight);
+      return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
+   }
+
+   PShape glLinePoly(int points, const PVector *p, int weight, bool closed)  {
+      PLine start;
+      PLine end;
+
+      PShape triangle_strip;
+      triangle_strip.beginShape(TRIANGLE_STRIP);
+
+      float half_weight = weight / 2.0;
+      if (closed) {
+         start = glLineMitred(p[points-1], p[0], p[1], half_weight );
+         end = start;
+      } else {
+         PVector normal = (p[1] - p[0]).normal();
+         normal.normalize();
+         normal.mult(half_weight);
+         start = {  p[0] + normal, p[0] - normal };
+         normal = (p[points-1] - p[points-2]).normal();
+         normal.normalize();
+         normal.mult(half_weight);
+         end = { p[points-1] + normal, p[points-1] - normal };
+      }
+
+      triangle_strip.vertex( start.start );
+      triangle_strip.vertex( start.end );
+
+      for (int i =0; i<points-2;++i) {
+         PLine next = glLineMitred(p[i], p[i+1], p[i+2], half_weight);
+         triangle_strip.vertex( next.start );
+         triangle_strip.vertex( next.end );
+      }
+      if (closed) {
+         PLine next = glLineMitred(p[points-2], p[points-1], p[0], half_weight);
+         triangle_strip.vertex( next.start );
+         triangle_strip.vertex( next.end );
+      }
+
+      triangle_strip.vertex( end.start );
+      triangle_strip.vertex( end.end );
+
+      triangle_strip.endShape(closed ? CLOSE : OPEN);
+      return triangle_strip;
+   }
+
+    // only used by glTriangleStrip and glTriangleFan, as mitred line probably
+   // wouldn't work.
+   void glLine(PShape &triangles, PVector p1, PVector p2, int weight) const {
+
+      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+      normal.normalize();
+      normal.mult(weight/2.0);
+
+      triangles.vertex(p1 + normal);
+      triangles.vertex(p1 - normal);
+      triangles.vertex(p2 + normal);
+
+      triangles.vertex(p2 + normal);
+      triangles.vertex(p2 - normal);
+      triangles.vertex(p1 - normal);
+
+   }
+   // MAke this make a new phsape and shove it in children
+   PShape glTriangleStrip(int points, const PVector *p,int weight) {
+      PShape triangles;
+      triangles.beginShape(TRIANGLES);
+      glLine(triangles, p[0], p[1], weight);
+      for (int i=2;i<points;++i) {
+         glLine(triangles, p[i-1], p[i], weight);
+         glLine(triangles, p[i], p[i-2], weight);
+      }
+      triangles.endShape();
+      return triangles;
+   }
+
    void shape_stroke(PShape &pshape, float x, float y, float width, float height, color color) {
       extern GLuint Color;
       float color_vec[] = {
@@ -240,10 +323,19 @@ public:
          break;
       }
       case POLYGON:
+      {
+         PShape xshape = glLinePoly( pshape.vertices.size(), pshape.vertices.data(), dm.stroke_weight, pshape.type == CLOSE);
+         shape_fill( xshape,0,0,0,0,color );
          break;
-      case TRIANGLES:
-         break;
+      }
       case TRIANGLE_STRIP:
+      {
+         PShape xshape = glTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), dm.stroke_weight);
+         shape_fill( xshape,0,0,0,0,color );
+         break;
+      }
+      default:
+         abort();
          break;
       }
    }
