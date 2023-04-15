@@ -226,9 +226,9 @@ void box(float w, float h, float d) {
    std::vector<float> colors;
 
    for (int i = 0; i< vertices.size(); ++i ) {
-      colors.push_back(g.fill_color.r / 255.0);
-      colors.push_back(g.fill_color.g / 255.0);
-      colors.push_back(g.fill_color.b / 255.0);
+      colors.push_back(g.cm.fill_color.r / 255.0);
+      colors.push_back(g.cm.fill_color.g / 255.0);
+      colors.push_back(g.cm.fill_color.b / 255.0);
    }
 
    drawGeometry(vertices, normals, triangles, colors);
@@ -279,9 +279,9 @@ void sphere(float radius) {
          vertices.push_back( x * radius);
          vertices.push_back( y * radius);
          vertices.push_back( z * radius);
-         colors.push_back(g.fill_color.r / 255.0);
-         colors.push_back(g.fill_color.g / 255.0);
-         colors.push_back(g.fill_color.b / 255.0);
+         colors.push_back(g.cm.fill_color.r / 255.0);
+         colors.push_back(g.cm.fill_color.g / 255.0);
+         colors.push_back(g.cm.fill_color.b / 255.0);
       }
    }
 
@@ -326,6 +326,14 @@ MAKE_GLOBAL(bezier, g);
 MAKE_GLOBAL(beginShape, g);
 MAKE_GLOBAL(vertex, g);
 MAKE_GLOBAL(endShape, g);
+
+MAKE_GLOBAL(createRect, g);
+MAKE_GLOBAL(createQuad, g);
+MAKE_GLOBAL(createLine, g);
+MAKE_GLOBAL(createTriangle, g);
+MAKE_GLOBAL(createArc, g);
+MAKE_GLOBAL(createEllipse, g);
+MAKE_GLOBAL(createPoint, g);
 
 MAKE_GLOBAL(fill, g);
 MAKE_GLOBAL(noFill, g);
@@ -672,10 +680,10 @@ void textSize(int size) {
 
 void text(std::string text, float x, float y, float width=-1, float height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
-                                                 { (unsigned char)g.fill_color.r,
-                                                   (unsigned char)g.fill_color.g,
-                                                   (unsigned char)g.fill_color.b,
-                                                   (unsigned char)g.fill_color.a });
+                                                 { (unsigned char)g.cm.fill_color.r,
+                                                   (unsigned char)g.cm.fill_color.g,
+                                                   (unsigned char)g.cm.fill_color.b,
+                                                   (unsigned char)g.cm.fill_color.a });
    if (surface == NULL) {
       printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
       abort();

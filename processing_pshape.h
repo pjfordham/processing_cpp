@@ -37,15 +37,21 @@ enum {
 extern GLuint programID;
 extern GLuint Color;
 
-class PShape;
-PShape createPoint(float x, float y);
+struct DrawingMode {
+   int stroke_weight = 1;
+   int line_end_cap = ROUND;
+   int ellipse_mode = DIAMETER;
+   int rect_mode = CORNER;
+};
+
+struct ColorMode {
+   color stroke_color{255,255,255,255};
+   color fill_color{255,255,255,255};
+};
+
 
 class PShape {
 public:
-   static int rect_mode;
-   static int ellipse_mode;
-   static int stroke_weight;
-   static int line_end_cap;
 
 private:
    GLuint VAO = 0;
@@ -174,26 +180,26 @@ public:
       vertices.push_back(p);
    }
 
-   void endShape(int type_ = OPEN) {
+   void endShape(int type_ = OPEN, DrawingMode dm=DrawingMode()) {
       type = type_;
 
       if (vertices.size() > 0) {
          if (style == POINTS) {
             for (auto z : vertices ) {
-               children.emplace_back(createPoint( z.x, z.y ));
+               //children.emplace_back(createPoint( z.x, z.y ));
             }
          } else if (style == TRIANGLE_STRIP) {
             createVAO();
             if (!stroke_only)
-               glTriangleStrip( vertices.size(), vertices.data(), stroke_weight);
+               glTriangleStrip( vertices.size(), vertices.data(), dm.stroke_weight);
          } else if (style == TRIANGLE_FAN) {
             createVAO();
             if (!stroke_only)
-               glTriangleFan( vertices.size(), vertices.data(), stroke_weight);
+               glTriangleFan( vertices.size(), vertices.data(), dm.stroke_weight);
          } else if (style == TRIANGLES) {
             createVAO();
             if (!stroke_only) {
-               glTriangleStrip( vertices.size(), vertices.data(), stroke_weight);
+               glTriangleStrip( vertices.size(), vertices.data(), dm.stroke_weight);
             }
          } else if (style == POLYGON) {
             if (type == CLOSE) {
@@ -202,9 +208,9 @@ public:
                createVAO( triangles );
             }
             if (!stroke_only)
-               glLinePoly( vertices.size(), vertices.data(), stroke_weight, type == CLOSE);
+               glLinePoly( vertices.size(), vertices.data(), dm.stroke_weight, type == CLOSE);
          } else if (style == LINES) {
-            glLinePoly( vertices.size(), vertices.data(), stroke_weight, type == CLOSE);
+            glLinePoly( vertices.size(), vertices.data(), dm.stroke_weight, type == CLOSE);
          } else {
             abort();
          }
@@ -382,26 +388,26 @@ public:
       return;
    }
 
-   void draw(color stroke_color, color fill_color) {
+   void draw(ColorMode cm) {
       pushMatrix();
       transform( shape_matrix );
       if ( VAO ) {
          switch( style ) {
          case TRIANGLE_FAN:
-            drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLE_FAN );
+            drawVAO( stroke_only ? cm.stroke_color : cm.fill_color , GL_TRIANGLE_FAN );
             break;
          case TRIANGLE_STRIP:
-            drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLE_STRIP );
+            drawVAO( stroke_only ? cm.stroke_color : cm.fill_color , GL_TRIANGLE_STRIP );
             break;
          case TRIANGLES:
-            drawVAO( stroke_only ? stroke_color : fill_color , GL_TRIANGLES );
+            drawVAO( stroke_only ? cm.stroke_color : cm.fill_color , GL_TRIANGLES );
             break;
          default:
             abort();
          }
       }
       for (auto &&child : children) {
-         child.draw(stroke_color, fill_color);
+         child.draw(cm);
       }
       popMatrix();
    }
@@ -411,156 +417,12 @@ public:
    }
 };
 
-int PShape::stroke_weight = 1;
-int PShape::line_end_cap = ROUND;
-int PShape::ellipse_mode = DIAMETER;
-int PShape::rect_mode = CORNER;
-
-
-
-
-PShape createRect(float x, float y, float width, float height) {
-   if (PShape::rect_mode == CORNERS) {
-      width = width - x;
-      height = height - y;
-   } else if (PShape::rect_mode == CENTER) {
-      x = x - width / 2;
-      y = y - height / 2;
-   } else if (PShape::rect_mode == RADIUS) {
-      width *= 2;
-      height *= 2;
-      x = x - width / 2;
-      y = y - height / 2;
-   }
-   PShape shape;
-   shape.beginShape(POLYGON);
-   shape.vertex(x,y);
-   shape.vertex(x+width,y);
-   shape.vertex(x+width,y+height);
-   shape.vertex(x,y+height);
-   shape.endShape(CLOSE);
-   return shape;
-}
-
-PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-   PShape shape;
-   shape.beginShape(POLYGON);
-   shape.vertex(x1, y1);
-   shape.vertex(x2, y2);
-   shape.vertex(x3, y3);
-   shape.vertex(x4, y4);
-   shape.endShape(CLOSE);
-   return shape;
-}
-
-
-PShape createLine(float x1, float y1, float x2, float y2) {
-   PVector p[] = {{x1,y1},{x1,y1},{x2,y2},{x2,y2}};
-
-   float half_stroke = PShape::stroke_weight/2.0;
-
-   PShape shape;
-   shape.stroke_only = true;
-   shape.beginShape(POLYGON);
-
-   PVector direction = PVector{x2-x1,y2-y1};
-   PVector normal = direction.normal();
-   normal.normalize();
-   normal.mult(half_stroke);
-
-   if (PShape::line_end_cap == ROUND ) {
-      int NUMBER_OF_VERTICES=16;
-
-      float start_angle = direction.heading() + HALF_PI;
-
-      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertex(x1 + cos(i + start_angle) * half_stroke,
-                      y1 + sin(i + start_angle) * half_stroke);
-      }
-
-      start_angle += PI;
-
-      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertex(x2 + cos(i + start_angle) * half_stroke,
-                      y2 + sin(i + start_angle) * half_stroke);
-      }
-   } else {
-      p[0].add(normal);
-      p[1].sub(normal);
-      p[2].sub(normal);
-      p[3].add(normal);
-
-      if (PShape::line_end_cap == PROJECT) {
-         direction.normalize();
-         direction.mult(half_stroke);
-         p[0].sub(direction);
-         p[1].sub(direction);
-         p[2].add(direction);
-         p[3].add(direction);
-      }
-
-      shape.vertex( p[0] );
-      shape.vertex( p[1] );
-      shape.vertex( p[2] );
-      shape.vertex( p[3] );
-   }
-   shape.endShape(CLOSE);
-   return shape;
-}
-
-PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
-   PShape shape;
-   shape.beginShape(TRIANGLE_STRIP);
-   shape.vertex(x1, y1);
-   shape.vertex(x2, y2);
-   shape.vertex(x3, y3);
-   shape.endShape(CLOSE);
-   return shape;
-}
-
-
 PVector ellipse_point(const PVector &center, int index, float start, float end, float xradius, float yradius) {
    float angle = map( index, 0, 32, start, end);
    return PVector( center.x + xradius * sin(-angle + HALF_PI),
                    center.y + yradius * cos(-angle + HALF_PI),
                    center.z);
 }
-
-PShape createArc(float x, float y, float width, float height, float start,
-                 float stop, int mode = DEFAULT) {
-
-   if (PShape::ellipse_mode != RADIUS) {
-      width /=2;
-      height /=2;
-   }
-   PShape shape;
-   shape.beginShape(POLYGON);
-   int NUMBER_OF_VERTICES=32;
-   if ( mode == DEFAULT || mode == PIE ) {
-      shape.vertex(x,y);
-   }
-   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-      shape.vertex( ellipse_point( {x,y}, i, start, stop, width, height ) );
-   }
-   shape.vertex( ellipse_point( {x,y}, 32, start, stop, width, height ) );
-   shape.endShape(CLOSE);
-   return shape;
-   // NEED to tweak outline see Arc.cc
-   // int NUMBER_OF_VERTICES=32;
-   // std::vector<PVector> vertexBuffer;
-   // if ( mode == PIE ) {
-   //    vertexBuffer.push_back(center);
-   // }
-   // for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-   //    vertexBuffer.push_back( ellipse_point( center, i, start, end, xradius, yradius ) );
-   // }
-   // vertexBuffer.push_back( ellipse_point( center, 32, start, end, xradius, yradius ) );
-   // if ( mode == CHORD || mode == PIE ) {
-   //    vertexBuffer.push_back( vertexBuffer[0] );
-   // }
-   // glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
-}
-
 
 PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    PShape shape;
@@ -571,50 +433,6 @@ PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
    shape.endShape(CLOSE);
    return shape;
 }
-
-PShape createEllipse(float x, float y, float width, float height) {
-   static PShape unitCircle = createUnitCircle();
-   PShape ellipse;
-   ellipse.borrowVAO( unitCircle );
-   if (PShape::ellipse_mode != RADIUS) {
-      width /=2;
-      height /=2;
-   }
-   ellipse.style = TRIANGLE_FAN;
-   ellipse.translate(x,y);
-   ellipse.scale(width,height);
-
-   if ( PShape::stroke_on() ) {
-      PShape group;
-      group.beginShape(GROUP);
-
-      PShape shape;
-      shape.beginShape(LINES);
-      shape.stroke_only = true;
-      for(int i = 0; i < 32; ++i) {
-         shape.vertex( ellipse_point( {x,y,0}, i, 0, TWO_PI, width, height ) );
-      }
-      shape.endShape(CLOSE);
-
-      group.addChild( std::move(ellipse) );
-      group.addChild( std::move(shape) );
-      group.endShape(OPEN);
-      return group;
-   }
-   return ellipse;
-}
-
-PShape createPoint(float x, float y) {
-   static PShape unitCircle = createUnitCircle();
-   PShape shape;
-   shape.borrowVAO( unitCircle );
-   shape.style = TRIANGLE_FAN;
-   shape.translate(x,y);
-   shape.scale(PShape::stroke_weight,PShape::stroke_weight);
-   shape.stroke_only = true;
-   return shape;
-}
-
 
 
 #endif

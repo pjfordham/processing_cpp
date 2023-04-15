@@ -20,8 +20,9 @@ public:
    GLuint bufferID;
    GLuint localFboID;
 
-   color stroke_color{255,255,255,255};
-   color fill_color{255,255,255,255};
+   DrawingMode dm;
+   ColorMode cm;
+
    int gfx_width, gfx_height;
 
    PGraphics(const PGraphics &x) = delete;
@@ -31,8 +32,8 @@ public:
       std::swap(localFboID, x.localFboID);
       std::swap(gfx_width, x.gfx_width);
       std::swap(gfx_height, x.gfx_height);
-      std::swap(fill_color, x.fill_color);
-      std::swap(stroke_color, x.stroke_color);
+      std::swap(cm, x.cm);
+      std::swap(dm, x.dm);
    }
 
    PGraphics& operator=(const PGraphics&) = delete;
@@ -41,8 +42,8 @@ public:
       std::swap(localFboID, x.localFboID);
       std::swap(gfx_width, x.gfx_width);
       std::swap(gfx_height, x.gfx_height);
-      std::swap(fill_color, x.fill_color);
-      std::swap(stroke_color, x.stroke_color);
+      std::swap(cm, x.cm);
+      std::swap(dm, x.dm);
       return *this;
    }
 
@@ -128,7 +129,7 @@ public:
    // Begin shapes managed by Pshape.
    // ----
    void fill(float r,float g,  float b, float a) {
-      fill_color = flatten_color_mode(r,g,b,a);
+      cm.fill_color = flatten_color_mode(r,g,b,a);
    }
 
    void fill(float r,float g, float b) {
@@ -160,7 +161,7 @@ public:
    }
 
    void stroke(float r,float g,  float b, float a) {
-      stroke_color = flatten_color_mode(r,g,b,a);
+      cm.stroke_color = flatten_color_mode(r,g,b,a);
    }
 
    void stroke(float r,float g, float b) {
@@ -177,7 +178,7 @@ public:
 
    void rect(int x, int y, int _width, int _height) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createRect(x,y,_width,_height).draw(stroke_color,fill_color);
+      createRect(x,y,_width,_height).draw(cm);
    }
 
    void stroke(float r) {
@@ -193,43 +194,43 @@ public:
    }
 
    void strokeWeight(int x) {
-      PShape::stroke_weight = x;
+      dm.stroke_weight = x;
    }
 
    void noStroke() {
-      stroke_color = {0,0,0,0};
+      cm.stroke_color = {0,0,0,0};
    }
 
    void noFill() {
-      fill_color = {0,0,0,0};
+      cm.fill_color = {0,0,0,0};
    }
 
    void ellipseMode(int mode) {
-      PShape::ellipse_mode = mode;
+      dm.ellipse_mode = mode;
    }
 
    void ellipse(float x, float y, float width, float height) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createEllipse(x, y, width, height).draw(stroke_color,fill_color);
+      createEllipse(x, y, width, height).draw(cm);
    }
 
    void ellipse(float x, float y, float radius) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createEllipse(x, y, radius, radius).draw(stroke_color,fill_color);
+      createEllipse(x, y, radius, radius).draw(cm);
    }
 
    void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createArc(x, y, width, height, start, stop, mode).draw(stroke_color,fill_color);
+      createArc(x, y, width, height, start, stop, mode).draw(cm);
    }
 
    void strokeCap(int cap) {
-      PShape::line_end_cap = cap;
+      dm.line_end_cap = cap;
    }
 
    void line(float x1, float y1, float x2, float y2) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createLine( x1, y1, x2, y2).draw(stroke_color,fill_color);
+      createLine( x1, y1, x2, y2).draw(cm);
    }
 
    void line(float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -249,17 +250,17 @@ public:
 
    void point(float x, float y) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createPoint(x, y).draw(stroke_color,fill_color);
+      createPoint(x, y).draw(cm);
    }
 
    void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw(stroke_color,fill_color);
+      createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw(cm);
    }
 
    void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createTriangle( x1, y1, x2, y2, x3, y3 ).draw(stroke_color,fill_color);
+      createTriangle( x1, y1, x2, y2, x3, y3 ).draw(cm);
    }
 
    void shape(PShape shape, float x, float y, float width, float height) {
@@ -267,7 +268,7 @@ public:
       pushMatrix();
       translate(x,y);
       scale(1,1); // Need to fix this properly
-      shape.draw(stroke_color,fill_color);
+      shape.draw(cm);
       popMatrix();
    }
 
@@ -283,13 +284,13 @@ public:
    }
 
    void endShape(int type = OPEN) {
-      _shape.endShape(type);
+      _shape.endShape(type,dm);
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      _shape.draw(stroke_color,fill_color);
+      _shape.draw(cm);
    }
 
    void rectMode(int mode){
-      PShape::rect_mode = mode;
+      dm.rect_mode = mode;
    }
 
    void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
@@ -302,9 +303,190 @@ public:
          float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
          bezier.vertex(x, y);
       }
-      bezier.endShape();
-      bezier.draw(stroke_color,fill_color);
+      bezier.endShape(OPEN, dm);
+      bezier.draw(cm);
    }
+
+
+PShape createRect(float x, float y, float width, float height) {
+   if (dm.rect_mode == CORNERS) {
+      width = width - x;
+      height = height - y;
+   } else if (dm.rect_mode == CENTER) {
+      x = x - width / 2;
+      y = y - height / 2;
+   } else if (dm.rect_mode == RADIUS) {
+      width *= 2;
+      height *= 2;
+      x = x - width / 2;
+      y = y - height / 2;
+   }
+   PShape shape;
+   shape.beginShape(POLYGON);
+   shape.vertex(x,y);
+   shape.vertex(x+width,y);
+   shape.vertex(x+width,y+height);
+   shape.vertex(x,y+height);
+   shape.endShape(CLOSE, dm);
+   return shape;
+}
+
+PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
+   PShape shape;
+   shape.beginShape(POLYGON);
+   shape.vertex(x1, y1);
+   shape.vertex(x2, y2);
+   shape.vertex(x3, y3);
+   shape.vertex(x4, y4);
+   shape.endShape(CLOSE, dm);
+   return shape;
+}
+
+
+PShape createLine(float x1, float y1, float x2, float y2) {
+   PVector p[] = {{x1,y1},{x1,y1},{x2,y2},{x2,y2}};
+
+   float half_stroke = dm.stroke_weight/2.0;
+
+   PShape shape;
+   shape.stroke_only = true;
+   shape.beginShape(POLYGON);
+
+   PVector direction = PVector{x2-x1,y2-y1};
+   PVector normal = direction.normal();
+   normal.normalize();
+   normal.mult(half_stroke);
+
+   if (dm.line_end_cap == ROUND ) {
+      int NUMBER_OF_VERTICES=16;
+
+      float start_angle = direction.heading() + HALF_PI;
+
+      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+         shape.vertex(x1 + cos(i + start_angle) * half_stroke,
+                      y1 + sin(i + start_angle) * half_stroke);
+      }
+
+      start_angle += PI;
+
+      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+         shape.vertex(x2 + cos(i + start_angle) * half_stroke,
+                      y2 + sin(i + start_angle) * half_stroke);
+      }
+   } else {
+      p[0].add(normal);
+      p[1].sub(normal);
+      p[2].sub(normal);
+      p[3].add(normal);
+
+      if (dm.line_end_cap == PROJECT) {
+         direction.normalize();
+         direction.mult(half_stroke);
+         p[0].sub(direction);
+         p[1].sub(direction);
+         p[2].add(direction);
+         p[3].add(direction);
+      }
+
+      shape.vertex( p[0] );
+      shape.vertex( p[1] );
+      shape.vertex( p[2] );
+      shape.vertex( p[3] );
+   }
+   shape.endShape(CLOSE,dm);
+   return shape;
+}
+
+PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
+   PShape shape;
+   shape.beginShape(TRIANGLE_STRIP);
+   shape.vertex(x1, y1);
+   shape.vertex(x2, y2);
+   shape.vertex(x3, y3);
+   shape.endShape(CLOSE,dm);
+   return shape;
+}
+
+
+
+PShape createArc(float x, float y, float width, float height, float start,
+                 float stop, int mode = DEFAULT) {
+
+   if (dm.ellipse_mode != RADIUS) {
+      width /=2;
+      height /=2;
+   }
+   PShape shape;
+   shape.beginShape(POLYGON);
+   int NUMBER_OF_VERTICES=32;
+   if ( mode == DEFAULT || mode == PIE ) {
+      shape.vertex(x,y);
+   }
+   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+      shape.vertex( ellipse_point( {x,y}, i, start, stop, width, height ) );
+   }
+   shape.vertex( ellipse_point( {x,y}, 32, start, stop, width, height ) );
+   shape.endShape(CLOSE,dm);
+   return shape;
+   // NEED to tweak outline see Arc.cc
+   // int NUMBER_OF_VERTICES=32;
+   // std::vector<PVector> vertexBuffer;
+   // if ( mode == PIE ) {
+   //    vertexBuffer.push_back(center);
+   // }
+   // for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+   //    vertexBuffer.push_back( ellipse_point( center, i, start, end, xradius, yradius ) );
+   // }
+   // vertexBuffer.push_back( ellipse_point( center, 32, start, end, xradius, yradius ) );
+   // if ( mode == CHORD || mode == PIE ) {
+   //    vertexBuffer.push_back( vertexBuffer[0] );
+   // }
+   // glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
+}
+
+PShape createEllipse(float x, float y, float width, float height) {
+   static PShape unitCircle = createUnitCircle();
+   PShape ellipse;
+   ellipse.borrowVAO( unitCircle );
+   if (dm.ellipse_mode != RADIUS) {
+      width /=2;
+      height /=2;
+   }
+   ellipse.style = TRIANGLE_FAN;
+   ellipse.translate(x,y);
+   ellipse.scale(width,height);
+
+   if ( PShape::stroke_on() ) {
+      PShape group;
+      group.beginShape(GROUP);
+
+      PShape shape;
+      shape.beginShape(LINES);
+      shape.stroke_only = true;
+      for(int i = 0; i < 32; ++i) {
+         shape.vertex( ellipse_point( {x,y,0}, i, 0, TWO_PI, width, height ) );
+      }
+      shape.endShape(CLOSE,dm);
+
+      group.addChild( std::move(ellipse) );
+      group.addChild( std::move(shape) );
+      group.endShape(OPEN,dm);
+      return group;
+   }
+   return ellipse;
+}
+
+PShape createPoint(float x, float y) {
+   static PShape unitCircle = createUnitCircle();
+   PShape shape;
+   shape.borrowVAO( unitCircle );
+   shape.style = TRIANGLE_FAN;
+   shape.translate(x,y);
+   shape.scale(dm.stroke_weight,dm.stroke_weight);
+   shape.stroke_only = true;
+   return shape;
+}
+
 
 
 // ----
