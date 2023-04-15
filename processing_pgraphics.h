@@ -15,13 +15,26 @@ enum {
    P2D, P3D
 };
 
+struct DrawingMode {
+   int stroke_weight = 1;
+   int line_end_cap = ROUND;
+   int ellipse_mode = DIAMETER;
+   int rect_mode = CORNER;
+};
+
+struct ColorMode {
+   color stroke_color{255,255,255,255};
+   color fill_color{255,255,255,255};
+};
+
+
 class PGraphics {
 public:
    GLuint bufferID;
    GLuint localFboID;
 
-   DrawingMode dm;
-   ColorMode cm;
+   DrawingMode dm{};
+   ColorMode cm{};
 
    int gfx_width, gfx_height;
 
@@ -177,8 +190,8 @@ public:
    }
 
    void rect(int x, int y, int _width, int _height) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createRect(x,y,_width,_height).draw(cm);
+      PShape pshape = createRect(x,y,_width,_height);
+      shape( pshape );
    }
 
    void stroke(float r) {
@@ -209,19 +222,203 @@ public:
       dm.ellipse_mode = mode;
    }
 
-   void ellipse(float x, float y, float width, float height) {
+   void shape_stroke(PShape &pshape, float x, float y, float width, float height, color color) {
+      extern GLuint Color;
+      float color_vec[] = {
+         color.r / 255.0f,
+         color.g / 255.0f,
+         color.b / 255.0f,
+         color.a / 255.0f };
+      glUniform4fv(Color, 1, color_vec);
+      switch( pshape.style ) {
+      case POINTS:
+      {
+         for (auto z : pshape.vertices ) {
+            PShape xshape = createRect(z.x, z.y, dm.stroke_weight, dm.stroke_weight);
+            shape_fill( xshape,0,0,0,0,color );
+         }
+         break;
+      }
+      case POLYGON:
+         break;
+      case TRIANGLES:
+         break;
+      case TRIANGLE_STRIP:
+         break;
+      }
+   }
+
+   void shape_fill(PShape &pshape, float x, float y, float width, float height, color color) {
+      extern GLuint Color;
+      switch( pshape.style ) {
+      case POINTS:
+         break;
+      case POLYGON:
+      {
+         float color_vec[] = {
+            color.r / 255.0f,
+            color.g / 255.0f,
+            color.b / 255.0f,
+            color.a / 255.0f };
+         glUniform4fv(Color, 1, color_vec);
+         std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
+
+         // Create a vertex array object (VAO)
+         GLuint VAO;
+         glGenVertexArrays(1, &VAO);
+         glBindVertexArray(VAO);
+
+         auto vertexbuffer_size = triangles.size();
+
+         GLuint vertexbuffer;
+         glGenBuffers(1, &vertexbuffer);
+         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+         glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
+
+         GLuint attribId = glGetAttribLocation(programID, "position");
+         glEnableVertexAttribArray(attribId);
+         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+         glVertexAttribPointer(
+            attribId,                         // attribute
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            sizeof(PVector),                  // stride
+            (void*)offsetof(PVector,x)        // array buffer offset
+            );
+
+         glBindVertexArray(VAO);
+         glDrawArrays(GL_TRIANGLES, 0, vertexbuffer_size);
+         glBindVertexArray(0);
+
+         glDeleteBuffers(1, &vertexbuffer);
+         glDeleteVertexArrays(1, &VAO);
+      }
+      break;
+      case TRIANGLES:
+      {
+         float color_vec[] = {
+            color.r / 255.0f,
+            color.g / 255.0f,
+            color.b / 255.0f,
+            color.a / 255.0f };
+         glUniform4fv(Color, 1, color_vec);
+         std::vector<PVector> &triangles = pshape.vertices;
+
+         // Create a vertex array object (VAO)
+         GLuint VAO;
+         glGenVertexArrays(1, &VAO);
+         glBindVertexArray(VAO);
+
+         auto vertexbuffer_size = triangles.size();
+
+         GLuint vertexbuffer;
+         glGenBuffers(1, &vertexbuffer);
+         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+         glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
+
+         GLuint attribId = glGetAttribLocation(programID, "position");
+         glEnableVertexAttribArray(attribId);
+         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+         glVertexAttribPointer(
+            attribId,                         // attribute
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            sizeof(PVector),                  // stride
+            (void*)offsetof(PVector,x)        // array buffer offset
+            );
+
+         glUniform4fv(Color, 1, color_vec);
+         glBindVertexArray(VAO);
+         glDrawArrays(GL_TRIANGLES, 0, vertexbuffer_size);
+         glBindVertexArray(0);
+
+         glDeleteBuffers(1, &vertexbuffer);
+         glDeleteVertexArrays(1, &VAO);
+      }
+      break;
+      case TRIANGLE_STRIP:
+      {
+         float color_vec[] = {
+            color.r / 255.0f,
+            color.g / 255.0f,
+            color.b / 255.0f,
+            color.a / 255.0f };
+         glUniform4fv(Color, 1, color_vec);
+         std::vector<PVector> &triangles = pshape.vertices;
+
+         // Create a vertex array object (VAO)
+         GLuint VAO;
+         glGenVertexArrays(1, &VAO);
+         glBindVertexArray(VAO);
+
+         auto vertexbuffer_size = triangles.size();
+
+         GLuint vertexbuffer;
+         glGenBuffers(1, &vertexbuffer);
+         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+         glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
+
+         GLuint attribId = glGetAttribLocation(programID, "position");
+         glEnableVertexAttribArray(attribId);
+         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+         glVertexAttribPointer(
+            attribId,                         // attribute
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            sizeof(PVector),                  // stride
+            (void*)offsetof(PVector,x)        // array buffer offset
+            );
+
+         glUniform4fv(Color, 1, color_vec);
+         glBindVertexArray(VAO);
+         glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexbuffer_size);
+         glBindVertexArray(0);
+
+         glDeleteBuffers(1, &vertexbuffer);
+         glDeleteVertexArrays(1, &VAO);
+      }
+      break;
+      default:
+         abort();
+      }
+   }
+
+   void shape(PShape &pshape, float x, float y, float width, float height) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createEllipse(x, y, width, height).draw(cm);
+      pushMatrix();
+      translate(x,y);
+      scale(1,1); // Need to fix this properly
+      transform( pshape.shape_matrix );
+      if ( pshape.style == GROUP ) {
+         for (auto &&child : pshape.children) {
+            shape(child,0,0,0,0);
+         }
+      } else {
+         shape_fill(pshape, x,y,width,height,cm.fill_color);
+         shape_stroke(pshape, x,y,width,height, cm.stroke_color);
+      }
+      popMatrix();
+   }
+
+   void shape(PShape &pshape) {
+      shape(pshape,0,0,0,0);
+   }
+
+   void ellipse(float x, float y, float width, float height) {
+      PShape pshape = createEllipse(x, y, width, height);
+      shape( pshape );
    }
 
    void ellipse(float x, float y, float radius) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createEllipse(x, y, radius, radius).draw(cm);
+      ellipse(x,y,radius,radius);
    }
 
    void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createArc(x, y, width, height, start, stop, mode).draw(cm);
+      PShape pshape = createArc(x, y, width, height, start, stop, mode);
+      shape( pshape );
    }
 
    void strokeCap(int cap) {
@@ -229,47 +426,40 @@ public:
    }
 
    void line(float x1, float y1, float x2, float y2) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createLine( x1, y1, x2, y2).draw(cm);
+      PShape pshape = createLine( x1, y1, x2, y2);
+      shape( pshape );
    }
 
    void line(float x1, float y1, float z1, float x2, float y2, float z2) {
       abort();
    }
 
-
    void line(PVector start, PVector end) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       line(start.x,start.y, end.x,end.y);
    }
 
    void line(PLine l) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       line(l.start, l.end);
    }
 
    void point(float x, float y) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createPoint(x, y).draw(cm);
+      PShape pshape = createPoint(x, y);
+      shape( pshape );
    }
 
    void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw(cm);
+      PShape pshape = createQuad(x1, y1, x2, y2, x3, y3, x4, y4);
+      shape( pshape );
    }
 
    void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createTriangle( x1, y1, x2, y2, x3, y3 ).draw(cm);
+      PShape pshape = createTriangle( x1, y1, x2, y2, x3, y3 );
+      shape( pshape );
    }
 
-   void shape(PShape shape, float x, float y, float width, float height) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      pushMatrix();
-      translate(x,y);
-      scale(1,1); // Need to fix this properly
-      shape.draw(cm);
-      popMatrix();
+   void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+      PShape pshape = createBezier(x1, y1, x2, y2, x3, y3, x4, y4);
+      shape( pshape );
    }
 
    PShape _shape;
@@ -284,18 +474,20 @@ public:
    }
 
    void endShape(int type = OPEN) {
-      _shape.endShape(type,dm);
+      _shape.endShape(type);
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      _shape.draw(cm);
+      shape(_shape, 0,0,0,0);
    }
 
    void rectMode(int mode){
       dm.rect_mode = mode;
    }
 
-   void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+
+
+   PShape createBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
       PShape bezier;
-      bezier.beginShape();
+      bezier.beginShape(POLYGON);
       for (float t = 0; t <= 1; t += 0.01) {
          // Compute the Bezier curve points
          float t_ = 1 - t;
@@ -303,189 +495,120 @@ public:
          float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
          bezier.vertex(x, y);
       }
-      bezier.endShape(OPEN, dm);
-      bezier.draw(cm);
+      bezier.endShape(OPEN);
+      return bezier;
    }
 
 
-PShape createRect(float x, float y, float width, float height) {
-   if (dm.rect_mode == CORNERS) {
-      width = width - x;
-      height = height - y;
-   } else if (dm.rect_mode == CENTER) {
-      x = x - width / 2;
-      y = y - height / 2;
-   } else if (dm.rect_mode == RADIUS) {
-      width *= 2;
-      height *= 2;
-      x = x - width / 2;
-      y = y - height / 2;
-   }
-   PShape shape;
-   shape.beginShape(POLYGON);
-   shape.vertex(x,y);
-   shape.vertex(x+width,y);
-   shape.vertex(x+width,y+height);
-   shape.vertex(x,y+height);
-   shape.endShape(CLOSE, dm);
-   return shape;
-}
-
-PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-   PShape shape;
-   shape.beginShape(POLYGON);
-   shape.vertex(x1, y1);
-   shape.vertex(x2, y2);
-   shape.vertex(x3, y3);
-   shape.vertex(x4, y4);
-   shape.endShape(CLOSE, dm);
-   return shape;
-}
-
-
-PShape createLine(float x1, float y1, float x2, float y2) {
-   PVector p[] = {{x1,y1},{x1,y1},{x2,y2},{x2,y2}};
-
-   float half_stroke = dm.stroke_weight/2.0;
-
-   PShape shape;
-   shape.stroke_only = true;
-   shape.beginShape(POLYGON);
-
-   PVector direction = PVector{x2-x1,y2-y1};
-   PVector normal = direction.normal();
-   normal.normalize();
-   normal.mult(half_stroke);
-
-   if (dm.line_end_cap == ROUND ) {
-      int NUMBER_OF_VERTICES=16;
-
-      float start_angle = direction.heading() + HALF_PI;
-
-      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertex(x1 + cos(i + start_angle) * half_stroke,
-                      y1 + sin(i + start_angle) * half_stroke);
+   PShape createRect(float x, float y, float width, float height) {
+      if (dm.rect_mode == CORNERS) {
+         width = width - x;
+         height = height - y;
+      } else if (dm.rect_mode == CENTER) {
+         x = x - width / 2;
+         y = y - height / 2;
+      } else if (dm.rect_mode == RADIUS) {
+         width *= 2;
+         height *= 2;
+         x = x - width / 2;
+         y = y - height / 2;
       }
-
-      start_angle += PI;
-
-      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertex(x2 + cos(i + start_angle) * half_stroke,
-                      y2 + sin(i + start_angle) * half_stroke);
-      }
-   } else {
-      p[0].add(normal);
-      p[1].sub(normal);
-      p[2].sub(normal);
-      p[3].add(normal);
-
-      if (dm.line_end_cap == PROJECT) {
-         direction.normalize();
-         direction.mult(half_stroke);
-         p[0].sub(direction);
-         p[1].sub(direction);
-         p[2].add(direction);
-         p[3].add(direction);
-      }
-
-      shape.vertex( p[0] );
-      shape.vertex( p[1] );
-      shape.vertex( p[2] );
-      shape.vertex( p[3] );
-   }
-   shape.endShape(CLOSE,dm);
-   return shape;
-}
-
-PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
-   PShape shape;
-   shape.beginShape(TRIANGLE_STRIP);
-   shape.vertex(x1, y1);
-   shape.vertex(x2, y2);
-   shape.vertex(x3, y3);
-   shape.endShape(CLOSE,dm);
-   return shape;
-}
-
-
-
-PShape createArc(float x, float y, float width, float height, float start,
-                 float stop, int mode = DEFAULT) {
-
-   if (dm.ellipse_mode != RADIUS) {
-      width /=2;
-      height /=2;
-   }
-   PShape shape;
-   shape.beginShape(POLYGON);
-   int NUMBER_OF_VERTICES=32;
-   if ( mode == DEFAULT || mode == PIE ) {
-      shape.vertex(x,y);
-   }
-   for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-      shape.vertex( ellipse_point( {x,y}, i, start, stop, width, height ) );
-   }
-   shape.vertex( ellipse_point( {x,y}, 32, start, stop, width, height ) );
-   shape.endShape(CLOSE,dm);
-   return shape;
-   // NEED to tweak outline see Arc.cc
-   // int NUMBER_OF_VERTICES=32;
-   // std::vector<PVector> vertexBuffer;
-   // if ( mode == PIE ) {
-   //    vertexBuffer.push_back(center);
-   // }
-   // for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-   //    vertexBuffer.push_back( ellipse_point( center, i, start, end, xradius, yradius ) );
-   // }
-   // vertexBuffer.push_back( ellipse_point( center, 32, start, end, xradius, yradius ) );
-   // if ( mode == CHORD || mode == PIE ) {
-   //    vertexBuffer.push_back( vertexBuffer[0] );
-   // }
-   // glLines(vertexBuffer.size(),vertexBuffer.data(),color,weight);
-}
-
-PShape createEllipse(float x, float y, float width, float height) {
-   static PShape unitCircle = createUnitCircle();
-   PShape ellipse;
-   ellipse.borrowVAO( unitCircle );
-   if (dm.ellipse_mode != RADIUS) {
-      width /=2;
-      height /=2;
-   }
-   ellipse.style = TRIANGLE_FAN;
-   ellipse.translate(x,y);
-   ellipse.scale(width,height);
-
-   if ( PShape::stroke_on() ) {
-      PShape group;
-      group.beginShape(GROUP);
-
       PShape shape;
-      shape.beginShape(LINES);
-      shape.stroke_only = true;
-      for(int i = 0; i < 32; ++i) {
-         shape.vertex( ellipse_point( {x,y,0}, i, 0, TWO_PI, width, height ) );
-      }
-      shape.endShape(CLOSE,dm);
-
-      group.addChild( std::move(ellipse) );
-      group.addChild( std::move(shape) );
-      group.endShape(OPEN,dm);
-      return group;
+      shape.beginShape(POLYGON);
+      shape.vertex(x,y);
+      shape.vertex(x+width,y);
+      shape.vertex(x+width,y+height);
+      shape.vertex(x,y+height);
+      shape.endShape(CLOSE);
+      return shape;
    }
-   return ellipse;
-}
 
-PShape createPoint(float x, float y) {
-   static PShape unitCircle = createUnitCircle();
-   PShape shape;
-   shape.borrowVAO( unitCircle );
-   shape.style = TRIANGLE_FAN;
-   shape.translate(x,y);
-   shape.scale(dm.stroke_weight,dm.stroke_weight);
-   shape.stroke_only = true;
-   return shape;
-}
+   PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
+      PShape shape;
+      shape.beginShape(POLYGON);
+      shape.vertex(x1, y1);
+      shape.vertex(x2, y2);
+      shape.vertex(x3, y3);
+      shape.vertex(x4, y4);
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   PShape createLine(float x1, float y1, float x2, float y2) {
+      PShape shape;
+      shape.beginShape(POLYGON);
+      shape.vertex(x1,y1);
+      shape.vertex(x2,y2);
+      shape.endShape(OPEN);
+      return shape;
+   }
+
+   PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
+      PShape shape;
+      shape.beginShape(TRIANGLES);
+      shape.vertex(x1, y1);
+      shape.vertex(x2, y2);
+      shape.vertex(x3, y3);
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   PVector ellipse_point(const PVector &center, int index, float start, float end, float xradius, float yradius) {
+      float angle = map( index, 0, 32, start, end);
+      return PVector( center.x + xradius * sin(-angle + HALF_PI),
+                      center.y + yradius * cos(-angle + HALF_PI),
+                      center.z);
+   }
+
+   PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
+      PShape shape;
+      shape.beginShape(POLYGON);
+      for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+         shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
+      }
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   PShape createEllipse(float x, float y, float width, float height) {
+      if (dm.ellipse_mode != RADIUS) {
+         width /=2;
+         height /=2;
+      }
+      PShape ellipse = createUnitCircle();
+      ellipse.translate(x,y);
+      ellipse.scale(width,height);
+      return ellipse;
+   }
+
+   PShape createArc(float x, float y, float width, float height, float start,
+                    float stop, int mode = DEFAULT) {
+
+      if (dm.ellipse_mode != RADIUS) {
+         width /=2;
+         height /=2;
+      }
+      PShape shape;
+      shape.beginShape(POLYGON);
+      int NUMBER_OF_VERTICES=32;
+      if ( mode == PIE ) {
+         shape.vertex(x,y);
+      }
+      for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+         shape.vertex( ellipse_point( {x,y}, i, start, stop, width, height ) );
+      }
+      shape.vertex( ellipse_point( {x,y}, 32, start, stop, width, height ) );
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   PShape createPoint(float x, float y) {
+      PShape shape;
+      shape.beginShape(POINTS);
+      shape.vertex(x,y);
+      shape.endShape();
+      return shape;
+   }
 
 
 
