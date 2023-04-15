@@ -488,7 +488,6 @@ public:
 
    void endShape(int type = OPEN) {
       _shape.endShape(type);
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       shape(_shape, 0,0,0,0);
    }
 
