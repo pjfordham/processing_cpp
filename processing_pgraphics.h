@@ -20,8 +20,8 @@ public:
    GLuint bufferID;
    GLuint localFboID;
 
-   color stroke_color;
-   color fill_color;
+   color stroke_color{255,255,255,255};
+   color fill_color{255,255,255,255};
    int gfx_width, gfx_height;
 
    PGraphics(const PGraphics &x) = delete;
@@ -128,7 +128,7 @@ public:
    // Begin shapes managed by Pshape.
    // ----
    void fill(float r,float g,  float b, float a) {
-      PShape::fill_color = flatten_color_mode(r,g,b,a);
+      fill_color = flatten_color_mode(r,g,b,a);
    }
 
    void fill(float r,float g, float b) {
@@ -160,7 +160,7 @@ public:
    }
 
    void stroke(float r,float g,  float b, float a) {
-      PShape::stroke_color = flatten_color_mode(r,g,b,a);
+      stroke_color = flatten_color_mode(r,g,b,a);
    }
 
    void stroke(float r,float g, float b) {
@@ -177,7 +177,7 @@ public:
 
    void rect(int x, int y, int _width, int _height) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createRect(x,y,_width,_height).draw();
+      createRect(x,y,_width,_height).draw(stroke_color,fill_color);
    }
 
    void stroke(float r) {
@@ -197,11 +197,11 @@ public:
    }
 
    void noStroke() {
-      PShape::stroke_color = {0,0,0,0};
+      stroke_color = {0,0,0,0};
    }
 
    void noFill() {
-      PShape::fill_color = {0,0,0,0};
+      fill_color = {0,0,0,0};
    }
 
    void ellipseMode(int mode) {
@@ -210,17 +210,17 @@ public:
 
    void ellipse(float x, float y, float width, float height) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createEllipse(x, y, width, height).draw();
+      createEllipse(x, y, width, height).draw(stroke_color,fill_color);
    }
 
    void ellipse(float x, float y, float radius) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createEllipse(x, y, radius, radius).draw();
+      createEllipse(x, y, radius, radius).draw(stroke_color,fill_color);
    }
 
    void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createArc(x, y, width, height, start, stop, mode).draw();
+      createArc(x, y, width, height, start, stop, mode).draw(stroke_color,fill_color);
    }
 
    void strokeCap(int cap) {
@@ -229,7 +229,7 @@ public:
 
    void line(float x1, float y1, float x2, float y2) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createLine( x1, y1, x2, y2).draw();
+      createLine( x1, y1, x2, y2).draw(stroke_color,fill_color);
    }
 
    void line(float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -249,17 +249,17 @@ public:
 
    void point(float x, float y) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createPoint(x, y).draw();
+      createPoint(x, y).draw(stroke_color,fill_color);
    }
 
    void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw();
+      createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw(stroke_color,fill_color);
    }
 
    void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      createTriangle( x1, y1, x2, y2, x3, y3 ).draw();
+      createTriangle( x1, y1, x2, y2, x3, y3 ).draw(stroke_color,fill_color);
    }
 
    void shape(PShape shape, float x, float y, float width, float height) {
@@ -267,7 +267,7 @@ public:
       pushMatrix();
       translate(x,y);
       scale(1,1); // Need to fix this properly
-      shape.draw();
+      shape.draw(stroke_color,fill_color);
       popMatrix();
    }
 
@@ -285,7 +285,7 @@ public:
    void endShape(int type = OPEN) {
       _shape.endShape(type);
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      _shape.draw();
+      _shape.draw(stroke_color,fill_color);
    }
 
    void rectMode(int mode){
@@ -303,7 +303,7 @@ public:
          bezier.vertex(x, y);
       }
       bezier.endShape();
-      bezier.draw();
+      bezier.draw(stroke_color,fill_color);
    }
 
 

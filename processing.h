@@ -226,9 +226,9 @@ void box(float w, float h, float d) {
    std::vector<float> colors;
 
    for (int i = 0; i< vertices.size(); ++i ) {
-      colors.push_back(PShape::fill_color.r / 255.0);
-      colors.push_back(PShape::fill_color.g / 255.0);
-      colors.push_back(PShape::fill_color.b / 255.0);
+      colors.push_back(g.fill_color.r / 255.0);
+      colors.push_back(g.fill_color.g / 255.0);
+      colors.push_back(g.fill_color.b / 255.0);
    }
 
    drawGeometry(vertices, normals, triangles, colors);
@@ -279,9 +279,9 @@ void sphere(float radius) {
          vertices.push_back( x * radius);
          vertices.push_back( y * radius);
          vertices.push_back( z * radius);
-         colors.push_back(PShape::fill_color.r / 255.0);
-         colors.push_back(PShape::fill_color.g / 255.0);
-         colors.push_back(PShape::fill_color.b / 255.0);
+         colors.push_back(g.fill_color.r / 255.0);
+         colors.push_back(g.fill_color.g / 255.0);
+         colors.push_back(g.fill_color.b / 255.0);
       }
    }
 
@@ -323,6 +323,9 @@ MAKE_GLOBAL(triangle, g);
 MAKE_GLOBAL(arc, g);
 MAKE_GLOBAL(shape, g);
 MAKE_GLOBAL(bezier, g);
+MAKE_GLOBAL(beginShape, g);
+MAKE_GLOBAL(vertex, g);
+MAKE_GLOBAL(endShape, g);
 
 MAKE_GLOBAL(fill, g);
 MAKE_GLOBAL(noFill, g);
@@ -334,22 +337,6 @@ MAKE_GLOBAL(ellipseMode, g);
 MAKE_GLOBAL(rectMode, g);
 MAKE_GLOBAL(noSmooth,g);
 
-
-PShape _shape;
-
-void beginShape(int points = POLYGON) {
-   _shape = PShape();
-   _shape.beginShape(points);
-}
-
-void vertex(float x, float y, float z = 0.0) {
-   _shape.vertex(x, y, z);
-}
-
-void endShape(int type = OPEN) {
-   _shape.endShape(type);
-   _shape.draw();
-}
 // ----
 // End shapes managed by Pshape.
 // ----
@@ -685,10 +672,10 @@ void textSize(int size) {
 
 void text(std::string text, float x, float y, float width=-1, float height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
-                                                 { (unsigned char)PShape::fill_color.r,
-                                                   (unsigned char)PShape::fill_color.g,
-                                                   (unsigned char)PShape::fill_color.b,
-                                                   (unsigned char)PShape::fill_color.a });
+                                                 { (unsigned char)g.fill_color.r,
+                                                   (unsigned char)g.fill_color.g,
+                                                   (unsigned char)g.fill_color.b,
+                                                   (unsigned char)g.fill_color.a });
    if (surface == NULL) {
       printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
       abort();

@@ -42,8 +42,6 @@ PShape createPoint(float x, float y);
 
 class PShape {
 public:
-   static color stroke_color;
-   static color fill_color;
    static int rect_mode;
    static int ellipse_mode;
    static int stroke_weight;
@@ -150,7 +148,7 @@ public:
    }
 
    static bool stroke_on() {
-      return stroke_color.a != 0;
+      return false; // FIXME: stroke_color.a != 0;
    }
 
    void borrowVAO( const PShape &shape ) {
@@ -384,7 +382,7 @@ public:
       return;
    }
 
-   void draw() {
+   void draw(color stroke_color, color fill_color) {
       pushMatrix();
       transform( shape_matrix );
       if ( VAO ) {
@@ -403,7 +401,7 @@ public:
          }
       }
       for (auto &&child : children) {
-         child.draw();
+         child.draw(stroke_color, fill_color);
       }
       popMatrix();
    }
@@ -413,8 +411,6 @@ public:
    }
 };
 
-color PShape::stroke_color{255,255,255,255};
-color PShape::fill_color{255,255,255,255};
 int PShape::stroke_weight = 1;
 int PShape::line_end_cap = ROUND;
 int PShape::ellipse_mode = DIAMETER;
