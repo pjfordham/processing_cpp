@@ -74,6 +74,8 @@ public:
       // Create a framebuffer object
       glGenFramebuffers(1, &localFboID);
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
       if (mode == P3D) {
          // Create a renderbuffer for the depth buffer
@@ -84,6 +86,9 @@ public:
 
          // Attach the depth buffer to the framebuffer object
          glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+         glEnable(GL_DEPTH_TEST);
+      } else {
+         glDisable(GL_DEPTH_TEST);
       }
 
       gfx_width = width;
@@ -311,7 +316,7 @@ public:
       case POINTS:
       {
          for (auto z : pshape.vertices ) {
-            PShape xshape = createRect(z.x, z.y, dm.stroke_weight, dm.stroke_weight);
+            PShape xshape = createEllipse(z.x, z.y, dm.stroke_weight, dm.stroke_weight);
             shape_fill( xshape,0,0,0,0,color );
          }
          break;
@@ -337,12 +342,12 @@ public:
    }
 
    void draw_vertices( std::vector<PVector> &triangles, GLuint element_type) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+
       // Create a vertex array object (VAO)
       GLuint VAO;
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
-
-      auto vertexbuffer_size = triangles.size();
 
       GLuint vertexbuffer;
       glGenBuffers(1, &vertexbuffer);
@@ -362,7 +367,7 @@ public:
          );
 
       glBindVertexArray(VAO);
-      glDrawArrays(element_type, 0, vertexbuffer_size);
+      glDrawArrays(element_type, 0, triangles.size());
       glBindVertexArray(0);
 
       glDeleteBuffers(1, &vertexbuffer);
@@ -400,7 +405,6 @@ public:
    }
 
    void shape(PShape &pshape, float x, float y, float width, float height) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       pushMatrix();
       translate(x,y);
       scale(1,1); // Need to fix this properly

@@ -63,6 +63,8 @@ void drawGeometry( const std::vector<float> &vertices,
                    const std::vector<unsigned short> &triangles,
                    const std::vector<float> &colors) {
 
+   glBindFramebuffer(GL_FRAMEBUFFER, g.localFboID);
+
    GLuint VAO;
    glGenVertexArrays(1, &VAO);
    glBindVertexArray(VAO);
@@ -586,13 +588,9 @@ void size(int _width, int _height, int mode = P2D) {
       abort();
    }
 
-   glEnable(GL_BLEND);
-   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    if (mode == P2D) {
-      glDisable(GL_DEPTH_TEST);
       programID = LoadShaders(ShadersFlat());
    } else {
-      glEnable(GL_DEPTH_TEST);
       programID = LoadShaders(Shaders3D());
    }
    glUseProgram(programID);
@@ -896,6 +894,7 @@ int main(int argc, char* argv[]) {
 
          if (xloop || frameCount == 0) {
 
+            glBindFramebuffer(GL_FRAMEBUFFER, g.localFboID);
             glClear(GL_DEPTH_BUFFER_BIT);
             move_matrix = Eigen::Matrix4f::Identity();
             glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
