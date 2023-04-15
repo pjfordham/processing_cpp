@@ -337,31 +337,15 @@ void sphere(float radius) {
 // ----
 PGraphics g;
 
-template<typename... Args>
-void background(Args... args) {
-    g.background(args...);
-}
+#define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args... args) { return instance.method(args...); }
 
-template<typename... Args>
-void fill(Args... args) {
-    g.fill(args...);
-}
+MAKE_GLOBAL(background, g);
+MAKE_GLOBAL(ellipse, g);
+MAKE_GLOBAL(rect, g);
 
-template<typename... Args>
-void rect(Args... args) {
-    g.rect(args...);
-}
-
-template<typename... Args>
-void noStroke(Args... args) {
-    g.noStroke(args...);
-}
-
-template<typename... Args>
-void stroke(Args... args) {
-    g.stroke(args...);
-}
-
+MAKE_GLOBAL(fill, g);
+MAKE_GLOBAL(noStroke, g);
+MAKE_GLOBAL(stroke, g);
 
 void strokeWeight(int x) {
    PShape::stroke_weight = x;
@@ -375,10 +359,6 @@ void ellipseMode(int mode) {
    PShape::ellipse_mode = mode;
 }
 
-template<typename... Args>
-void ellipse(Args... args) {
-    g.ellipse(args...);
-}
 void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
    createArc(x, y, width, height, start, stop, mode).draw();
 }
