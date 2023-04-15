@@ -588,10 +588,14 @@ public:
          width /=2;
          height /=2;
       }
-      PShape ellipse = createUnitCircle();
-      ellipse.translate(x,y);
-      ellipse.scale(width,height);
-      return ellipse;
+      int NUMBER_OF_VERTICES=32;
+      PShape shape;
+      shape.beginShape(POLYGON);
+      for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+         shape.vertex( ellipse_point( {x,y}, i, 0, TWO_PI, width, height ) );
+      }
+      shape.endShape(CLOSE);
+      return shape;
    }
 
    PShape createArc(float x, float y, float width, float height, float start,
