@@ -22,7 +22,6 @@
 #include <map>
 #include <fmt/core.h>
 
-#include "PerlinNoise.h"
 #include "weak.h"
 #include "processing_math.h"
 #include "processing_transforms.h"
@@ -35,24 +34,6 @@
 
 SDL_Window *window;
 SDL_Renderer *renderer;
-
-
-PerlinNoise perlin_noise;
-int perlin_octaves = 4 ;
-float perlin_falloff = 0.5;
-
-void noiseSeed(int seed) {
-   perlin_noise = PerlinNoise(seed);
-}
-
-void noiseDetail(int lod, float falloff) {
-   perlin_octaves = lod;
-   perlin_falloff = falloff;
-}
-
-float noise(float x, float y = 0, float z = 0) {
-   return perlin_noise.octave(x,y,z,perlin_octaves,perlin_falloff);
-}
 
 Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
    float f = 1 / tan(0.5 * fov);
@@ -668,10 +649,7 @@ void loadPixels() {
    pixels = g.pixels.data();
 }
 
-void updatePixels() {
-   g.updatePixels();
-}
-
+MAKE_GLOBAL(updatePixels, g);
 
 typedef std::pair<const char *, int> PFont;
 PFont currentFont(NULL,0);

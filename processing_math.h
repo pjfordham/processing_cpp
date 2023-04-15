@@ -10,6 +10,24 @@
 #include <random>
 #include <Eigen/Dense>
 #include <fmt/core.h>
+#include "PerlinNoise.h"
+
+PerlinNoise perlin_noise;
+int perlin_octaves = 4 ;
+float perlin_falloff = 0.5;
+
+void noiseSeed(int seed) {
+   perlin_noise = PerlinNoise(seed);
+}
+
+void noiseDetail(int lod, float falloff) {
+   perlin_octaves = lod;
+   perlin_falloff = falloff;
+}
+
+float noise(float x, float y = 0, float z = 0) {
+   return perlin_noise.octave(x,y,z,perlin_octaves,perlin_falloff);
+}
 
 const float PI = M_PI;
 const float TWO_PI = M_PI * 2.0;
