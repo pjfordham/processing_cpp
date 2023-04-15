@@ -661,22 +661,15 @@ void size(int _width, int _height, int mode = P2D) {
 }
 
 
-std::vector<Uint32> _pixels;
 Uint32 *pixels; // pointer to the texture's pixel data in the desired format
 
 void loadPixels() {
-   _pixels.resize(width*height);
-   pixels =  _pixels.data();
-   // Read the pixel data from the framebuffer into the array
-   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+   g.loadPixels();
+   pixels = g.pixels.data();
 }
 
 void updatePixels() {
-   anything_drawn = true;
-   // Write the pixel data to the framebuffer
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-   // _pixels.clear();
-   // pixels = NULL;
+   g.updatePixels();
 }
 
 

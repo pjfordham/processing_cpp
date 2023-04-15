@@ -107,6 +107,22 @@ public:
       }
    }
 
+   std::vector<Uint32> pixels;
+   void loadPixels() {
+      pixels.resize(gfx_width*gfx_height);
+      glBindTexture(GL_TEXTURE_2D, bufferID);
+      // Read the pixel data from the framebuffer into the array
+      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+   }
+
+   void updatePixels() {
+      anything_drawn = true;
+      // Write the pixel data to the framebuffer
+      glBindTexture(GL_TEXTURE_2D, bufferID);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gfx_width, gfx_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+      // _pixels.clear();
+      // pixels = NULL;
+   }
 
    // ----
    // Begin shapes managed by Pshape.
