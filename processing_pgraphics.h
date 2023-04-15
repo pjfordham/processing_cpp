@@ -275,8 +275,7 @@ public:
       return triangle_strip;
    }
 
-    // only used by glTriangleStrip and glTriangleFan, as mitred line probably
-   // wouldn't work.
+   // only used by glTriangleStrip as mitred line probably wouldn't work.
    void glLine(PShape &triangles, PVector p1, PVector p2, int weight) const {
 
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
@@ -292,7 +291,7 @@ public:
       triangles.vertex(p1 - normal);
 
    }
-   // MAke this make a new phsape and shove it in children
+
    PShape glTriangleStrip(int points, const PVector *p,int weight) {
       PShape triangles;
       triangles.beginShape(TRIANGLES);
@@ -306,13 +305,8 @@ public:
    }
 
    void shape_stroke(PShape &pshape, float x, float y, float width, float height, color color) {
-      extern GLuint Color;
-      float color_vec[] = {
-         color.r / 255.0f,
-         color.g / 255.0f,
-         color.b / 255.0f,
-         color.a / 255.0f };
-      glUniform4fv(Color, 1, color_vec);
+      if (color.a == 0)
+         return;
       switch( pshape.style ) {
       case POINTS:
       {
@@ -334,145 +328,72 @@ public:
          shape_fill( xshape,0,0,0,0,color );
          break;
       }
+      case TRIANGLES:
+         break;
       default:
          abort();
          break;
       }
    }
 
+   void draw_vertices( std::vector<PVector> &triangles, GLuint element_type) {
+      // Create a vertex array object (VAO)
+      GLuint VAO;
+      glGenVertexArrays(1, &VAO);
+      glBindVertexArray(VAO);
+
+      auto vertexbuffer_size = triangles.size();
+
+      GLuint vertexbuffer;
+      glGenBuffers(1, &vertexbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
+
+      GLuint attribId = glGetAttribLocation(programID, "position");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         sizeof(PVector),                  // stride
+         (void*)offsetof(PVector,x)        // array buffer offset
+         );
+
+      glBindVertexArray(VAO);
+      glDrawArrays(element_type, 0, vertexbuffer_size);
+      glBindVertexArray(0);
+
+      glDeleteBuffers(1, &vertexbuffer);
+      glDeleteVertexArrays(1, &VAO);
+   }
+
    void shape_fill(PShape &pshape, float x, float y, float width, float height, color color) {
+      if (color.a == 0)
+         return;
       extern GLuint Color;
+      float color_vec[] = {
+         color.r / 255.0f,
+         color.g / 255.0f,
+         color.b / 255.0f,
+         color.a / 255.0f };
+      glUniform4fv(Color, 1, color_vec);
       switch( pshape.style ) {
       case POINTS:
          break;
       case POLYGON:
       {
-         float color_vec[] = {
-            color.r / 255.0f,
-            color.g / 255.0f,
-            color.b / 255.0f,
-            color.a / 255.0f };
-         glUniform4fv(Color, 1, color_vec);
          std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
-
-         // Create a vertex array object (VAO)
-         GLuint VAO;
-         glGenVertexArrays(1, &VAO);
-         glBindVertexArray(VAO);
-
-         auto vertexbuffer_size = triangles.size();
-
-         GLuint vertexbuffer;
-         glGenBuffers(1, &vertexbuffer);
-         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-         glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
-
-         GLuint attribId = glGetAttribLocation(programID, "position");
-         glEnableVertexAttribArray(attribId);
-         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-         glVertexAttribPointer(
-            attribId,                         // attribute
-            3,                                // size
-            GL_FLOAT,                         // type
-            GL_FALSE,                         // normalized?
-            sizeof(PVector),                  // stride
-            (void*)offsetof(PVector,x)        // array buffer offset
-            );
-
-         glBindVertexArray(VAO);
-         glDrawArrays(GL_TRIANGLES, 0, vertexbuffer_size);
-         glBindVertexArray(0);
-
-         glDeleteBuffers(1, &vertexbuffer);
-         glDeleteVertexArrays(1, &VAO);
+         draw_vertices( triangles, GL_TRIANGLES );
       }
       break;
       case TRIANGLES:
-      {
-         float color_vec[] = {
-            color.r / 255.0f,
-            color.g / 255.0f,
-            color.b / 255.0f,
-            color.a / 255.0f };
-         glUniform4fv(Color, 1, color_vec);
-         std::vector<PVector> &triangles = pshape.vertices;
-
-         // Create a vertex array object (VAO)
-         GLuint VAO;
-         glGenVertexArrays(1, &VAO);
-         glBindVertexArray(VAO);
-
-         auto vertexbuffer_size = triangles.size();
-
-         GLuint vertexbuffer;
-         glGenBuffers(1, &vertexbuffer);
-         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-         glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
-
-         GLuint attribId = glGetAttribLocation(programID, "position");
-         glEnableVertexAttribArray(attribId);
-         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-         glVertexAttribPointer(
-            attribId,                         // attribute
-            3,                                // size
-            GL_FLOAT,                         // type
-            GL_FALSE,                         // normalized?
-            sizeof(PVector),                  // stride
-            (void*)offsetof(PVector,x)        // array buffer offset
-            );
-
-         glUniform4fv(Color, 1, color_vec);
-         glBindVertexArray(VAO);
-         glDrawArrays(GL_TRIANGLES, 0, vertexbuffer_size);
-         glBindVertexArray(0);
-
-         glDeleteBuffers(1, &vertexbuffer);
-         glDeleteVertexArrays(1, &VAO);
-      }
-      break;
+         draw_vertices( pshape.vertices, GL_TRIANGLES );
+         break;
       case TRIANGLE_STRIP:
-      {
-         float color_vec[] = {
-            color.r / 255.0f,
-            color.g / 255.0f,
-            color.b / 255.0f,
-            color.a / 255.0f };
-         glUniform4fv(Color, 1, color_vec);
-         std::vector<PVector> &triangles = pshape.vertices;
-
-         // Create a vertex array object (VAO)
-         GLuint VAO;
-         glGenVertexArrays(1, &VAO);
-         glBindVertexArray(VAO);
-
-         auto vertexbuffer_size = triangles.size();
-
-         GLuint vertexbuffer;
-         glGenBuffers(1, &vertexbuffer);
-         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-         glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
-
-         GLuint attribId = glGetAttribLocation(programID, "position");
-         glEnableVertexAttribArray(attribId);
-         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-         glVertexAttribPointer(
-            attribId,                         // attribute
-            3,                                // size
-            GL_FLOAT,                         // type
-            GL_FALSE,                         // normalized?
-            sizeof(PVector),                  // stride
-            (void*)offsetof(PVector,x)        // array buffer offset
-            );
-
-         glUniform4fv(Color, 1, color_vec);
-         glBindVertexArray(VAO);
-         glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexbuffer_size);
-         glBindVertexArray(0);
-
-         glDeleteBuffers(1, &vertexbuffer);
-         glDeleteVertexArrays(1, &VAO);
-      }
-      break;
+         draw_vertices( pshape.vertices, GL_TRIANGLE_STRIP );
+         break;
       default:
          abort();
       }
