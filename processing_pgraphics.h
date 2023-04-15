@@ -272,6 +272,25 @@ public:
       _shape.draw();
    }
 
+   void rectMode(int mode){
+      PShape::rect_mode = mode;
+   }
+
+   void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+      PShape bezier;
+      bezier.beginShape();
+      for (float t = 0; t <= 1; t += 0.01) {
+         // Compute the Bezier curve points
+         float t_ = 1 - t;
+         float x = t_ * t_ * t_ * x1 + 3 * t_ * t_ * t * x2 + 3 * t_ * t * t * x3 + t * t * t * x4;
+         float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
+         bezier.vertex(x, y);
+      }
+      bezier.endShape();
+      bezier.draw();
+   }
+
+
 // ----
 // End shapes managed by Pshape.
 // ----

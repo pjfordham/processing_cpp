@@ -342,67 +342,23 @@ PGraphics g;
 MAKE_GLOBAL(background, g);
 MAKE_GLOBAL(ellipse, g);
 MAKE_GLOBAL(rect, g);
+MAKE_GLOBAL(line, g);
+MAKE_GLOBAL(point, g);
+MAKE_GLOBAL(quad, g);
+MAKE_GLOBAL(triangle, g);
+MAKE_GLOBAL(arc, g);
+MAKE_GLOBAL(shape, g);
+MAKE_GLOBAL(bezier, g);
 
 MAKE_GLOBAL(fill, g);
+MAKE_GLOBAL(noFill, g);
 MAKE_GLOBAL(noStroke, g);
 MAKE_GLOBAL(stroke, g);
+MAKE_GLOBAL(strokeWeight, g);
+MAKE_GLOBAL(strokeCap, g);
+MAKE_GLOBAL(ellipseMode, g);
+MAKE_GLOBAL(rectMode, g);
 
-void strokeWeight(int x) {
-   PShape::stroke_weight = x;
-}
-
-void noFill() {
-   PShape::fill_color = {0,0,0,0};
-}
-
-void ellipseMode(int mode) {
-   PShape::ellipse_mode = mode;
-}
-
-void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
-   createArc(x, y, width, height, start, stop, mode).draw();
-}
-
-void strokeCap(int cap) {
-   PShape::line_end_cap = cap;
-}
-
-void line(float x1, float y1, float x2, float y2) {
-   createLine( x1, y1, x2, y2).draw();
-}
-
-void line(float x1, float y1, float z1, float x2, float y2, float z2) {
-  abort();
-}
-
-
-void line(PVector start, PVector end) {
-   line(start.x,start.y, end.x,end.y);
-}
-
-void line(PLine l) {
-   line(l.start, l.end);
-}
-
-void point(float x, float y) {
-   createPoint(x, y).draw();
-}
-
-void quad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-   createQuad(x1, y1, x2, y2, x3, y3, x4, y4).draw();
-}
-
-void triangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
-   createTriangle( x1, y1, x2, y2, x3, y3 ).draw();
-}
-
-void shape(PShape shape, float x, float y, float width, float height) {
-   pushMatrix();
-   translate(x,y);
-   scale(1,1); // Need to fix this properly
-   shape.draw();
-   popMatrix();
-}
 
 PShape _shape;
 
@@ -450,20 +406,6 @@ color lerpColor(const color& c1, const color& c2, float amt) {
       c1.a + (c2.a - c1.a) * amt};
 }
 
-
-void bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-   PShape bezier;
-   bezier.beginShape();
-   for (float t = 0; t <= 1; t += 0.01) {
-      // Compute the Bezier curve points
-      float t_ = 1 - t;
-      float x = t_ * t_ * t_ * x1 + 3 * t_ * t_ * t * x2 + 3 * t_ * t * t * x3 + t * t * t * x4;
-      float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
-      bezier.vertex(x, y);
-   }
-   bezier.endShape();
-   bezier.draw();
-}
 
 auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -697,12 +639,12 @@ void size(int _width, int _height, int mode = P2D) {
 
    flatTextureShader = LoadShaders(ShadersFlatTexture());
 
-      if (!glewIsSupported("GL_EXT_framebuffer_object")) {
-         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
-         abort();
-      }
+   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
+      abort();
+   }
 
-      g = PGraphics(width, height, mode);
+   g = PGraphics(width, height, mode);
 
 
    if (mode == P2D) {
@@ -735,11 +677,6 @@ void updatePixels() {
    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
    // _pixels.clear();
    // pixels = NULL;
-}
-
-
-void rectMode(int mode){
-   PShape::rect_mode = mode;
 }
 
 
@@ -827,7 +764,7 @@ void tint(color tint) {}
 
 void tint(color tint, float alpha) {}
 
-void noTine() {
+void noTint() {
    PImage::tint = WHITE;
 }
 
@@ -859,10 +796,6 @@ void image(const PImage &pimage, float x, float y) {
       abort();
    }
 }
-
-// void background(const PImage &bg) {
-//    image(bg,0,0);
-// }
 
 int frameCount = 0;
 int zframeCount = 0;
