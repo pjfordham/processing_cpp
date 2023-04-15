@@ -175,12 +175,12 @@ public:
       }
    }
 
- void rect(int x, int y, int _width, int _height) {
-     glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-     createRect(x,y,_width,_height).draw();
-}
+   void rect(int x, int y, int _width, int _height) {
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      createRect(x,y,_width,_height).draw();
+   }
 
-  void stroke(float r) {
+   void stroke(float r) {
       if (color::mode == HSB) {
          stroke(r,0,0,color::scaleA);
       } else {
@@ -310,6 +310,13 @@ public:
 // ----
 // End shapes managed by Pshape.
 // ----
+
+   bool xSmoothing = true;
+
+   void noSmooth() {
+      // Doesn't yet apply to actual graphics
+      xSmoothing = false;
+   }
 
    void beginDraw() {}
    void endDraw() {}

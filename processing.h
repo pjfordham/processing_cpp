@@ -58,13 +58,6 @@ GLuint programID;
 GLuint Pmatrix;
 GLuint Vmatrix;
 
-bool xSmoothing = true;
-
-void noSmooth() {
-   // Doesn't yet apply to actual graphics
-   xSmoothing = false;
-}
-
 void drawGeometry( const std::vector<float> &vertices,
                    const std::vector<float> &normals,
                    const std::vector<unsigned short> &triangles,
@@ -339,6 +332,7 @@ MAKE_GLOBAL(strokeWeight, g);
 MAKE_GLOBAL(strokeCap, g);
 MAKE_GLOBAL(ellipseMode, g);
 MAKE_GLOBAL(rectMode, g);
+MAKE_GLOBAL(noSmooth,g);
 
 
 PShape _shape;
