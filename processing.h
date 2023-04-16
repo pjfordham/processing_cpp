@@ -615,11 +615,7 @@ void size(int _width, int _height, int mode = P2D) {
    g = PGraphics(width, height, mode);
 
    camera();
-   if (mode == P2D) {
-      ortho();
-   } else {
-      perspective();
-   }
+   perspective();
 
    background(WHITE);
 }
