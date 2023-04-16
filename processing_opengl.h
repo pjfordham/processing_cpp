@@ -27,7 +27,6 @@ unsigned int next_power_of_2(unsigned int v)
 }
 
 extern GLuint programID;
-extern GLuint flatTextureShader;
 extern Eigen::Matrix4f move_matrix; // Default is identity
 extern Eigen::Matrix4f projection_matrix; // Default is identity
 extern Eigen::Matrix4f view_matrix; // Default is identity
@@ -40,7 +39,11 @@ void printMatrix4f(const Eigen::Matrix4f& mat) {
 }
 
 void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID, bool flip=false) {
-   GLuint uSampler = glGetUniformLocation(flatTextureShader, "uSampler");
+   GLuint uSampler = glGetUniformLocation(programID, "uSampler");
+
+   extern GLuint Color;
+   float color_vec[] = { 0,0,0,0 };
+   glUniform4fv(Color, 1, color_vec);
 
    int textureUnitIndex = 0;
    glBindTexture(GL_TEXTURE_2D, textureID);
@@ -48,10 +51,10 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange
    glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
 
 
-   Eigen::Vector4f vert0 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p0.x,p0.y,0,1};
-   Eigen::Vector4f vert1 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p1.x,p1.y,0,1};
-   Eigen::Vector4f vert2 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p2.x,p2.y,0,1};
-   Eigen::Vector4f vert3 = projection_matrix * view_matrix * move_matrix * Eigen::Vector4f{p3.x,p3.y,0,1};
+   Eigen::Vector4f vert0 = Eigen::Vector4f{p0.x,p0.y,0,1};
+   Eigen::Vector4f vert1 = Eigen::Vector4f{p1.x,p1.y,0,1};
+   Eigen::Vector4f vert2 = Eigen::Vector4f{p2.x,p2.y,0,1};
+   Eigen::Vector4f vert3 = Eigen::Vector4f{p3.x,p3.y,0,1};
 
    std::vector<float> vertices{
       vert0[0],  vert0[1], 0.0f,
@@ -102,7 +105,7 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange
    glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(float), coords.data(), GL_STATIC_DRAW);
 
 
-   GLuint attribId = glGetAttribLocation(flatTextureShader, "position");
+   GLuint attribId = glGetAttribLocation(programID, "position");
    glEnableVertexAttribArray(attribId);
    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
    glVertexAttribPointer(
@@ -114,7 +117,7 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange
       (void*)0                          // array buffer offset
       );
 
-   attribId = glGetAttribLocation(flatTextureShader, "coords");
+   attribId = glGetAttribLocation(programID, "coords");
    glEnableVertexAttribArray(attribId);
    glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
    glVertexAttribPointer(
@@ -126,7 +129,6 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange
       (void*)0                          // array buffer offset
       );
 
-   glUseProgram(flatTextureShader);
    glBindVertexArray(localVAO);
    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
    glBindVertexArray(0);
@@ -142,7 +144,6 @@ void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
    glBindVertexArray(0);
 
-   glUseProgram(programID);
    glBindTexture(GL_TEXTURE_2D, 0);
 }
 

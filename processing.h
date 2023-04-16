@@ -77,7 +77,7 @@ void drawGeometry( const std::vector<float> &vertices,
       flat_color.a/255.0f };
    glUniform4fv(Color, 1, color_vec);
 
-      GLuint vertexbuffer;
+   GLuint vertexbuffer;
    glGenBuffers(1, &vertexbuffer);
    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
@@ -528,8 +528,6 @@ void camera() {
           width / 2.0, height / 2.0, 0, 0, 1, 0);
 }
 
-GLuint flatTextureShader;
-
 void size(int _width, int _height, int mode = P2D) {
    // Create a window
    width = _width;
@@ -583,8 +581,6 @@ void size(int _width, int _height, int mode = P2D) {
    AmbientLight = glGetUniformLocation(programID, "ambientLight");
    DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
    DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
-
-   flatTextureShader = LoadShaders(ShadersFlatTexture());
 
    g = PGraphics(width, height, mode);
 
@@ -873,11 +869,13 @@ int main(int argc, char* argv[]) {
             // draw the texture from the PGraphics flat.
             noLights();
             move_matrix = Eigen::Matrix4f::Identity();
-            view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
-            projection_matrix = Eigen::Matrix4f::Identity();
             glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-            //glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-            //glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+
+            Eigen::Matrix4f P = Eigen::Matrix4f::Identity();
+            Eigen::Matrix4f V = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
+
+            glUniformMatrix4fv(Pmatrix, 1,false, P.data());
+            glUniformMatrix4fv(Vmatrix, 1,false, V.data());
 
             if (g.localFboID != 0) {
                // bind the real frame buffer
@@ -887,6 +885,8 @@ int main(int argc, char* argv[]) {
                // Draw the flipped PGraphics context
                g.draw(0,0,true);
             }
+            glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+            glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
 
             SDL_GL_SwapWindow(window);
 
