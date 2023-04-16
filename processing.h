@@ -498,7 +498,7 @@ void ortho(float left, float right, float bottom, float top, float near, float f
 }
 
 void ortho(float left, float right, float bottom, float top) {
-   ortho(-width / 2.0, width / 2.0, -height / 2.0, height / 2.0,-10,10);
+   ortho(left, right, bottom, top, bottom*2, top*2);
 }
 
 void ortho() {
@@ -614,14 +614,11 @@ void size(int _width, int _height, int mode = P2D) {
 
    g = PGraphics(width, height, mode);
 
+   camera();
    if (mode == P2D) {
-      view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
-      projection_matrix = Eigen::Matrix4f::Identity();
-      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
-      glUniformMatrix4fv(Pmatrix, 1, false, projection_matrix.data());
+      ortho();
    } else {
       perspective();
-      camera();
    }
 
    background(WHITE);
