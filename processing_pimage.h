@@ -30,8 +30,6 @@ public:
    unsigned int *pixels;
    SDL_Surface *surface;
 
-   static color tint;
-   static int mode;
    PImage() : width(0), height(0), pixels{NULL}, surface{NULL} {}
 
    ~PImage() {
@@ -122,9 +120,6 @@ public:
       }
    }
 };
-
-int PImage::mode = CORNER;
-color PImage::tint = WHITE;
 
 PImage loadImage(const char *filename) {
    return {filename};

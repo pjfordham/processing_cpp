@@ -10,6 +10,7 @@
 #include "processing_opengl.h"
 #include "processing_color.h"
 #include "processing_pshape.h"
+#include "processing_pimage.h"
 
 enum {
    P2D, P3D
@@ -138,6 +139,54 @@ public:
       } else {
          background(gray,gray,gray);
       }
+   }
+
+   color image_tint = WHITE;
+   int image_mode = CORNER;
+   void imageMode(int iMode) {
+      image_mode = iMode;
+   }
+
+// We can add a tint color to the texture shader.
+   void tint(color tint) {}
+
+   void tint(color tint, float alpha) {}
+
+   void noTint() {
+      image_tint = WHITE;
+   }
+
+   void image(const PImage &pimage, float left, float top, float right, float bottom) {
+      if ( image_mode == CORNER ) {
+         float width = right;
+         float height = bottom;
+         right = left + width;
+         bottom = top + height;
+      } else if ( image_mode == CENTER ) {
+         float width = right;
+         float height = bottom;
+         left = left - ( width / 2.0 );
+         top = top - ( height / 2.0 );
+         right = left + width;
+         bottom = top + height;
+      }
+      glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, pimage.surface);
+   }
+
+   void image(const PImage &pimage, float x, float y) {
+      if ( image_mode == CORNER ) {
+         image( pimage, x, y, pimage.width, pimage.height );;
+      } else if ( image_mode == CORNERS ) {
+         image( pimage, x, y, x + pimage.width, y + pimage.height );;
+      } else   if (image_mode == CENTER) {
+         image( pimage, x, y, pimage.width, pimage.height );
+      } else {
+         abort();
+      }
+   }
+
+   void background(const PImage &bg) {
+      image(bg,0,0);
    }
 
    std::vector<Uint32> pixels;

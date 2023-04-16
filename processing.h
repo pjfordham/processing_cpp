@@ -306,6 +306,7 @@ MAKE_GLOBAL(bezier, g);
 MAKE_GLOBAL(beginShape, g);
 MAKE_GLOBAL(vertex, g);
 MAKE_GLOBAL(endShape, g);
+MAKE_GLOBAL(image, g);
 
 MAKE_GLOBAL(createRect, g);
 MAKE_GLOBAL(createQuad, g);
@@ -673,48 +674,6 @@ void text(std::string text, float x, float y, float width=-1, float height=-1) {
 void text(char c, float x, float y, float width = -1, float height = -1) {
    std::string s(&c,1);
    text(s,x,y,width,height);
-}
-
-void imageMode(int iMode) {
-   PImage::mode = iMode;
-}
-
-// We can add a tint color to the texture shader.
-void tint(color tint) {}
-
-void tint(color tint, float alpha) {}
-
-void noTint() {
-   PImage::tint = WHITE;
-}
-
-void image(const PImage &pimage, float left, float top, float right, float bottom) {
-   if ( PImage::mode == CORNER ) {
-      float width = right;
-      float height = bottom;
-      right = left + width;
-      bottom = top + height;
-   } else if ( PImage::mode == CENTER ) {
-      float width = right;
-      float height = bottom;
-      left = left - ( width / 2.0 );
-      top = top - ( height / 2.0 );
-      right = left + width;
-      bottom = top + height;
-   }
-   glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, pimage.surface);
-}
-
-void image(const PImage &pimage, float x, float y) {
-   if ( PImage::mode == CORNER ) {
-      image( pimage, x, y, pimage.width, pimage.height );;
-   } else if ( PImage::mode == CORNERS ) {
-      image( pimage, x, y, x + pimage.width, y + pimage.height );;
-   } else   if (PImage::mode == CENTER) {
-      image( pimage, x, y, pimage.width, pimage.height );
-   } else {
-      abort();
-   }
 }
 
 int frameCount = 0;
