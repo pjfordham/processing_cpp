@@ -32,6 +32,7 @@ class PGraphics {
 public:
    GLuint bufferID;
    GLuint localFboID;
+   GLuint depthBufferID;
 
    DrawingMode dm{};
    ColorMode cm{};
@@ -43,6 +44,7 @@ public:
    PGraphics(PGraphics &&x) {
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
+      std::swap(depthBufferID, x.depthBufferID);
       std::swap(gfx_width, x.gfx_width);
       std::swap(gfx_height, x.gfx_height);
       std::swap(cm, x.cm);
@@ -53,6 +55,7 @@ public:
    PGraphics& operator=(PGraphics&&x){
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
+      std::swap(depthBufferID, x.depthBufferID);
       std::swap(gfx_width, x.gfx_width);
       std::swap(gfx_height, x.gfx_height);
       std::swap(cm, x.cm);
@@ -63,30 +66,39 @@ public:
    PGraphics() {
       localFboID = 0;
       bufferID = 0;
+      depthBufferID = 0;
    }
    ~PGraphics() {
       if (localFboID)
          glDeleteFramebuffers(1, &localFboID);
       if (bufferID)
          glDeleteTextures(1, &bufferID);
+      if (depthBufferID)
+         glDeleteRenderbuffers(1, &depthBufferID);
    }
-   PGraphics(int width, int height, int mode) {
-      // Create a framebuffer object
-      glGenFramebuffers(1, &localFboID);
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+   PGraphics(int width, int height, int mode, bool fb = false) {
+      if (fb) {
+         // Use main framebuffer
+         localFboID = 0;
+      } else {
+         // Create a framebuffer object
+         glGenFramebuffers(1, &localFboID);
+         glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      }
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
       if (mode == P3D) {
-         // Create a renderbuffer for the depth buffer
-         GLuint depthBufferID;
-         glGenRenderbuffers(1, &depthBufferID);
-         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-
-         // Attach the depth buffer to the framebuffer object
-         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
          glEnable(GL_DEPTH_TEST);
+         // Create a renderbuffer for the depth buffer
+         if (!fb) {
+            glGenRenderbuffers(1, &depthBufferID);
+            glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+
+            // Attach the depth buffer to the framebuffer object
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+         }
       } else {
          glDisable(GL_DEPTH_TEST);
       }
@@ -94,14 +106,16 @@ public:
       gfx_width = width;
       gfx_height = height;
 
-      // Create a texture to render to
-      glGenTextures(1, &bufferID);
-      glBindTexture(GL_TEXTURE_2D, bufferID);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferID, 0);
+      if (!fb) {
+         // Create a texture to render to
+         glGenTextures(1, &bufferID);
+         glBindTexture(GL_TEXTURE_2D, bufferID);
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferID, 0);
+      }
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    }
 
    void background(float r, float g, float b) {

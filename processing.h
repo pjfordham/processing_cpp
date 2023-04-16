@@ -588,6 +588,11 @@ void size(int _width, int _height, int mode = P2D) {
       abort();
    }
 
+   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
+      abort();
+   }
+
    if (mode == P2D) {
       programID = LoadShaders(ShadersFlat());
    } else {
@@ -607,13 +612,7 @@ void size(int _width, int _height, int mode = P2D) {
 
    flatTextureShader = LoadShaders(ShadersFlatTexture());
 
-   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
-      abort();
-   }
-
    g = PGraphics(width, height, mode);
-
 
    if (mode == P2D) {
       view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
@@ -814,7 +813,7 @@ int main(int argc, char* argv[]) {
          if (event.type == SDL_QUIT) {
             quit = true;
          } else if (event.type == SDL_MOUSEMOTION ) {
-           mouseX = event.motion.x;
+            mouseX = event.motion.x;
             mouseY = event.motion.y;
             if (mousePressedb) {
                mouseDragged();
@@ -896,9 +895,6 @@ int main(int argc, char* argv[]) {
 
             glBindFramebuffer(GL_FRAMEBUFFER, g.localFboID);
             glClear(GL_DEPTH_BUFFER_BIT);
-            move_matrix = Eigen::Matrix4f::Identity();
-            glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-            noLights();
 
             draw();
 
@@ -906,12 +902,24 @@ int main(int argc, char* argv[]) {
             pmouseX = mouseX;
             pmouseY = mouseY;
 
-            // bind the real frame buffer
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            // Clear the color and depth buffers
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            // Draw the flipped PGraphics context
-            g.draw(0,0,true);
+            // Reset to default view settings to draw next frame and
+            // draw the texture from the PGraphics flat.
+            noLights();
+            move_matrix = Eigen::Matrix4f::Identity();
+            view_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
+            projection_matrix = Eigen::Matrix4f::Identity();
+            glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+            //glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+            //glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+
+            if (g.localFboID != 0) {
+               // bind the real frame buffer
+               glBindFramebuffer(GL_FRAMEBUFFER, 0);
+               // Clear the color and depth buffers
+               glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+               // Draw the flipped PGraphics context
+               g.draw(0,0,true);
+            }
 
             SDL_GL_SwapWindow(window);
 
