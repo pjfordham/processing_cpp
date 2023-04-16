@@ -307,6 +307,8 @@ MAKE_GLOBAL(beginShape, g);
 MAKE_GLOBAL(vertex, g);
 MAKE_GLOBAL(endShape, g);
 MAKE_GLOBAL(image, g);
+MAKE_GLOBAL(imageMode, g);
+MAKE_GLOBAL(tint, g);
 
 MAKE_GLOBAL(createRect, g);
 MAKE_GLOBAL(createQuad, g);
