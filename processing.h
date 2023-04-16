@@ -61,7 +61,7 @@ GLuint Vmatrix;
 void drawGeometry( const std::vector<float> &vertices,
                    const std::vector<float> &normals,
                    const std::vector<unsigned short> &triangles,
-                   const std::vector<float> &colors) {
+                   color flat_color) {
 
    glBindFramebuffer(GL_FRAMEBUFFER, g.localFboID);
 
@@ -69,7 +69,15 @@ void drawGeometry( const std::vector<float> &vertices,
    glGenVertexArrays(1, &VAO);
    glBindVertexArray(VAO);
 
-   GLuint vertexbuffer;
+   extern GLuint Color;
+   float color_vec[] = {
+      flat_color.r/255.0f,
+      flat_color.g/255.0f,
+      flat_color.b/255.0f,
+      flat_color.a/255.0f };
+   glUniform4fv(Color, 1, color_vec);
+
+      GLuint vertexbuffer;
    glGenBuffers(1, &vertexbuffer);
    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
@@ -84,26 +92,9 @@ void drawGeometry( const std::vector<float> &vertices,
    glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
 
-   GLuint colorbuffer;
-   glGenBuffers(1, &colorbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-   glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
-
    GLuint attribId = glGetAttribLocation(programID, "position");
    glEnableVertexAttribArray(attribId);
    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
-   attribId = glGetAttribLocation(programID, "color");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
    glVertexAttribPointer(
       attribId,                         // attribute
       3,                                // size
@@ -130,7 +121,6 @@ void drawGeometry( const std::vector<float> &vertices,
    glDeleteBuffers(1, &vertexbuffer);
    glDeleteBuffers(1, &indexbuffer);
    glDeleteBuffers(1, &normalbuffer);
-   glDeleteBuffers(1, &colorbuffer);
 
    // Unbind the buffer objects and VAO
    glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -225,15 +215,7 @@ void box(float w, float h, float d) {
       16,17,18, 16,18,19, 20,21,22, 20,22,23
    };
 
-   std::vector<float> colors;
-
-   for (int i = 0; i< vertices.size(); ++i ) {
-      colors.push_back(g.cm.fill_color.r / 255.0);
-      colors.push_back(g.cm.fill_color.g / 255.0);
-      colors.push_back(g.cm.fill_color.b / 255.0);
-   }
-
-   drawGeometry(vertices, normals, triangles, colors);
+   drawGeometry(vertices, normals, triangles, g.cm.fill_color);
 };
 
 void box(float size) {
@@ -256,7 +238,6 @@ void sphere(float radius) {
 
    std::vector<float> vertices;
    std::vector<float> normals;
-   std::vector<float> colors;
 
    float latStep = M_PI / xsphere_ures;
    float lonStep = 2 * M_PI / xsphere_vres;
@@ -281,9 +262,6 @@ void sphere(float radius) {
          vertices.push_back( x * radius);
          vertices.push_back( y * radius);
          vertices.push_back( z * radius);
-         colors.push_back(g.cm.fill_color.r / 255.0);
-         colors.push_back(g.cm.fill_color.g / 255.0);
-         colors.push_back(g.cm.fill_color.b / 255.0);
       }
    }
 
@@ -303,7 +281,7 @@ void sphere(float radius) {
       }
    }
 
-   drawGeometry(vertices, normals, indices, colors);
+   drawGeometry(vertices, normals, indices, g.cm.fill_color);
 }
 
 
@@ -593,11 +571,7 @@ void size(int _width, int _height, int mode = P2D) {
       abort();
    }
 
-   if (mode == P2D) {
-      programID = LoadShaders(ShadersFlat());
-   } else {
-      programID = LoadShaders(Shaders3D());
-   }
+   programID = LoadShaders(Shaders3D());
    glUseProgram(programID);
 
    // Get a handle for our "MVP" uniform

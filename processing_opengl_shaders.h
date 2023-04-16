@@ -135,48 +135,20 @@ inline std::tuple<const char*, const char*, const char*> ShadersFlatTexture() {
    return { vertexShader, geometryShader, fragmentShader };
 }
 
-inline std::tuple<const char*, const char*, const char*> ShadersFlat() {
-   const char *vertexShader = R"glsl(
-      #version 330
-      in vec3 position;
-      uniform mat4 Pmatrix;
-      uniform mat4 Vmatrix;
-      uniform mat4 Mmatrix;
-      void main()
-      {
-          gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.0);
-      }
-)glsl";
-
-   const char *geometryShader = NULL;
-
-   const char *fragmentShader = R"glsl(
-      #version 330
-      uniform vec4 color;
-      out vec4 fragColor;
-      void main()
-      {
-          fragColor = color;
-      }
-)glsl";
-
-   return { vertexShader, geometryShader, fragmentShader };
-}
-
 inline std::tuple<const char*, const char*, const char*> Shaders3D() {
 
    const char *vertexShader = R"glsl(
       #version 330
       in vec3 position;
       in vec3 normal;
-      in vec3 color;
+      uniform vec4 color;
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
       uniform vec3 directionLightVector;
       uniform mat4 Pmatrix;
       uniform mat4 Vmatrix;
       uniform mat4 Mmatrix;
-      out vec3 vColor;
+      out vec4 vColor;
       out vec3 vLighting;
       void main()
       {
@@ -194,12 +166,12 @@ inline std::tuple<const char*, const char*, const char*> Shaders3D() {
 
   const char *fragmentShader = R"glsl(
       #version 330
-      in vec3 vColor;
+      in vec4 vColor;
       in vec3 vLighting;
       out vec4 fragColor;
       void main()
       {
-          fragColor = vec4(vLighting * vColor, 1.0);
+          fragColor = vec4(vLighting,1.0) * vColor;
       }
 )glsl";
    return { vertexShader, geometryShader, fragmentShader };
