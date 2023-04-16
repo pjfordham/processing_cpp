@@ -170,6 +170,7 @@ public:
          right = left + width;
          bottom = top + height;
       }
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, pimage.surface);
    }
 

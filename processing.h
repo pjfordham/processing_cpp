@@ -585,6 +585,10 @@ void size(int _width, int _height, int mode = P2D) {
 
    g = PGraphics(width, height, mode);
 
+   move_matrix = Eigen::Matrix4f::Identity();
+   glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+
+   noLights();
    camera();
    perspective();
 
@@ -726,7 +730,6 @@ int main(int argc, char* argv[]) {
 
    // Set the initial tick count
    Uint32 ticks = SDL_GetTicks();
-
 
    while (!quit) {
       // Handle events
