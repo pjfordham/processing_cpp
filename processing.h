@@ -27,7 +27,6 @@
 #include "processing_transforms.h"
 #include "processing_color.h"
 #include "processing_java_compatability.h"
-#include "processing_opengl.h"
 #include "processing_pimage.h"
 #include "processing_pshape.h"
 #include "processing_pgraphics.h"
@@ -178,7 +177,11 @@ void box(float w, float h, float d) {
       16,17,18, 16,18,19, 20,21,22, 20,22,23
    };
 
-   g.drawGeometry(vertices, normals, coords, triangles, g.cm.fill_color);
+   if (g.currentTextureID) {
+      g.drawGeometry(vertices, normals, coords, triangles, g.tint_color);
+   }else {
+      g.drawGeometry(vertices, normals, coords, triangles, g.cm.fill_color);
+   }
 };
 
 void box(float size) {
@@ -274,6 +277,7 @@ MAKE_GLOBAL(imageMode, g);
 MAKE_GLOBAL(tint, g);
 MAKE_GLOBAL(texture, g);
 MAKE_GLOBAL(noTexture, g);
+MAKE_GLOBAL(glTexturedQuad, g);
 
 MAKE_GLOBAL(createRect, g);
 MAKE_GLOBAL(createQuad, g);
@@ -636,7 +640,7 @@ void text(std::string text, float x, float y, float width=-1, float height=-1) {
       y = y - height / 2;
    }
 
-   glTexturedQuad({x,y},{x+width,y},{x+width,y+height}, {x,y+height}, surface2);
+   glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height}, surface2,WHITE);
 
    SDL_FreeSurface(surface);
    SDL_FreeSurface(surface2);
@@ -812,7 +816,7 @@ int main(int argc, char* argv[]) {
                // Clear the color and depth buffers
                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                // Draw the flipped PGraphics context
-               g.draw(0,0,true);
+               g.draw_main();
             }
             glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
             glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
@@ -820,17 +824,8 @@ int main(int argc, char* argv[]) {
             SDL_GL_SwapWindow(window);
 
             // Update the screen
-            if (anything_drawn) {
-               // Set the default render target
-               // Swap buffers
-               // SDL_SetRenderTarget(renderer, NULL);
-               // SDL_RenderPresent(renderer);
-               anything_drawn = false;
-               frameCount++;
-               zframeCount++;
-            } else {
-               SDL_Delay(5);
-            }
+            frameCount++;
+            zframeCount++;
          } else {
             SDL_Delay(5);
          }

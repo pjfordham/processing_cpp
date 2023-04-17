@@ -7,10 +7,11 @@
 #include <GL/glut.h>
 
 #include "processing_math.h"
-#include "processing_opengl.h"
 #include "processing_color.h"
 #include "processing_pshape.h"
 #include "processing_pimage.h"
+
+extern GLuint programID;
 
 enum {
    P2D, P3D
@@ -34,6 +35,7 @@ public:
    GLuint bufferID;
    GLuint localFboID;
    GLuint depthBufferID;
+   GLuint whiteTextureID;
 
    DrawingMode dm{};
    ColorMode cm{};
@@ -107,6 +109,17 @@ public:
       gfx_width = width;
       gfx_height = height;
 
+      // Create a white OpenGL texture
+      unsigned int white = 0xFFFFFFFF;
+      glGenTextures(1, &whiteTextureID);
+      glBindTexture(GL_TEXTURE_2D, currentTextureID);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, &white);
+
       if (!fb) {
          // Create a texture to render to
          glGenTextures(1, &bufferID);
@@ -120,7 +133,6 @@ public:
    }
 
    void background(float r, float g, float b) {
-      anything_drawn = true;
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       auto color = flatten_color_mode(r,g,b,color::scaleA);
       // Set clear color
@@ -148,7 +160,6 @@ public:
                       color flat_color) {
 
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      glBindTexture(GL_TEXTURE_2D, currentTextureID);
 
       if (currentTextureID) {
          glBindTexture(GL_TEXTURE_2D, currentTextureID);
@@ -156,12 +167,9 @@ public:
          int textureUnitIndex = 0;
          glUniform1i(uSampler,0);
          glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
-         flat_color = BLACK;
+      } else {
+         glBindTexture(GL_TEXTURE_2D, whiteTextureID);
       }
-
-      GLuint VAO;
-      glGenVertexArrays(1, &VAO);
-      glBindVertexArray(VAO);
 
       extern GLuint Color;
       float color_vec[] = {
@@ -170,6 +178,10 @@ public:
          flat_color.b/255.0f,
          flat_color.a/255.0f };
       glUniform4fv(Color, 1, color_vec);
+
+      GLuint VAO;
+      glGenVertexArrays(1, &VAO);
+      glBindVertexArray(VAO);
 
       GLuint vertexbuffer;
       glGenBuffers(1, &vertexbuffer);
@@ -245,6 +257,7 @@ public:
       if (currentTextureID) {
          glDeleteTextures(1, &currentTextureID);
          currentTextureID = 0;
+         glBindTexture(GL_TEXTURE_2D, whiteTextureID);
       }
    }
    void texture(PImage &img) {
@@ -261,19 +274,41 @@ public:
                    GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
    }
 
-   color image_tint = WHITE;
    int image_mode = CORNER;
    void imageMode(int iMode) {
       image_mode = iMode;
    }
 
-// We can add a tint color to the texture shader.
-   void tint(color tint) {}
+   color tint_color = WHITE;
+   void tint(float r,float g,  float b, float a) {
+      tint_color = flatten_color_mode(r,g,b,a);
+   }
 
-   void tint(color tint, float alpha) {}
+   void tint(float r,float g, float b) {
+      tint(r,g,b,color::scaleA);
+   }
+
+   void tint(float r,float a) {
+      if (color::mode == HSB) {
+         tint(0,0,r,a);
+      } else {
+         tint(r,r,r,a);
+      }
+   }
+   void tint(float r) {
+      if (color::mode == HSB) {
+         tint(r,0,0,color::scaleA);
+      } else {
+         tint(r,r,r,color::scaleA);
+      }
+   }
+
+   void tint(color c) {
+      tint(c.r,c.g,c.b,c.a);
+   }
 
    void noTint() {
-      image_tint = WHITE;
+      tint_color = WHITE;
    }
 
    void image(const PImage &pimage, float left, float top, float right, float bottom) {
@@ -291,7 +326,7 @@ public:
          bottom = top + height;
       }
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, pimage.surface);
+      glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, pimage.surface, tint_color);
    }
 
    void image(const PImage &pimage, float x, float y) {
@@ -319,7 +354,6 @@ public:
    }
 
    void updatePixels() {
-      anything_drawn = true;
       // Write the pixel data to the framebuffer
       glBindTexture(GL_TEXTURE_2D, bufferID);
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gfx_width, gfx_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
@@ -411,6 +445,175 @@ public:
       dm.ellipse_mode = mode;
    }
 
+   void printMatrix4f(const Eigen::Matrix4f& mat) {
+      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(0, 0), mat(0, 1), mat(0, 2), mat(0, 3));
+      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(1, 0), mat(1, 1), mat(1, 2), mat(1, 3));
+      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(2, 0), mat(2, 1), mat(2, 2), mat(2, 3));
+      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
+   }
+
+   void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID, color tint) {
+      GLuint uSampler = glGetUniformLocation(programID, "uSampler");
+
+      extern GLuint Color;
+      float color_vec[] = {
+         tint.r/255.0f,
+         tint.g/255.0f,
+         tint.b/255.0f,
+         tint.a/255.0f};
+      glUniform4fv(Color, 1, color_vec);
+
+      int textureUnitIndex = 0;
+      glBindTexture(GL_TEXTURE_2D, textureID);
+      glUniform1i(uSampler,0);
+      glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
+
+
+      Eigen::Vector4f vert0 = Eigen::Vector4f{p0.x,p0.y,0,1};
+      Eigen::Vector4f vert1 = Eigen::Vector4f{p1.x,p1.y,0,1};
+      Eigen::Vector4f vert2 = Eigen::Vector4f{p2.x,p2.y,0,1};
+      Eigen::Vector4f vert3 = Eigen::Vector4f{p3.x,p3.y,0,1};
+
+      std::vector<float> vertices{
+         vert0[0],  vert0[1], 0.0f,
+         vert1[0],  vert1[1], 0.0f,
+         vert2[0],  vert2[1], 0.0f,
+         vert3[0],  vert3[1], 0.0f,
+      };
+
+      std::vector<float> coords;
+      coords = {
+         0.0f, 0.0f,
+         xrange, 0.0f,
+         xrange, yrange,
+         0.0f, yrange,
+      };
+
+      std::vector<unsigned short>  indices = {
+         0,1,2, 0,2,3,
+      };
+
+      GLuint localVAO;
+      // Create a vertex array object (VAO)
+      glGenVertexArrays(1, &localVAO);
+      glBindVertexArray(localVAO);
+
+      GLuint indexbuffer;
+      glGenBuffers(1, &indexbuffer);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
+
+      GLuint vertexbuffer;
+      glGenBuffers(1, &vertexbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+      GLuint coordsbuffer;
+      glGenBuffers(1, &coordsbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+      glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(float), coords.data(), GL_STATIC_DRAW);
+
+
+      GLuint attribId = glGetAttribLocation(programID, "position");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      attribId = glGetAttribLocation(programID, "coords");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         2,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      glBindVertexArray(localVAO);
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+      glBindVertexArray(0);
+
+      glDeleteVertexArrays(1, &localVAO);
+
+      glDeleteBuffers(1, &vertexbuffer);
+      glDeleteBuffers(1, &indexbuffer);
+      glDeleteBuffers(1, &coordsbuffer);
+
+      // Unbind the buffer objects and VAO
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+      glBindVertexArray(0);
+
+      glBindTexture(GL_TEXTURE_2D, 0);
+      color_vec[0] = cm.fill_color.r/255.0f;
+      color_vec[1] = cm.fill_color.g/255.0f;
+      color_vec[2] = cm.fill_color.b/255.0f;
+      color_vec[3] = cm.fill_color.a/255.0f;
+      glUniform4fv(Color, 1, color_vec);
+   }
+
+   unsigned int next_power_of_2(unsigned int v) {
+      v--;
+      v |= v >> 1;
+      v |= v >> 2;
+      v |= v >> 4;
+      v |= v >> 8;
+      v |= v >> 16;
+      v++;
+      return v;
+   }
+
+   void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface *surface, color tint) {
+      int newWidth = next_power_of_2(surface->w);
+      int newHeight = next_power_of_2(surface->h);
+
+      SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, newWidth, newHeight,
+                                                     surface->format->BitsPerPixel,
+                                                     surface->format->Rmask,
+                                                     surface->format->Gmask,
+                                                     surface->format->Bmask,
+                                                     surface->format->Amask);
+      if (newSurface == NULL) {
+         abort();
+      }
+
+      // clear new surface with a transparent color and blit existing surface to it
+      SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
+      SDL_BlitSurface(surface, NULL, newSurface, NULL);
+
+      // Calculate extends of texture to use
+      float xrange = (1.0 * surface->w) / newWidth;
+      float yrange = (1.0 * surface->h) / newHeight;
+
+      // Create an OpenGL texture from the SDL_Surface
+      GLuint textureID;
+      glGenTextures(1, &textureID);
+      glBindTexture(GL_TEXTURE_2D, textureID);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+
+      glBindTexture(GL_TEXTURE_2D, 0);
+      glTexturedQuad(p0,p1,p2,p3,xrange, yrange, textureID, tint);
+
+      glDeleteTextures(1, &textureID);
+      SDL_FreeSurface(newSurface);
+
+
+   }
    PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
       PLine l1{ p1, p2 };
       PLine l2{ p2, p3 };
@@ -527,6 +730,7 @@ public:
 
    void draw_vertices( std::vector<PVector> &triangles, GLuint element_type) {
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      glBindTexture(GL_TEXTURE_2D, whiteTextureID);
 
       // Create a vertex array object (VAO)
       GLuint VAO;
@@ -830,13 +1034,22 @@ public:
    void beginDraw() {}
    void endDraw() {}
 
-   void draw(float x, float y, bool flip=false) {
+   void draw_main() {
+      // For drawing the main screen we need to flip the texture and remove any tintint
+      glTexturedQuad(
+         {0.0f,           0.0f+gfx_height},
+         {0.0f+gfx_width ,0.0f+gfx_height},
+         {0.0f+gfx_width, 0.0f},
+         {0.0f,           0.0f},
+         1.0,1.0, bufferID, WHITE);
+   }
+
+   void draw(float x, float y) {
       glTexturedQuad( {x, y},
                       {x+gfx_width,y},
                       {x+gfx_width,y+gfx_height},
                       {x,y+gfx_height},
-                      1.0,1.0, bufferID,flip );
-      return;
+                      1.0,1.0, bufferID, tint_color);
    }
 };
 
