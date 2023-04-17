@@ -58,76 +58,6 @@ GLuint programID;
 GLuint Pmatrix;
 GLuint Vmatrix;
 
-void drawGeometry( const std::vector<float> &vertices,
-                   const std::vector<float> &normals,
-                   const std::vector<unsigned short> &triangles,
-                   color flat_color) {
-
-   glBindFramebuffer(GL_FRAMEBUFFER, g.localFboID);
-
-   GLuint VAO;
-   glGenVertexArrays(1, &VAO);
-   glBindVertexArray(VAO);
-
-   extern GLuint Color;
-   float color_vec[] = {
-      flat_color.r/255.0f,
-      flat_color.g/255.0f,
-      flat_color.b/255.0f,
-      flat_color.a/255.0f };
-   glUniform4fv(Color, 1, color_vec);
-
-   GLuint vertexbuffer;
-   glGenBuffers(1, &vertexbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-   GLuint indexbuffer;
-   glGenBuffers(1, &indexbuffer);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size() * sizeof(unsigned short), triangles.data(), GL_STATIC_DRAW);
-
-   GLuint normalbuffer;
-   glGenBuffers(1, &normalbuffer);
-   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-   glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
-
-   GLuint attribId = glGetAttribLocation(programID, "position");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
-   attribId = glGetAttribLocation(programID, "normal");
-   glEnableVertexAttribArray(attribId);
-   glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-   glVertexAttribPointer(
-      attribId,                         // attribute
-      3,                                // size
-      GL_FLOAT,                         // type
-      GL_FALSE,                         // normalized?
-      0,                                // stride
-      (void*)0                          // array buffer offset
-      );
-
-   glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_SHORT, 0);
-
-   glDeleteBuffers(1, &vertexbuffer);
-   glDeleteBuffers(1, &indexbuffer);
-   glDeleteBuffers(1, &normalbuffer);
-
-   // Unbind the buffer objects and VAO
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-   glBindVertexArray(0);
-
-}
 
 void box(float w, float h, float d) {
    w = w / 2;
@@ -169,6 +99,39 @@ void box(float w, float h, float d) {
       -w, -h, d,
       -w, h, d,
       -w, h, -d,
+   };
+
+   std::vector<float> coords = {
+      // Front
+      0.0,  0.0,
+      1.0,  0.0,
+      1.0,  1.0,
+      0.0,  1.0,
+      // Back
+      0.0,  0.0,
+      1.0,  0.0,
+      1.0,  1.0,
+      0.0,  1.0,
+      // Top
+      0.0,  0.0,
+      1.0,  0.0,
+      1.0,  1.0,
+      0.0,  1.0,
+      // Bottom
+      0.0,  0.0,
+      1.0,  0.0,
+      1.0,  1.0,
+      0.0,  1.0,
+      // Right
+      0.0,  0.0,
+      1.0,  0.0,
+      1.0,  1.0,
+      0.0,  1.0,
+      // Left
+      0.0,  0.0,
+      1.0,  0.0,
+      1.0,  1.0,
+      0.0,  1.0,
    };
 
    std::vector<float> normals = {
@@ -215,7 +178,7 @@ void box(float w, float h, float d) {
       16,17,18, 16,18,19, 20,21,22, 20,22,23
    };
 
-   drawGeometry(vertices, normals, triangles, g.cm.fill_color);
+   g.drawGeometry(vertices, normals, coords, triangles, g.cm.fill_color);
 };
 
 void box(float size) {
@@ -238,6 +201,7 @@ void sphere(float radius) {
 
    std::vector<float> vertices;
    std::vector<float> normals;
+   std::vector<float> coords;
 
    float latStep = M_PI / xsphere_ures;
    float lonStep = 2 * M_PI / xsphere_vres;
@@ -280,8 +244,7 @@ void sphere(float radius) {
          indices.push_back(idx3);
       }
    }
-
-   drawGeometry(vertices, normals, indices, g.cm.fill_color);
+   g.drawGeometry(vertices, normals,coords, indices, g.cm.fill_color);
 }
 
 
@@ -309,6 +272,8 @@ MAKE_GLOBAL(endShape, g);
 MAKE_GLOBAL(image, g);
 MAKE_GLOBAL(imageMode, g);
 MAKE_GLOBAL(tint, g);
+MAKE_GLOBAL(texture, g);
+MAKE_GLOBAL(noTexture, g);
 
 MAKE_GLOBAL(createRect, g);
 MAKE_GLOBAL(createQuad, g);

@@ -141,6 +141,126 @@ public:
       }
    }
 
+   void drawGeometry( const std::vector<float> &vertices,
+                      const std::vector<float> &normals,
+                      const std::vector<float> &coords,
+                      const std::vector<unsigned short> &triangles,
+                      color flat_color) {
+
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      glBindTexture(GL_TEXTURE_2D, currentTextureID);
+
+      if (currentTextureID) {
+         glBindTexture(GL_TEXTURE_2D, currentTextureID);
+         GLuint uSampler = glGetUniformLocation(programID, "uSampler");
+         int textureUnitIndex = 0;
+         glUniform1i(uSampler,0);
+         glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
+         flat_color = BLACK;
+      }
+
+      GLuint VAO;
+      glGenVertexArrays(1, &VAO);
+      glBindVertexArray(VAO);
+
+      extern GLuint Color;
+      float color_vec[] = {
+         flat_color.r/255.0f,
+         flat_color.g/255.0f,
+         flat_color.b/255.0f,
+         flat_color.a/255.0f };
+      glUniform4fv(Color, 1, color_vec);
+
+      GLuint vertexbuffer;
+      glGenBuffers(1, &vertexbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+      GLuint coordsbuffer;
+      glGenBuffers(1, &coordsbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+      glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(float), coords.data(), GL_STATIC_DRAW);
+
+      GLuint indexbuffer;
+      glGenBuffers(1, &indexbuffer);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size() * sizeof(unsigned short), triangles.data(), GL_STATIC_DRAW);
+
+      GLuint normalbuffer;
+      glGenBuffers(1, &normalbuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+      glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
+
+      GLuint attribId = glGetAttribLocation(programID, "position");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      attribId = glGetAttribLocation(programID, "coords");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
+      glVertexAttribPointer(attribId, // attribute
+                            2,        // size
+                            GL_FLOAT, // type
+                            GL_FALSE, // normalized?
+                            0,        // stride
+                            (void *)0 // array buffer offset
+         );
+
+      attribId = glGetAttribLocation(programID, "normal");
+      glEnableVertexAttribArray(attribId);
+      glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+      glVertexAttribPointer(
+         attribId,                         // attribute
+         3,                                // size
+         GL_FLOAT,                         // type
+         GL_FALSE,                         // normalized?
+         0,                                // stride
+         (void*)0                          // array buffer offset
+         );
+
+      glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_SHORT, 0);
+
+      glDeleteBuffers(1, &vertexbuffer);
+      glDeleteBuffers(1, &indexbuffer);
+      glDeleteBuffers(1, &normalbuffer);
+      glDeleteBuffers(1, &coordsbuffer);
+
+      // Unbind the buffer objects and VAO
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+      glBindVertexArray(0);
+   }
+
+   GLuint currentTextureID = 0;
+
+   void noTexture() {
+      if (currentTextureID) {
+         glDeleteTextures(1, &currentTextureID);
+         currentTextureID = 0;
+      }
+   }
+   void texture(PImage &img) {
+      noTexture();
+      auto newSurface = img.surface;
+      // Create an OpenGL texture from the SDL_Surface
+      glGenTextures(1, &currentTextureID);
+      glBindTexture(GL_TEXTURE_2D, currentTextureID);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+   }
+
    color image_tint = WHITE;
    int image_mode = CORNER;
    void imageMode(int iMode) {
