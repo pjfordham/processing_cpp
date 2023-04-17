@@ -91,19 +91,16 @@ public:
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-      if (mode == P3D) {
-         glEnable(GL_DEPTH_TEST);
-         // Create a renderbuffer for the depth buffer
-         if (!fb) {
-            glGenRenderbuffers(1, &depthBufferID);
-            glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+      glDepthFunc(GL_LEQUAL);
+      glEnable(GL_DEPTH_TEST);
+      // Create a renderbuffer for the depth buffer
+      if (!fb) {
+         glGenRenderbuffers(1, &depthBufferID);
+         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
 
-            // Attach the depth buffer to the framebuffer object
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
-         }
-      } else {
-         glDisable(GL_DEPTH_TEST);
+         // Attach the depth buffer to the framebuffer object
+         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
       }
 
       gfx_width = width;
