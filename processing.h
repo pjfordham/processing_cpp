@@ -151,7 +151,6 @@ MAKE_GLOBAL(imageMode, g);
 MAKE_GLOBAL(tint, g);
 MAKE_GLOBAL(texture, g);
 MAKE_GLOBAL(noTexture, g);
-MAKE_GLOBAL(glTexturedQuad, g);
 MAKE_GLOBAL(box, g);
 MAKE_GLOBAL(sphere, g);
 MAKE_GLOBAL(sphereDetail, g);
@@ -491,6 +490,58 @@ void textSize(int size) {
    currentFont = createFont(currentFont.first, size);
 }
 
+ unsigned int next_power_of_2(unsigned int v) {
+      v--;
+      v |= v >> 1;
+      v |= v >> 2;
+      v |= v >> 4;
+      v |= v >> 8;
+      v |= v >> 16;
+      v++;
+      return v;
+   }
+
+void draw_text(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface *surface, GLuint frame_buffer_ID, color tint) {
+   int newWidth = next_power_of_2(surface->w);
+   int newHeight = next_power_of_2(surface->h);
+
+   SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, newWidth, newHeight,
+						  surface->format->BitsPerPixel,
+						  surface->format->Rmask,
+						  surface->format->Gmask,
+						  surface->format->Bmask,
+						  surface->format->Amask);
+   if (newSurface == NULL) {
+      abort();
+   }
+
+   // clear new surface with a transparent color and blit existing surface to it
+   SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
+   SDL_BlitSurface(surface, NULL, newSurface, NULL);
+
+   // Calculate extends of texture to use
+   float xrange = (1.0 * surface->w) / newWidth;
+   float yrange = (1.0 * surface->h) / newHeight;
+
+   // Create an OpenGL texture from the SDL_Surface
+   GLuint textureID;
+   glGenTextures(1, &textureID);
+   glBindTexture(GL_TEXTURE_2D, textureID);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+
+   glBindTexture(GL_TEXTURE_2D, 0);
+   g.glTexturedQuad(p0,p1,p2,p3,xrange, yrange, textureID, frame_buffer_ID, tint);
+
+   glDeleteTextures(1, &textureID);
+   SDL_FreeSurface(newSurface);
+}
+
 void text(std::string text, float x, float y, float width=-1, float height=-1) {
    SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
                                                  { (unsigned char)g.cm.fill_color.r,
@@ -517,7 +568,7 @@ void text(std::string text, float x, float y, float width=-1, float height=-1) {
       y = y - height / 2;
    }
 
-   glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height}, surface2, g.localFboID, WHITE);
+   draw_text(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height}, surface2, g.localFboID, WHITE);
 
    SDL_FreeSurface(surface);
    SDL_FreeSurface(surface2);

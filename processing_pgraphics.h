@@ -241,6 +241,39 @@ public:
 
    GLuint currentTextureID = 0;
 
+   GLuint createTextureCopy(GLuint srcTexture) {
+      // Get the width and height of the source texture
+      GLint width, height;
+      glBindTexture(GL_TEXTURE_2D, srcTexture);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+      glBindTexture(GL_TEXTURE_2D, 0);
+
+      // Create a new texture to hold the copy
+      GLuint dstTexture;
+      glGenTextures(1, &dstTexture);
+
+      // Bind the destination texture
+      glBindTexture(GL_TEXTURE_2D, dstTexture);
+
+      // Set texture parameters
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+      // Copy the pixels from the source texture
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+      glCopyImageSubData(srcTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+                         dstTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+                         width, height, 1);
+
+      // Unbind the textures
+      glBindTexture(GL_TEXTURE_2D, 0);
+
+      return dstTexture;
+   }
+
    void noTexture() {
       if (currentTextureID) {
          glDeleteTextures(1, &currentTextureID);
@@ -250,16 +283,7 @@ public:
    }
    void texture(PImage &img) {
       noTexture();
-      auto newSurface = img.surface;
-      // Create an OpenGL texture from the SDL_Surface
-      glGenTextures(1, &currentTextureID);
-      glBindTexture(GL_TEXTURE_2D, currentTextureID);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
-                   GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+      currentTextureID = createTextureCopy( img.get_texture_id() );
    }
 
    int image_mode = CORNER;
@@ -487,7 +511,7 @@ public:
       drawGeometry(vertices, normals,coords, indices, GL_TRIANGLES, localFboID, cm.fill_color);
    }
 
-   void image(const PImage &pimage, float left, float top, float right, float bottom) {
+   void image( PImage &pimage, float left, float top, float right, float bottom) {
       if ( image_mode == CORNER ) {
          float width = right;
          float height = bottom;
@@ -501,10 +525,11 @@ public:
          right = left + width;
          bottom = top + height;
       }
-      glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, pimage.surface, localFboID, tint_color);
+      glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, 1.0,1.0,
+                     pimage.get_texture_id(), localFboID, tint_color);
    }
 
-   void image(const PImage &pimage, float x, float y) {
+   void image(PImage &pimage, float x, float y) {
       if ( image_mode == CORNER ) {
          image( pimage, x, y, pimage.width, pimage.height );;
       } else if ( image_mode == CORNERS ) {
@@ -516,7 +541,7 @@ public:
       }
    }
 
-   void background(const PImage &bg) {
+   void background(PImage &bg) {
       image(bg,0,0);
    }
 
@@ -649,59 +674,7 @@ public:
       glBindTexture(GL_TEXTURE_2D, 0);
    }
 
-   unsigned int next_power_of_2(unsigned int v) {
-      v--;
-      v |= v >> 1;
-      v |= v >> 2;
-      v |= v >> 4;
-      v |= v >> 8;
-      v |= v >> 16;
-      v++;
-      return v;
-   }
 
-   void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface *surface, GLuint frame_buffer_ID, color tint) {
-      int newWidth = next_power_of_2(surface->w);
-      int newHeight = next_power_of_2(surface->h);
-
-      SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, newWidth, newHeight,
-                                                     surface->format->BitsPerPixel,
-                                                     surface->format->Rmask,
-                                                     surface->format->Gmask,
-                                                     surface->format->Bmask,
-                                                     surface->format->Amask);
-      if (newSurface == NULL) {
-         abort();
-      }
-
-      // clear new surface with a transparent color and blit existing surface to it
-      SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
-      SDL_BlitSurface(surface, NULL, newSurface, NULL);
-
-      // Calculate extends of texture to use
-      float xrange = (1.0 * surface->w) / newWidth;
-      float yrange = (1.0 * surface->h) / newHeight;
-
-      // Create an OpenGL texture from the SDL_Surface
-      GLuint textureID;
-      glGenTextures(1, &textureID);
-      glBindTexture(GL_TEXTURE_2D, textureID);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
-                   GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
-
-      glBindTexture(GL_TEXTURE_2D, 0);
-      glTexturedQuad(p0,p1,p2,p3,xrange, yrange, textureID, frame_buffer_ID, tint);
-
-      glDeleteTextures(1, &textureID);
-      SDL_FreeSurface(newSurface);
-
-
-   }
    PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
       PLine l1{ p1, p2 };
       PLine l2{ p2, p3 };

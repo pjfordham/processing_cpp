@@ -29,6 +29,7 @@ public:
    int height;
    unsigned int *pixels;
    SDL_Surface *surface;
+   GLuint textureID = 0;
 
    PImage() : width(0), height(0), pixels{NULL}, surface{NULL} {}
 
@@ -36,6 +37,8 @@ public:
       if (surface) {
          SDL_FreeSurface(surface);
       }
+      if (textureID)
+         glDeleteTextures(1, &textureID);
    }
 
    PImage(const PImage &x){
@@ -50,6 +53,7 @@ public:
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(pixels, x.pixels);
+      std::swap(textureID, x.textureID);
    }
 
    PImage& operator=(const PImage&) = delete;
@@ -58,6 +62,7 @@ public:
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(pixels, x.pixels);
+      std::swap(textureID, x.textureID);
       return *this;
    }
 
@@ -119,6 +124,50 @@ public:
          }
       }
    }
+
+   unsigned int next_power_of_2(unsigned int v) {
+      v--;
+      v |= v >> 1;
+      v |= v >> 2;
+      v |= v >> 4;
+      v |= v >> 8;
+      v |= v >> 16;
+      v++;
+      return v;
+   }
+
+   GLuint get_texture_id()  {
+      SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
+                                                     surface->format->BitsPerPixel,
+                                                     surface->format->Rmask,
+                                                     surface->format->Gmask,
+                                                     surface->format->Bmask,
+                                                     surface->format->Amask);
+      if (newSurface == NULL) {
+         abort();
+      }
+
+      // clear new surface with a transparent color and blit existing surface to it
+      SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
+      SDL_BlitSurface(surface, NULL, newSurface, NULL);
+
+      // Create/update an OpenGL texture from the SDL_Surface
+      if (!textureID) {
+         glGenTextures(1, &textureID);
+      }
+      glBindTexture(GL_TEXTURE_2D, textureID);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+      SDL_FreeSurface(newSurface);
+
+      return textureID;
+   }
+
 };
 
 PImage loadImage(const char *filename) {
