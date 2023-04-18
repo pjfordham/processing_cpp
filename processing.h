@@ -14,7 +14,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_image.h>
 #include <algorithm>
 #include <chrono>
 #include <vector>
@@ -618,11 +617,7 @@ int main(int argc, char* argv[]) {
       abort();
    }
 
-   // initialize SDL_image
-   if (IMG_Init(IMG_INIT_JPG) != IMG_INIT_JPG) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init JPG failed: %s\n", TTF_GetError());
-      abort();
-   }
+   PImage::init();
 
    setup();
 
@@ -760,6 +755,8 @@ int main(int argc, char* argv[]) {
       }
 
    }
+
+   PImage::close();
 
    for (auto font : fontMap) {
       TTF_CloseFont(font.second);

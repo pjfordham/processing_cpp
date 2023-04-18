@@ -31,6 +31,17 @@ public:
    SDL_Surface *surface;
    GLuint textureID = 0;
 
+   static void init() {
+      // initialize SDL_image
+      if (IMG_Init(IMG_INIT_JPG) != IMG_INIT_JPG) {
+         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init JPG failed: %s\n", SDL_GetError());
+         abort();
+      }
+   }
+
+   static void close() {
+   }
+
    PImage() : width(0), height(0), pixels{NULL}, surface{NULL} {}
 
    ~PImage() {
