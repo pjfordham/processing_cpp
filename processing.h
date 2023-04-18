@@ -127,113 +127,113 @@ void box(float w, float h, float d) {
    w = w / 2;
    h = h / 2;
    d = d / 2;
-   std::vector<float> vertices = {
+   std::vector<PVector> vertices = {
       // Front face
-      -w, -h, d,
-      w, -h, d,
-      w, h, d,
-      -w, h, d,
+      { -w, -h, d},
+      {w, -h, d},
+      {w, h, d},
+      {-w, h, d},
 
       // Back face
-      -w, -h, -d,
-      -w, h, -d,
-      w, h, -d,
-      w, -h, -d,
+      {-w, -h, -d},
+      {-w, h, -d},
+      {w, h, -d},
+      {w, -h, -d},
 
       // Top face
-      -w, h, -d,
-      -w, h, d,
-      w, h, d,
-      w, h, -d,
+      {-w, h, -d},
+      {-w, h, d},
+      {w, h, d},
+      {w, h, -d},
 
       // Bottom face
-      -w, -h, -d,
-      w, -h, -d,
-      w, -h, d,
-      -w, -h, d,
+      {  -w, -h, -d},
+      {  w, -h, -d},
+      {  w, -h, d},
+      {  -w, -h, d},
 
       // Right face
-      w, -h, -d,
-      w, h, -d,
-      w, h, d,
-      w, -h, d,
+      {  w, -h, -d},
+      {  w, h, -d},
+      {  w, h, d},
+      {  w, -h, d},
 
       // Left face
-      -w, -h, -d,
-      -w, -h, d,
-      -w, h, d,
-      -w, h, -d,
+      {  -w, -h, -d},
+      {-w, -h, d},
+      { -w, h, d},
+      { -w, h, -d},
    };
 
-   std::vector<float> coords = {
+   std::vector<PVector> coords = {
       // Front
-      0.0,  0.0,
-      1.0,  0.0,
-      1.0,  1.0,
-      0.0,  1.0,
+      {0.0,  0.0},
+      {1.0,  0.0},
+      {1.0,  1.0},
+      {0.0,  1.0},
       // Back
-      0.0,  0.0,
-      1.0,  0.0,
-      1.0,  1.0,
-      0.0,  1.0,
+      {0.0,  0.0},
+      {1.0,  0.0},
+      {1.0,  1.0},
+      {0.0,  1.0},
       // Top
-      0.0,  0.0,
-      1.0,  0.0,
-      1.0,  1.0,
-      0.0,  1.0,
+      {0.0,  0.0},
+      {1.0,  0.0},
+      {1.0,  1.0},
+      {0.0,  1.0},
       // Bottom
-      0.0,  0.0,
-      1.0,  0.0,
-      1.0,  1.0,
-      0.0,  1.0,
+      {0.0,  0.0},
+      {1.0,  0.0},
+      {1.0,  1.0},
+      {0.0,  1.0},
       // Right
-      0.0,  0.0,
-      1.0,  0.0,
-      1.0,  1.0,
-      0.0,  1.0,
+      {0.0,  0.0},
+      {1.0,  0.0},
+      {1.0,  1.0},
+      {0.0,  1.0},
       // Left
-      0.0,  0.0,
-      1.0,  0.0,
-      1.0,  1.0,
-      0.0,  1.0,
+      {0.0,  0.0},
+      {1.0,  0.0},
+      {1.0,  1.0},
+      {0.0,  1.0},
    };
 
-   std::vector<float> normals = {
+   std::vector<PVector> normals = {
       // Front
-      0.0,  0.0,  1.0,
-      0.0,  0.0,  1.0,
-      0.0,  0.0,  1.0,
-      0.0,  0.0,  1.0,
+      {0.0,  0.0,  1.0},
+      {0.0,  0.0,  1.0},
+      {0.0,  0.0,  1.0},
+      {0.0,  0.0,  1.0},
 
       // Back
-      0.0,  0.0, -1.0,
-      0.0,  0.0, -1.0,
-      0.0,  0.0, -1.0,
-      0.0,  0.0, -1.0,
+      {0.0,  0.0, -1.0},
+      {0.0,  0.0, -1.0},
+      {0.0,  0.0, -1.0},
+      {0.0,  0.0, -1.0},
 
       // Top
-      0.0,  1.0,  0.0,
-      0.0,  1.0,  0.0,
-      0.0,  1.0,  0.0,
-      0.0,  1.0,  0.0,
+      {0.0,  1.0,  0.0},
+      {0.0,  1.0,  0.0},
+      {0.0,  1.0,  0.0},
+      {0.0,  1.0,  0.0},
 
       // Bottom
-      0.0, -1.0,  0.0,
-      0.0, -1.0,  0.0,
-      0.0, -1.0,  0.0,
-      0.0, -1.0,  0.0,
+      {0.0, -1.0,  0.0},
+      {0.0, -1.0,  0.0},
+      {0.0, -1.0,  0.0},
+      {0.0, -1.0,  0.0},
 
       // Right
-      1.0,  0.0,  0.0,
-      1.0,  0.0,  0.0,
-      1.0,  0.0,  0.0,
-      1.0,  0.0,  0.0,
+      {1.0,  0.0,  0.0},
+      {1.0,  0.0,  0.0},
+      {1.0,  0.0,  0.0},
+      {1.0,  0.0,  0.0},
 
       // Left
-      -1.0,  0.0,  0.0,
-      -1.0,  0.0,  0.0,
-      -1.0,  0.0,  0.0,
-      -1.0,  0.0,  0.0
+      {-1.0,  0.0,  0.0},
+      {-1.0,  0.0,  0.0},
+      {-1.0,  0.0,  0.0},
+      {-1.0,  0.0,  0.0}
    };
 
    std::vector<unsigned short>  triangles = {
@@ -243,9 +243,9 @@ void box(float w, float h, float d) {
    };
 
    if (g.currentTextureID) {
-      g.drawGeometry(vertices, normals, coords, triangles, g.tint_color);
+      g.drawGeometry(vertices, normals, coords, triangles, GL_TRIANGLES, g.localFboID, g.tint_color);
    }else {
-      g.drawGeometry(vertices, normals, coords, triangles, g.cm.fill_color);
+      g.drawGeometry(vertices, normals, coords, triangles, GL_TRIANGLES, g.localFboID, g.cm.fill_color);
    }
 };
 
@@ -267,9 +267,9 @@ void sphereDetail(float res) {
 
 void sphere(float radius) {
 
-   std::vector<float> vertices;
-   std::vector<float> normals;
-   std::vector<float> coords;
+   std::vector<PVector> vertices;
+   std::vector<PVector> normals;
+   std::vector<PVector> coords;
 
    float latStep = M_PI / xsphere_ures;
    float lonStep = 2 * M_PI / xsphere_vres;
@@ -288,12 +288,8 @@ void sphere(float radius) {
          float y = sinLat * sinLon;
          float z = cosLat;
 
-         normals.push_back( x );
-         normals.push_back( y );
-         normals.push_back( z );
-         vertices.push_back( x * radius);
-         vertices.push_back( y * radius);
-         vertices.push_back( z * radius);
+         normals.push_back( {x,y,z} );
+         vertices.push_back( { x * radius, y * radius, z * radius} );
       }
    }
 
@@ -312,7 +308,7 @@ void sphere(float radius) {
          indices.push_back(idx3);
       }
    }
-   g.drawGeometry(vertices, normals,coords, indices, g.cm.fill_color);
+   g.drawGeometry(vertices, normals,coords, indices, GL_TRIANGLES, g.localFboID, g.cm.fill_color);
 }
 
 
@@ -705,7 +701,7 @@ void text(std::string text, float x, float y, float width=-1, float height=-1) {
       y = y - height / 2;
    }
 
-   glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height}, surface2,WHITE);
+   glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height}, surface2, g.localFboID, WHITE);
 
    SDL_FreeSurface(surface);
    SDL_FreeSurface(surface2);

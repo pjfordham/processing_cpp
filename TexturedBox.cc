@@ -15,15 +15,17 @@ void setup() {
    img = loadImage("moon.jpg");
 }
 
+float a = 0;
 void draw() {
-   background(0);
+   background(48);
    lights();
 
    noStroke();
    pushMatrix();
    translate(130, height/2, 0);
-   rotateY(1.25);
-   rotateX(-0.4);
+   rotateY(1.25 + a);
+   rotateX(-0.4 + 0.3 * a);
+   a += 0.01;
    tint(BLUE);
    texture(img);
    box(100);
