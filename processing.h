@@ -674,34 +674,30 @@ int main(int argc, char* argv[]) {
 
             draw();
 
+	    if (g.localFboID != 0) {
+	       // Reset to default view settings to draw next frame and
+	       // draw the texture from the PGraphics flat.
+	       noLights();
+	       move_matrix = Eigen::Matrix4f::Identity();
+	       glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+
+	       Eigen::Matrix4f P = Eigen::Matrix4f::Identity();
+	       Eigen::Matrix4f V = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
+
+	       glUniformMatrix4fv(Pmatrix, 1,false, P.data());
+	       glUniformMatrix4fv(Vmatrix, 1,false, V.data());
+
+	       g.draw_main();
+
+	       glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+	       glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+	    }
+
+            SDL_GL_SwapWindow(window);
+
             // Only update once per frame so we don't miss positions
             pmouseX = mouseX;
             pmouseY = mouseY;
-
-            // Reset to default view settings to draw next frame and
-            // draw the texture from the PGraphics flat.
-            noLights();
-            move_matrix = Eigen::Matrix4f::Identity();
-            glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-
-            Eigen::Matrix4f P = Eigen::Matrix4f::Identity();
-            Eigen::Matrix4f V = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
-
-            glUniformMatrix4fv(Pmatrix, 1,false, P.data());
-            glUniformMatrix4fv(Vmatrix, 1,false, V.data());
-
-            if (g.localFboID != 0) {
-               // bind the real frame buffer
-               glBindFramebuffer(GL_FRAMEBUFFER, 0);
-               // Clear the color and depth buffers
-               glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-               // Draw the flipped PGraphics context
-               g.draw_main();
-            }
-            glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-            glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
-
-            SDL_GL_SwapWindow(window);
 
             // Update the screen
             frameCount++;

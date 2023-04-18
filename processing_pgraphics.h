@@ -1091,6 +1091,11 @@ public:
    void endDraw() {}
 
    void draw_main() {
+      // bind the real frame buffer
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      // Clear the color and depth buffers
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      // Draw the flipped PGraphics context
       // For drawing the main screen we need to flip the texture and remove any tintint
       glTexturedQuad(
          {0.0f,           0.0f+gfx_height},
