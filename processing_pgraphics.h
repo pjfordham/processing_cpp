@@ -150,6 +150,32 @@ public:
       }
    }
 
+   class GL_FLOAT_buffer {
+      GLuint buffer_id;
+      GLuint attribId;
+   public:
+      GL_FLOAT_buffer(const void *data, int size, const char *attrib, int count, int stride, void* offset) {
+         glGenBuffers(1, &buffer_id);
+         glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+         glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STATIC_DRAW);
+
+         attribId = glGetAttribLocation(programID, attrib);
+         glEnableVertexAttribArray(attribId);
+         glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+         glVertexAttribPointer(
+            attribId,                         // attribute
+            count,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            stride,                           // stride
+            offset                     // array buffer offset
+            );
+      }
+      ~GL_FLOAT_buffer() {
+         glDeleteBuffers(1, &buffer_id);
+      }
+   };
+
    void drawGeometry( const std::vector<float> &vertices,
                       const std::vector<float> &normals,
                       const std::vector<float> &coords,
@@ -180,67 +206,18 @@ public:
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
 
-      GLuint vertexbuffer;
-      glGenBuffers(1, &vertexbuffer);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-      GLuint coordsbuffer;
-      glGenBuffers(1, &coordsbuffer);
-      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
-      glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(float), coords.data(), GL_STATIC_DRAW);
+      GL_FLOAT_buffer vertex( vertices.data(), vertices.size(), "position", 3, 0, nullptr);
+      GL_FLOAT_buffer normal( normals.data(), normals.size(), "normal", 3, 0, nullptr);
+      GL_FLOAT_buffer coord( coords.data(), coords.size(), "coords", 2, 0, nullptr);
 
       GLuint indexbuffer;
       glGenBuffers(1, &indexbuffer);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size() * sizeof(unsigned short), triangles.data(), GL_STATIC_DRAW);
 
-      GLuint normalbuffer;
-      glGenBuffers(1, &normalbuffer);
-      glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-      glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
-
-      GLuint attribId = glGetAttribLocation(programID, "position");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
-         );
-
-      attribId = glGetAttribLocation(programID, "coords");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, coordsbuffer);
-      glVertexAttribPointer(attribId, // attribute
-                            2,        // size
-                            GL_FLOAT, // type
-                            GL_FALSE, // normalized?
-                            0,        // stride
-                            (void *)0 // array buffer offset
-         );
-
-      attribId = glGetAttribLocation(programID, "normal");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         0,                                // stride
-         (void*)0                          // array buffer offset
-         );
-
       glDrawElements(GL_TRIANGLES, triangles.size(), GL_UNSIGNED_SHORT, 0);
 
-      glDeleteBuffers(1, &vertexbuffer);
       glDeleteBuffers(1, &indexbuffer);
-      glDeleteBuffers(1, &normalbuffer);
-      glDeleteBuffers(1, &coordsbuffer);
 
       // Unbind the buffer objects and VAO
       glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -725,43 +702,12 @@ public:
       }
    }
 
-   void draw_vertices( std::vector<PVector> &triangles, GLuint element_type) {
+   void draw_vertices( std::vector<PVector> &triangles, GLuint element_type, color color) {
+
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+
       glBindTexture(GL_TEXTURE_2D, whiteTextureID);
 
-      // Create a vertex array object (VAO)
-      GLuint VAO;
-      glGenVertexArrays(1, &VAO);
-      glBindVertexArray(VAO);
-
-      GLuint vertexbuffer;
-      glGenBuffers(1, &vertexbuffer);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glBufferData(GL_ARRAY_BUFFER, triangles.size() * sizeof(float) * 3, triangles.data(), GL_STATIC_DRAW);
-
-      GLuint attribId = glGetAttribLocation(programID, "position");
-      glEnableVertexAttribArray(attribId);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-      glVertexAttribPointer(
-         attribId,                         // attribute
-         3,                                // size
-         GL_FLOAT,                         // type
-         GL_FALSE,                         // normalized?
-         sizeof(PVector),                  // stride
-         (void*)offsetof(PVector,x)        // array buffer offset
-         );
-
-      glBindVertexArray(VAO);
-      glDrawArrays(element_type, 0, triangles.size());
-      glBindVertexArray(0);
-
-      glDeleteBuffers(1, &vertexbuffer);
-      glDeleteVertexArrays(1, &VAO);
-   }
-
-   void shape_fill(PShape &pshape, float x, float y, float width, float height, color color) {
-      if (color.a == 0)
-         return;
       extern GLuint Color;
       float color_vec[] = {
          color.r / 255.0f,
@@ -769,20 +715,38 @@ public:
          color.b / 255.0f,
          color.a / 255.0f };
       glUniform4fv(Color, 1, color_vec);
+
+      // Create a vertex array object (VAO)
+      GLuint VAO;
+      glGenVertexArrays(1, &VAO);
+      glBindVertexArray(VAO);
+
+      GL_FLOAT_buffer gub( triangles.data(), triangles.size() * 3, "position", 3, sizeof(PVector),  (void*)offsetof(PVector,x) );
+
+      glDrawArrays(element_type, 0, triangles.size());
+
+      glDeleteVertexArrays(1, &VAO);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+      glBindVertexArray(0);
+   }
+
+   void shape_fill(PShape &pshape, float x, float y, float width, float height, color color) {
+      if (color.a == 0)
+         return;
       switch( pshape.style ) {
       case POINTS:
          break;
       case POLYGON:
       {
          std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
-         draw_vertices( triangles, GL_TRIANGLES );
+         draw_vertices( triangles, GL_TRIANGLES, color );
       }
       break;
       case TRIANGLES:
-         draw_vertices( pshape.vertices, GL_TRIANGLES );
+         draw_vertices( pshape.vertices, GL_TRIANGLES, color );
          break;
       case TRIANGLE_STRIP:
-         draw_vertices( pshape.vertices, GL_TRIANGLE_STRIP );
+         draw_vertices( pshape.vertices, GL_TRIANGLE_STRIP, color );
          break;
       default:
          abort();
