@@ -148,21 +148,6 @@ public:
    }
 
    GLuint get_texture_id()  {
-      SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
-                                                     surface->format->BitsPerPixel,
-                                                     surface->format->Rmask,
-                                                     surface->format->Gmask,
-                                                     surface->format->Bmask,
-                                                     surface->format->Amask);
-      if (newSurface == NULL) {
-         abort();
-      }
-
-      // clear new surface with a transparent color and blit existing surface to it
-      SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
-      SDL_BlitSurface(surface, NULL, newSurface, NULL);
-
-      // Create/update an OpenGL texture from the SDL_Surface
       if (!textureID) {
          glGenTextures(1, &textureID);
       }
@@ -172,10 +157,8 @@ public:
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
-                   GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
-      SDL_FreeSurface(newSurface);
-
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0,
+                   GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
       return textureID;
    }
 

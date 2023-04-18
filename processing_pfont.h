@@ -74,19 +74,10 @@ public:
       width = surface->w;
       height = surface->h;
 
-      SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
-                                                     surface->format->BitsPerPixel,
-                                                     surface->format->Rmask,
-                                                     surface->format->Gmask,
-                                                     surface->format->Bmask,
-                                                     surface->format->Amask);
+      SDL_Surface* newSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
       if (newSurface == NULL) {
          abort();
       }
-
-      // clear new surface with a transparent color and blit existing surface to it
-      SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
-      SDL_BlitSurface(surface, NULL, newSurface, NULL);
 
       // Create an OpenGL texture from the SDL_Surface
       GLuint textureID;
