@@ -12,7 +12,6 @@
 #include <Eigen/Dense>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_opengl.h>
 #include <algorithm>
 #include <chrono>
@@ -32,6 +31,7 @@
 #include "processing_pimage.h"
 #include "processing_pshape.h"
 #include "processing_pgraphics.h"
+#include "processing_pfont.h"
 
 FT_Library ft;
 FT_Face face;
@@ -451,26 +451,10 @@ void loadPixels() {
 
 MAKE_GLOBAL(updatePixels, g);
 
-typedef std::pair<const char *, int> PFont;
-PFont currentFont(NULL,0);
+PFont PFont::currentFont;
 
 void textFont(PFont font) {
-   currentFont = font;
-}
-
-std::map<PFont, TTF_Font *> fontMap;
-
-PFont createFont(const char *filename, int size) {
-   auto key = std::make_pair(filename,size);
-   if (fontMap.count(key) == 0) {
-      auto font = TTF_OpenFont(filename, size);
-      if (font == NULL) {
-         printf("TTF_OpenFont failed: %s\n", TTF_GetError());
-         abort();
-      }
-      fontMap[key] = font;
-   }
-   return key;
+   PFont::currentFont = font;
 }
 
 int xTextAlign;
@@ -486,78 +470,12 @@ void textAlign(int x) {
 }
 
 void textSize(int size) {
-   currentFont = createFont(currentFont.first, size);
+   PFont::currentFont = createFont(PFont::currentFont.name, size);
 }
 
- unsigned int next_power_of_2(unsigned int v) {
-      v--;
-      v |= v >> 1;
-      v |= v >> 2;
-      v |= v >> 4;
-      v |= v >> 8;
-      v |= v >> 16;
-      v++;
-      return v;
-   }
-
-void draw_text(PVector p0, PVector p1, PVector p2, PVector p3, SDL_Surface *surface, GLuint frame_buffer_ID, color tint) {
-   int newWidth = next_power_of_2(surface->w);
-   int newHeight = next_power_of_2(surface->h);
-
-   SDL_Surface* newSurface = SDL_CreateRGBSurface(surface->flags, newWidth, newHeight,
-						  surface->format->BitsPerPixel,
-						  surface->format->Rmask,
-						  surface->format->Gmask,
-						  surface->format->Bmask,
-						  surface->format->Amask);
-   if (newSurface == NULL) {
-      abort();
-   }
-
-   // clear new surface with a transparent color and blit existing surface to it
-   SDL_FillRect(newSurface, NULL, SDL_MapRGBA(newSurface->format, 0, 0, 0, 0));
-   SDL_BlitSurface(surface, NULL, newSurface, NULL);
-
-   // Calculate extends of texture to use
-   float xrange = (1.0 * surface->w) / newWidth;
-   float yrange = (1.0 * surface->h) / newHeight;
-
-   // Create an OpenGL texture from the SDL_Surface
-   GLuint textureID;
-   glGenTextures(1, &textureID);
-   glBindTexture(GL_TEXTURE_2D, textureID);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
-
-   glBindTexture(GL_TEXTURE_2D, 0);
-   g.glTexturedQuad(p0,p1,p2,p3,xrange, yrange, textureID, frame_buffer_ID, tint);
-
-   glDeleteTextures(1, &textureID);
-   SDL_FreeSurface(newSurface);
-}
 
 void text(std::string text, float x, float y, float width=-1, float height=-1) {
-   SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
-                                                 { (unsigned char)g.cm.fill_color.r,
-                                                   (unsigned char)g.cm.fill_color.g,
-                                                   (unsigned char)g.cm.fill_color.b,
-                                                   (unsigned char)g.cm.fill_color.a });
-   if (surface == NULL) {
-      printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
-      abort();
-   }
-   SDL_Surface* surface2 = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_BGRA8888, 0);
-   if (surface2 == NULL) {
-      abort();
-   }
-
-   width = surface2->w;
-   height = surface2->h;
+   GLuint textureID = PFont::currentFont.render_text(text, g.cm.fill_color, width, height);
 
    // this works well enough for the Letters.cc example but it's not really general
    if ( xTextAlign == CENTER ) {
@@ -567,10 +485,11 @@ void text(std::string text, float x, float y, float width=-1, float height=-1) {
       y = y - height / 2;
    }
 
-   draw_text(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height}, surface2, g.localFboID, WHITE);
+   g.glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height},
+		    1.0, 1.0, textureID, g.localFboID, WHITE);
 
-   SDL_FreeSurface(surface);
-   SDL_FreeSurface(surface2);
+   glDeleteTextures(1, &textureID);
+
 }
 
 void text(char c, float x, float y, float width = -1, float height = -1) {
@@ -611,12 +530,7 @@ int main(int argc, char* argv[]) {
    // Disable freetype for now
    // init_freetype();
 
-   TTF_Font* font = NULL;
-   if (TTF_Init() != 0) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
-      abort();
-   }
-
+   PFont::init();
    PImage::init();
 
    setup();
@@ -756,11 +670,8 @@ int main(int argc, char* argv[]) {
 
    }
 
+   PFont::close();
    PImage::close();
-
-   for (auto font : fontMap) {
-      TTF_CloseFont(font.second);
-   }
 
    //close_freetype();
 
