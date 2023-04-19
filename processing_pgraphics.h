@@ -602,7 +602,11 @@ public:
       drawGeometry(vertices, normals,coords, indices, GL_TRIANGLES, localFboID, fill_color);
    }
 
-   void image( PImage &pimage, float left, float top, float right, float bottom) {
+   void image(PGraphics &gfx, int x, int y) {
+      gfx.draw(x,y,localFboID);
+   }
+
+   void image(PImage &pimage, float left, float top, float right, float bottom) {
       if ( image_mode == CORNER ) {
          float width = right;
          float height = bottom;
@@ -1166,22 +1170,18 @@ public:
          1.0,1.0, bufferID, 0, WHITE);
    }
 
-   void draw(float x, float y) {
+   void draw(float x, float y, GLuint frame_buffer_id) {
       glTexturedQuad( {x, y},
                       {x+gfx_width,y},
                       {x+gfx_width,y+gfx_height},
                       {x,y+gfx_height},
-                      1.0,1.0, bufferID, localFboID, tint_color);
+                      1.0,1.0, bufferID, frame_buffer_id, tint_color);
    }
 };
 
 
 PGraphics createGraphics(int width, int height, int mode = P2D) {
    return { width, height, mode };
-}
-
-void image(PGraphics &gfx, int x, int y) {
-   gfx.draw(x,y);
 }
 
 
