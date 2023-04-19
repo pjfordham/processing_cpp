@@ -18,9 +18,6 @@
 #include <map>
 #include <fmt/core.h>
 
-#include <freetype2/ft2build.h>
-#include FT_FREETYPE_H
-
 #include "weak.h"
 #include "processing_math.h"
 #include "processing_transforms.h"
@@ -31,67 +28,6 @@
 #include "processing_pgraphics.h"
 #include "processing_pfont.h"
 
-FT_Library ft;
-FT_Face face;
-
-void init_freetype() {
-
-   // Initialize FreeType
-   FT_Error err = FT_Init_FreeType(&ft);
-   if (err != 0) {
-      printf("Failed to initialize FreeType\n");
-      exit(EXIT_FAILURE);
-   }
-   FT_Int major, minor, patch;
-   FT_Library_Version(ft, &major, &minor, &patch);
-   // printf("FreeType's version is %d.%d.%d\n", major, minor, patch);
-
-   // Load the TrueType font file
-   FT_New_Face(ft, "./SourceCodePro-Regular.ttf", 0, &face);
-   if (err != 0) {
-      printf("Failed to load face\n");
-      exit(EXIT_FAILURE);
-   }
-
-   // Set the character size
-   FT_Set_Char_Size(face, 0, 16*64, 300, 300);
-   if (err != 0) {
-      printf("Failed to set char size\n");
-      exit(EXIT_FAILURE);
-   }
-
-   // Load the glyph outline data
-   FT_Load_Char(face, 'A', FT_LOAD_RENDER | FT_LOAD_NO_HINTING);
-   if (err != 0) {
-      printf("Failed to load glyph outlie data\n");
-      exit(EXIT_FAILURE);
-   }
-
-   std::vector<PVector> gvertices;
-   std::vector<char> gtags;
-
-   // Convert the glyph outline data into vertices
-   for (int i = 0; i < face->glyph->outline.n_points; i++) {
-      FT_Vector vec = face->glyph->outline.points[i];
-      gvertices.emplace_back(PVector{vec.x / 64.0f , vec.y / 64.0f} );
-      gtags.emplace_back(  face->glyph->outline.tags[i] );
-   }
-
-   // Render the vertices using OpenGL
-   // glEnableClientState(GL_VERTEX_ARRAY);
-   // glVertexPointer(2, GL_FLOAT, 0, &gvertices[0]);
-   // glDrawArrays(GL_TRIANGLES, 0, gvertices.size() / 2);
-   // glDisableClientState(GL_VERTEX_ARRAY);
-
-   return;
-}
-
-void close_freetype() {
-   // Cleanup
-   FT_Done_Face(face);
-   FT_Done_FreeType(ft);
-   return;
-};
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -436,9 +372,6 @@ int main(int argc, char* argv[]) {
       return 1;
    }
 
-   // Disable freetype for now
-   // init_freetype();
-
    PFont::init();
    PImage::init();
 
@@ -581,8 +514,6 @@ int main(int argc, char* argv[]) {
 
    PFont::close();
    PImage::close();
-
-   //close_freetype();
 
    // Clean up
    SDL_GL_DeleteContext(glContext);
