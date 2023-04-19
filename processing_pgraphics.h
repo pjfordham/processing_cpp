@@ -12,10 +12,7 @@
 #include "processing_pshape.h"
 #include "processing_pimage.h"
 #include "processing_pfont.h"
-
-enum {
-   P2D, P3D
-};
+#include "processing_enum.h"
 
 class PGraphics {
 public:

@@ -2,16 +2,11 @@
 #define PROCESSING_COLOR_H
 
 #include "processing_math.h"
+#include "processing_enum.h"
 
 // ----
 // Begin color handling.
 // ----
-enum {
-   RGB = 0,
-   HSB = 1,
-};
-
-
 float red(unsigned int pixel) {
    return (pixel >>  0) & 0xFF;
 }

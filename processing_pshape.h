@@ -5,34 +5,12 @@
 #include "processing_color.h"
 #include "processing_earclipping.h"
 #include "processing_transforms.h"
+#include "processing_enum.h"
 
 #include <GL/glew.h>     // GLEW library header
 #include <GL/gl.h>       // OpenGL header
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
-
-enum {
-   POINTS,
-   POLYGON,
-   LINES,
-   GROUP,
-   TRIANGLE_STRIP,
-   TRIANGLE_FAN,
-   TRIANGLES,
-   OPEN,
-   CLOSE,
-   CORNERS,
-   CORNER,
-   CENTER,
-   RADIUS,
-   ROUND,
-   SQUARE,
-   PROJECT,
-   CHORD,
-   PIE,
-   DEFAULT,
-   DIAMETER,
-};
 
 class PShape {
 public:

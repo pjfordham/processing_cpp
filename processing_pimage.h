@@ -4,24 +4,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-// Just for enum
-#include "processing_pshape.h"
 #include "processing_color.h"
+#include "processing_enum.h"
 
 #include <vector>
-
-enum {
-  THRESHOLD,
-  GRAY,
-  OPAQUE,
-  INVERT,
-  POSTERIZE,
-  BLUR,
-  ERODE,
-  DILATE,
-};
-
-enum { /*RGB=0,*/ ARGB = 1,  ALPHA=2 };
 
 class PImage {
 public:
