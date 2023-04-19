@@ -1232,6 +1232,10 @@ public:
       _shape.vertex(x, y, z);
    }
 
+   void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
+      _shape.bezierVertex(x2,y2, x3,y3,x4,y4);
+   }
+
    void endShape(int type = OPEN) {
       _shape.endShape(type);
       shape(_shape, 0,0,0,0);
@@ -1241,22 +1245,14 @@ public:
       rect_mode = mode;
    }
 
-
-
    PShape createBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
       PShape bezier;
-      bezier.beginShape(POLYGON);
-      for (float t = 0; t <= 1; t += 0.01) {
-         // Compute the Bezier curve points
-         float t_ = 1 - t;
-         float x = t_ * t_ * t_ * x1 + 3 * t_ * t_ * t * x2 + 3 * t_ * t * t * x3 + t * t * t * x4;
-         float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
-         bezier.vertex(x, y);
-      }
+      bezier.beginShape();
+      bezier.vertex(x1, y1);
+      bezier.bezierVertex(x2, y2, x3, y3, x4, y4);
       bezier.endShape(OPEN);
       return bezier;
    }
-
 
    PShape createRect(float x, float y, float width, float height) {
       if (rect_mode == CORNERS) {

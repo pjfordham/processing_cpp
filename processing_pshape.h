@@ -72,6 +72,22 @@ public:
       vertices.push_back(p);
    }
 
+   void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
+      bezierVertex( x2, y2, 0, x3, y3, 0, x4, y4, 0);
+   }
+
+   void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4) {
+      float x1 = vertices.back().x;
+      float y1 = vertices.back().y;
+      for (float t = 0; t <= 1; t += 0.01) {
+         // Compute the Bezier curve points
+         float t_ = 1 - t;
+         float x = t_ * t_ * t_ * x1 + 3 * t_ * t_ * t * x2 + 3 * t_ * t * t * x3 + t * t * t * x4;
+         float y = t_ * t_ * t_ * y1 + 3 * t_ * t_ * t * y2 + 3 * t_ * t * t * y3 + t * t * t * y4;
+         vertex(x, y);
+      }
+   }
+
    void endShape(int type_ = OPEN) {
       // OPEN or CLOSE
       type = type_;
