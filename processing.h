@@ -1,7 +1,6 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-
 #include <GL/glew.h>     // GLEW library header
 #include <GL/gl.h>       // OpenGL header
 #include <GL/glu.h>      // GLU header
@@ -20,7 +19,6 @@
 
 #include "weak.h"
 #include "processing_math.h"
-#include "processing_transforms.h"
 #include "processing_color.h"
 #include "processing_java_compatability.h"
 #include "processing_pimage.h"
@@ -31,8 +29,6 @@
 
 SDL_Window *window;
 SDL_Renderer *renderer;
-
-
 
 // This is the global PGraphcs object that forms the top level canvas.
 PGraphics g;
@@ -90,7 +86,14 @@ MAKE_GLOBAL(noLights, g);
 MAKE_GLOBAL(ortho, g);
 MAKE_GLOBAL(perspective, g);
 MAKE_GLOBAL(camera, g);
-
+MAKE_GLOBAL(pushMatrix, g);
+MAKE_GLOBAL(popMatrix, g);
+MAKE_GLOBAL(translate, g);
+MAKE_GLOBAL(transform, g);
+MAKE_GLOBAL(scale, g);
+MAKE_GLOBAL(rotate, g);
+MAKE_GLOBAL(rotateY, g);
+MAKE_GLOBAL(rotateX, g);
 
 int setFrameRate = 60;
 void frameRate(int rate) {
@@ -221,12 +224,6 @@ void size(int _width, int _height, int mode = P2D) {
    }
 
    g = PGraphics(width, height, mode);
-
-   Mmatrix = glGetUniformLocation(g.programID, "Mmatrix");
-
-   move_matrix = Eigen::Matrix4f::Identity();
-   glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-
 }
 
 
@@ -270,6 +267,7 @@ int main(int argc, char* argv[]) {
    PFont::init();
    PImage::init();
 
+   // Call the sketch's setup.
    setup();
 
    Uint32 clock = SDL_GetTicks();
@@ -366,18 +364,9 @@ int main(int argc, char* argv[]) {
 
          if (xloop || frameCount == 0) {
 
-            glBindFramebuffer(GL_FRAMEBUFFER, g.localFboID);
-            glClear(GL_DEPTH_BUFFER_BIT);
-
+            // Call the sketch's draw()
             draw();
-
 	    if (g.localFboID != 0) {
-	       // Reset to default view settings to draw next frame and
-	       // draw the texture from the PGraphics flat.
-	       noLights();
-	       move_matrix = Eigen::Matrix4f::Identity();
-	       glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-
 	       g.draw_main();
             }
 

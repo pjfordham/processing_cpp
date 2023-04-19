@@ -4,13 +4,7 @@
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_earclipping.h"
-#include "processing_transforms.h"
 #include "processing_enum.h"
-
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
 
 class PShape {
 public:

@@ -62,9 +62,12 @@ public:
    GLuint Pmatrix;
    GLuint Vmatrix;
 
+   std::vector<Eigen::Matrix4f> matrix_stack;
+   Eigen::Matrix4f move_matrix; // Default is identity
 
+   GLuint Mmatrix;
 
-  PGraphics(const PGraphics &x) = delete;
+   PGraphics(const PGraphics &x) = delete;
 
    PGraphics(PGraphics &&x) {
       std::swap(bufferID, x.bufferID);
@@ -106,6 +109,9 @@ public:
       std::swap(view_matrix, x.view_matrix);
       std::swap(Pmatrix, x.Pmatrix);
       std::swap(Vmatrix, x.Vmatrix);
+      std::swap(matrix_stack, x.matrix_stack);
+      std::swap(move_matrix, x.move_matrix);
+      std::swap(Mmatrix, x.Mmatrix);
    }
 
    PGraphics& operator=(const PGraphics&) = delete;
@@ -150,6 +156,10 @@ public:
       std::swap(view_matrix, x.view_matrix);
       std::swap(Pmatrix, x.Pmatrix);
       std::swap(Vmatrix, x.Vmatrix);
+
+      std::swap(matrix_stack, x.matrix_stack);
+      std::swap(move_matrix, x.move_matrix);
+      std::swap(Mmatrix, x.Mmatrix);
       return *this;
    }
 
@@ -242,6 +252,11 @@ public:
       }
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+      Mmatrix = glGetUniformLocation(programID, "Mmatrix");
+
+      move_matrix = Eigen::Matrix4f::Identity();
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+
       noLights();
       camera();
       perspective();
@@ -249,6 +264,56 @@ public:
       background(WHITE);
    }
 
+
+   void pushMatrix() {
+      matrix_stack.push_back(move_matrix);
+   }
+
+   void popMatrix() {
+      move_matrix = matrix_stack.back();
+      matrix_stack.pop_back();
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
+
+   void translate(float x, float y, float z=0) {
+      move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
+
+   void transform(Eigen::Matrix4f transform_matrix) {
+      move_matrix = move_matrix * transform_matrix;
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
+
+   void scale(float x, float y,float z = 1) {
+      move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
+
+   void scale(float x) {
+      scale(x,x,x);
+   }
+
+   void rotate(float angle, PVector axis) {
+      move_matrix = move_matrix * RotateMatrix(angle,axis);
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
+
+
+   void rotate(float angle) {
+      move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
+
+   void rotateY(float angle) {
+      move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
+
+   void rotateX(float angle) {
+      move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+   }
 
    Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
       float f = 1 / tan(0.5 * fov);
@@ -1324,6 +1389,12 @@ public:
    void endDraw() {}
 
    void draw_main() {
+      // Reset to default view settings to draw next frame and
+      // draw the texture from the PGraphics flat.
+      noLights();
+      move_matrix = Eigen::Matrix4f::Identity();
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+
       Eigen::Matrix4f P = Eigen::Matrix4f::Identity();
       Eigen::Matrix4f V = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
 
@@ -1334,8 +1405,8 @@ public:
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       // Clear the color and depth buffers
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      // Draw the flipped PGraphics context
-      // For drawing the main screen we need to flip the texture and remove any tintint
+
+      // For drawing the main screen we need to flip the texture and remove any tint
       glTexturedQuad(
          {0.0f,           0.0f+height},
          {0.0f+width ,0.0f+height},
@@ -1344,6 +1415,10 @@ public:
          1.0,1.0, bufferID, 0, WHITE);
       glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
       glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+
+      // Clear the depth buffer but not what was drawn for the next frame
+      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      glClear(GL_DEPTH_BUFFER_BIT);
    }
 
    void draw(float x, float y, GLuint frame_buffer_id) {
