@@ -34,8 +34,8 @@ public:
    int rect_mode = CORNER;
    int image_mode = CORNER;
 
-   int gfx_width;
-   int gfx_height;
+   int width;
+   int height;
 
    PFont currentFont;
    int xTextAlign;
@@ -56,7 +56,15 @@ public:
    GLuint DirectionLightColor;
    GLuint DirectionLightVector;
 
-   PGraphics(const PGraphics &x) = delete;
+   Eigen::Matrix4f projection_matrix; // Default is identity
+   Eigen::Matrix4f view_matrix; // Default is identity
+
+   GLuint Pmatrix;
+   GLuint Vmatrix;
+
+
+
+  PGraphics(const PGraphics &x) = delete;
 
    PGraphics(PGraphics &&x) {
       std::swap(bufferID, x.bufferID);
@@ -76,8 +84,8 @@ public:
       std::swap(rect_mode, x.rect_mode);
       std::swap(image_mode, x.image_mode);
 
-      std::swap(gfx_width, x.gfx_width);
-      std::swap(gfx_height, x.gfx_height);
+      std::swap(width, x.width);
+      std::swap(height, x.height);
 
       std::swap(currentFont, x.currentFont);
       std::swap(xTextAlign, x.xTextAlign);
@@ -94,6 +102,10 @@ public:
       std::swap(AmbientLight, x.AmbientLight);
       std::swap(DirectionLightColor, x.DirectionLightColor);
       std::swap(DirectionLightVector, x.DirectionLightVector);
+      std::swap(projection_matrix, x.projection_matrix);
+      std::swap(view_matrix, x.view_matrix);
+      std::swap(Pmatrix, x.Pmatrix);
+      std::swap(Vmatrix, x.Vmatrix);
    }
 
    PGraphics& operator=(const PGraphics&) = delete;
@@ -115,8 +127,8 @@ public:
       std::swap(rect_mode, x.rect_mode);
       std::swap(image_mode, x.image_mode);
 
-      std::swap(gfx_width, x.gfx_width);
-      std::swap(gfx_height, x.gfx_height);
+      std::swap(width, x.width);
+      std::swap(height, x.height);
 
       std::swap(currentFont, x.currentFont);
       std::swap(xTextAlign, x.xTextAlign);
@@ -133,6 +145,11 @@ public:
       std::swap(AmbientLight, x.AmbientLight);
       std::swap(DirectionLightColor, x.DirectionLightColor);
       std::swap(DirectionLightVector, x.DirectionLightVector);
+
+      std::swap(projection_matrix, x.projection_matrix);
+      std::swap(view_matrix, x.view_matrix);
+      std::swap(Pmatrix, x.Pmatrix);
+      std::swap(Vmatrix, x.Vmatrix);
       return *this;
    }
 
@@ -151,7 +168,7 @@ public:
          glDeleteRenderbuffers(1, &depthBufferID);
    }
 
-   PGraphics(int width, int height, int mode, bool fb = false) {
+   PGraphics(int z_width, int z_height, int mode, bool fb = false) {
       if (fb) {
          // Use main framebuffer
          localFboID = 0;
@@ -169,14 +186,14 @@ public:
       if (!fb) {
          glGenRenderbuffers(1, &depthBufferID);
          glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, z_width, z_height);
 
          // Attach the depth buffer to the framebuffer object
          glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
       }
 
-      gfx_width = width;
-      gfx_height = height;
+      width = z_width;
+      height = z_height;
 
       programID = LoadShaders(Shaders3D());
       glUseProgram(programID);
@@ -185,6 +202,10 @@ public:
       AmbientLight = glGetUniformLocation(programID, "ambientLight");
       DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
       DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
+
+      // Get a handle for our "MVP" uniform
+      Pmatrix = glGetUniformLocation(programID, "Pmatrix");
+      Vmatrix = glGetUniformLocation(programID, "Vmatrix");
 
 
       // Create a white OpenGL texture
@@ -202,12 +223,94 @@ public:
          // Create a texture to render to
          glGenTextures(1, &bufferID);
          glBindTexture(GL_TEXTURE_2D, bufferID);
-         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, z_width, z_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
          glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferID, 0);
       }
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
+   }
+
+
+   Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
+      float f = 1 / tan(0.5 * fov);
+      float rangeInv = 1.0 / (near - far);
+      float A = (near + far) * rangeInv;
+      float B = near * far * rangeInv * 2;
+      Eigen::Matrix4f ret = Eigen::Matrix4f{
+         { f/a,  0,  0,  0 },
+         {   0,  f,  0,  0 },
+         {   0,  0,  A,  B },
+         {   0,  0, -1,  0 }
+      };
+      return ret;
+   }
+   
+   void ortho(float left, float right, float bottom, float top, float near, float far) {
+      float tx = -(right + left) / (right - left);
+      float ty = -(top + bottom) / (top - bottom);
+      float tz = -(far + near) / (far - near);
+
+      projection_matrix = Eigen::Matrix4f{
+         { 2/(right-left),               0,              0,  tx },
+         {              0,  2/(top-bottom),              0,  ty },
+         {              0,               0, -2/(far - near), tz },
+         {              0,               0,              0,   1 }
+      };
+      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+   }
+
+   void ortho(float left, float right, float bottom, float top) {
+      ortho(left, right, bottom, top, bottom*2, top*2);
+   }
+
+   void ortho() {
+      ortho(-width / 2.0, width / 2.0, -height / 2.0, height / 2.0);
+   }
+
+   void perspective(float angle, float aspect, float minZ, float maxZ) {
+      projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
+      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+   }
+
+   void perspective() {
+      float fov = PI/3.0;
+      float cameraZ = (height/2.0) / tan(fov/2.0);
+      perspective( fov, (float)width/(float)height, cameraZ/10.0,  cameraZ*10.0);
+   }
+
+   void camera( float eyeX, float eyeY, float eyeZ,
+                float centerX, float centerY, float centerZ,
+                float upX, float upY, float upZ ) {
+
+      Eigen::Vector3f center = Eigen::Vector3f{centerX, centerY, centerZ};
+      Eigen::Vector3f eye =  Eigen::Vector3f{eyeX,eyeY,eyeZ};
+      Eigen::Vector3f _up = Eigen::Vector3f{upX,upY,upZ};
+
+      Eigen::Vector3f forward = (center - eye).normalized();
+      Eigen::Vector3f side = forward.cross(_up).normalized();
+      Eigen::Vector3f up = side.cross(forward).normalized();
+
+      Eigen::Matrix4f view{
+         {    side[0],     side[1],     side[2], 0.0f},
+         {      up[0],       up[1],       up[2], 0.0f},
+         {-forward[0], -forward[1], -forward[2], 0.0f},
+         {       0.0f,        0.0f,        0.0f, 1.0f} };
+
+      Eigen::Matrix4f translate{
+         {1.0,    0,     0,    -eyeX} ,
+         {0,    1.0,     0,    -eyeY},
+         {0,      0,   1.0,    -eyeZ},
+         {0.0f, 0.0f,  0.0f,    1.0f} };
+
+      // Translate the camera to the origin
+      view_matrix = view * translate;
+      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+   }
+
+   void camera() {
+      camera(width / 2.0, height / 2.0, (height / 2.0) / tan(PI * 30.0 / 180.0),
+             width / 2.0, height / 2.0, 0, 0, 1, 0);
    }
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
@@ -252,27 +355,27 @@ public:
    }
 
 
-   void text(std::string text, float x, float y, float width=-1, float height=-1) {
-      GLuint textureID = currentFont.render_text(text, fill_color, width, height);
+   void text(std::string text, float x, float y, float twidth=-1, float theight=-1) {
+      GLuint textureID = currentFont.render_text(text, fill_color, twidth, theight);
 
       // this works well enough for the Letters.cc example but it's not really general
       if ( xTextAlign == CENTER ) {
-         x = x - width / 2;
+         x = x - twidth / 2;
       }
       if ( yTextAlign == CENTER ) {
-         y = y - height / 2;
+         y = y - theight / 2;
       }
 
-      glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height},
+      glTexturedQuad(PVector{x,y},PVector{x+twidth,y},PVector{x+twidth,y+theight}, PVector{x,y+theight},
                      1.0, 1.0, textureID, localFboID, WHITE);
 
       glDeleteTextures(1, &textureID);
 
    }
 
-   void text(char c, float x, float y, float width = -1, float height = -1) {
+   void text(char c, float x, float y, float twidth = -1, float theight = -1) {
       std::string s(&c,1);
-      text(s,x,y,width,height);
+      text(s,x,y,twidth,theight);
    }
 
    void background(float r, float g, float b) {
@@ -386,10 +489,10 @@ public:
 
    GLuint createTextureCopy(GLuint srcTexture) {
       // Get the width and height of the source texture
-      GLint width, height;
+      GLint tex_width, tex_height;
       glBindTexture(GL_TEXTURE_2D, srcTexture);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tex_width);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &tex_height);
       glBindTexture(GL_TEXTURE_2D, 0);
 
       // Create a new texture to hold the copy
@@ -406,10 +509,10 @@ public:
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
       // Copy the pixels from the source texture
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
       glCopyImageSubData(srcTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
                          dstTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
-                         width, height, 1);
+                         tex_width, tex_height, 1);
 
       // Unbind the textures
       glBindTexture(GL_TEXTURE_2D, 0);
@@ -655,17 +758,17 @@ public:
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
       if ( image_mode == CORNER ) {
-         float width = right;
-         float height = bottom;
-         right = left + width;
-         bottom = top + height;
+         float iwidth = right;
+         float iheight = bottom;
+         right = left + iwidth;
+         bottom = top + iheight;
       } else if ( image_mode == CENTER ) {
-         float width = right;
-         float height = bottom;
-         left = left - ( width / 2.0 );
-         top = top - ( height / 2.0 );
-         right = left + width;
-         bottom = top + height;
+         float iwidth = right;
+         float iheight = bottom;
+         left = left - ( iwidth / 2.0 );
+         top = top - ( iheight / 2.0 );
+         right = left + iwidth;
+         bottom = top + iheight;
       }
       glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, 1.0,1.0,
                      pimage.get_texture_id(), localFboID, tint_color);
@@ -688,7 +791,7 @@ public:
    }
 
    void loadPixels() {
-      pixels.resize(gfx_width*gfx_height);
+      pixels.resize(width*height);
       glBindTexture(GL_TEXTURE_2D, bufferID);
       // Read the pixel data from the framebuffer into the array
       glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
@@ -697,7 +800,7 @@ public:
    void updatePixels() {
       // Write the pixel data to the framebuffer
       glBindTexture(GL_TEXTURE_2D, bufferID);
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, gfx_width, gfx_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
       // _pixels.clear();
       // pixels = NULL;
    }
@@ -898,7 +1001,7 @@ public:
       return triangles;
    }
 
-   void shape_stroke(PShape &pshape, float x, float y, float width, float height, color color) {
+   void shape_stroke(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
       if (color.a == 0)
          return;
       switch( pshape.style ) {
@@ -939,7 +1042,7 @@ public:
 
    }
 
-   void shape_fill(PShape &pshape, float x, float y, float width, float height, color color) {
+   void shape_fill(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
       if (color.a == 0)
          return;
       switch( pshape.style ) {
@@ -962,7 +1065,7 @@ public:
       }
    }
 
-   void shape(PShape &pshape, float x, float y, float width, float height) {
+   void shape(PShape &pshape, float x, float y, float swidth, float sheight) {
       pushMatrix();
       translate(x,y);
       scale(1,1); // Need to fix this properly
@@ -972,8 +1075,8 @@ public:
             shape(child,0,0,0,0);
          }
       } else {
-         shape_fill(pshape, x,y,width,height,fill_color);
-         shape_stroke(pshape, x,y,width,height, stroke_color);
+         shape_fill(pshape, x,y,swidth,sheight,fill_color);
+         shape_stroke(pshape, x,y,swidth,sheight, stroke_color);
       }
       popMatrix();
    }
@@ -1203,6 +1306,12 @@ public:
    void endDraw() {}
 
    void draw_main() {
+      Eigen::Matrix4f P = Eigen::Matrix4f::Identity();
+      Eigen::Matrix4f V = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
+
+      glUniformMatrix4fv(Pmatrix, 1,false, P.data());
+      glUniformMatrix4fv(Vmatrix, 1,false, V.data());
+
       // bind the real frame buffer
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       // Clear the color and depth buffers
@@ -1210,18 +1319,20 @@ public:
       // Draw the flipped PGraphics context
       // For drawing the main screen we need to flip the texture and remove any tintint
       glTexturedQuad(
-         {0.0f,           0.0f+gfx_height},
-         {0.0f+gfx_width ,0.0f+gfx_height},
-         {0.0f+gfx_width, 0.0f},
+         {0.0f,           0.0f+height},
+         {0.0f+width ,0.0f+height},
+         {0.0f+width, 0.0f},
          {0.0f,           0.0f},
          1.0,1.0, bufferID, 0, WHITE);
+      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
    }
 
    void draw(float x, float y, GLuint frame_buffer_id) {
       glTexturedQuad( {x, y},
-                      {x+gfx_width,y},
-                      {x+gfx_width,y+gfx_height},
-                      {x,y+gfx_height},
+                      {x+width,y},
+                      {x+width,y+height},
+                      {x,y+height},
                       1.0,1.0, bufferID, frame_buffer_id, tint_color);
    }
 };

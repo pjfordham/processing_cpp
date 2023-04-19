@@ -32,27 +32,6 @@
 SDL_Window *window;
 SDL_Renderer *renderer;
 
-Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
-   float f = 1 / tan(0.5 * fov);
-   float rangeInv = 1.0 / (near - far);
-   float A = (near + far) * rangeInv;
-   float B = near * far * rangeInv * 2;
-   Eigen::Matrix4f ret = Eigen::Matrix4f{
-      { f/a,  0,  0,  0 },
-      {   0,  f,  0,  0 },
-      {   0,  0,  A,  B },
-      {   0,  0, -1,  0 }
-   };
-   return ret;
-}
-
-Eigen::Matrix4f projection_matrix; // Default is identity
-Eigen::Matrix4f view_matrix; // Default is identity
-
-GLuint Pmatrix;
-GLuint Vmatrix;
-
-
 
 
 // This is the global PGraphcs object that forms the top level canvas.
@@ -108,6 +87,9 @@ MAKE_GLOBAL(directionalLight, g);
 MAKE_GLOBAL(ambientLight, g);
 MAKE_GLOBAL(lights, g);
 MAKE_GLOBAL(noLights, g);
+MAKE_GLOBAL(ortho, g);
+MAKE_GLOBAL(perspective, g);
+MAKE_GLOBAL(camera, g);
 
 
 int setFrameRate = 60;
@@ -209,73 +191,6 @@ int height = 0;
 SDL_GLContext glContext = NULL;
 
 
-void ortho(float left, float right, float bottom, float top, float near, float far) {
-   float tx = -(right + left) / (right - left);
-   float ty = -(top + bottom) / (top - bottom);
-   float tz = -(far + near) / (far - near);
-
-   projection_matrix = Eigen::Matrix4f{
-      { 2/(right-left),               0,              0,  tx },
-      {              0,  2/(top-bottom),              0,  ty },
-      {              0,               0, -2/(far - near), tz },
-      {              0,               0,              0,   1 }
-   };
-   glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-}
-
-void ortho(float left, float right, float bottom, float top) {
-   ortho(left, right, bottom, top, bottom*2, top*2);
-}
-
-void ortho() {
-   ortho(-width / 2.0, width / 2.0, -height / 2.0, height / 2.0);
-}
-
-void perspective(float angle, float aspect, float minZ, float maxZ) {
-   projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
-   glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-}
-
-void perspective() {
-   float fov = PI/3.0;
-   float cameraZ = (height/2.0) / tan(fov/2.0);
-   perspective( fov, (float)width/(float)height, cameraZ/10.0,  cameraZ*10.0);
-}
-
-void camera( float eyeX, float eyeY, float eyeZ,
-             float centerX, float centerY, float centerZ,
-             float upX, float upY, float upZ ) {
-
-   Eigen::Vector3f center = Eigen::Vector3f{centerX, centerY, centerZ};
-   Eigen::Vector3f eye =  Eigen::Vector3f{eyeX,eyeY,eyeZ};
-   Eigen::Vector3f _up = Eigen::Vector3f{upX,upY,upZ};
-
-   Eigen::Vector3f forward = (center - eye).normalized();
-   Eigen::Vector3f side = forward.cross(_up).normalized();
-   Eigen::Vector3f up = side.cross(forward).normalized();
-
-   Eigen::Matrix4f view{
-      {    side[0],     side[1],     side[2], 0.0f},
-      {      up[0],       up[1],       up[2], 0.0f},
-      {-forward[0], -forward[1], -forward[2], 0.0f},
-      {       0.0f,        0.0f,        0.0f, 1.0f} };
-
-   Eigen::Matrix4f translate{
-      {1.0,    0,     0,    -eyeX} ,
-      {0,    1.0,     0,    -eyeY},
-      {0,      0,   1.0,    -eyeZ},
-      {0.0f, 0.0f,  0.0f,    1.0f} };
-
-   // Translate the camera to the origin
-   view_matrix = view * translate;
-   glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
-}
-
-void camera() {
-   camera(width / 2.0, height / 2.0, (height / 2.0) / tan(PI * 30.0 / 180.0),
-          width / 2.0, height / 2.0, 0, 0, 1, 0);
-}
-
 void size(int _width, int _height, int mode = P2D) {
    // Create a window
    width = _width;
@@ -319,9 +234,6 @@ void size(int _width, int _height, int mode = P2D) {
 
    g = PGraphics(width, height, mode);
 
-   // Get a handle for our "MVP" uniform
-   Pmatrix = glGetUniformLocation(g.programID, "Pmatrix");
-   Vmatrix = glGetUniformLocation(g.programID, "Vmatrix");
    Mmatrix = glGetUniformLocation(g.programID, "Mmatrix");
 
    move_matrix = Eigen::Matrix4f::Identity();
@@ -483,17 +395,8 @@ int main(int argc, char* argv[]) {
 	       move_matrix = Eigen::Matrix4f::Identity();
 	       glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 
-	       Eigen::Matrix4f P = Eigen::Matrix4f::Identity();
-	       Eigen::Matrix4f V = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
-
-	       glUniformMatrix4fv(Pmatrix, 1,false, P.data());
-	       glUniformMatrix4fv(Vmatrix, 1,false, V.data());
-
 	       g.draw_main();
-
-	       glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-	       glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
-	    }
+            }
 
             SDL_GL_SwapWindow(window);
 
