@@ -10,6 +10,7 @@
 #include "processing_color.h"
 #include "processing_pshape.h"
 #include "processing_pimage.h"
+#include "processing_pfont.h"
 
 extern GLuint programID;
 
@@ -127,6 +128,52 @@ public:
          glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferID, 0);
       }
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
+   }
+
+   PFont currentFont;
+
+   void textFont(PFont font) {
+      currentFont = font;
+   }
+
+   int xTextAlign;
+   int yTextAlign;
+
+   void textAlign(int x, int y) {
+      xTextAlign = x;
+      yTextAlign = y;
+   }
+
+   void textAlign(int x) {
+      xTextAlign = x;
+   }
+
+   void textSize(int size) {
+      currentFont = createFont(currentFont.name, size);
+   }
+
+
+   void text(std::string text, float x, float y, float width=-1, float height=-1) {
+      GLuint textureID = currentFont.render_text(text, cm.fill_color, width, height);
+
+      // this works well enough for the Letters.cc example but it's not really general
+      if ( xTextAlign == CENTER ) {
+         x = x - width / 2;
+      }
+      if ( yTextAlign == CENTER ) {
+         y = y - height / 2;
+      }
+
+      glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height},
+                     1.0, 1.0, textureID, localFboID, WHITE);
+
+      glDeleteTextures(1, &textureID);
+
+   }
+
+   void text(char c, float x, float y, float width = -1, float height = -1) {
+      std::string s(&c,1);
+      text(s,x,y,width,height);
    }
 
    void background(float r, float g, float b) {

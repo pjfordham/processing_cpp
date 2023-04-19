@@ -124,12 +124,11 @@ GLuint Vmatrix;
 
 
 
-
-// ----
-// Begin shapes managed by Pshape.
-// ----
+// This is the global PGraphcs object that forms the top level canvas.
 PGraphics g;
 
+// This macro and it's following uses pull the API from PGraphcs into
+// the global namespace dispatching to the PGraphics object g.
 #define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args... args) { return instance.method(args...); }
 
 MAKE_GLOBAL(background, g);
@@ -153,7 +152,6 @@ MAKE_GLOBAL(noTexture, g);
 MAKE_GLOBAL(box, g);
 MAKE_GLOBAL(sphere, g);
 MAKE_GLOBAL(sphereDetail, g);
-
 MAKE_GLOBAL(createRect, g);
 MAKE_GLOBAL(createQuad, g);
 MAKE_GLOBAL(createLine, g);
@@ -161,7 +159,6 @@ MAKE_GLOBAL(createTriangle, g);
 MAKE_GLOBAL(createArc, g);
 MAKE_GLOBAL(createEllipse, g);
 MAKE_GLOBAL(createPoint, g);
-
 MAKE_GLOBAL(fill, g);
 MAKE_GLOBAL(noFill, g);
 MAKE_GLOBAL(noStroke, g);
@@ -171,10 +168,12 @@ MAKE_GLOBAL(strokeCap, g);
 MAKE_GLOBAL(ellipseMode, g);
 MAKE_GLOBAL(rectMode, g);
 MAKE_GLOBAL(noSmooth,g);
+MAKE_GLOBAL(updatePixels, g);
+MAKE_GLOBAL(textFont, g);
+MAKE_GLOBAL(textAlign, g);
+MAKE_GLOBAL(textSize, g);
+MAKE_GLOBAL(text, g);
 
-// ----
-// End shapes managed by Pshape.
-// ----
 
 
 int setFrameRate = 60;
@@ -447,54 +446,6 @@ Uint32 *pixels; // pointer to the texture's pixel data in the desired format
 void loadPixels() {
    g.loadPixels();
    pixels = g.pixels.data();
-}
-
-MAKE_GLOBAL(updatePixels, g);
-
-PFont PFont::currentFont;
-
-void textFont(PFont font) {
-   PFont::currentFont = font;
-}
-
-int xTextAlign;
-int yTextAlign;
-
-void textAlign(int x, int y) {
-   xTextAlign = x;
-   yTextAlign = y;
-}
-
-void textAlign(int x) {
-   xTextAlign = x;
-}
-
-void textSize(int size) {
-   PFont::currentFont = createFont(PFont::currentFont.name, size);
-}
-
-
-void text(std::string text, float x, float y, float width=-1, float height=-1) {
-   GLuint textureID = PFont::currentFont.render_text(text, g.cm.fill_color, width, height);
-
-   // this works well enough for the Letters.cc example but it's not really general
-   if ( xTextAlign == CENTER ) {
-      x = x - width / 2;
-   }
-   if ( yTextAlign == CENTER ) {
-      y = y - height / 2;
-   }
-
-   g.glTexturedQuad(PVector{x,y},PVector{x+width,y},PVector{x+width,y+height}, PVector{x,y+height},
-		    1.0, 1.0, textureID, g.localFboID, WHITE);
-
-   glDeleteTextures(1, &textureID);
-
-}
-
-void text(char c, float x, float y, float width = -1, float height = -1) {
-   std::string s(&c,1);
-   text(s,x,y,width,height);
 }
 
 int frameCount = 0;

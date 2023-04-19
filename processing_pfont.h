@@ -18,8 +18,6 @@ class PFont {
 public:
    static std::map<PFont, TTF_Font *> fontMap;
 
-   static PFont currentFont;
-
    static void init() {
       TTF_Font* font = NULL;
       if (TTF_Init() != 0) {
@@ -62,7 +60,7 @@ public:
    }
 
    GLuint render_text(std::string text, color color, float &width, float &height) {
-      SDL_Surface* surface = TTF_RenderText_Blended(fontMap[currentFont], text.c_str(),
+      SDL_Surface* surface = TTF_RenderText_Blended(fontMap[*this], text.c_str(),
                                                     { (unsigned char)color.r,
                                                       (unsigned char)color.g,
                                                       (unsigned char)color.b,
