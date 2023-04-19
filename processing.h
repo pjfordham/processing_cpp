@@ -220,18 +220,6 @@ void size(int _width, int _height, int mode = P2D) {
       abort();
    }
 
-   // Initialize GLEW
-   glewExperimental = true; // Needed for core profile
-   if (glewInit() != GLEW_OK) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
-      abort();
-   }
-
-   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
-      abort();
-   }
-
    g = PGraphics(width, height, mode);
 
    Mmatrix = glGetUniformLocation(g.programID, "Mmatrix");
@@ -239,11 +227,6 @@ void size(int _width, int _height, int mode = P2D) {
    move_matrix = Eigen::Matrix4f::Identity();
    glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 
-   noLights();
-   camera();
-   perspective();
-
-   background(WHITE);
 }
 
 

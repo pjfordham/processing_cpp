@@ -169,6 +169,18 @@ public:
    }
 
    PGraphics(int z_width, int z_height, int mode, bool fb = false) {
+      // Initialize GLEW
+      glewExperimental = true; // Needed for core profile
+      if (glewInit() != GLEW_OK) {
+         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
+         abort();
+      }
+
+      if (!glewIsSupported("GL_EXT_framebuffer_object")) {
+         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
+         abort();
+      }
+
       if (fb) {
          // Use main framebuffer
          localFboID = 0;
@@ -229,6 +241,12 @@ public:
          glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferID, 0);
       }
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+      noLights();
+      camera();
+      perspective();
+
+      background(WHITE);
    }
 
 
