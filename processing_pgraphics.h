@@ -6,30 +6,16 @@
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
 
+#include "processing_opengl_shaders.h"
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_pshape.h"
 #include "processing_pimage.h"
 #include "processing_pfont.h"
 
-extern GLuint programID;
-
 enum {
    P2D, P3D
 };
-
-struct DrawingMode {
-   int stroke_weight = 1;
-   int line_end_cap = ROUND;
-   int ellipse_mode = DIAMETER;
-   int rect_mode = CORNER;
-};
-
-struct ColorMode {
-   color stroke_color{255,255,255,255};
-   color fill_color{255,255,255,255};
-};
-
 
 class PGraphics {
 public:
@@ -37,11 +23,33 @@ public:
    GLuint localFboID;
    GLuint depthBufferID;
    GLuint whiteTextureID;
+   GLuint Color;
+   GLuint programID;
+   GLuint currentTextureID = 0;
 
-   DrawingMode dm{};
-   ColorMode cm{};
+   color stroke_color = WHITE;
+   color fill_color = WHITE;
+   color tint_color = WHITE;
 
-   int gfx_width, gfx_height;
+   int stroke_weight = 1;
+   int line_end_cap = ROUND;
+   int ellipse_mode = DIAMETER;
+   int rect_mode = CORNER;
+   int image_mode = CORNER;
+
+   int gfx_width;
+   int gfx_height;
+
+   PFont currentFont;
+   int xTextAlign;
+   int yTextAlign;
+
+   float xsphere_ures = 30;
+   float xsphere_vres = 30;
+
+   bool xSmoothing = true;
+   PShape _shape;
+   std::vector<Uint32> pixels;
 
    PGraphics(const PGraphics &x) = delete;
 
@@ -49,10 +57,31 @@ public:
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
       std::swap(depthBufferID, x.depthBufferID);
+      std::swap(Color, x.Color);
+      std::swap(programID, x.programID);
+      std::swap(currentTextureID, x.currentTextureID);
+
+      std::swap(stroke_color, x.stroke_color);
+      std::swap(fill_color, x.fill_color);
+      std::swap(tint_color, x.tint_color);
+
+      std::swap(stroke_weight, x.stroke_weight);
+      std::swap(line_end_cap, x.line_end_cap);
+      std::swap(ellipse_mode, x.ellipse_mode);
+      std::swap(rect_mode, x.rect_mode);
+      std::swap(image_mode, x.image_mode);
+
       std::swap(gfx_width, x.gfx_width);
       std::swap(gfx_height, x.gfx_height);
-      std::swap(cm, x.cm);
-      std::swap(dm, x.dm);
+
+      std::swap(currentFont, x.currentFont);
+      std::swap(xTextAlign, x.xTextAlign);
+      std::swap(yTextAlign, x.yTextAlign);
+      std::swap(xsphere_ures, x.xsphere_ures);
+      std::swap(xsphere_vres, x.xsphere_vres);
+      std::swap(xSmoothing, x.xSmoothing);
+      std::swap(_shape, x._shape);
+      std::swap(pixels, x.pixels);
    }
 
    PGraphics& operator=(const PGraphics&) = delete;
@@ -60,10 +89,31 @@ public:
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
       std::swap(depthBufferID, x.depthBufferID);
+      std::swap(Color, x.Color);
+      std::swap(programID, x.programID);
+      std::swap(currentTextureID, x.currentTextureID);
+
+      std::swap(stroke_color, x.stroke_color);
+      std::swap(fill_color, x.fill_color);
+      std::swap(tint_color, x.tint_color);
+
+      std::swap(stroke_weight, x.stroke_weight);
+      std::swap(line_end_cap, x.line_end_cap);
+      std::swap(ellipse_mode, x.ellipse_mode);
+      std::swap(rect_mode, x.rect_mode);
+      std::swap(image_mode, x.image_mode);
+
       std::swap(gfx_width, x.gfx_width);
       std::swap(gfx_height, x.gfx_height);
-      std::swap(cm, x.cm);
-      std::swap(dm, x.dm);
+
+      std::swap(currentFont, x.currentFont);
+      std::swap(xTextAlign, x.xTextAlign);
+      std::swap(yTextAlign, x.yTextAlign);
+      std::swap(xsphere_ures, x.xsphere_ures);
+      std::swap(xsphere_vres, x.xsphere_vres);
+      std::swap(xSmoothing, x.xSmoothing);
+      std::swap(_shape, x._shape);
+      std::swap(pixels, x.pixels);
       return *this;
    }
 
@@ -72,6 +122,7 @@ public:
       bufferID = 0;
       depthBufferID = 0;
    }
+
    ~PGraphics() {
       if (localFboID)
          glDeleteFramebuffers(1, &localFboID);
@@ -80,6 +131,7 @@ public:
       if (depthBufferID)
          glDeleteRenderbuffers(1, &depthBufferID);
    }
+
    PGraphics(int width, int height, int mode, bool fb = false) {
       if (fb) {
          // Use main framebuffer
@@ -107,6 +159,11 @@ public:
       gfx_width = width;
       gfx_height = height;
 
+      programID = LoadShaders(Shaders3D());
+      glUseProgram(programID);
+
+      Color = glGetUniformLocation(programID, "color");
+
       // Create a white OpenGL texture
       unsigned int white = 0xFFFFFFFF;
       glGenTextures(1, &whiteTextureID);
@@ -130,14 +187,9 @@ public:
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
    }
 
-   PFont currentFont;
-
    void textFont(PFont font) {
       currentFont = font;
    }
-
-   int xTextAlign;
-   int yTextAlign;
 
    void textAlign(int x, int y) {
       xTextAlign = x;
@@ -154,7 +206,7 @@ public:
 
 
    void text(std::string text, float x, float y, float width=-1, float height=-1) {
-      GLuint textureID = currentFont.render_text(text, cm.fill_color, width, height);
+      GLuint textureID = currentFont.render_text(text, fill_color, width, height);
 
       // this works well enough for the Letters.cc example but it's not really general
       if ( xTextAlign == CENTER ) {
@@ -201,7 +253,7 @@ public:
       GLuint buffer_id = 0;
       GLuint attribId;
    public:
-      GL_FLOAT_buffer(const void *data, int size, const char *attrib, int count, int stride, void* offset) {
+      GL_FLOAT_buffer(GLuint programID, const void *data, int size, const char *attrib, int count, int stride, void* offset) {
          if (size > 0) {
             glGenBuffers(1, &buffer_id);
             glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
@@ -247,7 +299,6 @@ public:
          glBindTexture(GL_TEXTURE_2D, whiteTextureID);
       }
 
-      extern GLuint Color;
       float color_vec[] = {
          color.r/255.0f,
          color.g/255.0f,
@@ -260,10 +311,10 @@ public:
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
 
-      GL_FLOAT_buffer vertex( vertices.data(), vertices.size() * 3, "position", 3,
+      GL_FLOAT_buffer vertex( programID, vertices.data(), vertices.size() * 3, "position", 3,
                               sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer normal( normals.data(),  normals.size() * 3,  "normal",   3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer coord(  coords.data(),   coords.size() * 3,   "coords",   2, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer normal( programID, normals.data(),  normals.size() * 3,  "normal",   3, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer coord(  programID, coords.data(),   coords.size() * 3,   "coords",   2, sizeof(PVector), (void*)offsetof(PVector,x));
 
       if ( indices.size() > 0 ) {
          GLuint indexbuffer;
@@ -285,8 +336,6 @@ public:
       glBindBuffer(GL_ARRAY_BUFFER, 0);
       glBindVertexArray(0);
    }
-
-   GLuint currentTextureID = 0;
 
    GLuint createTextureCopy(GLuint srcTexture) {
       // Get the width and height of the source texture
@@ -333,12 +382,10 @@ public:
       currentTextureID = createTextureCopy( img.get_texture_id() );
    }
 
-   int image_mode = CORNER;
    void imageMode(int iMode) {
       image_mode = iMode;
    }
 
-   color tint_color = WHITE;
    void tint(float r,float g,  float b, float a) {
       tint_color = flatten_color_mode(r,g,b,a);
    }
@@ -492,16 +539,13 @@ public:
       if (currentTextureID) {
          drawGeometry(vertices, normals, coords, triangles, GL_TRIANGLES, localFboID, tint_color);
       }else {
-         drawGeometry(vertices, normals, coords, triangles, GL_TRIANGLES, localFboID, cm.fill_color);
+         drawGeometry(vertices, normals, coords, triangles, GL_TRIANGLES, localFboID, fill_color);
       }
    };
 
    void box(float size) {
       box(size, size, size);
    }
-
-   float xsphere_ures = 30;
-   float xsphere_vres = 30;
 
    void sphereDetail(float ures, float vres) {
       xsphere_ures = ures;
@@ -555,7 +599,7 @@ public:
             indices.push_back(idx3);
          }
       }
-      drawGeometry(vertices, normals,coords, indices, GL_TRIANGLES, localFboID, cm.fill_color);
+      drawGeometry(vertices, normals,coords, indices, GL_TRIANGLES, localFboID, fill_color);
    }
 
    void image( PImage &pimage, float left, float top, float right, float bottom) {
@@ -592,7 +636,6 @@ public:
       image(bg,0,0);
    }
 
-   std::vector<Uint32> pixels;
    void loadPixels() {
       pixels.resize(gfx_width*gfx_height);
       glBindTexture(GL_TEXTURE_2D, bufferID);
@@ -612,7 +655,7 @@ public:
    // Begin shapes managed by Pshape.
    // ----
    void fill(float r,float g,  float b, float a) {
-      cm.fill_color = flatten_color_mode(r,g,b,a);
+      fill_color = flatten_color_mode(r,g,b,a);
    }
 
    void fill(float r,float g, float b) {
@@ -644,7 +687,7 @@ public:
    }
 
    void stroke(float r,float g,  float b, float a) {
-      cm.stroke_color = flatten_color_mode(r,g,b,a);
+      stroke_color = flatten_color_mode(r,g,b,a);
    }
 
    void stroke(float r,float g, float b) {
@@ -677,19 +720,19 @@ public:
    }
 
    void strokeWeight(int x) {
-      dm.stroke_weight = x;
+      stroke_weight = x;
    }
 
    void noStroke() {
-      cm.stroke_color = {0,0,0,0};
+      stroke_color = {0,0,0,0};
    }
 
    void noFill() {
-      cm.fill_color = {0,0,0,0};
+      fill_color = {0,0,0,0};
    }
 
    void ellipseMode(int mode) {
-      dm.ellipse_mode = mode;
+      ellipse_mode = mode;
    }
 
    void printMatrix4f(const Eigen::Matrix4f& mat) {
@@ -811,20 +854,20 @@ public:
       case POINTS:
       {
          for (auto z : pshape.vertices ) {
-            PShape xshape = createEllipse(z.x, z.y, dm.stroke_weight, dm.stroke_weight);
+            PShape xshape = createEllipse(z.x, z.y, stroke_weight, stroke_weight);
             shape_fill( xshape,0,0,0,0,color );
          }
          break;
       }
       case POLYGON:
       {
-         PShape xshape = glLinePoly( pshape.vertices.size(), pshape.vertices.data(), dm.stroke_weight, pshape.type == CLOSE);
+         PShape xshape = glLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE);
          shape_fill( xshape,0,0,0,0,color );
          break;
       }
       case TRIANGLE_STRIP:
       {
-         PShape xshape = glTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), dm.stroke_weight);
+         PShape xshape = glTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight);
          shape_fill( xshape,0,0,0,0,color );
          break;
       }
@@ -878,8 +921,8 @@ public:
             shape(child,0,0,0,0);
          }
       } else {
-         shape_fill(pshape, x,y,width,height,cm.fill_color);
-         shape_stroke(pshape, x,y,width,height, cm.stroke_color);
+         shape_fill(pshape, x,y,width,height,fill_color);
+         shape_stroke(pshape, x,y,width,height, stroke_color);
       }
       popMatrix();
    }
@@ -903,7 +946,7 @@ public:
    }
 
    void strokeCap(int cap) {
-      dm.line_end_cap = cap;
+      line_end_cap = cap;
    }
 
    void line(float x1, float y1, float x2, float y2) {
@@ -943,8 +986,6 @@ public:
       shape( pshape );
    }
 
-   PShape _shape;
-
    void beginShape(int points = POLYGON) {
       _shape = PShape();
       _shape.beginShape(points);
@@ -960,7 +1001,7 @@ public:
    }
 
    void rectMode(int mode){
-      dm.rect_mode = mode;
+      rect_mode = mode;
    }
 
 
@@ -981,13 +1022,13 @@ public:
 
 
    PShape createRect(float x, float y, float width, float height) {
-      if (dm.rect_mode == CORNERS) {
+      if (rect_mode == CORNERS) {
          width = width - x;
          height = height - y;
-      } else if (dm.rect_mode == CENTER) {
+      } else if (rect_mode == CENTER) {
          x = x - width / 2;
          y = y - height / 2;
-      } else if (dm.rect_mode == RADIUS) {
+      } else if (rect_mode == RADIUS) {
          width *= 2;
          height *= 2;
          x = x - width / 2;
@@ -1051,7 +1092,7 @@ public:
    }
 
    PShape createEllipse(float x, float y, float width, float height) {
-      if (dm.ellipse_mode != RADIUS) {
+      if (ellipse_mode != RADIUS) {
          width /=2;
          height /=2;
       }
@@ -1068,7 +1109,7 @@ public:
    PShape createArc(float x, float y, float width, float height, float start,
                     float stop, int mode = DEFAULT) {
 
-      if (dm.ellipse_mode != RADIUS) {
+      if (ellipse_mode != RADIUS) {
          width /=2;
          height /=2;
       }
@@ -1100,7 +1141,7 @@ public:
 // End shapes managed by Pshape.
 // ----
 
-   bool xSmoothing = true;
+
 
    void noSmooth() {
       // Doesn't yet apply to actual graphics
@@ -1138,8 +1179,6 @@ public:
 PGraphics createGraphics(int width, int height, int mode = P2D) {
    return { width, height, mode };
 }
-
-extern PGraphics g;
 
 void image(PGraphics &gfx, int x, int y) {
    gfx.draw(x,y);

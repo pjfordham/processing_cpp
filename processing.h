@@ -7,8 +7,6 @@
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
 
-#include "processing_opengl_shaders.h"
-
 #include <Eigen/Dense>
 
 #include <SDL2/SDL.h>
@@ -115,9 +113,6 @@ Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far)
 Eigen::Matrix4f projection_matrix; // Default is identity
 Eigen::Matrix4f view_matrix; // Default is identity
 
-GLuint Color;
-
-GLuint programID;
 GLuint Pmatrix;
 GLuint Vmatrix;
 
@@ -272,7 +267,6 @@ void loop() {
 int width = 0;
 int height = 0;
 
-using std::min;
 SDL_GLContext glContext = NULL;
 
 std::array<float,3> xambientLight;
@@ -415,20 +409,16 @@ void size(int _width, int _height, int mode = P2D) {
       abort();
    }
 
-   programID = LoadShaders(Shaders3D());
-   glUseProgram(programID);
+   g = PGraphics(width, height, mode);
 
    // Get a handle for our "MVP" uniform
-   Pmatrix = glGetUniformLocation(programID, "Pmatrix");
-   Vmatrix = glGetUniformLocation(programID, "Vmatrix");
-   Mmatrix = glGetUniformLocation(programID, "Mmatrix");
-   Color = glGetUniformLocation(programID, "color");
+   Pmatrix = glGetUniformLocation(g.programID, "Pmatrix");
+   Vmatrix = glGetUniformLocation(g.programID, "Vmatrix");
+   Mmatrix = glGetUniformLocation(g.programID, "Mmatrix");
 
-   AmbientLight = glGetUniformLocation(programID, "ambientLight");
-   DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
-   DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
-
-   g = PGraphics(width, height, mode);
+   AmbientLight = glGetUniformLocation(g.programID, "ambientLight");
+   DirectionLightColor = glGetUniformLocation(g.programID, "directionLightColor");
+   DirectionLightVector = glGetUniformLocation(g.programID, "directionLightVector");
 
    move_matrix = Eigen::Matrix4f::Identity();
    glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
