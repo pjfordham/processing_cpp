@@ -48,6 +48,14 @@ public:
    PShape _shape;
    std::vector<Uint32> pixels;
 
+   std::array<float,3> xambientLight;
+   std::array<float,3> xdirectionLightColor;
+   std::array<float,3> xdirectionLightVector;
+
+   GLuint AmbientLight;
+   GLuint DirectionLightColor;
+   GLuint DirectionLightVector;
+
    PGraphics(const PGraphics &x) = delete;
 
    PGraphics(PGraphics &&x) {
@@ -79,6 +87,13 @@ public:
       std::swap(xSmoothing, x.xSmoothing);
       std::swap(_shape, x._shape);
       std::swap(pixels, x.pixels);
+
+      std::swap(xambientLight, x.xambientLight);
+      std::swap(xdirectionLightColor, x.xdirectionLightColor);
+      std::swap(xdirectionLightVector, x.xdirectionLightVector);
+      std::swap(AmbientLight, x.AmbientLight);
+      std::swap(DirectionLightColor, x.DirectionLightColor);
+      std::swap(DirectionLightVector, x.DirectionLightVector);
    }
 
    PGraphics& operator=(const PGraphics&) = delete;
@@ -111,6 +126,13 @@ public:
       std::swap(xSmoothing, x.xSmoothing);
       std::swap(_shape, x._shape);
       std::swap(pixels, x.pixels);
+
+      std::swap(xambientLight, x.xambientLight);
+      std::swap(xdirectionLightColor, x.xdirectionLightColor);
+      std::swap(xdirectionLightVector, x.xdirectionLightVector);
+      std::swap(AmbientLight, x.AmbientLight);
+      std::swap(DirectionLightColor, x.DirectionLightColor);
+      std::swap(DirectionLightVector, x.DirectionLightVector);
       return *this;
    }
 
@@ -160,6 +182,10 @@ public:
       glUseProgram(programID);
 
       Color = glGetUniformLocation(programID, "color");
+      AmbientLight = glGetUniformLocation(programID, "ambientLight");
+      DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
+      DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
+
 
       // Create a white OpenGL texture
       unsigned int white = 0xFFFFFFFF;
@@ -182,6 +208,30 @@ public:
          glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferID, 0);
       }
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
+   }
+
+   void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
+      xdirectionLightColor = {r/255.0f, r/255.0f, r/255.0f};
+      xdirectionLightVector = {nx, ny, nz};
+      glUniform3fv(DirectionLightColor, 1, xdirectionLightColor.data() );
+      glUniform3fv(DirectionLightVector, 1,xdirectionLightVector.data() );
+   }
+
+   void ambientLight(float r, float g, float b) {
+      xambientLight = { r/255.0f, g/255.0f, b/255.0f };
+      glUniform3fv(AmbientLight, 1, xambientLight.data() );
+   }
+
+   void lights() {
+      ambientLight(128, 128, 128);
+      directionalLight(128, 128, 128, 0, 0, -1);
+      //lightFalloff(1, 0, 0);
+      //lightSpecular(0, 0, 0);
+   };
+
+   void noLights() {
+      ambientLight(255.0, 255.0, 255.0);
+      directionalLight(0.0,0.0,0.0, 0.0,0.0,-1.0);
    }
 
    void textFont(PFont font) {

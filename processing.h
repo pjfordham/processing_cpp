@@ -168,7 +168,10 @@ MAKE_GLOBAL(textFont, g);
 MAKE_GLOBAL(textAlign, g);
 MAKE_GLOBAL(textSize, g);
 MAKE_GLOBAL(text, g);
-
+MAKE_GLOBAL(directionalLight, g);
+MAKE_GLOBAL(ambientLight, g);
+MAKE_GLOBAL(lights, g);
+MAKE_GLOBAL(noLights, g);
 
 
 int setFrameRate = 60;
@@ -269,37 +272,6 @@ int height = 0;
 
 SDL_GLContext glContext = NULL;
 
-std::array<float,3> xambientLight;
-std::array<float,3> xdirectionLightColor;
-std::array<float,3> xdirectionLightVector;
-
-GLuint AmbientLight;
-GLuint DirectionLightColor;
-GLuint DirectionLightVector;
-
-void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
-   xdirectionLightColor = {r/255.0f, r/255.0f, r/255.0f};
-   xdirectionLightVector = {nx, ny, nz};
-   glUniform3fv(DirectionLightColor, 1, xdirectionLightColor.data() );
-   glUniform3fv(DirectionLightVector, 1,xdirectionLightVector.data() );
-}
-
-void ambientLight(float r, float g, float b) {
-   xambientLight = { r/255.0f, g/255.0f, b/255.0f };
-   glUniform3fv(AmbientLight, 1, xambientLight.data() );
-}
-
-void lights() {
-   ambientLight(128, 128, 128);
-   directionalLight(128, 128, 128, 0, 0, -1);
-   //lightFalloff(1, 0, 0);
-   //lightSpecular(0, 0, 0);
-};
-
-void noLights() {
-   ambientLight(255.0, 255.0, 255.0);
-   directionalLight(0.0,0.0,0.0, 0.0,0.0,-1.0);
-}
 
 void ortho(float left, float right, float bottom, float top, float near, float far) {
    float tx = -(right + left) / (right - left);
@@ -415,10 +387,6 @@ void size(int _width, int _height, int mode = P2D) {
    Pmatrix = glGetUniformLocation(g.programID, "Pmatrix");
    Vmatrix = glGetUniformLocation(g.programID, "Vmatrix");
    Mmatrix = glGetUniformLocation(g.programID, "Mmatrix");
-
-   AmbientLight = glGetUniformLocation(g.programID, "ambientLight");
-   DirectionLightColor = glGetUniformLocation(g.programID, "directionLightColor");
-   DirectionLightVector = glGetUniformLocation(g.programID, "directionLightVector");
 
    move_matrix = Eigen::Matrix4f::Identity();
    glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
