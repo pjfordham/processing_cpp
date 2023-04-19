@@ -6,15 +6,10 @@
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
 
-#include <Eigen/Dense>
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <algorithm>
-#include <chrono>
-#include <vector>
 #include <cmath>
-#include <map>
 #include <fmt/core.h>
 
 #include "weak.h"
@@ -25,10 +20,11 @@
 #include "processing_pshape.h"
 #include "processing_pgraphics.h"
 #include "processing_pfont.h"
-
+#include "processing_time.h"
 
 SDL_Window *window;
 SDL_Renderer *renderer;
+SDL_GLContext glContext = NULL;
 
 // This is the global PGraphcs object that forms the top level canvas.
 PGraphics g;
@@ -100,84 +96,6 @@ void frameRate(int rate) {
    setFrameRate = rate;
 }
 
-
-template <typename Container>
-typename Container::value_type random(const Container& c) {
-   auto random_it = std::next(std::begin(c), random(std::size(c)));
-   return *random_it;
-}
-
-template <typename T>
-T random(const std::initializer_list<T>& c) {
-   auto random_it = std::next(std::begin(c), random(std::size(c)));
-   return *random_it;
-}
-
-color lerpColor(const color& c1, const color& c2, float amt) {
-   return {
-      c1.r + (c2.r - c1.r) * amt,
-      c1.g + (c2.g - c1.g) * amt,
-      c1.b + (c2.b - c1.b) * amt,
-      c1.a + (c2.a - c1.a) * amt};
-}
-
-
-auto start_time = std::chrono::high_resolution_clock::now();
-
-unsigned long millis() {
-   auto current_time = std::chrono::high_resolution_clock::now();
-   auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
-   return elapsed_time;
-}
-
-int second() {
-   // Get the current wall clock time
-   auto now = std::chrono::system_clock::now();
-
-   // Convert to time_t and then to tm structure in local time
-   std::time_t time = std::chrono::system_clock::to_time_t(now);
-   std::tm local_time = *std::localtime(&time);
-
-   // Extract hours, minutes, and seconds from the tm structure
-   int hours = local_time.tm_hour;
-   int minutes = local_time.tm_min;
-   int seconds = local_time.tm_sec;
-
-   return seconds;
-}
-
-int minute() {
-   // Get the current wall clock time
-   auto now = std::chrono::system_clock::now();
-
-   // Convert to time_t and then to tm structure in local time
-   std::time_t time = std::chrono::system_clock::to_time_t(now);
-   std::tm local_time = *std::localtime(&time);
-
-   // Extract hours, minutes, and seconds from the tm structure
-   int hours = local_time.tm_hour;
-   int minutes = local_time.tm_min;
-   int seconds = local_time.tm_sec;
-
-   return minutes;
-}
-
-int hour() {
-   // Get the current wall clock time
-   auto now = std::chrono::system_clock::now();
-
-   // Convert to time_t and then to tm structure in local time
-   std::time_t time = std::chrono::system_clock::to_time_t(now);
-   std::tm local_time = *std::localtime(&time);
-
-   // Extract hours, minutes, and seconds from the tm structure
-   int hours = local_time.tm_hour;
-   int minutes = local_time.tm_min;
-   int seconds = local_time.tm_sec;
-
-   return hours;
-}
-
 bool xloop = true;
 
 void noLoop() {
@@ -190,9 +108,6 @@ void loop() {
 
 int width = 0;
 int height = 0;
-
-SDL_GLContext glContext = NULL;
-
 
 void size(int _width, int _height, int mode = P2D) {
    // Create a window
@@ -217,7 +132,7 @@ void size(int _width, int _height, int mode = P2D) {
    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
    // Create OpenGL context
-   SDL_GLContext glContext = SDL_GL_CreateContext(window);
+   glContext = SDL_GL_CreateContext(window);
    if (glContext == nullptr) {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
       abort();

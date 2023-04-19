@@ -321,4 +321,16 @@ float sq(float a) {
    return a * a;
 }
 
+template <typename Container>
+typename Container::value_type random(const Container& c) {
+   auto random_it = std::next(std::begin(c), random(std::size(c)));
+   return *random_it;
+}
+
+template <typename T>
+T random(const std::initializer_list<T>& c) {
+   auto random_it = std::next(std::begin(c), random(std::size(c)));
+   return *random_it;
+}
+
 #endif

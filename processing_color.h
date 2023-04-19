@@ -120,6 +120,15 @@ color flatten_color_mode(float r, float g, float b, float a) {
    }
    return { r, g, b, a };
 }
+
+color lerpColor(const color& c1, const color& c2, float amt) {
+   return {
+      c1.r + (c2.r - c1.r) * amt,
+      c1.g + (c2.g - c1.g) * amt,
+      c1.b + (c2.b - c1.b) * amt,
+      c1.a + (c2.a - c1.a) * amt};
+}
+
 // ----
 // End color handling.
 // ----

@@ -11,6 +11,8 @@
 
 using FloatArrayList = std::vector<float>;
 
+using std::min;
+
 typedef bool boolean;
 
 typedef unsigned char byte;

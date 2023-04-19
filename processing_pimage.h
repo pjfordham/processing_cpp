@@ -1,6 +1,11 @@
 #ifndef PROCESSING_PIMAGE_H
 #define PROCESSING_PIMAGE_H
 
+#include <GL/glew.h>     // GLEW library header
+#include <GL/gl.h>       // OpenGL header
+#include <GL/glu.h>      // GLU header
+#include <GL/glut.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
