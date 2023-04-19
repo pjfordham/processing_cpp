@@ -11,6 +11,9 @@
 #include <algorithm>
 #include <cmath>
 #include <fmt/core.h>
+#include <fstream>
+#include <vector>
+#include <string>
 
 #include "weak.h"
 #include "processing_math.h"
@@ -92,6 +95,49 @@ MAKE_GLOBAL(scale, g);
 MAKE_GLOBAL(rotate, g);
 MAKE_GLOBAL(rotateY, g);
 MAKE_GLOBAL(rotateX, g);
+
+template <typename T>
+std::vector<T> subset(const std::vector<T> &c, int start, int length) {
+   return { c.begin() + start, c.begin() + start + length };
+}
+
+std::vector<std::string> split(const std::string& str, char delimiter) {
+  std::vector<std::string> result;
+  std::string token;
+
+  for (const char& c : str) {
+    if (c == delimiter) {
+      result.push_back(token);
+      token.clear();
+    } else {
+      token += c;
+    }
+  }
+
+  // Push back the last token, if any
+  if (!token.empty()) {
+    result.push_back(token);
+  }
+
+  return result;
+}
+
+std::vector<std::string> loadStrings(const std::string& fileName) {
+    std::vector<std::string> lines;
+    std::ifstream inputFile(fileName);
+
+    if (!inputFile.is_open()) {
+       abort();
+    }
+
+    std::string line;
+    while (std::getline(inputFile, line)) {
+        lines.push_back(line);
+    }
+
+    inputFile.close();
+    return lines;
+}
 
 int setFrameRate = 60;
 void frameRate(int rate) {

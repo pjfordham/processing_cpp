@@ -8,6 +8,7 @@
 // compile unmodified.
 
 #define y1 processing_y1
+#define index processing_index
 
 using FloatArrayList = std::vector<float>;
 
