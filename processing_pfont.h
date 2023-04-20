@@ -10,16 +10,47 @@
 #include <SDL2/SDL_ttf.h>
 #include <map>
 #include <string>
+#include <filesystem>
 
 #include "processing_color.h"
 
 
 class PFont {
 public:
-   static std::map<PFont, TTF_Font *> fontMap;
+   const char *name;
+   int size;
+
+   // Mappings from loaded font name and size to a TTF_Font*
+   static std::map<std::pair<const char*,int>, TTF_Font *> fontMap;
+
+   // Mappings from filename to full path for system fonts
+   static std::map<std::string, std::string> fontFileMap;
+
+   static void search_directory(const std::filesystem::path& path, const std::string& suffix) {
+      for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+         if (!entry.is_directory() && entry.path().extension() == suffix) {
+            fontFileMap[entry.path().filename().string()] = entry.path().string();
+         }
+      }
+   }
+
+   static std::vector<std::string> list() {
+      std::filesystem::path path_to_search = "/usr/share/fonts/truetype";
+      std::string suffix_to_find = ".ttf";
+      search_directory(path_to_search, suffix_to_find);
+      path_to_search = ".";
+      search_directory(path_to_search, suffix_to_find);
+      std::vector<std::string> keys;
+      for (auto const& [key, value] : fontFileMap) {
+         keys.push_back(key);
+      }
+      if (keys.size() == 0) {
+         abort();
+      };
+      return keys;
+   }
 
    static void init() {
-      TTF_Font* font = NULL;
       if (TTF_Init() != 0) {
          SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TTF_Init failed: %s\n", TTF_GetError());
          abort();
@@ -32,6 +63,27 @@ public:
       }
    }
 
+   PFont() : name(nullptr), size(0) {}
+
+   // We can safely copy and don't have to delete as the
+   // map gets garbage collected at the end of the program
+   PFont(const char *name_, int size_) {
+      size = size_;
+      if (PFont::fontFileMap.size() == 0) {
+         PFont::list();
+      }
+      name = fontFileMap[name_].c_str();
+      auto key = std::make_pair(name,size);
+      if (PFont::fontMap.count(key) == 0) {
+         auto font = TTF_OpenFont(name, size);
+         if (font == NULL) {
+            printf("TTF_OpenFont failed: %s,%d %s\n", name, size, TTF_GetError());
+            abort();
+         }
+         PFont::fontMap[key] = font;
+      }
+   }
+
    bool operator<(const PFont&a) const {
       if (name != a.name) {
          return name < a.name;
@@ -40,35 +92,16 @@ public:
       }
    }
 
-   const char *name;
-   int size;
-
-   TTF_Font *open() {
-      auto font = TTF_OpenFont(name, size);
-      if (font == NULL) {
-         printf("TTF_OpenFont failed: %s\n", TTF_GetError());
-         abort();
-      }
-      return font;
-   }
-
-   PFont() : name(nullptr), size(0) {}
-
-   PFont(const char *name_, int size_) {
-      name = name_;
-      size = size_;
-   }
-
    GLuint render_text(std::string text, color color, float &width, float &height) {
-      SDL_Surface* surface = TTF_RenderText_Blended(fontMap[*this], text.c_str(),
+      SDL_Surface* surface = TTF_RenderText_Blended(fontMap[std::make_pair(name,size)], text.c_str(),
                                                     { (unsigned char)color.r,
                                                       (unsigned char)color.g,
                                                       (unsigned char)color.b,
                                                       (unsigned char)color.a });
       if (surface == NULL) {
          printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
-         abort();
-      }
+         surface = SDL_CreateRGBSurfaceWithFormat(0, 10, 10, 32, SDL_PIXELFORMAT_ABGR8888);
+       }
       width = surface->w;
       height = surface->h;
 
@@ -96,15 +129,11 @@ public:
 
 };
 
-std::map<PFont, TTF_Font *> PFont::fontMap;
+std::map<std::string, std::string> PFont::fontFileMap;
+std::map<std::pair<const char*,int>, TTF_Font *> PFont::fontMap;
 
-PFont createFont(const char *filename, int size)  {
-   PFont key(filename,size);
-   if (PFont::fontMap.count(key) == 0) {
-      PFont font(filename,size);
-      PFont::fontMap[key] = font.open();
-   }
-   return key;
+PFont createFont(const char *name, int size)  {
+  return {name, size};
 }
 
 // #include <freetype2/ft2build.h>

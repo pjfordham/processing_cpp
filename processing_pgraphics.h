@@ -257,6 +257,7 @@ public:
       move_matrix = Eigen::Matrix4f::Identity();
       glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 
+      textFont( createFont("DejaVuSans.ttf",12));
       noLights();
       camera();
       perspective();
