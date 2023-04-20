@@ -13,12 +13,13 @@ void setup() {
 void draw() {
   background(0);
 
-  PVector p1{50,height/2};
+  PVector p1{50.0f,height/2.0f};
   PVector p2{mouseX,mouseY};
   PVector p3{width-mouseX,height - mouseY};
-  PVector p4{width-50,height/2};
+  PVector p4{width-50.0f,height/2.0f};
 
   strokeWeight(10);
+  noFill();
   stroke(255, 160);
   beginShape();
   vertex(p1.x,p1.y);
