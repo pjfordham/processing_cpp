@@ -2,6 +2,7 @@
 #define WEAK_H
 
 void keyPressed();
+void keyReleased();
 void keyTyped();
 void setup();
 void draw();

@@ -3,6 +3,13 @@
 
 // All the enums in one place!
 enum {
+   CODED = -1,
+
+   LEFT,
+   RIGHT,
+   UP,
+   DOWN,
+
    P2D,
    P3D,
 

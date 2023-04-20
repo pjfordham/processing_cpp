@@ -211,13 +211,6 @@ void redraw() {
 char key = 0;
 int keyCode = 0;
 
-enum {
-   LEFT = 37,
-   RIGHT = 39,
-   UP = 38,
-   DOWN = 40,
-};
-
 bool mousePressedb = false;
 
 int main(int argc, char* argv[]) {
@@ -265,53 +258,67 @@ int main(int argc, char* argv[]) {
             } else if (event.button.button == SDL_BUTTON_RIGHT) {
             }
          } else if (event.type == SDL_MOUSEWHEEL) {
-         } else if (event.type == SDL_KEYDOWN) {
+         } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
             switch (event.key.keysym.sym) {
             case SDLK_ESCAPE:
                quit = true;
                break;
-            }
-            // Get the key code from the event
-            SDL_Keycode sdl_keycode = event.key.keysym.sym;
-
-            // Check if any of the modifier keys are pressed
-            SDL_Keymod mod_state = SDL_GetModState();
-            bool shift_pressed = mod_state & KMOD_SHIFT;
-
-            // Convert the key code to a string
-            const char* keyname = SDL_GetKeyName(sdl_keycode);
-
-            key = 1;
-            keyCode = 0;
-            // Get the first character of the string and convert to lowercase if shift is not pressed
-            if ( keyname[1] == 0) {
-               char zkey = keyname[0];
-               if (shift_pressed) {
-                  // Leave the key uppercase if shift is pressed
-               } else if (zkey >= 'A' && zkey <= 'Z') {
-                  // Convert to lowercase if the key is a letter
-                  zkey += 'a' - 'A';
-               }
-               key = zkey;
-               keyCode = key;
-               keyTyped();
-            } else if (keyname[0] == 'S' && keyname[1] == 'p') {
-               key = ' ';
-               keyCode = key;
-               keyTyped();
-            } else if (keyname[0] == 'L' && keyname[1] == 'e') {
-               keyCode = LEFT;
-            } else if (keyname[0] == 'R' && keyname[1] == 'i') {
-               keyCode = RIGHT;
-            } else if (keyname[0] == 'U' && keyname[1] == 'p') {
+            case SDLK_UP:
+               key = CODED;
                keyCode = UP;
-            } else if (keyname[0] == 'D' && keyname[1] == 'o') {
+               break;
+            case SDLK_DOWN:
+               key = CODED;
                keyCode = DOWN;
+               break;
+            case SDLK_RIGHT:
+               key = CODED;
+               keyCode = RIGHT;
+               break;
+            case SDLK_LEFT:
+               key = CODED;
+               keyCode = LEFT;
+               break;
+            default:
+            {
+               // Get the key code from the event
+               SDL_Keycode sdl_keycode = event.key.keysym.sym;
+
+               // Check if any of the modifier keys are pressed
+               SDL_Keymod mod_state = SDL_GetModState();
+               bool shift_pressed = mod_state & KMOD_SHIFT;
+
+               // Convert the key code to a string
+               const char* keyname = SDL_GetKeyName(sdl_keycode);
+
+               key = 1;
+               keyCode = 0;
+               // Get the first character of the string and convert to lowercase if shift is not pressed
+               if ( keyname[1] == 0) {
+                  char zkey = keyname[0];
+                  if (shift_pressed) {
+                     // Leave the key uppercase if shift is pressed
+                  } else if (zkey >= 'A' && zkey <= 'Z') {
+                     // Convert to lowercase if the key is a letter
+                     zkey += 'a' - 'A';
+                  }
+                  key = zkey;
+                  keyCode = key;
+                  keyTyped();
+               } else if (keyname[0] == 'S' && keyname[1] == 'p') {
+                  key = ' ';
+                  keyCode = key;
+                  if (event.type == SDL_KEYDOWN)
+                     keyTyped();
+               }
             }
-            keyPressed();
+            }
+            if (event.type == SDL_KEYDOWN)
+               keyPressed();
+            else
+               keyReleased();
          }
       }
-
 
       // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
       if (SDL_GetTicks() - ticks >= (1000 / setFrameRate))
@@ -329,8 +336,8 @@ int main(int argc, char* argv[]) {
 
             // Call the sketch's draw()
             draw();
-	    if (g.localFboID != 0) {
-	       g.draw_main();
+            if (g.localFboID != 0) {
+               g.draw_main();
             }
 
             SDL_GL_SwapWindow(window);
