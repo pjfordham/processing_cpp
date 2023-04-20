@@ -264,7 +264,18 @@ public:
       background(WHITE);
    }
 
-
+   void saveFrame( std::string fileName = "frame-####.png" ) {
+      static int counter = 0;
+      int c = counter;
+      std::size_t pos = fileName.rfind('#');
+      while (pos != std::string::npos) {
+         fileName[pos] = '0' + (c % 10);
+         c /= 10;
+         pos = fileName.rfind('#', pos - 1);
+      }
+      PImage::saveFrame( localFboID, width, height, fileName );
+      counter++;
+   }
    void pushMatrix() {
       matrix_stack.push_back(move_matrix);
    }

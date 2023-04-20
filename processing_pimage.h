@@ -157,6 +157,27 @@ public:
       return textureID;
    }
 
+   static void saveFrame(const GLuint framebufferID, int width, int height, const std::string& fileName) {
+
+      // Bind the framebuffer and get its dimensions
+      glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
+
+      // Create SDL surface from framebuffer data
+      SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
+      glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
+
+      // Flip the image vertically
+      SDL_Surface* flippedSurface = SDL_CreateRGBSurface(0, width, height, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
+      SDL_BlitSurface(surface, nullptr, flippedSurface, nullptr);
+      SDL_FreeSurface(surface);
+
+      // Save the image as PNG
+      IMG_SavePNG(flippedSurface, fileName.c_str());
+
+      // Cleanup
+      SDL_FreeSurface(flippedSurface);
+   }
+
 };
 
 PImage createImage(int width, int height, int mode) {
