@@ -15,6 +15,7 @@ int p4 = p3+d;
 void setup() {
    size(640, 360);
    noSmooth();
+   noLoop();
 }
 
 void draw() {

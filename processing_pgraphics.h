@@ -30,7 +30,7 @@ public:
 
    int stroke_weight = 1;
    int line_end_cap = ROUND;
-   int ellipse_mode = DIAMETER;
+   int ellipse_mode = CENTER;
    int rect_mode = CORNER;
    int image_mode = CORNER;
 
@@ -1103,7 +1103,7 @@ public:
       case POINTS:
       {
          for (auto z : pshape.vertices ) {
-            PShape xshape = createEllipse(z.x, z.y, stroke_weight, stroke_weight);
+            PShape xshape = _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER);
             shape_fill( xshape,0,0,0,0,color );
          }
          break;
@@ -1337,15 +1337,34 @@ public:
    }
 
    PShape createEllipse(float x, float y, float width, float height) {
-      if (ellipse_mode != RADIUS) {
-         width /=2;
-         height /=2;
+      return _createEllipse(x,y,width,height,ellipse_mode);
+   }
+
+   PShape _createEllipse(float x, float y, float width, float height, int ellipse_mode) {
+      switch (ellipse_mode) {
+      case CENTER:
+         break;
+      case RADIUS:
+         width = width * 2.0;
+         height = height * 2.0;
+         break;
+      case CORNER:
+         x = x - width / 2.0;
+         y = y - height / 2.0;
+         break;
+      case CORNERS:
+         width = width - x;
+         height = height - y;
+         break;
+         height;
+      default:
+         abort();
       }
       int NUMBER_OF_VERTICES=32;
       PShape shape;
       shape.beginShape(POLYGON);
       for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-         shape.vertex( ellipse_point( {x,y}, i, 0, TWO_PI, width, height ) );
+         shape.vertex( ellipse_point( {x,y}, i, 0, TWO_PI, width / 2.0, height /2.0) );
       }
       shape.endShape(CLOSE);
       return shape;
