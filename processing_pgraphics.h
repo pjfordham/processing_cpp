@@ -61,6 +61,7 @@ public:
 
    GLuint Pmatrix;
    GLuint Vmatrix;
+   GLuint uSampler;
 
    std::vector<Eigen::Matrix4f> matrix_stack;
    Eigen::Matrix4f move_matrix; // Default is identity
@@ -109,6 +110,7 @@ public:
       std::swap(view_matrix, x.view_matrix);
       std::swap(Pmatrix, x.Pmatrix);
       std::swap(Vmatrix, x.Vmatrix);
+      std::swap(uSampler, x.uSampler);
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
       std::swap(Mmatrix, x.Mmatrix);
@@ -156,6 +158,7 @@ public:
       std::swap(view_matrix, x.view_matrix);
       std::swap(Pmatrix, x.Pmatrix);
       std::swap(Vmatrix, x.Vmatrix);
+      std::swap(uSampler, x.uSampler);
 
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
@@ -224,6 +227,12 @@ public:
       AmbientLight = glGetUniformLocation(programID, "ambientLight");
       DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
       DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
+
+      uSampler = glGetUniformLocation(programID, "uSampler");
+
+      int textureUnitIndex = 0;
+      glUniform1i(uSampler,0);
+      glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
 
       // Get a handle for our "MVP" uniform
       Pmatrix = glGetUniformLocation(programID, "Pmatrix");
@@ -528,10 +537,6 @@ public:
 
       if (currentTextureID) {
          glBindTexture(GL_TEXTURE_2D, currentTextureID);
-         GLuint uSampler = glGetUniformLocation(programID, "uSampler");
-         int textureUnitIndex = 0;
-         glUniform1i(uSampler,0);
-         glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
       } else {
          glBindTexture(GL_TEXTURE_2D, whiteTextureID);
       }
