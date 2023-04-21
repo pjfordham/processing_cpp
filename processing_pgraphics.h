@@ -255,7 +255,6 @@ public:
       Mmatrix = glGetUniformLocation(programID, "Mmatrix");
 
       move_matrix = Eigen::Matrix4f::Identity();
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -284,22 +283,18 @@ public:
    void popMatrix() {
       move_matrix = matrix_stack.back();
       matrix_stack.pop_back();
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
    void translate(float x, float y, float z=0) {
       move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
    void transform(Eigen::Matrix4f transform_matrix) {
       move_matrix = move_matrix * transform_matrix;
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
    void scale(float x, float y,float z = 1) {
       move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
    void scale(float x) {
@@ -308,23 +303,19 @@ public:
 
    void rotate(float angle, PVector axis) {
       move_matrix = move_matrix * RotateMatrix(angle,axis);
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
 
    void rotate(float angle) {
       move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
    void rotateY(float angle) {
       move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
    void rotateX(float angle) {
       move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
    }
 
    Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
@@ -352,7 +343,6 @@ public:
          {              0,               0, -2/(far - near), tz },
          {              0,               0,              0,   1 }
       };
-      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
    }
 
    void ortho(float left, float right, float bottom, float top) {
@@ -365,7 +355,6 @@ public:
 
    void perspective(float angle, float aspect, float minZ, float maxZ) {
       projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
-      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
    }
 
    void perspective() {
@@ -400,7 +389,6 @@ public:
 
       // Translate the camera to the origin
       view_matrix = view * translate;
-      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
    }
 
    void camera() {
@@ -531,6 +519,10 @@ public:
                       GLuint element_type,
                       GLuint frame_buffer_ID,
                       color color) {
+
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
 
       glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_ID);
 
@@ -848,7 +840,11 @@ public:
    }
 
    void image(PGraphics &gfx, int x, int y) {
-      gfx.draw(x,y,localFboID);
+      glTexturedQuad( {x, y},
+                      {x+gfx.width,y},
+                      {x+gfx.width,y+gfx.height},
+                      {x,y+gfx.height},
+                      1.0,1.0, gfx.bufferID, localFboID, tint_color);
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
@@ -1401,17 +1397,19 @@ public:
       // draw the texture from the PGraphics flat.
       noLights();
       move_matrix = Eigen::Matrix4f::Identity();
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
 
-      Eigen::Matrix4f P = Eigen::Matrix4f::Identity();
-      Eigen::Matrix4f V = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
+      Eigen::Matrix4f old_move_matrix = move_matrix;
+      Eigen::Matrix4f old_view_matrix = view_matrix;
+      Eigen::Matrix4f old_projection_matrix = projection_matrix;
 
-      glUniformMatrix4fv(Pmatrix, 1,false, P.data());
-      glUniformMatrix4fv(Vmatrix, 1,false, V.data());
+
+      view_matrix = Eigen::Matrix4f::Identity();
+      projection_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
 
       // bind the real frame buffer
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       // Clear the color and depth buffers
+      glClearColor(0.0, 0.0, 0.0, 255.0);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // For drawing the main screen we need to flip the texture and remove any tint
@@ -1421,27 +1419,25 @@ public:
          {0.0f+width, 0.0f},
          {0.0f,           0.0f},
          1.0,1.0, bufferID, 0, WHITE);
-      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+
+      view_matrix = old_view_matrix;
+      projection_matrix = old_projection_matrix;
 
       // Clear the depth buffer but not what was drawn for the next frame
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       glClear(GL_DEPTH_BUFFER_BIT);
    }
 
-   void draw(float x, float y, GLuint frame_buffer_id) {
-      glTexturedQuad( {x, y},
-                      {x+width,y},
-                      {x+width,y+height},
-                      {x,y+height},
-                      1.0,1.0, bufferID, frame_buffer_id, tint_color);
+   PGraphics createGraphics(int width, int height, int mode = P2D) {
+      PGraphics pg{ width, height, mode };
+      pg.view_matrix = view_matrix;
+      pg.projection_matrix = projection_matrix;
+      return pg;
    }
+
 };
 
 
-PGraphics createGraphics(int width, int height, int mode = P2D) {
-   return { width, height, mode };
-}
 
 
 #endif
