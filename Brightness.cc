@@ -19,7 +19,7 @@ void setup() {
 }
 
 void draw() {
-   int whichBar = mouseX / barWidth;
+  int whichBar = mouseX / barWidth;
   if (whichBar != lastBar) {
     int barX = whichBar * barWidth;
     fill(barX, 100, mouseY);

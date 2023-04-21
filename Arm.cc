@@ -5,7 +5,7 @@
  * mouseY position. The transformations applied to the first segment
  * are also applied to the second segment because they are inside
  * the same pushMatrix() and popMatrix() group.
-*/
+ */
 
 float x, y;
 float angle1 = 0.0;

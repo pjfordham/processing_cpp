@@ -15,35 +15,35 @@ float dx;  // Value for incrementing X, a function of period and xspacing
 std::vector<float> yvalues;  // Using an array to store height values for the wave
 
 void calcWave() {
-   // Increment theta (try different values for 'angular velocity' here
-   theta += 0.02;
+  // Increment theta (try different values for 'angular velocity' here
+  theta += 0.02;
 
-   // For every x value, calculate a y value with sine function
-   float x = theta;
-   for (int i = 0; i < yvalues.size(); i++) {
-      yvalues[i] = sin(x)*amplitude;
-      x+=dx;
-   }
+  // For every x value, calculate a y value with sine function
+  float x = theta;
+  for (int i = 0; i < yvalues.size(); i++) {
+    yvalues[i] = sin(x)*amplitude;
+    x+=dx;
+  }
 }
 
 void renderWave() {
-   noStroke();
-   fill(255);
-   // A simple way to draw the wave with an ellipse at each location
-   for (int x = 0; x < yvalues.size(); x++) {
-      ellipse(x*xspacing, height/2+yvalues[x], 16, 16);
-   }
+  noStroke();
+  fill(255);
+  // A simple way to draw the wave with an ellipse at each location
+  for (int x = 0; x < yvalues.size(); x++) {
+    ellipse(x*xspacing, height/2+yvalues[x], 16, 16);
+  }
 }
 
 void setup() {
-   size(640, 360);
-   w = width+16;
-   dx = (TWO_PI / period) * xspacing;
-   yvalues.resize(w/xspacing);
+  size(640, 360);
+  w = width+16;
+  dx = (TWO_PI / period) * xspacing;
+  yvalues.resize(w/xspacing);
 }
 
 void draw() {
-   background(0);
-   calcWave();
-   renderWave();
+  background(0);
+  calcWave();
+  renderWave();
 }

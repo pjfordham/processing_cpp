@@ -10,104 +10,104 @@
 class Mover {
 
 public:
-   // position, velocity, and acceleration
-   PVector position;
-   PVector velocity;
-   PVector acceleration;
+  // position, velocity, and acceleration
+  PVector position;
+  PVector velocity;
+  PVector acceleration;
 
-   // Mass is tied to size
-   float mass;
+  // Mass is tied to size
+  float mass;
 
-   Mover(float m, float x, float y) {
-      mass = m;
-      position = PVector(x, y);
-      velocity = PVector(0, 0);
-      acceleration = PVector(0, 0);
-   }
+  Mover(float m, float x, float y) {
+    mass = m;
+    position = PVector(x, y);
+    velocity = PVector(0, 0);
+    acceleration = PVector(0, 0);
+  }
 
-   // Newton's 2nd law: F = M * A
-   // or A = F / M
-   void applyForce(PVector force) {
-      // Divide by mass
-      PVector f = PVector::div(force, mass);
-      // Accumulate all forces in acceleration
-      acceleration.add(f);
-   }
+  // Newton's 2nd law: F = M * A
+  // or A = F / M
+  void applyForce(PVector force) {
+    // Divide by mass
+    PVector f = PVector::div(force, mass);
+    // Accumulate all forces in acceleration
+    acceleration.add(f);
+  }
 
-   void update() {
-      // Velocity changes according to acceleration
-      velocity.add(acceleration);
-      // position changes by velocity
-      position.add(velocity);
-      // We must clear acceleration each frame
-      acceleration.mult(0);
-   }
+  void update() {
+    // Velocity changes according to acceleration
+    velocity.add(acceleration);
+    // position changes by velocity
+    position.add(velocity);
+    // We must clear acceleration each frame
+    acceleration.mult(0);
+  }
 
-   // Draw Mover
-   void display() {
-      stroke(255);
-      strokeWeight(2);
-      fill(255, 200);
-      ellipse(position.x, position.y, mass*16, mass*16);
-   }
+  // Draw Mover
+  void display() {
+    stroke(255);
+    strokeWeight(2);
+    fill(255, 200);
+    ellipse(position.x, position.y, mass*16, mass*16);
+  }
 
-   // Bounce off bottom of window
-   void checkEdges() {
-      if (position.y > height) {
-         velocity.y *= -0.9;  // A little dampening when hitting the bottom
-         position.y = height;
-      }
-   }
+  // Bounce off bottom of window
+  void checkEdges() {
+    if (position.y > height) {
+      velocity.y *= -0.9;  // A little dampening when hitting the bottom
+      position.y = height;
+    }
+  }
 };
 
 class Liquid {
 
-   // Liquid is a rectangle
-   float x, y, w, h;
-   // Coefficient of drag
-   float c;
+  // Liquid is a rectangle
+  float x, y, w, h;
+  // Coefficient of drag
+  float c;
 
- public:
-   Liquid() {}
+public:
+  Liquid() {}
    
-   Liquid(float x_, float y_, float w_, float h_, float c_) {
-      x = x_;
-      y = y_;
-      w = w_;
-      h = h_;
-      c = c_;
-   }
+  Liquid(float x_, float y_, float w_, float h_, float c_) {
+    x = x_;
+    y = y_;
+    w = w_;
+    h = h_;
+    c = c_;
+  }
 
-   // Is the Mover in the Liquid?
-   boolean contains(Mover m) {
-      PVector l = m.position;
-      if (l.x > x && l.x < x + w && l.y > y && l.y < y + h) {
-         return true;
-      } else {
-         return false;
-      }
-   }
+  // Is the Mover in the Liquid?
+  boolean contains(Mover m) {
+    PVector l = m.position;
+    if (l.x > x && l.x < x + w && l.y > y && l.y < y + h) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-   // Calculate drag force
-   PVector drag(Mover m) {
-      // Magnitude is coefficient * speed squared
-      float speed = m.velocity.mag();
-      float dragMagnitude = c * speed * speed;
+  // Calculate drag force
+  PVector drag(Mover m) {
+    // Magnitude is coefficient * speed squared
+    float speed = m.velocity.mag();
+    float dragMagnitude = c * speed * speed;
 
-      // Direction is inverse of velocity
-      PVector drag = m.velocity;
-      drag.mult(-1);
+    // Direction is inverse of velocity
+    PVector drag = m.velocity;
+    drag.mult(-1);
 
-      // Scale according to magnitude
-      drag.setMag(dragMagnitude);
-      return drag;
-   }
+    // Scale according to magnitude
+    drag.setMag(dragMagnitude);
+    return drag;
+  }
 
-   void display() {
-      noStroke();
-      fill(127);
-      rect(x, y, w, h);
-   }
+  void display() {
+    noStroke();
+    fill(127);
+    rect(x, y, w, h);
+  }
 };
 
 // Five moving bodies
@@ -118,55 +118,55 @@ Liquid liquid;
 
 // Restart all the Mover objects randomly
 void reset() {
-   movers.clear();
-   for (int i = 0; i < 10; i++) {
-      movers.emplace_back(random(0.5, 3), 40+i*70, 0);
-   }
+  movers.clear();
+  for (int i = 0; i < 10; i++) {
+    movers.emplace_back(random(0.5, 3), 40+i*70, 0);
+  }
 }
 
 PFont f;
 
 void setup() {
-   size(640, 360);
-   f = createFont("SourceCodePro-Regular.ttf", 18);
-   textFont(f);
-   reset();
-   // Create liquid object
-   liquid = Liquid(0, height/2, width, height/2, 0.1);
+  size(640, 360);
+  f = createFont("SourceCodePro-Regular.ttf", 18);
+  textFont(f);
+  reset();
+  // Create liquid object
+  liquid = Liquid(0, height/2, width, height/2, 0.1);
 }
 
 void draw() {
-   background(0);
+  background(0);
 
-   // Draw water
-   liquid.display();
+  // Draw water
+  liquid.display();
 
-   for (Mover &mover : movers) {
+  for (Mover &mover : movers) {
 
-      // Is the Mover in the liquid?
-      if (liquid.contains(mover)) {
-         // Calculate drag force
-         PVector drag = liquid.drag(mover);
-         // Apply drag force to Mover
-         mover.applyForce(drag);
-      }
+    // Is the Mover in the liquid?
+    if (liquid.contains(mover)) {
+      // Calculate drag force
+      PVector drag = liquid.drag(mover);
+      // Apply drag force to Mover
+      mover.applyForce(drag);
+    }
 
-      // Gravity is scaled by mass here!
-      PVector gravity(0, 0.1*mover.mass);
-      // Apply gravity
-      mover.applyForce(gravity);
+    // Gravity is scaled by mass here!
+    PVector gravity(0, 0.1*mover.mass);
+    // Apply gravity
+    mover.applyForce(gravity);
 
-      // Update and display
-      mover.update();
-      mover.display();
-      mover.checkEdges();
-   }
+    // Update and display
+    mover.update();
+    mover.display();
+    mover.checkEdges();
+  }
 
-   fill(255);
-   text("click mouse to reset", 10, 30);
+  fill(255);
+  text("click mouse to reset", 10, 30);
 }
 
 void mousePressed() {
-   reset();
+  reset();
 }
 

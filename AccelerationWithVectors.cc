@@ -12,43 +12,43 @@
 
 class Mover {
 
-   // The Mover tracks location, velocity, and acceleration
-   PVector location;
-   PVector velocity;
-   PVector acceleration;
-   // The Mover's maximum speed
-   float topspeed;
+  // The Mover tracks location, velocity, and acceleration
+  PVector location;
+  PVector velocity;
+  PVector acceleration;
+  // The Mover's maximum speed
+  float topspeed;
 
 public:
-   Mover() {
-      // Start in the center
-      location = PVector(width/2,height/2);
-      velocity = PVector(0,0);
-      topspeed = 5;
-   }
+  Mover() {
+    // Start in the center
+    location = PVector(width/2,height/2);
+    velocity = PVector(0,0);
+    topspeed = 5;
+  }
 
-   void update() {
+  void update() {
 
-      // Compute a vector that points from location to mouse
-      PVector mouse = PVector(mouseX,mouseY);
-      PVector acceleration = PVector::sub(mouse,location);
-      // Set magnitude of acceleration
-      acceleration.setMag(0.2);
+    // Compute a vector that points from location to mouse
+    PVector mouse = PVector(mouseX,mouseY);
+    PVector acceleration = PVector::sub(mouse,location);
+    // Set magnitude of acceleration
+    acceleration.setMag(0.2);
 
-      // Velocity changes according to acceleration
-      velocity.add(acceleration);
-      // Limit the velocity by topspeed
-      velocity.limit(topspeed);
-      // Location changes by velocity
-      location.add(velocity);
-   }
+    // Velocity changes according to acceleration
+    velocity.add(acceleration);
+    // Limit the velocity by topspeed
+    velocity.limit(topspeed);
+    // Location changes by velocity
+    location.add(velocity);
+  }
 
-   void display() {
-      stroke(255);
-      strokeWeight(2);
-      fill(127);
-      ellipse(location.x,location.y,48,48);
-   }
+  void display() {
+    stroke(255);
+    strokeWeight(2);
+    fill(127);
+    ellipse(location.x,location.y,48,48);
+  }
 
 };
 
@@ -57,14 +57,14 @@ public:
 Mover mover;
 
 void setup() {
-   size(640,360);
+  size(640,360);
 }
 
 void draw() {
-   background(0);
+  background(0);
 
-   // Update the location
-   mover.update();
-   // Display the Mover
-   mover.display();
+  // Update the location
+  mover.update();
+  // Display the Mover
+  mover.display();
 }

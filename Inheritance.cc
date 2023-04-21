@@ -9,7 +9,7 @@
 
 class Spin {
 public:
-   float x, y, speed;
+  float x, y, speed;
   float angle = 0.0;
   Spin(float xpos, float ypos, float s) {
     x = xpos;
@@ -23,8 +23,8 @@ public:
 
 class SpinArm : public Spin {
 public :
-      SpinArm(float x, float y, float s) : Spin(x,y,s) {
-   }
+  SpinArm(float x, float y, float s) : Spin(x,y,s) {
+  }
   void display() {
     strokeWeight(1);
     stroke(0);
@@ -39,8 +39,8 @@ public :
 
 class SpinSpots : public  Spin {
 public:
-   float dim;
-   SpinSpots(float x, float y, float s, float d) : Spin(x,y,s) {
+  float dim;
+  SpinSpots(float x, float y, float s, float d) : Spin(x,y,s) {
     dim = d;
   }
   void display() {

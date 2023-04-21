@@ -28,41 +28,41 @@ float speed = 3.5;
 
 // Calculate variables for the ground
 void createGround() {
-   // calculate length of base top
-   baseLength = PVector::dist(base1, base2);
+  // calculate length of base top
+  baseLength = PVector::dist(base1, base2);
    
-   if (baseLength > 1000 ) { abort(); }
+  if (baseLength > 1000 ) { abort(); }
    
-   coords.clear();
-   for (int i=0; i<ceil(baseLength); i++) {
-      coords.emplace_back(
-         base1.x + ((base2.x-base1.x)/baseLength)*i,
-         base1.y + ((base2.y-base1.y)/baseLength)*i );
-   }
+  coords.clear();
+  for (int i=0; i<ceil(baseLength); i++) {
+    coords.emplace_back(
+      base1.x + ((base2.x-base1.x)/baseLength)*i,
+      base1.y + ((base2.y-base1.y)/baseLength)*i );
+  }
 }
 
 void setup() {
-   size(640, 360);
+  size(640, 360);
 
-   fill(128);
-   base1 = PVector(0, height-150);
-   base2 = PVector(width, height);
-   createGround();
+  fill(128);
+  base1 = PVector(0, height-150);
+  base2 = PVector(width, height);
+  createGround();
 
-   // start ellipse at middle top of screen
-   position = PVector(width/2, 0);
+  // start ellipse at middle top of screen
+  position = PVector(width/2, 0);
 
-   // calculate initial random velocity
-   velocity = PVector::random2D();
-   velocity.mult(speed);
+  // calculate initial random velocity
+  velocity = PVector::random2D();
+  velocity.mult(speed);
 
 }
 
 void draw() {
   // draw background
-   fill(0, 12);
-   noStroke();
-   rect(0, 0, width, height);
+  fill(0, 12);
+  noStroke();
+  rect(0, 0, width, height);
 
   // draw base
   fill(200);
@@ -87,8 +87,8 @@ void draw() {
 
   // detect and handle collision
   for (int i=0; i<coords.size(); i++) {
-     // check distance between ellipse and base top coordinates
-     if (PVector::dist(position, coords[i]) < r) {
+    // check distance between ellipse and base top coordinates
+    if (PVector::dist(position, coords[i]) < r) {
 
       // calculate dot product of incident vector and base top normal
       float dot = incidence.dot(normal);

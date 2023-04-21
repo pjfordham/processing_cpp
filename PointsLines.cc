@@ -13,28 +13,28 @@ int p3 = p2+d;
 int p4 = p3+d;
 
 void setup() {
-   size(640, 360);
-   noSmooth();
-   noLoop();
+  size(640, 360);
+  noSmooth();
+  noLoop();
 }
 
 void draw() {
-   background(0);
-   translate(140, 0);
+  background(0);
+  translate(140, 0);
 
 // Draw gray box
-   stroke(153);
-   line(p3, p3, p2, p3);
-   line(p2, p3, p2, p2);
-   line(p2, p2, p3, p2);
-   line(p3, p2, p3, p3);
+  stroke(153);
+  line(p3, p3, p2, p3);
+  line(p2, p3, p2, p2);
+  line(p2, p2, p3, p2);
+  line(p3, p2, p3, p3);
 
 // Draw white points
-   stroke(255);
-   point(p1, p1);
-   point(p1, p3);
-   point(p2, p4);
-   point(p3, p1);
-   point(p4, p2);
-   point(p4, p4);
+  stroke(255);
+  point(p1, p1);
+  point(p1, p3);
+  point(p2, p4);
+  point(p3, p1);
+  point(p4, p2);
+  point(p4, p4);
 }

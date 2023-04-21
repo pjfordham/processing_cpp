@@ -20,8 +20,8 @@
  */
 
 std::vector<std::vector<float>> kernel = {{ -1, -1, -1},
-                    { -1,  8, -1},
-                    { -1, -1, -1}};
+                                          { -1,  8, -1},
+                                          { -1, -1, -1}};
 
 PImage img;
 
@@ -39,7 +39,7 @@ void draw() {
   //  Create a copy of the source image, and convert to gray.
   PImage grayImg = img;
   grayImg.filter(GRAY);
-   grayImg.filter(BLUR);
+  grayImg.filter(BLUR);
 
   // Create an opaque image of the same size as the original
   PImage edgeImg = createImage(grayImg.width, grayImg.height, RGB);

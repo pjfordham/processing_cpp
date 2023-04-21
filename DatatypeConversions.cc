@@ -10,29 +10,29 @@
  */
 
 void setup() {
-   size(640, 360);
-   stroke(255);
-   textFont(createFont("SourceCodePro-Regular.ttf",24));
+  size(640, 360);
+  stroke(255);
+  textFont(createFont("SourceCodePro-Regular.ttf",24));
 }
 
 void draw() {
-   char c;    // Chars are used for storing alphanumeric symbols
-   float f;   // Floats are decimal numbers
-   int i;     // Integers are values between 2,147,483,647 and -2147483648
-   byte b;    // Bytes are values between -128 and 127
+  char c;    // Chars are used for storing alphanumeric symbols
+  float f;   // Floats are decimal numbers
+  int i;     // Integers are values between 2,147,483,647 and -2147483648
+  byte b;    // Bytes are values between -128 and 127
 
-   c = 'A';
-   f = float(c);      // Sets f = 65.0
-   i = int(f * 1.4);  // Sets i to 91
-   b = byte(c / 2);   // Sets b to 32
+  c = 'A';
+  f = float(c);      // Sets f = 65.0
+  i = int(f * 1.4);  // Sets i to 91
+  b = byte(c / 2);   // Sets b to 32
 
 //println(f);
 //println(i);
 //println(b);
 
-   background(0);
-   text(fmt::format("The value of variable c is {}", c), 50, 100);
-   text(fmt::format("The value of variable f is {}", f), 50, 150);
-   text(fmt::format("The value of variable i is {}", i), 50, 200);
-   text(fmt::format("The value of variable b is {}", b), 50, 250);
+  background(0);
+  text(fmt::format("The value of variable c is {}", c), 50, 100);
+  text(fmt::format("The value of variable f is {}", f), 50, 150);
+  text(fmt::format("The value of variable i is {}", i), 50, 200);
+  text(fmt::format("The value of variable b is {}", b), 50, 250);
 }

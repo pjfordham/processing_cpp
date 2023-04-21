@@ -9,25 +9,25 @@
  */
 
 void setup() {
-   size(800, 400);
-   stroke(BLACK);
-   noFill();
+  size(800, 400);
+  stroke(BLACK);
+  noFill();
 }
 
 void draw() {
-   background(132);
+  background(132);
 
-   noFill();
-   beginShape();
-   vertex(120, 80);
-   bezierVertex(320, 0, 320, 300, 120, 300);
-   endShape(OPEN);
+  noFill();
+  beginShape();
+  vertex(120, 80);
+  bezierVertex(320, 0, 320, 300, 120, 300);
+  endShape(OPEN);
 
-   fill(WHITE);
-   beginShape();
-   vertex(520, 80);
-   bezierVertex(720, 0, 720, 300, 490, 300);
-   bezierVertex(600, 320, 640, 100, 520, 80);
-   endShape();
+  fill(WHITE);
+  beginShape();
+  vertex(520, 80);
+  bezierVertex(720, 0, 720, 300, 490, 300);
+  bezierVertex(600, 320, 640, 100, 520, 80);
+  endShape();
 
 }

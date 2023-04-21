@@ -10,15 +10,15 @@
 float scalef;
 
 void setup() {
-   size(640, 360);
-   noStroke();
-   scalef = width/20;
+  size(640, 360);
+  noStroke();
+  scalef = width/20;
 }
 
 void draw() {
-   for (int i = 0; i < scalef; i++) {
-      colorMode(RGB, (i+1) * scalef * 10);
-      fill( fmodf(millis(),((i+1) * scalef * 10) ));
-      rect(i*scalef, 0, scalef, height);
-   }
+  for (int i = 0; i < scalef; i++) {
+    colorMode(RGB, (i+1) * scalef * 10);
+    fill( fmodf(millis(),((i+1) * scalef * 10) ));
+    rect(i*scalef, 0, scalef, height);
+  }
 }

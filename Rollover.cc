@@ -19,64 +19,64 @@ boolean rectOver = false;
 boolean circleOver = false;
 
 boolean overCircle(int x, int y, int diameter) {
-   float disX = x - mouseX;
-   float disY = y - mouseY;
-   if(sqrt(sq(disX) + sq(disY)) < diameter/2 ) {
-      return true;
-   } else {
-      return false;
-   }
+  float disX = x - mouseX;
+  float disY = y - mouseY;
+  if(sqrt(sq(disX) + sq(disY)) < diameter/2 ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 boolean overRect(int x, int y, int width, int height) {
-   if (mouseX >= x && mouseX <= x+width &&
-       mouseY >= y && mouseY <= y+height) {
-      return true;
-   } else {
-      return false;
-   }
+  if (mouseX >= x && mouseX <= x+width &&
+      mouseY >= y && mouseY <= y+height) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void update(int x, int y) {
-   if( overCircle(circleX, circleY, circleSize) ) {
-      circleOver = true;
-      rectOver = false;
-   } else if ( overRect(rectX, rectY, rectSize, rectSize) ) {
-      rectOver = true;
-      circleOver = false;
-   } else {
-      circleOver = rectOver = false;
-   }
+  if( overCircle(circleX, circleY, circleSize) ) {
+    circleOver = true;
+    rectOver = false;
+  } else if ( overRect(rectX, rectY, rectSize, rectSize) ) {
+    rectOver = true;
+    circleOver = false;
+  } else {
+    circleOver = rectOver = false;
+  }
 }
 
 void setup() {
-   size(640, 360);
-   rectColor = color(0);
-   circleColor = color(255);
-   baseColor = color(102);
-   circleX = width/2+circleSize/2+10;
-   circleY = height/2;
-   rectX = width/2-rectSize-10;
-   rectY = height/2-rectSize/2;
-   ellipseMode(CENTER);
+  size(640, 360);
+  rectColor = color(0);
+  circleColor = color(255);
+  baseColor = color(102);
+  circleX = width/2+circleSize/2+10;
+  circleY = height/2;
+  rectX = width/2-rectSize-10;
+  rectY = height/2-rectSize/2;
+  ellipseMode(CENTER);
 }
 
 void draw() {
-   update(mouseX, mouseY);
+  update(mouseX, mouseY);
 
-   noStroke();
-   if (rectOver) {
-      background(rectColor);
-   } else if (circleOver) {
-      background(circleColor);
-   } else {
-      background(baseColor);
-   }
+  noStroke();
+  if (rectOver) {
+    background(rectColor);
+  } else if (circleOver) {
+    background(circleColor);
+  } else {
+    background(baseColor);
+  }
 
-   stroke(255);
-   fill(rectColor);
-   rect(rectX, rectY, rectSize, rectSize);
-   stroke(0);
-   fill(circleColor);
-   ellipse(circleX, circleY, circleSize, circleSize);
+  stroke(255);
+  fill(rectColor);
+  rect(rectX, rectY, rectSize, rectSize);
+  stroke(0);
+  fill(circleColor);
+  ellipse(circleX, circleY, circleSize, circleSize);
 }

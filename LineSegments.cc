@@ -3,7 +3,7 @@
  *
  * Project a line to have a thickness and
  * work out how the ends should interct cleanly.
-*/
+ */
 
 void setup() {
   size(640, 360);
@@ -33,33 +33,33 @@ void draw() {
   float offset = 50;
 
   for (int i = 0; i < lines.size() -1; ++i) {
-     auto &a = lines[i];
-     auto &b = lines[i+1];
+    auto &a = lines[i];
+    auto &b = lines[i+1];
 
-     PLine low_a = a.offset(-offset);
-     PLine high_a = a.offset(offset);
+    PLine low_a = a.offset(-offset);
+    PLine high_a = a.offset(offset);
 
-     PLine low_b = b.offset(-offset);
-     PLine high_b = b.offset(offset);
+    PLine low_b = b.offset(-offset);
+    PLine high_b = b.offset(offset);
 
-     strokeWeight(1);
+    strokeWeight(1);
 
-     stroke(255,0,0, 160);
-     line(low_a);
-     line(low_b);
+    stroke(255,0,0, 160);
+    line(low_a);
+    line(low_b);
 
-     stroke(0,255,0, 160);
-     line(high_a);
-     line(high_b);
+    stroke(0,255,0, 160);
+    line(high_a);
+    line(high_b);
 
-     PVector i_upper = high_a.intersect(high_b);
-     stroke(RED);
-     strokeWeight(5);
-     point(i_upper.x,i_upper.y);
+    PVector i_upper = high_a.intersect(high_b);
+    stroke(RED);
+    strokeWeight(5);
+    point(i_upper.x,i_upper.y);
 
-     PVector i_lower = low_a.intersect(low_b);
-     stroke(RED);
-     strokeWeight(5);
-     point(i_lower.x,i_lower.y);
+    PVector i_lower = low_a.intersect(low_b);
+    stroke(RED);
+    strokeWeight(5);
+    point(i_lower.x,i_lower.y);
   }
 }

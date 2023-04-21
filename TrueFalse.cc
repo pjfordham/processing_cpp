@@ -11,32 +11,32 @@
 boolean b = false;
 
 void setup() {
-   size(640, 360);
-   stroke(255);
+  size(640, 360);
+  stroke(255);
 }
 
 void draw() {
-   int d = 20;
-   int middle = width/2;
+  int d = 20;
+  int middle = width/2;
 
-   background(0);
+  background(0);
 
-   for (int i = d; i <= width; i += d) {
+  for (int i = d; i <= width; i += d) {
 
-      if (i < middle) {
-         b = true;
-      } else {
-         b = false;
-      }
+    if (i < middle) {
+      b = true;
+    } else {
+      b = false;
+    }
 
-      if (b == true) {
-         // Vertical line
-         line(i, d, i, height-d);
-      }
+    if (b == true) {
+      // Vertical line
+      line(i, d, i, height-d);
+    }
 
-      if (b == false) {
-         // Horizontal line
-         line(middle, i - middle + d, width-d, i - middle + d);
-      }
-   }
+    if (b == false) {
+      // Horizontal line
+      line(middle, i - middle + d, width-d, i - middle + d);
+    }
+  }
 }

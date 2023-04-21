@@ -9,7 +9,7 @@
 
 class Spot {
 public:
-   float x, y, radius;
+  float x, y, radius;
   
   // First version of the Spot constructor;
   // the fields are assigned default values
