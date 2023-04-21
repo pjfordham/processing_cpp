@@ -1,8 +1,8 @@
 
 /**
- * PrimitivePShape. 
- * 
- * Using a PShape to display a custom polygon. 
+ * PrimitivePShape.
+ *
+ * Using a PShape to display a custom polygon.
  */
 
 // The PShape object

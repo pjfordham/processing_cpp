@@ -1,12 +1,12 @@
 /**
  * CountingString example
- * by Daniel Shiffman.  
- * 
- * This example demonstrates how to use a IntDict to store 
+ * by Daniel Shiffman.
+ *
+ * This example demonstrates how to use a IntDict to store
  * a number associated with a String.  Java HashMaps can also
  * be used for this, however, this example uses the IntDict
  * class offered by Processing's data package for simplicity
- * and added functionality. 
+ * and added functionality.
  *
  * This example uses the IntDict to perform a simple concordance
  * http://en.wikipedia.org/wiki/Concordance_(publishing)
@@ -16,7 +16,7 @@
 // An IntDict pairs Strings with integers
 IntDict concordance;
 
-// The raw array of words in 
+// The raw array of words in
 String[] tokens;
 int counter = 0;
 

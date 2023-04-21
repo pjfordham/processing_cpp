@@ -1,11 +1,11 @@
-// Implementation of 1D, 2D, and 3D Perlin noise. Based on the 
+// Implementation of 1D, 2D, and 3D Perlin noise. Based on the
 // C code by Paul Bourke:
 // http://local.wasp.uwa.edu.au/~pbourke/texture_colour/perlin/
 class Perlin {
   int B = 0x100;
   int BM = 0xff;
   int N = 0x1000;
-  int NP = 12; 
+  int NP = 12;
   int NM = 0xfff;
 
   int p[];
@@ -30,11 +30,11 @@ class Perlin {
     return t * t * (3.0 - 2.0 * t);
   }
 
-  float at2(float q[], float rx, float ry) { 
+  float at2(float q[], float rx, float ry) {
     return rx * q[0] + ry * q[1];
   }
 
-  float at3(float q[], float rx, float ry, float rz) { 
+  float at3(float q[], float rx, float ry, float rz) {
     return rx * q[0] + ry * q[1] + rz * q[2];
   }
 
@@ -42,10 +42,10 @@ class Perlin {
     p = new int[B + B + 2];
     g3 = new float[B + B + 2][3];
     g2 = new float[B + B + 2][2];
-    g1 = new float[B + B + 2];  
+    g1 = new float[B + B + 2];
 
     init();
-  }  
+  }
 
   void init() {
     int i, j, k;
@@ -87,7 +87,7 @@ class Perlin {
     bx0 = int(t) & BM;
     bx1 = (bx0 + 1) & BM;
     rx0 = t - int(t);
-    rx1 = rx0 - 1.0; 
+    rx1 = rx0 - 1.0;
 
     sx = sCurve(rx0);
     u = rx0 * g1[p[bx0]];
@@ -99,14 +99,14 @@ class Perlin {
   float noise2(float[] vec) {
     int bx0, bx1, by0, by1, b00, b10, b01, b11;
     float rx0, rx1, ry0, ry1, sx, sy, a, b, t, u, v;
-    float[] q;    
+    float[] q;
     int i, j;
 
     t = vec[0] + N;
     bx0 = int(t) & BM;
     bx1 = (bx0 + 1) & BM;
     rx0 = t - int(t);
-    rx1 = rx0 - 1.0; 
+    rx1 = rx0 - 1.0;
 
     t = vec[1] + N;
     by0 = int(t) & BM;
@@ -125,15 +125,15 @@ class Perlin {
     sx = sCurve(rx0);
     sy = sCurve(ry0);
 
-    q = g2[b00]; 
+    q = g2[b00];
     u = at2(q, rx0, ry0);
-    q = g2[b10]; 
+    q = g2[b10];
     v = at2(q, rx1, ry0);
     a = lerp(u, v, sx);
 
-    q = g2[b01] ; 
+    q = g2[b01] ;
     u = at2(q, rx0, ry1);
-    q = g2[b11] ; 
+    q = g2[b11] ;
     v = at2(q, rx1, ry1);
     b = lerp(u, v, sx);
 
@@ -176,29 +176,29 @@ class Perlin {
     sy = sCurve(ry0);
     sz = sCurve(rz0);
 
-    q = g3[b00 + bz0]; 
+    q = g3[b00 + bz0];
     u = at3(q, rx0, ry0, rz0);
-    q = g3[b10 + bz0]; 
+    q = g3[b10 + bz0];
     v = at3(q, rx1, ry0, rz0);
     a = lerp(u, v, t);
 
-    q = g3[b01 + bz0]; 
+    q = g3[b01 + bz0];
     u = at3(q, rx0, ry1, rz0);
-    q = g3[b11 + bz0]; 
+    q = g3[b11 + bz0];
     v = at3(q, rx1, ry1, rz0);
     b = lerp(u, v, t);
 
     c = lerp(a, b, sy);
 
-    q = g3[b00 + bz1]; 
+    q = g3[b00 + bz1];
     u = at3(q, rx0, ry0, rz1);
-    q = g3[b10 + bz1]; 
+    q = g3[b10 + bz1];
     v = at3(q, rx1, ry0, rz1);
     a = lerp(u, v, t);
 
-    q = g3[b01 + bz1]; 
+    q = g3[b01 + bz1];
     u = at3(q, rx0, ry1, rz1);
-    q = g3[b11 + bz1]; 
+    q = g3[b11 + bz1];
     v = at3(q, rx1, ry1, rz1);
     b = lerp(u, v, t);
 
@@ -210,7 +210,7 @@ class Perlin {
   // In what follows "nalpha" is the weight when the sum is formed.
   // Typically it is 2, as this approaches 1 the function is noisier.
   // "nbeta" is the harmonic scaling/spacing, typically 2. n is the
-  // number of harmonics added up in the final result. Higher number 
+  // number of harmonics added up in the final result. Higher number
   // results in more detailed noise.
 
   float noise1D(float x, float nalpha, float nbeta, int n) {

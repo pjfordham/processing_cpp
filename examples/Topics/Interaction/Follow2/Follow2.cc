@@ -1,7 +1,7 @@
 /**
- * Follow 2  
- * based on code from Keith Peters. 
- * 
+ * Follow 2
+ * based on code from Keith Peters.
+ *
  * A two-segmented arm follows the cursor position. The relative
  * angle between the segments is calculated with atan2() and the
  * position calculated with sin() and cos().
@@ -26,7 +26,7 @@ void draw() {
 void dragSegment(int i, float xin, float yin) {
   float dx = xin - x[i];
   float dy = yin - y[i];
-  float angle = atan2(dy, dx);  
+  float angle = atan2(dy, dx);
   x[i] = xin - cos(angle) * segLength;
   y[i] = yin - sin(angle) * segLength;
   segment(x[i], y[i], angle);

@@ -1,11 +1,11 @@
 /**
- * Button. 
- * 
- * Click on one of the colored shapes in the 
- * center of the image to change the color of 
- * the background. 
+ * Button.
+ *
+ * Click on one of the colored shapes in the
+ * center of the image to change the color of
+ * the background.
  */
- 
+
 int rectX, rectY;      // Position of square button
 int circleX, circleY;  // Position of circle button
 int rectSize = 90;     // Diameter of rect
@@ -34,7 +34,7 @@ void setup() {
 void draw() {
   update(mouseX, mouseY);
   background(currentColor);
-  
+
   if (rectOver) {
     fill(rectHighlight);
   } else {
@@ -42,7 +42,7 @@ void draw() {
   }
   stroke(255);
   rect(rectX, rectY, rectSize, rectSize);
-  
+
   if (circleOver) {
     fill(circleHighlight);
   } else {
@@ -74,7 +74,7 @@ void mousePressed() {
 }
 
 boolean overRect(int x, int y, int width, int height)  {
-  if (mouseX >= x && mouseX <= x+width && 
+  if (mouseX >= x && mouseX <= x+width &&
       mouseY >= y && mouseY <= y+height) {
     return true;
   } else {

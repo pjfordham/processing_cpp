@@ -1,7 +1,7 @@
 /**
- * Acceleration with Vectors 
- * by Daniel Shiffman.  
- * 
+ * Acceleration with Vectors
+ * by Daniel Shiffman.
+ *
  * Demonstration of the basics of motion with vector.
  * A "Mover" object stores location, velocity, and acceleration as vectors
  * The motion is controlled by affecting the acceleration (in this case towards the mouse)
@@ -10,7 +10,7 @@
 
 class Mover {
 
-  // The Mover tracks location, velocity, and acceleration 
+  // The Mover tracks location, velocity, and acceleration
   PVector location;
   PVector velocity;
   PVector acceleration;
@@ -25,13 +25,13 @@ class Mover {
   }
 
   void update() {
-    
+
     // Compute a vector that points from location to mouse
     PVector mouse = new PVector(mouseX,mouseY);
     PVector acceleration = PVector.sub(mouse,location);
     // Set magnitude of acceleration
     acceleration.setMag(0.2);
-    
+
     // Velocity changes according to acceleration
     velocity.add(acceleration);
     // Limit the velocity by topspeed

@@ -1,8 +1,8 @@
 /**
- * Non-orthogonal Reflection 
- * by Ira Greenberg. 
- * 
- * Based on the equation (R = 2N(N*L)-L) where R is the 
+ * Non-orthogonal Reflection
+ * by Ira Greenberg.
+ *
+ * Based on the equation (R = 2N(N*L)-L) where R is the
  * reflection vector, N is the normal, and L is the incident
  * vector.
  */
@@ -71,7 +71,7 @@ void draw() {
     // check distance between ellipse and base top coordinates
     if (PVector.dist(position, coords[i]) < r) {
 
-      // calculate dot product of incident vector and base top normal 
+      // calculate dot product of incident vector and base top normal
       float dot = incidence.dot(normal);
 
       // calculate reflection vector
@@ -91,7 +91,7 @@ void draw() {
     position.x = width-r;
     velocity.x *= -1;
   }
-  // left 
+  // left
   if (position.x < r) {
     position.x = r;
     velocity.x *= -1;

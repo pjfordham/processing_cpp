@@ -1,9 +1,9 @@
 /**
- * Spring. 
- * 
- * Click, drag, and release the horizontal bar to start the spring. 
+ * Spring.
+ *
+ * Click, drag, and release the horizontal bar to start the spring.
  */
- 
+
 // Spring drawing constants for top bar
 int springHeight = 32;  // Height
 int left;               // Left position
@@ -41,16 +41,16 @@ void draw() {
 }
 
 void drawSpring() {
-  
+
   // Draw base
   fill(0.2);
   float baseWidth = 0.5 * ps + -8;
   rect(width/2 - baseWidth, ps + springHeight, width/2 + baseWidth, height);
 
   // Set color and draw top bar
-  if(over || move) { 
+  if(over || move) {
     fill(255);
-  } else { 
+  } else {
     fill(204);
   }
   rect(left, ps, right, ps + springHeight);
@@ -75,7 +75,7 @@ void updateSpring() {
   } else {
     over = false;
   }
-  
+
   // Set and constrain the position of top bar
   if(move) {
     ps = mouseY - springHeight/2;

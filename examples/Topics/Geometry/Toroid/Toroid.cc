@@ -1,10 +1,10 @@
 /**
  * Interactive Toroid
- * by Ira Greenberg. 
- * 
+ * by Ira Greenberg.
+ *
  * Illustrates the geometric relationship between Toroid, Sphere, and Helix
  * 3D primitives, as well as lathing principal.
- * 
+ *
  * Instructions: <br />
  * UP arrow key pts++ <br />
  * DOWN arrow key pts-- <br />
@@ -18,7 +18,7 @@
  * 'h' key toggle sphere/helix <br />
  */
 
-int pts = 40; 
+int pts = 40;
 float angle = 0;
 float radius = 60.0;
 
@@ -30,7 +30,7 @@ float latheRadius = 100.0;
 //vertices
 PVector vertices[], vertices2[];
 
-// for shaded or wireframe rendering 
+// for shaded or wireframe rendering
 boolean isWireFrame = false;
 
 // for optional helix
@@ -50,7 +50,7 @@ void draw(){
   if (isWireFrame){
     stroke(255, 255, 150);
     noFill();
-  } 
+  }
   else {
     noStroke();
     fill(150, 195, 125);
@@ -72,9 +72,9 @@ void draw(){
     vertices2[i] = new PVector();
     vertices[i].x = latheRadius + sin(radians(angle))*radius;
     if (isHelix){
-      vertices[i].z = cos(radians(angle))*radius-(helixOffset* 
+      vertices[i].z = cos(radians(angle))*radius-(helixOffset*
         segments)/2;
-    } 
+    }
     else{
       vertices[i].z = cos(radians(angle))*radius;
     }
@@ -95,13 +95,13 @@ void draw(){
       // optional helix offset
       if (isHelix){
         vertices[j].z+=helixOffset;
-      } 
+      }
       vertex(vertices2[j].x, vertices2[j].y, vertices2[j].z);
     }
     // create extra rotation for helix
     if (isHelix){
       latheAngle+=720.0/segments;
-    } 
+    }
     else {
       latheAngle+=360.0/segments;
     }
@@ -118,45 +118,45 @@ void draw(){
  'h' key toggles between toroid and helix
  */
 void keyPressed(){
-  if(key == CODED) { 
+  if(key == CODED) {
     // pts
-    if (keyCode == UP) { 
+    if (keyCode == UP) {
       if (pts<40){
         pts++;
-      } 
-    } 
-    else if (keyCode == DOWN) { 
+      }
+    }
+    else if (keyCode == DOWN) {
       if (pts>3){
         pts--;
       }
-    } 
+    }
     // extrusion length
-    if (keyCode == LEFT) { 
+    if (keyCode == LEFT) {
       if (segments>3){
-        segments--; 
+        segments--;
       }
-    } 
-    else if (keyCode == RIGHT) { 
+    }
+    else if (keyCode == RIGHT) {
       if (segments<80){
-        segments++; 
+        segments++;
       }
-    } 
+    }
   }
   // lathe radius
   if (key =='a'){
     if (latheRadius>0){
-      latheRadius--; 
+      latheRadius--;
     }
-  } 
+  }
   else if (key == 's'){
-    latheRadius++; 
+    latheRadius++;
   }
   // ellipse radius
   if (key =='z'){
     if (radius>10){
       radius--;
     }
-  } 
+  }
   else if (key == 'x'){
     radius++;
   }
@@ -164,7 +164,7 @@ void keyPressed(){
   if (key =='w'){
     if (isWireFrame){
       isWireFrame=false;
-    } 
+    }
     else {
       isWireFrame=true;
     }
@@ -173,7 +173,7 @@ void keyPressed(){
   if (key =='h'){
     if (isHelix){
       isHelix=false;
-    } 
+    }
     else {
       isHelix=true;
     }

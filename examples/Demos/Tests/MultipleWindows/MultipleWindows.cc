@@ -2,7 +2,7 @@
 
 ChildApplet child;
 boolean mousePressedOnParent = false;
-Arcball arcball, arcball2;  
+Arcball arcball, arcball2;
 
 void settings() {
   size(320, 240, P3D);
@@ -55,7 +55,7 @@ class ChildApplet extends PApplet {
     size(400, 400, P3D);
     smooth();
   }
-  public void setup() { 
+  public void setup() {
     surface.setTitle("Child sketch");
     arcball2 = new Arcball(this, 300);
   }

@@ -1,10 +1,10 @@
-/** 
- * Pentigree L-System 
- * by Geraldine Sarmiento. 
- * 
- * This code was based on Patrick Dwyer's L-System class. 
+/**
+ * Pentigree L-System
+ * by Geraldine Sarmiento.
+ *
+ * This code was based on Patrick Dwyer's L-System class.
  */
- 
+
 
 PentigreeLSystem ps;
 

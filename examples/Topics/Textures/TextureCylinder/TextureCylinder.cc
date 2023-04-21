@@ -1,9 +1,9 @@
 /**
- * Texture Cylinder. 
- * 
- * Load an image and draw it onto a cylinder and a quad. 
+ * Texture Cylinder.
+ *
+ * Load an image and draw it onto a cylinder and a quad.
  */
- 
+
 int tubeRes = 32;
 float[] tubeX = new float[tubeRes];
 float[] tubeY = new float[tubeRes];

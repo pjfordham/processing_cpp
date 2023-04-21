@@ -1,14 +1,14 @@
 /**
- * Keyboard Functions. 
- * Modified from code by Martin. 
- * Original 'Color Typewriter' concept by John Maeda. 
- * 
- * Click on the window to give it focus and press the letter keys to type colors. 
+ * Keyboard Functions.
+ * Modified from code by Martin.
+ * Original 'Color Typewriter' concept by John Maeda.
+ *
+ * Click on the window to give it focus and press the letter keys to type colors.
  * The keyboard function keyPressed() is called whenever
  * a key is pressed. keyReleased() is another keyboard
  * function that is called when a key is released.
  */
- 
+
 int maxHeight = 40;
 int minHeight = 20;
 int letterHeight = maxHeight; // Height of the letters
@@ -17,7 +17,7 @@ int letterWidth = 20;          // Width of the letter
 int x = -letterWidth;          // X position of the letters
 int y = 0;                      // Y position of the letters
 
-boolean newletter;              
+boolean newletter;
 
 int numChars = 26;      // There are 26 characters in the alphabet
 color[] colors = new color[numChars];
@@ -29,7 +29,7 @@ void setup() {
   background(numChars/2);
   // Set a hue value for each key
   for(int i = 0; i < numChars; i++) {
-    colors[i] = color(i, numChars, numChars);    
+    colors[i] = color(i, numChars, numChars);
   }
 }
 
@@ -72,7 +72,7 @@ void keyPressed()
   newletter = true;
 
   // Update the "letter" position
-  x = ( x + letterWidth ); 
+  x = ( x + letterWidth );
 
   // Wrap horizontally
   if (x > width - letterWidth) {

@@ -1,25 +1,25 @@
 /**
- * Edge Detection. 
- * 
+ * Edge Detection.
+ *
  * A high-pass filter sharpens an image. This program analyzes every
- * pixel in an image in relation to the neighboring pixels to sharpen 
+ * pixel in an image in relation to the neighboring pixels to sharpen
  * the image. This example is currently not accurate in JavaScript mode.
  */
 
-float[][] kernel = {{ -1, -1, -1}, 
-                    { -1,  9, -1}, 
+float[][] kernel = {{ -1, -1, -1},
+                    { -1,  9, -1},
                     { -1, -1, -1}};
-                    
+
 PImage img;
 
-void setup() { 
+void setup() {
   size(640, 360);
   img = loadImage("moon.jpg"); // Load the original image
   noLoop();
 }
 
 void draw() {
-  image(img, 0, 0); // Displays the image from point (0,0) 
+  image(img, 0, 0); // Displays the image from point (0,0)
   img.loadPixels();
   // Create an opaque image of the same size as the original
   PImage edgeImg = createImage(img.width, img.height, RGB);

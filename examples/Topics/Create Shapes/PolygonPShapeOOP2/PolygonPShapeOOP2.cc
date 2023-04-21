@@ -1,7 +1,7 @@
 /**
- * PolygonPShapeOOP. 
- * 
- * Wrapping a PShape inside a custom class 
+ * PolygonPShapeOOP.
+ *
+ * Wrapping a PShape inside a custom class
  * and demonstrating how we can have a multiple objects each
  * using the same PShape.
  */
@@ -29,10 +29,10 @@ void setup() {
   star.vertex(-47, -15);
   star.vertex(-14, -20);
   star.endShape(CLOSE);
-  
+
   // Make an ArrayList
   polygons = new ArrayList<Polygon>();
-  
+
   // Add a bunch of objects to the ArrayList
   // Pass in reference to the PShape
   // We coud make polygons with different PShapes

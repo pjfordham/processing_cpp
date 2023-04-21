@@ -1,8 +1,8 @@
 /**
- * Gravitational Attraction (3D) 
- * by Daniel Shiffman.  
- * 
- * Simulating gravitational attraction 
+ * Gravitational Attraction (3D)
+ * by Daniel Shiffman.
+ *
+ * Simulating gravitational attraction
  * G ---> universal gravitational constant
  * m1 --> mass of object #1
  * m2 --> mass of object #2
@@ -12,7 +12,7 @@
  * For the basics of working with PVector, see
  * http://processing.org/learning/pvector/
  * as well as examples in Topics/Vectors/
- * 
+ *
  */
 
 // A bunch of planets

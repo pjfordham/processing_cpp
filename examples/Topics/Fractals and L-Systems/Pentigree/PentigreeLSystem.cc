@@ -8,7 +8,7 @@ class PentigreeLSystem extends LSystem {
     axiom = "F-F-F-F-F";
     rule = "F-F++F+F-F-F";
     startLength = 60.0;
-    theta = radians(72);  
+    theta = radians(72);
     reset();
   }
 
@@ -40,7 +40,7 @@ class PentigreeLSystem extends LSystem {
 
   void render() {
     translate(width/4, height/2);
-    steps += 3;          
+    steps += 3;
     if (steps > production.length()) {
       steps = production.length();
     }
@@ -52,16 +52,16 @@ class PentigreeLSystem extends LSystem {
         stroke(255);
         line(0, 0, 0, -drawLength);
         translate(0, -drawLength);
-      } 
+      }
       else if (step == '+') {
         rotate(theta);
-      } 
+      }
       else if (step == '-') {
         rotate(-theta);
-      } 
+      }
       else if (step == '[') {
         pushMatrix();
-      } 
+      }
       else if (step == ']') {
         popMatrix();
       }

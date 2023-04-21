@@ -1,9 +1,9 @@
 
 public void setup() {
-  size(800, 600, P2D);  
+  size(800, 600, P2D);
 }
-  
-public void draw() {    
+
+public void draw() {
   background(255);
   stroke(0, 10);
   for (int i = 0; i < 50000; i++) {
@@ -12,9 +12,9 @@ public void draw() {
     float z0 = random(-100, 100);
     float x1 = random(width);
     float y1 = random(height);
-    float z1 = random(-100, 100);    
-    
-    // purely 2D lines will trigger the GLU 
+    float z1 = random(-100, 100);
+
+    // purely 2D lines will trigger the GLU
     // tessellator to add accurate line caps,
     // but performance will be substantially
     // lower.

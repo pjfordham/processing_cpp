@@ -1,10 +1,10 @@
 /**
- * Variables. 
- * 
- * Variables are used for storing values. In this example, change 
- * the values of variables to affect the composition. 
+ * Variables.
+ *
+ * Variables are used for storing values. In this example, change
+ * the values of variables to affect the composition.
  */
- 
+
 size(640, 360);
 background(0);
 stroke(153);

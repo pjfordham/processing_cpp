@@ -1,6 +1,6 @@
 /**
- * Texture Quad. 
- * 
+ * Texture Quad.
+ *
  * Load an image and draw it onto a quad. The texture() function sets
  * the texture image. The vertex() function maps the image to the geometry.
  */

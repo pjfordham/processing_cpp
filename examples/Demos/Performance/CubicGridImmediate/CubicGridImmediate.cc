@@ -1,9 +1,9 @@
 /**
- * Cubic Grid 
- * by Ira Greenberg. 
- * 
+ * Cubic Grid
+ * by Ira Greenberg.
+ *
  * 3D translucent colored grid uses nested pushMatrix()
- * and popMatrix() functions. 
+ * and popMatrix() functions.
  */
 
 float boxSize = 20;
@@ -24,20 +24,20 @@ void setup() {
 
 void draw() {
   background(255);
-  
+
   hint(DISABLE_DEPTH_TEST);
-    
+
   // Center and spin grid
   pushMatrix();
   translate(width/2, height/2, -depth);
   rotateY(frameCount * 0.01);
   rotateX(frameCount * 0.01);
 
-  // Build grid using multiple translations 
+  // Build grid using multiple translations
   for (float i =- depth/2+margin; i <= depth/2-margin; i += boxSize){
     for (float j =- height+margin; j <= height-margin; j += boxSize){
       for (float k =- width+margin; k <= width-margin; k += boxSize){
-        // Base fill color on counter values, abs function 
+        // Base fill color on counter values, abs function
         // ensures values stay within legal range
         boxFill = color(abs(i), abs(j), abs(k), 50);
         pushMatrix();
@@ -49,17 +49,17 @@ void draw() {
     }
   }
   popMatrix();
-  
+
   hint(ENABLE_DEPTH_TEST);
-  
+
   fcount += 1;
   int m = millis();
   if (m - lastm > 1000 * fint) {
     frate = float(fcount) / fint;
     fcount = 0;
     lastm = m;
-    println("fps: " + frate); 
+    println("fps: " + frate);
   }
   fill(0);
-  text("fps: " + frate, 10, 20);  
+  text("fps: " + frate, 10, 20);
 }

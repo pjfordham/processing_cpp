@@ -1,4 +1,4 @@
-class LSystem 
+class LSystem
 {
   int steps = 0;
 
@@ -32,7 +32,7 @@ class LSystem
 
   void render() {
     translate(width/2, height/2);
-    steps += 5;          
+    steps += 5;
     if (steps > production.length()) {
       steps = production.length();
     }
@@ -42,18 +42,18 @@ class LSystem
         rect(0, 0, -drawLength, -drawLength);
         noFill();
         translate(0, -drawLength);
-      } 
+      }
       else if (step == '+') {
         rotate(theta);
-      } 
+      }
       else if (step == '-') {
         rotate(-theta);
-      } 
+      }
       else if (step == '[') {
         pushMatrix();
-      } 
+      }
       else if (step == ']') {
-        popMatrix();            
+        popMatrix();
       }
     }
   }
@@ -67,7 +67,7 @@ class LSystem
   String iterate(String prod_, String rule_) {
     drawLength = drawLength * 0.6;
     generations++;
-    String newProduction = prod_;          
+    String newProduction = prod_;
     newProduction = newProduction.replaceAll("F", rule_);
     return newProduction;
   }

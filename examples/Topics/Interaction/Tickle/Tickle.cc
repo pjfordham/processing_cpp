@@ -1,6 +1,6 @@
 /**
- * Tickle. 
- * 
+ * Tickle.
+ *
  * The word "tickle" jitters when the cursor hovers over.
  * Sometimes, it can be tickled off the screen.
  */
@@ -11,11 +11,11 @@ float hr, vr;  // horizontal and vertical radius of the text
 
 void setup() {
   size(640, 360);
-  
+
   // Create the font
   textFont(createFont("SourceCodePro-Regular.ttf", 36));
   textAlign(CENTER, CENTER);
-  
+
   hr = textWidth(message) / 2;
   vr = (textAscent() + textDescent()) / 2;
   noStroke();
@@ -28,7 +28,7 @@ void draw() {
   // a semi-transparent rectangle on top
   fill(204, 120);
   rect(0, 0, width, height);
-  
+
   // If the cursor is over the text, change the position
   if (abs(mouseX - x) < hr &&
       abs(mouseY - y) < vr) {

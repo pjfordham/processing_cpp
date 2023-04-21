@@ -1,13 +1,13 @@
 /**
- * Cubes Contained Within a Cube 
- * by Ira Greenberg.  
- * 
+ * Cubes Contained Within a Cube
+ * by Ira Greenberg.
+ *
  * Collision detection against all
- * outer cube's surfaces. 
+ * outer cube's surfaces.
  */
 
 // 20 little internal cubes
-Cube[] cubies = new Cube[20]; 
+Cube[] cubies = new Cube[20];
 
 // Size of outer cube
 float bounds = 300;
@@ -38,7 +38,7 @@ void draw() {
 
 
   // Outer transparent cube, just using box() method
-  noFill(); 
+  noFill();
   box(bounds);
 
   // Move and rotate cubies

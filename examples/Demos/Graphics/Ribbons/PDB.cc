@@ -10,7 +10,7 @@ void readPDB(String filename) {
   String atstr, resstr;
 
   PShape model;
-  ArrayList atoms;  
+  ArrayList atoms;
   ArrayList residues;
   HashMap residue;
   PVector v;
@@ -20,13 +20,13 @@ void readPDB(String filename) {
   models = new ArrayList();
 
   xmin = ymin = zmin = 10000;
-  xmax = ymax = zmax = -10000; 
+  xmax = ymax = zmax = -10000;
 
   atoms = null;
   residues = null;
   residue = null;
   model = null;
-  res0 = -1;    
+  res0 = -1;
   nmdl = -1;
   for (int i = 0; i < strLines.length; i++) {
     s = strLines[i];
@@ -50,18 +50,18 @@ void readPDB(String filename) {
       xstr = s.substring(30, 37);
       xstr = xstr.trim();
       ystr = s.substring(38, 45);
-      ystr = ystr.trim();            
+      ystr = ystr.trim();
       zstr = s.substring(46, 53);
       zstr = zstr.trim();
 
       x = scaleFactor * parseFloat(xstr);
       y = scaleFactor * parseFloat(ystr);
-      z = scaleFactor * parseFloat(zstr);            
+      z = scaleFactor * parseFloat(zstr);
       v = new PVector(x, y, z);
 
       xmin = min(xmin, x);
       xmax = max(xmax, x);
-    
+
       ymin = min(ymin, y);
       ymax = max(ymax, y);
 
@@ -86,7 +86,7 @@ void readPDB(String filename) {
       float rgyr = calculateGyrRadius(atoms);
 
       res0 = -1;
-      residue = null;  
+      residue = null;
       atoms = null;
       residues = null;
     }

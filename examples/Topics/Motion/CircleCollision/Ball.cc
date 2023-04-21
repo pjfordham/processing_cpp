@@ -56,14 +56,14 @@ class Ball {
       float sine = sin(theta);
       float cosine = cos(theta);
 
-      /* bTemp will hold rotated ball positions. You 
+      /* bTemp will hold rotated ball positions. You
        just need to worry about bTemp[1] position*/
       PVector[] bTemp = {
         new PVector(), new PVector()
       };
 
       /* this ball's position is relative to the other
-       so you can use the vector between them (bVect) as the 
+       so you can use the vector between them (bVect) as the
        reference point in the rotation expressions.
        bTemp[0].position.x and bTemp[0].position.y will initialize
        automatically to 0.0, which is what you want
@@ -82,9 +82,9 @@ class Ball {
       vTemp[1].y  = cosine * other.velocity.y - sine * other.velocity.x;
 
       /* Now that velocities are rotated, you can use 1D
-       conservation of momentum equations to calculate 
+       conservation of momentum equations to calculate
        the final velocity along the x-axis. */
-      PVector[] vFinal = {  
+      PVector[] vFinal = {
         new PVector(), new PVector()
       };
 
@@ -101,10 +101,10 @@ class Ball {
       bTemp[1].x += vFinal[1].x;
 
       /* Rotate ball positions and velocities back
-       Reverse signs in trig expressions to rotate 
+       Reverse signs in trig expressions to rotate
        in the opposite direction */
       // rotate balls
-      PVector[] bFinal = { 
+      PVector[] bFinal = {
         new PVector(), new PVector()
       };
 

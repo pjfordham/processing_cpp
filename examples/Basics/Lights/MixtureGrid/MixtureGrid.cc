@@ -1,8 +1,8 @@
 /**
- * Mixture Grid  
- * modified from an example by Simon Greenwold. 
- * 
- * Display a 2D grid of boxes with three different kinds of lights. 
+ * Mixture Grid
+ * modified from an example by Simon Greenwold.
+ *
+ * Display a 2D grid of boxes with three different kinds of lights.
  */
 
 void setup() {
@@ -13,7 +13,7 @@ void setup() {
 void draw() {
   defineLights();
   background(0);
-  
+
   for (int x = 0; x <= width; x += 60) {
     for (int y = 0; y <= height; y += 60) {
       pushMatrix();

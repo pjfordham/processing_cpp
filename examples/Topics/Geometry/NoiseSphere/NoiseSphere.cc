@@ -1,15 +1,15 @@
 /**
- * Noise Sphere 
- * by David Pena.  
- * 
- * Uniform random distribution on the surface of a sphere. 
+ * Noise Sphere
+ * by David Pena.
+ *
+ * Uniform random distribution on the surface of a sphere.
  */
 
 int cuantos = 4000;
 Pelo[] lista ;
-float[] z = new float[cuantos]; 
-float[] phi = new float[cuantos]; 
-float[] largos = new float[cuantos]; 
+float[] z = new float[cuantos];
+float[] phi = new float[cuantos];
+float[] largos = new float[cuantos];
 float radio;
 float rx = 0;
 float ry =0;
@@ -45,7 +45,7 @@ void draw() {
 
 
 class Pelo {
-  
+
   float z = random(-radio, radio);
   float phi = random(TWO_PI);
   float largo = random(1.15, 1.2);

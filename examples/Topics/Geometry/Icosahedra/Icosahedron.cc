@@ -43,7 +43,7 @@ class Icosahedron extends Shape3D{
     bottomPoint = new PVector(0, 0, -(triHt/2.0f+a));
   }
 
-  // draws icosahedron 
+  // draws icosahedron
   void create(){
     for (int i=0; i<topPent.length; i++){
       // icosahedron top
@@ -52,7 +52,7 @@ class Icosahedron extends Shape3D{
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);
         vertex(x+topPoint.x, y+topPoint.y, z+topPoint.z);
         vertex(x+topPent[i+1].x, y+topPent[i+1].y, z+topPent[i+1].z);
-      } 
+      }
       else {
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);
         vertex(x+topPoint.x, y+topPoint.y, z+topPoint.z);
@@ -66,7 +66,7 @@ class Icosahedron extends Shape3D{
         vertex(x+bottomPent[i].x, y+bottomPent[i].y, z+bottomPent[i].z);
         vertex(x+bottomPoint.x, y+bottomPoint.y, z+bottomPoint.z);
         vertex(x+bottomPent[i+1].x, y+bottomPent[i+1].y, z+bottomPent[i+1].z);
-      } 
+      }
       else {
         vertex(x+bottomPent[i].x, y+bottomPent[i].y, z+bottomPent[i].z);
         vertex(x+bottomPoint.x, y+bottomPoint.y, z+bottomPoint.z);
@@ -89,7 +89,7 @@ class Icosahedron extends Shape3D{
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);
         vertex(x+topPent[i+1].x, y+topPent[i+1].y, z+topPent[i+1].z);
         endShape(CLOSE);
-      } 
+      }
       else if (i==topPent.length-2){
         beginShape();
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);

@@ -4,7 +4,7 @@ class Animation {
   PImage[] images;
   int imageCount;
   int frame;
-  
+
   Animation(String imagePrefix, int count) {
     imageCount = count;
     images = new PImage[imageCount];
@@ -20,7 +20,7 @@ class Animation {
     frame = (frame+1) % imageCount;
     image(images[frame], xpos, ypos);
   }
-  
+
   int getWidth() {
     return images[0].width;
   }

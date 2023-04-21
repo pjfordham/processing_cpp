@@ -1,7 +1,7 @@
 /**
- * Array Objects. 
- * 
- * Demonstrates the syntax for creating an array of custom objects. 
+ * Array Objects.
+ *
+ * Demonstrates the syntax for creating an array of custom objects.
  */
 
 int unit = 40;

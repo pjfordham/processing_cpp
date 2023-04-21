@@ -3,8 +3,8 @@ public void setup() {
   size(800, 600, P2D);
   fill(0);
 }
-  
-public void draw() {    
+
+public void draw() {
   background(255);
   for (int i = 0; i < 10000; i++) {
     float x = random(width);

@@ -1,10 +1,10 @@
 /**
- * Soft Body 
- * by Ira Greenberg.  
- * 
+ * Soft Body
+ * by Ira Greenberg.
+ *
  * Softbody dynamics simulation using curveVertex() and curveTightness().
  */
- 
+
 // center point
 float centerX = 0, centerY = 0;
 

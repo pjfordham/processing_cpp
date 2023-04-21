@@ -1,6 +1,6 @@
 /**
  * LoadFile 1
- * 
+ *
  * Loads a text file that contains two numbers separated by a tab ('\t').
  * A new pair of numbers is loaded each frame and used to draw a point on the screen.
  */

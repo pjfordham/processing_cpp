@@ -1,17 +1,17 @@
 /**
- * Iteration. 
- * 
- * Iteration with a "for" structure to construct repetitive forms. 
+ * Iteration.
+ *
+ * Iteration with a "for" structure to construct repetitive forms.
  */
- 
+
 int y;
 int num = 14;
 
 size(640, 360);
 background(102);
 noStroke();
- 
-// White bars 
+
+// White bars
 fill(255);
 y = 60;
 for(int i = 0; i < num/3; i++) {
@@ -31,7 +31,7 @@ for(int i = 0; i < num; i++) {
   rect(425, y, 30, 10);
   y += 20;
 }
-  
+
 // Thin lines
 y = 45;
 fill(0);

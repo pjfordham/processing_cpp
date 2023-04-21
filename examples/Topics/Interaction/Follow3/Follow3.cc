@@ -1,7 +1,7 @@
 /**
- * Follow 3  
- * based on code from Keith Peters. 
- * 
+ * Follow 3
+ * based on code from Keith Peters.
+ *
  * A segmented line follows the mouse. The relative angle from
  * each segment to the next is calculated with atan2() and the
  * position of the next is calculated with sin() and cos().
@@ -28,7 +28,7 @@ void draw() {
 void dragSegment(int i, float xin, float yin) {
   float dx = xin - x[i];
   float dy = yin - y[i];
-  float angle = atan2(dy, dx);  
+  float angle = atan2(dy, dx);
   x[i] = xin - cos(angle) * segLength;
   y[i] = yin - sin(angle) * segLength;
   segment(x[i], y[i], angle);

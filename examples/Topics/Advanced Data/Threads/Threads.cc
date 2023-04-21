@@ -1,7 +1,7 @@
 /**
  * Thread function example
- * by Daniel Shiffman.  
- * 
+ * by Daniel Shiffman.
+ *
  * This example demonstrates how to use thread() to spawn
  * a process that happens outside of the main animation thread.
  *
@@ -13,18 +13,18 @@
 
 // This sketch will load data from all of these URLs in a separate thread
 String[] urls = {
-  "http://processing.org", 
-  "http://www.processing.org/exhibition/", 
-  "http://www.processing.org/reference/", 
-  "http://www.processing.org/reference/libraries", 
-  "http://www.processing.org/reference/tools",   
-  "http://www.processing.org/reference/environment",   
-  "http://www.processing.org/learning/", 
-  "http://www.processing.org/learning/basics/", 
-  "http://www.processing.org/learning/topics/", 
+  "http://processing.org",
+  "http://www.processing.org/exhibition/",
+  "http://www.processing.org/reference/",
+  "http://www.processing.org/reference/libraries",
+  "http://www.processing.org/reference/tools",
+  "http://www.processing.org/reference/environment",
+  "http://www.processing.org/learning/",
+  "http://www.processing.org/learning/basics/",
+  "http://www.processing.org/learning/topics/",
   "http://www.processing.org/learning/gettingstarted/",
-  "http://www.processing.org/download/", 
-  "http://www.processing.org/shop/", 
+  "http://www.processing.org/download/",
+  "http://www.processing.org/shop/",
   "http://www.processing.org/about/"
 };
 
@@ -44,7 +44,7 @@ void setup() {
 
 void draw() {
   background(0);
-  
+
   // If we're not finished draw a "loading bar"
   // This is so that we can see the progress of the thread
   // This would not be necessary in a sketch where you wanted to load data in the background
@@ -61,7 +61,7 @@ void draw() {
     textAlign(CENTER);
     fill(255);
     text("Loading", width/2, height/2+30);
-  } 
+  }
   else {
     // The thread is complete!
     textAlign(CENTER);
@@ -80,7 +80,7 @@ void loadData() {
   finished = false;
   // Reset the data to empty
   allData = "";
-  
+
   // Look at each URL
   // This example is doing some highly arbitrary things just to make it take longer
   // If you had a lot of data parsing you needed to do, this can all happen in the background
@@ -97,11 +97,11 @@ void loadData() {
     allData += join(words, " ");
     percent = float(i)/urls.length;
   }
-  
+
   String[] words = split(allData," ");
   words = sort(words);
   allData = join(words, " ");
-  
+
   // The thread is completed!
   finished = true;
 }

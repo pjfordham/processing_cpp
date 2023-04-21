@@ -1,11 +1,11 @@
 /**
  * Koch Curve
  * by Daniel Shiffman.
- * 
- * Renders a simple fractal, the Koch snowflake. 
- * Each recursive level is drawn in sequence. 
+ *
+ * Renders a simple fractal, the Koch snowflake.
+ * Each recursive level is drawn in sequence.
  */
- 
+
 
 KochFractal k;
 

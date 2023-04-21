@@ -1,9 +1,9 @@
 /**
  * Loading JSON Data
- * by Daniel Shiffman.  
- * 
+ * by Daniel Shiffman.
+ *
  * This example demonstrates how to use loadJSON()
- * to retrieve data from a JSON file and make objects 
+ * to retrieve data from a JSON file and make objects
  * from that data.
  *
  * Here is what the JSON looks like (partial):
@@ -60,17 +60,17 @@ void draw() {
   JSONArray bubbleData = json.getJSONArray("bubbles");
 
   // The size of the array of Bubble objects is determined by the total XML elements named "bubble"
-  bubbles = new Bubble[bubbleData.size()]; 
+  bubbles = new Bubble[bubbleData.size()];
 
   for (int i = 0; i < bubbleData.size(); i++) {
     // Get each object in the array
-    JSONObject bubble = bubbleData.getJSONObject(i); 
+    JSONObject bubble = bubbleData.getJSONObject(i);
     // Get a position object
     JSONObject position = bubble.getJSONObject("position");
     // Get x,y from position
     int x = position.getInt("x");
     int y = position.getInt("y");
-    
+
     // Get diamter and label
     float diameter = bubble.getFloat("diameter");
     String label = bubble.getString("label");

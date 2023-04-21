@@ -13,14 +13,14 @@ void setup() {
   loadTileShader();
 }
 
-void loadTileShader() {  
+void loadTileShader() {
   tileShader = loadShader("scroller.glsl");
-  tileShader.set("resolution", float(width), float(height));  
+  tileShader.set("resolution", float(width), float(height));
   tileShader.set("tileImage", tileTexture);
 }
 
 void draw() {
   tileShader.set("time", millis() / 1000.0);
-  shader(tileShader);                    
+  shader(tileShader);
   rect(0, 0, width, height);
 }

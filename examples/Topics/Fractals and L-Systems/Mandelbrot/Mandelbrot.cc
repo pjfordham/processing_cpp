@@ -1,6 +1,6 @@
 /**
  * The Mandelbrot Set
- * by Daniel Shiffman.  
+ * by Daniel Shiffman.
  * (slight modification by l8l)
  *
  * Simple rendering of the Mandelbrot set.
@@ -57,7 +57,7 @@ for (int j = 0; j < height; j++) {
       float bb = b * b;
       float abs = sqrt(aa + bb);
       if (abs > max) { // |z| = sqrt(a^2+b^2)
-        // Now measure how much we exceeded the maximum: 
+        // Now measure how much we exceeded the maximum:
         float diffToLast = (float) (abs - absOld);
         float diffToMax  = (float) (max - absOld);
         convergeNumber = n + diffToMax/diffToLast;

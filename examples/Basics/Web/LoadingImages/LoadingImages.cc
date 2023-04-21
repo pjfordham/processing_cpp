@@ -1,8 +1,8 @@
 /**
- * Loading Images. 
- * 
- * Processing applications can load images from the network. 
- * 
+ * Loading Images.
+ *
+ * Processing applications can load images from the network.
+ *
  */
 
 PImage img;

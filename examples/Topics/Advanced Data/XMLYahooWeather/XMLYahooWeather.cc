@@ -1,7 +1,7 @@
 /**
  * Loading XML Data
- * by Daniel Shiffman.  
- * 
+ * by Daniel Shiffman.
+ *
  * This example demonstrates how to use loadXML()
  * to retrieve data from an XML document via a URL
  */
@@ -12,7 +12,7 @@ int temperature = 0;
 String weather = "";
 
 
-// Yahoo weather uses something called A WOEID (Where On Earth IDentifier) 
+// Yahoo weather uses something called A WOEID (Where On Earth IDentifier)
 // https://en.wikipedia.org/wiki/WOEID
 // This is the WOEID for zip code 10003
 String zip = "10003";
@@ -22,19 +22,19 @@ PFont font;
 
 void setup() {
   size(600, 360);
-  
+
   font = createFont("Merriweather-Light.ttf", 28);
   textFont(font);
 
   // The URL for the XML document
   String url = "http://query.yahooapis.com/v1/public/yql?format=xml&q=select+*+from+weather.forecast+where+woeid=" + woeid + "+and+u='F'";
-  
+
   // Load the XML document
   XML xml = loadXML(url);
 
   // Grab the element we want
   XML forecast = xml.getChild("results/channel/item/yweather:forecast");
-  
+
   // Get the attributes we want
   temperature = forecast.getInt("high");
   weather = forecast.getString("text");

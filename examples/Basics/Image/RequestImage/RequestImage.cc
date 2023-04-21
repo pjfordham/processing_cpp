@@ -1,14 +1,14 @@
 /**
  * Request Image
- * by Ira Greenberg ( From Processing for Flash Developers). 
- * 
- * Shows how to use the requestImage() function with preloader animation. 
- * The requestImage() function loads images on a separate thread so that 
+ * by Ira Greenberg ( From Processing for Flash Developers).
+ *
+ * Shows how to use the requestImage() function with preloader animation.
+ * The requestImage() function loads images on a separate thread so that
  * the sketch does not freeze while they load. It's very useful when you are
- * loading large images. 
- * 
- * These images are small for a quick download, but try it with your own huge 
- * images to get the full effect. 
+ * loading large images.
+ *
+ * These images are small for a quick download, but try it with your own huge
+ * images to get the full effect.
  */
 
 int imgCount = 12;
@@ -33,10 +33,10 @@ void setup() {
 
 void draw(){
   background(0);
-  
+
   // Start loading animation
   runLoaderAni();
-  
+
   for (int i = 0; i < imgs.length; i++){
     // Check if individual images are fully loaded
     if ((imgs[i].width != 0) && (imgs[i].width != -1)){
@@ -72,12 +72,12 @@ void runLoaderAni(){
   }
 }
 
-// Return true when all images are loaded - no false values left in array 
+// Return true when all images are loaded - no false values left in array
 boolean checkLoadStates(){
   for (int i = 0; i < imgs.length; i++){
     if (loadStates[i] == false){
       return false;
-    } 
+    }
   }
   return true;
 }

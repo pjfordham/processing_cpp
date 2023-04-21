@@ -1,6 +1,6 @@
 /**
- * Arm. 
- * 
+ * Arm.
+ *
  * The angle of each segment is controlled with the mouseX and
  * mouseY position. The transformations applied to the first segment
  * are also applied to the second segment because they are inside
@@ -16,19 +16,19 @@ void setup() {
   size(640, 360);
   strokeWeight(30);
   stroke(255, 160);
-  
+
   x = width * 0.3;
   y = height * 0.5;
 }
 
 void draw() {
   background(0);
-  
+
   angle1 = (mouseX/float(width) - 0.5) * -PI;
   angle2 = (mouseY/float(height) - 0.5) * PI;
-  
+
   pushMatrix();
-  segment(x, y, angle1); 
+  segment(x, y, angle1);
   segment(segLength, 0, angle2);
   popMatrix();
 }

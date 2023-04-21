@@ -1,6 +1,6 @@
 /**
- * Texture Triangle. 
- * 
+ * Texture Triangle.
+ *
  * Using a rectangular image to map a texture onto a triangle.
  */
 

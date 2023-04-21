@@ -1,16 +1,16 @@
 /**
- * Words. 
- * 
+ * Words.
+ *
  * The text() function is used for writing words to the screen.
- * The letters can be aligned left, center, or right with the 
- * textAlign() function. 
+ * The letters can be aligned left, center, or right with the
+ * textAlign() function.
  */
-  
+
 PFont f;
-  
+
 void setup() {
   size(640, 360);
-  
+
   // Create the font
   printArray(PFont.list());
   f = createFont("SourceCodePro-Regular.ttf", 24);

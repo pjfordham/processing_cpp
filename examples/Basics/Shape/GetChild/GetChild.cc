@@ -1,8 +1,8 @@
 /**
- * Get Child. 
- * 
- * SVG files can be made of many individual shapes. 
- * Each of these shapes (called a "child") has its own name 
+ * Get Child.
+ *
+ * SVG files can be made of many individual shapes.
+ * Each of these shapes (called a "child") has its own name
  * that can be used to extract it from the "parent" file.
  * This example loads a map of the United States and creates
  * two new PShape objects by extracting the data from two states.
@@ -13,7 +13,7 @@ PShape michigan;
 PShape ohio;
 
 void setup() {
-  size(640, 360);  
+  size(640, 360);
   usa = loadShape("usa-wikipedia.svg");
   michigan = usa.getChild("MI");
   ohio = usa.getChild("OH");
@@ -21,10 +21,10 @@ void setup() {
 
 void draw() {
   background(255);
-  
+
   // Draw the full map
   shape(usa, -600, -180);
-  
+
   // Disable the colors found in the SVG file
   michigan.disableStyle();
   // Set our own coloring
@@ -32,7 +32,7 @@ void draw() {
   noStroke();
   // Draw a single state
   shape(michigan, -600, -180); // Wolverines!
-  
+
   // Disable the colors found in the SVG file
   ohio.disableStyle();
   // Set our own coloring

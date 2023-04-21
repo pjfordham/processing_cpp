@@ -1,5 +1,5 @@
 // A class to describe a group of Particles
-// An ArrayList is used to manage the list of Particles 
+// An ArrayList is used to manage the list of Particles
 
 class ParticleSystem {
 
@@ -32,7 +32,7 @@ class ParticleSystem {
     for (Particle p : particles) {
       p.applyForce(dir);
     }
-  }  
+  }
 
   void addParticle() {
     particles.add(new Particle(origin, img));

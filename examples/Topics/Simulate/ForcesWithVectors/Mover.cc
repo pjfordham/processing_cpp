@@ -1,7 +1,7 @@
 /**
- * Forces (Gravity and Fluid Resistence) with Vectors 
- * by Daniel Shiffman.  
- * 
+ * Forces (Gravity and Fluid Resistence) with Vectors
+ * by Daniel Shiffman.
+ *
  * Demonstration of multiple force acting on bodies (Mover class)
  * Bodies experience gravity continuously
  * Bodies experience fluid resistance when in "water"
@@ -10,7 +10,7 @@
 
 class Mover {
 
-  // position, velocity, and acceleration 
+  // position, velocity, and acceleration
   PVector position;
   PVector velocity;
   PVector acceleration;
@@ -28,7 +28,7 @@ class Mover {
   // Newton's 2nd law: F = M * A
   // or A = F / M
   void applyForce(PVector force) {
-    // Divide by mass 
+    // Divide by mass
     PVector f = PVector.div(force, mass);
     // Accumulate all forces in acceleration
     acceleration.add(f);

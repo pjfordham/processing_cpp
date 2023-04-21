@@ -1,7 +1,7 @@
 /**
- * PolygonPShapeOOP. 
- * 
- * Wrapping a PShape inside a custom class 
+ * PolygonPShapeOOP.
+ *
+ * Wrapping a PShape inside a custom class
  * and demonstrating how we can have a multiple objects each
  * using the same PShape.
  */
@@ -15,14 +15,14 @@ PShape[] shapes = new PShape[3];
 
 void setup() {
   size(640, 360, P2D);
-  
+
   shapes[0] = createShape(ELLIPSE,0,0,100,100);
   shapes[0].setFill(color(255, 127));
   shapes[0].setStroke(false);
   shapes[1] = createShape(RECT,0,0,100,100);
   shapes[1].setFill(color(255, 127));
   shapes[1].setStroke(false);
-  shapes[2] = createShape();  
+  shapes[2] = createShape();
   shapes[2].beginShape();
   shapes[2].fill(0, 127);
   shapes[2].noStroke();
@@ -40,7 +40,7 @@ void setup() {
 
   // Make an ArrayList
   polygons = new ArrayList<Polygon>();
-  
+
   for (int i = 0; i < 25; i++) {
     int selection = int(random(shapes.length));        // Pick a random index
     Polygon p = new Polygon(shapes[selection]);        // Use corresponding PShape to create Polygon

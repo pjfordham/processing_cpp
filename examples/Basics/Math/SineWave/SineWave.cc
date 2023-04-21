@@ -1,10 +1,10 @@
 /**
  * Sine Wave
- * by Daniel Shiffman.  
- * 
- * Render a simple sine wave. 
+ * by Daniel Shiffman.
+ *
+ * Render a simple sine wave.
  */
- 
+
 int xspacing = 16;   // How far apart should each horizontal location be spaced
 int w;              // Width of entire wave
 

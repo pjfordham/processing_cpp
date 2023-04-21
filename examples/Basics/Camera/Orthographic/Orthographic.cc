@@ -1,9 +1,9 @@
 /**
  * Perspective vs. Ortho
  *
- * Move the mouse left to right to change the "far" 
+ * Move the mouse left to right to change the "far"
  * parameter for the perspective() and ortho() functions.
- * This parameter sets the maximum distance from the 
+ * This parameter sets the maximum distance from the
  * origin away from the viewer and will clip the geometry.
  * Click a mouse button to switch between the perspective and
  * orthographic projections.

@@ -1,8 +1,8 @@
 /**
  * LoadFile 2
- * 
+ *
  * This example loads a data file about cars. Each element is separated
- * with a tab and corresponds to a different aspect of each car. The file stores 
+ * with a tab and corresponds to a different aspect of each car. The file stores
  * the miles per gallon, cylinders, displacement, etc., for more than 400 different
  * makes and models. Press a mouse button to advance to the next group of entries.
  */
@@ -18,10 +18,10 @@ void setup() {
   size(200, 200);
   fill(255);
   noLoop();
-  
+
   body = loadFont("TheSans-Plain-12.vlw");
   textFont(body);
-  
+
   lines = loadStrings("cars2.tsv");
   records = new Record[lines.length];
   for (int i = 0; i < lines.length; i++) {
@@ -47,9 +47,9 @@ void draw() {
 }
 
 void mousePressed() {
-  startingEntry += num; 
+  startingEntry += num;
   if (startingEntry > records.length) {
     startingEntry = 0;  // go back to the beginning
-  } 
+  }
   redraw();
 }

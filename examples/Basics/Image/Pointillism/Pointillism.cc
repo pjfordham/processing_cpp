@@ -1,10 +1,10 @@
 /**
  * Pointillism
- * by Daniel Shiffman. 
- * 
- * Mouse horizontal location controls size of dots. 
+ * by Daniel Shiffman.
+ *
+ * Mouse horizontal location controls size of dots.
  * Creates a simple pointillist effect using ellipses colored
- * according to pixels in an image. 
+ * according to pixels in an image.
  */
 
 PImage img;
@@ -20,7 +20,7 @@ void setup() {
   background(255);
 }
 
-void draw() { 
+void draw() {
   float pointillize = map(mouseX, 0, width, smallPoint, largePoint);
   int x = int(random(img.width));
   int y = int(random(img.height));

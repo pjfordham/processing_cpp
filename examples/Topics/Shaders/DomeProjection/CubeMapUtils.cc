@@ -30,7 +30,7 @@ void initCubeMap() {
   pgl.renderbufferStorage(PGL.RENDERBUFFER, PGL.DEPTH_COMPONENT24, envMapSize, envMapSize);
 
   // Attach depth buffer to FBO
-  pgl.framebufferRenderbuffer(PGL.FRAMEBUFFER, PGL.DEPTH_ATTACHMENT, PGL.RENDERBUFFER, rbo.get(0));    
+  pgl.framebufferRenderbuffer(PGL.FRAMEBUFFER, PGL.DEPTH_ATTACHMENT, PGL.RENDERBUFFER, rbo.get(0));
 
   endPGL();
 
@@ -42,13 +42,13 @@ void initCubeMap() {
 void drawCubeMap() {
   PGL pgl = beginPGL();
   pgl.activeTexture(PGL.TEXTURE1);
-  pgl.enable(PGL.TEXTURE_CUBE_MAP);  
-  pgl.bindTexture(PGL.TEXTURE_CUBE_MAP, envMapTextureID.get(0));     
+  pgl.enable(PGL.TEXTURE_CUBE_MAP);
+  pgl.bindTexture(PGL.TEXTURE_CUBE_MAP, envMapTextureID.get(0));
   regenerateEnvMap(pgl);
   endPGL();
-  
+
   drawDomeMaster();
-  
+
   pgl.bindTexture(PGL.TEXTURE_CUBE_MAP, 0);
 }
 
@@ -62,14 +62,14 @@ void drawDomeMaster() {
 }
 
 // Called to regenerate the envmap
-void regenerateEnvMap(PGL pgl) {    
+void regenerateEnvMap(PGL pgl) {
   // bind fbo
   pgl.bindFramebuffer(PGL.FRAMEBUFFER, fbo.get(0));
 
   // generate 6 views from origin(0, 0, 0)
-  pgl.viewport(0, 0, envMapSize, envMapSize);    
-  perspective(90.0f * DEG_TO_RAD, 1.0f, 1.0f, 1025.0f);  
-  for (int face = PGL.TEXTURE_CUBE_MAP_POSITIVE_X; face < 
+  pgl.viewport(0, 0, envMapSize, envMapSize);
+  perspective(90.0f * DEG_TO_RAD, 1.0f, 1.0f, 1025.0f);
+  for (int face = PGL.TEXTURE_CUBE_MAP_POSITIVE_X; face <
                   PGL.TEXTURE_CUBE_MAP_NEGATIVE_Z; face++) {
     resetMatrix();
 
@@ -78,20 +78,20 @@ void regenerateEnvMap(PGL pgl) {
     } else if (face == PGL.TEXTURE_CUBE_MAP_NEGATIVE_X) {
       camera(0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f);
     } else if (face == PGL.TEXTURE_CUBE_MAP_POSITIVE_Y) {
-      camera(0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, -1.0f);  
+      camera(0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, -1.0f);
     } else if (face == PGL.TEXTURE_CUBE_MAP_NEGATIVE_Y) {
       camera(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
     } else if (face == PGL.TEXTURE_CUBE_MAP_POSITIVE_Z) {
-      camera(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f);    
+      camera(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f);
     }
-    
+
     scale(-1, 1, -1);
     translate(-width * 0.5f, -height * 0.5f, -500);
 
     pgl.framebufferTexture2D(PGL.FRAMEBUFFER, PGL.COLOR_ATTACHMENT0, face, envMapTextureID.get(0), 0);
 
     drawScene(); // Draw objects in the scene
-    flush(); // Make sure that the geometry in the scene is pushed to the GPU    
+    flush(); // Make sure that the geometry in the scene is pushed to the GPU
     noLights();  // Disabling lights to avoid adding many times
     pgl.framebufferTexture2D(PGL.FRAMEBUFFER, PGL.COLOR_ATTACHMENT0, face, 0, 0);
   }

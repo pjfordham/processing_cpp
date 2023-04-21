@@ -1,7 +1,7 @@
 /**
- * Wave Gradient 
- * by Ira Greenberg.  
- * 
+ * Wave Gradient
+ * by Ira Greenberg.
+ *
  * Generate a gradient along a sin() wave.
  */
 
@@ -11,12 +11,12 @@ float fillGap = 2.5;
 void setup() {
   size(640, 360);
   background(200);
-  
-  // To efficiently set all the pixels on screen, make the set() 
+
+  // To efficiently set all the pixels on screen, make the set()
   // calls on a PImage, then write the result to the screen.
   PImage gradient = createImage(width, height, RGB);
   float frequency = 0;
-  
+
   for (int i =- 75; i < height+75; i++){
     // Reset angle to 0, so waves stack properly
     float angle = 0;

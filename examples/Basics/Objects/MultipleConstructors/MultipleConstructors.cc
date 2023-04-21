@@ -1,9 +1,9 @@
 /**
  * Multiple constructors
- * 
- * A class can have multiple constructors that assign the fields in different ways. 
- * Sometimes it's beneficial to specify every aspect of an object's data by assigning 
- * parameters to the fields, but other times it might be appropriate to define only 
+ *
+ * A class can have multiple constructors that assign the fields in different ways.
+ * Sometimes it's beneficial to specify every aspect of an object's data by assigning
+ * parameters to the fields, but other times it might be appropriate to define only
  * one or a few.
  */
 
@@ -26,7 +26,7 @@ void draw() {
 
 class Spot {
   float x, y, radius;
-  
+
   // First version of the Spot constructor;
   // the fields are assigned default values
   Spot() {
@@ -34,7 +34,7 @@ class Spot {
     x = width*0.25;
     y = height*0.5;
   }
-  
+
   // Second version of the Spot constructor;
   // the fields are assigned with parameters
   Spot(float xpos, float ypos, float r) {
@@ -45,5 +45,5 @@ class Spot {
   void display() {
     ellipse(x, y, radius*2, radius*2);
   }
-  
+
 }

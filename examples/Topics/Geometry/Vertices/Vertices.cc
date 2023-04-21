@@ -1,10 +1,10 @@
 /**
- * Vertices 
+ * Vertices
  * by Simon Greenwold.
- * 
- * Draw a cylinder centered on the y-axis, going down 
- * from y=0 to y=height. The radius at the top can be 
- * different from the radius at the bottom, and the 
+ *
+ * Draw a cylinder centered on the y-axis, going down
+ * from y=0 to y=height. The radius at the top can be
+ * different from the radius at the bottom, and the
  * number of sides drawn is variable.
  */
 
@@ -36,12 +36,12 @@ void drawCylinder(float topRadius, float bottomRadius, float tall, int sides) {
     angle += angleIncrement;
   }
   endShape();
-  
+
   // If it is not a cone, draw the circular top cap
   if (topRadius != 0) {
     angle = 0;
     beginShape(TRIANGLE_FAN);
-    
+
     // Center point
     vertex(0, 0, 0);
     for (int i = 0; i < sides + 1; i++) {

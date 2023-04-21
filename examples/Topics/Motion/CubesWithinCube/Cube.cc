@@ -20,7 +20,7 @@ class Cube {
     this.w = w;
     this.h = h;
     this.d = d;
-    
+
     // Colors are hardcoded
     quadBG[0] = color(0);
     quadBG[1] = color(51);
@@ -28,7 +28,7 @@ class Cube {
     quadBG[3] = color(153);
     quadBG[4] = color(204);
     quadBG[5] = color(255);
-   
+
     // Start in center
     position = new PVector();
     // Random velocity vector
@@ -53,7 +53,7 @@ class Cube {
     vertices[10] = new PVector(w/2, h/2, -d/2);
     vertices[11] = new PVector(w/2, h/2, d/2);
     //back
-    vertices[12] = new PVector(-w/2, -h/2, -d/2); 
+    vertices[12] = new PVector(-w/2, -h/2, -d/2);
     vertices[13] = new PVector(w/2, -h/2, -d/2);
     vertices[14] = new PVector(w/2, h/2, -d/2);
     vertices[15] = new PVector(-w/2, h/2, -d/2);
@@ -67,7 +67,7 @@ class Cube {
     vertices[21] = new PVector(-w/2, h/2, -d/2);
     vertices[22] = new PVector(w/2, h/2, -d/2);
     vertices[23] = new PVector(w/2, h/2, d/2);
-  } 
+  }
 
   // Cube shape itself
   void drawCube() {
@@ -81,7 +81,7 @@ class Cube {
       endShape();
     }
   }
-  
+
   // Update location
   void update() {
     position.add(velocity);
@@ -98,7 +98,7 @@ class Cube {
     }
   }
 
-  
+
   // Display method
   void display() {
     pushMatrix();

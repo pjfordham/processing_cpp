@@ -1,4 +1,4 @@
-// Gravitational Attraction (3D) 
+// Gravitational Attraction (3D)
 // Daniel Shiffman <http://www.shiffman.net>
 
 // A class for an orbiting Planet

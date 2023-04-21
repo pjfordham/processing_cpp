@@ -1,16 +1,16 @@
 /**
  * DomeProjection
- * 
- * This sketch uses use environmental mapping to render the output 
+ *
+ * This sketch uses use environmental mapping to render the output
  * on a full spherical dome.
- * 
- * Based on the FullDomeTemplate code from Christopher Warnow: 
+ *
+ * Based on the FullDomeTemplate code from Christopher Warnow:
  * https://github.com/mphasize/FullDome
  *
  * Note: This example needs desktop-class graphics to function.
- * 
+ *
  */
- 
+
 import java.nio.IntBuffer;
 
 PShader cubemapShader;
@@ -20,7 +20,7 @@ IntBuffer fbo;
 IntBuffer rbo;
 IntBuffer envMapTextureID;
 
-int envMapSize = 1024;   
+int envMapSize = 1024;
 
 void setup() {
   size(640, 640, P3D);
@@ -29,12 +29,12 @@ void setup() {
 
 void draw() {
   background(0);
-  drawCubeMap();  
+  drawCubeMap();
 }
 
-void drawScene() {  
+void drawScene() {
   background(0);
-  
+
   stroke(255, 0, 0);
   strokeWeight(2);
   for (int i = -width; i < 2 * width; i += 50) {
@@ -43,12 +43,12 @@ void drawScene() {
   for (int i = -height; i < 2 * height; i += 50) {
     line(-width, i, -100, 2 * width, i, -100);
   }
-  
+
   lights();
   noStroke();
   translate(mouseX, mouseY, 200);
   rotateX(frameCount * 0.01);
-  rotateY(frameCount * 0.01);  
+  rotateY(frameCount * 0.01);
   box(100);
 }
 

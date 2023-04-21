@@ -1,10 +1,10 @@
 /**
- * Explode 
- * by Daniel Shiffman. 
- * 
- * Mouse horizontal location controls breaking apart of image and 
- * Maps pixels from a 2D image into 3D space. Pixel brightness controls 
- * translation along z axis. 
+ * Explode
+ * by Daniel Shiffman.
+ *
+ * Mouse horizontal location controls breaking apart of image and
+ * Maps pixels from a 2D image into 3D space. Pixel brightness controls
+ * translation along z axis.
  */
 
 PImage img;       // The source image
@@ -12,7 +12,7 @@ int cellsize = 2; // Dimensions of each cell in the grid
 int columns, rows;   // Number of columns and rows in our system
 
 void setup() {
-  size(640, 360, P3D); 
+  size(640, 360, P3D);
   img = loadImage("eames.jpg");  // Load the image
   columns = img.width / cellsize;  // Calculate # of columns
   rows = img.height / cellsize;  // Calculate # of rows

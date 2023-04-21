@@ -8,7 +8,7 @@ class Arcball {
   int axis;
   float mxv, myv;
   float x, y;
-  
+
   Arcball(float center_x, float center_y, float radius){
     this.center_x = center_x;
     this.center_y = center_y;
@@ -22,7 +22,7 @@ class Arcball {
     q_drag = new Quat();
 
     axisSet = new Vec3[] {new Vec3(1.0f, 0.0f, 0.0f), new Vec3(0.0f, 1.0f, 0.0f), new Vec3(0.0f, 0.0f, 1.0f)};
-    axis = -1;  // no constraints...    
+    axis = -1;  // no constraints...
   }
 
   void mousePressed(){
@@ -39,13 +39,13 @@ class Arcball {
   void run(){
     q_now = Quat.mul(q_drag, q_down);
     applyQuat2Matrix(q_now);
-    
+
     x += mxv;
     y += myv;
     mxv -= mxv * .01;
     myv -= myv * .01;
   }
-  
+
   Vec3 mouse_to_sphere(float x, float y){
     Vec3 v = new Vec3();
     v.x = (x - center_x) / radius;
@@ -110,7 +110,7 @@ static class Vec3{
   static float dot(Vec3 v1, Vec3 v2){
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
   }
-  
+
   static Vec3 mul(Vec3 v, float d){
     Vec3 res = new Vec3();
     res.x = v.x * d;
@@ -169,7 +169,7 @@ static class Quat{
     res.z = q1.w * q2.z + q1.z * q2.w + q1.x * q2.y - q1.y * q2.x;
     return res;
   }
-  
+
   float[] getValue(){
     // transforming this quat into an angle and an axis vector...
 

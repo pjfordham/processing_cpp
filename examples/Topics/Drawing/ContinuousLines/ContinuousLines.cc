@@ -1,7 +1,7 @@
 /**
- * Continuous Lines. 
- * 
- * Click and drag the mouse to draw a line. 
+ * Continuous Lines.
+ *
+ * Click and drag the mouse to draw a line.
  */
 
 void setup() {

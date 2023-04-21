@@ -5,8 +5,8 @@ class Module {
   int unit;
   int xDirection = 1;
   int yDirection = 1;
-  float speed; 
-  
+  float speed;
+
   // Contructor
   Module(int xOffsetTemp, int yOffsetTemp, int xTemp, int yTemp, float speedTemp, int tempUnit) {
     xOffset = xOffsetTemp;
@@ -16,7 +16,7 @@ class Module {
     speed = speedTemp;
     unit = tempUnit;
   }
-  
+
   // Custom method for updating the variables
   void update() {
     x = x + (speed * xDirection);
@@ -30,7 +30,7 @@ class Module {
       y = y + (1 * yDirection);
     }
   }
-  
+
   // Custom method for drawing the object
   void display() {
     fill(255);

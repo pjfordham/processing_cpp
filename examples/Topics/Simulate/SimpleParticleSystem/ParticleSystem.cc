@@ -1,5 +1,5 @@
 // A class to describe a group of Particles
-// An ArrayList is used to manage the list of Particles 
+// An ArrayList is used to manage the list of Particles
 
 class ParticleSystem {
   ArrayList<Particle> particles;

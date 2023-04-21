@@ -1,8 +1,8 @@
 /**
  * Convolution
- * by Daniel Shiffman.  
- * 
- * Applies a convolution matrix to a portion of an image. Move mouse to 
+ * by Daniel Shiffman.
+ *
+ * Applies a convolution matrix to a portion of an image. Move mouse to
  * apply filter to different parts of the image. This example is currently
  * not accurate in JavaScript mode.
  */
@@ -10,23 +10,23 @@
 PImage img;
 int w = 120;
 
-// It's possible to convolve the image with many different 
-// matrices to produce different effects. This is a high-pass 
-// filter; it accentuates the edges. 
+// It's possible to convolve the image with many different
+// matrices to produce different effects. This is a high-pass
+// filter; it accentuates the edges.
 float[][] matrix = { { -1, -1, -1 },
                      { -1,  9, -1 },
-                     { -1, -1, -1 } }; 
+                     { -1, -1, -1 } };
 
 void setup() {
   size(640, 360);
-  img = loadImage("moon-wide.jpg"); 
+  img = loadImage("moon-wide.jpg");
 }
 
 void draw() {
   // We're only going to process a portion of the image
   // so let's set the whole image as the background first
   image(img, 0, 0);
-  
+
   // Calculate the small rectangle we will process
   int xstart = constrain(mouseX - w/2, 0, img.width);
   int ystart = constrain(mouseY - w/2, 0, img.height);

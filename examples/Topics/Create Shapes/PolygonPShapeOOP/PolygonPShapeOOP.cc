@@ -1,7 +1,7 @@
 /**
- * PolygonPShapeOOP. 
- * 
- * Wrapping a PShape inside a custom class 
+ * PolygonPShapeOOP.
+ *
+ * Wrapping a PShape inside a custom class
  */
 
 
@@ -19,10 +19,10 @@ void setup() {
 
 void draw() {
   background(51);
- 
+
   s1.display();  // Display the first star
   s1.move();  // Move the first star
-  
+
   s2.display();  // Display the second star
   s2.move();  // Move the second star
 

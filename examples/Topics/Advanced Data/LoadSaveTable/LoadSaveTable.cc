@@ -1,9 +1,9 @@
 /**
  * Loading Tabular Data
- * by Daniel Shiffman.  
- * 
+ * by Daniel Shiffman.
+ *
  * This example demonstrates how to use loadTable()
- * to retrieve data from a CSV file and make objects 
+ * to retrieve data from a CSV file and make objects
  * from that data.
  *
  * Here is what the CSV looks like:
@@ -44,7 +44,7 @@ void loadData() {
   table = loadTable("data.csv", "header");
 
   // The size of the array of Bubble objects is determined by the total number of rows in the CSV
-  bubbles = new Bubble[table.getRowCount()]; 
+  bubbles = new Bubble[table.getRowCount()];
 
   // You can access iterate over all the rows in a table
   int rowCount = 0;

@@ -10,7 +10,7 @@ class Star {
 
   Star() {
     x = random(100, width-100);
-    y = random(100, height-100); 
+    y = random(100, height-100);
     speed = random(0.5, 3);
     // First create the shape
     s = createShape();

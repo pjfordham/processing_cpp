@@ -16,7 +16,7 @@ class Particle {
   // A single force
   PVector gravity = new PVector(0, 0.1);
 
-  Particle() {    
+  Particle() {
     partSize = random(10, 60);
     // The particle is a textured quad
     part = createShape();
@@ -31,8 +31,8 @@ class Particle {
     part.endShape();
 
     // Initialize center vector
-    center = new PVector(); 
-    
+    center = new PVector();
+
     // Set the particle starting location
     rebirth(width/2, height/2);
   }
@@ -51,18 +51,18 @@ class Particle {
     lifespan = 255;
     // Set location using translate
     part.resetMatrix();
-    part.translate(x, y); 
-    
+    part.translate(x, y);
+
     // Update center vector
     center.set(x, y, 0);
   }
 
   // Is it off the screen, or its lifespan is over?
   boolean isDead() {
-    if (center.x > width  || center.x < 0 || 
+    if (center.x > width  || center.x < 0 ||
         center.y > height || center.y < 0 || lifespan < 0) {
       return true;
-    } 
+    }
     else {
       return false;
     }

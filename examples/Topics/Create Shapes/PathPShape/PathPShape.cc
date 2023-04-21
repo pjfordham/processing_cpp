@@ -1,6 +1,6 @@
 /**
  * PathPShape
- * 
+ *
  * A simple path using PShape
  */
 
@@ -17,7 +17,7 @@ void setup() {
   path.noFill();
   path.stroke(255);
   path.strokeWeight(2);
-  
+
   float x = 0;
   // Calculate the path as a sine wave
   for (float a = 0; a < TWO_PI; a+=0.1) {
@@ -25,7 +25,7 @@ void setup() {
     x+= 5;
   }
   // The path is complete
-  path.endShape();  
+  path.endShape();
 
 }
 

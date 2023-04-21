@@ -1,8 +1,8 @@
 /**
- * Linear Image. 
- * 
- * Click and drag mouse up and down to control the signal. 
- * Press and hold any key to watch the scanning. 
+ * Linear Image.
+ *
+ * Click and drag mouse up and down to control the signal.
+ * Press and hold any key to watch the scanning.
  */
 
 PImage img;
@@ -19,12 +19,12 @@ void setup() {
 }
 
 void draw() {
-  if (signal > img.height-1 || signal < 0) { 
+  if (signal > img.height-1 || signal < 0) {
     direction = direction * -1;
   }
   if (mousePressed == true) {
     signal = abs(mouseY % img.height);
-  } 
+  }
   else {
     signal += (0.3*direction);
   }
@@ -32,7 +32,7 @@ void draw() {
   if (keyPressed == true) {
     set(0, 0, img);
     line(0, signal, img.width, signal);
-  } 
+  }
   else {
     int signalOffset = int(signal)*img.width;
     for (int y = 0; y < img.height; y++) {

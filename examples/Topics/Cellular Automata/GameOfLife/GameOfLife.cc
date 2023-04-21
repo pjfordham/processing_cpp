@@ -25,9 +25,9 @@ color alive = color(0, 200, 0);
 color dead = color(0);
 
 // Array of cells
-int[][] cells; 
+int[][] cells;
 // Buffer to record the state of the cells and use this while changing the others in the interations
-int[][] cellsBuffer; 
+int[][] cellsBuffer;
 
 // Pause
 boolean pause = false;
@@ -35,7 +35,7 @@ boolean pause = false;
 void setup() {
   size (640, 360);
 
-  // Instantiate arrays 
+  // Instantiate arrays
   cells = new int[width/cellSize][height/cellSize];
   cellsBuffer = new int[width/cellSize][height/cellSize];
 
@@ -48,7 +48,7 @@ void setup() {
   for (int x=0; x<width/cellSize; x++) {
     for (int y=0; y<height/cellSize; y++) {
       float state = random (100);
-      if (state > probabilityOfAliveAtStart) { 
+      if (state > probabilityOfAliveAtStart) {
         state = 0;
       }
       else {
@@ -100,7 +100,7 @@ void draw() {
       cells[xCellOver][yCellOver]=1; // Make alive
       fill(alive); // Fill alive color
     }
-  } 
+  }
   else if (pause && !mousePressed) { // And then save to buffer once mouse goes up
     // Save cells to buffer (so we opeate with one array keeping the other intact)
     for (int x=0; x<width/cellSize; x++) {
@@ -127,7 +127,7 @@ void iteration() { // When the clock ticks
       // And visit all the neighbours of each cell
       int neighbours = 0; // We'll count the neighbours
       for (int xx=x-1; xx<=x+1;xx++) {
-        for (int yy=y-1; yy<=y+1;yy++) {  
+        for (int yy=y-1; yy<=y+1;yy++) {
           if (((xx>=0)&&(xx<width/cellSize))&&((yy>=0)&&(yy<height/cellSize))) { // Make sure you are not out of bounds
             if (!((xx==x)&&(yy==y))) { // Make sure to to check against self
               if (cellsBuffer[xx][yy]==1){
@@ -142,8 +142,8 @@ void iteration() { // When the clock ticks
         if (neighbours < 2 || neighbours > 3) {
           cells[x][y] = 0; // Die unless it has 2 or 3 neighbours
         }
-      } 
-      else { // The cell is dead: make it live if necessary      
+      }
+      else { // The cell is dead: make it live if necessary
         if (neighbours == 3 ) {
           cells[x][y] = 1; // Only if it has 3 neighbours
         }

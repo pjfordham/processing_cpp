@@ -85,7 +85,7 @@ class Boid {
     // Draw a triangle rotated in the direction of velocity
     float theta = velocity.heading2D() + radians(90);
     // heading2D() above is now heading() but leaving old syntax until Processing.js catches up
-    
+
     fill(200, 100);
     stroke(255);
     pushMatrix();
@@ -171,7 +171,7 @@ class Boid {
       PVector steer = PVector.sub(sum, velocity);
       steer.limit(maxforce);
       return steer;
-    } 
+    }
     else {
       return new PVector(0, 0);
     }
@@ -193,7 +193,7 @@ class Boid {
     if (count > 0) {
       sum.div(count);
       return seek(sum);  // Steer towards the position
-    } 
+    }
     else {
       return new PVector(0, 0);
     }

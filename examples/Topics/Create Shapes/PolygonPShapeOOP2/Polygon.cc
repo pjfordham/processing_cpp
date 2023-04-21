@@ -10,11 +10,11 @@ class Polygon {
 
   Polygon(PShape s_) {
     x = random(width);
-    y = random(-500, -100); 
+    y = random(-500, -100);
     s = s_;
     speed = random(2, 6);
   }
-  
+
   // Simple motion
   void move() {
     y += speed;
@@ -22,7 +22,7 @@ class Polygon {
       y = -100;
     }
   }
-  
+
   // Draw the object
   void display() {
     pushMatrix();

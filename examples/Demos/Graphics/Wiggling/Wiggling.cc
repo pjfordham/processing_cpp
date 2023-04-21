@@ -10,7 +10,7 @@ float noiseMag = 1;
 boolean wiggling = false;
 
 void setup() {
-  size(1024, 768, P3D);    
+  size(1024, 768, P3D);
 
   createCube();
 }
@@ -56,7 +56,7 @@ public void keyPressed() {
 }
 
 void createCube() {
-  cube = createShape(GROUP);  
+  cube = createShape(GROUP);
 
   PShape face;
 

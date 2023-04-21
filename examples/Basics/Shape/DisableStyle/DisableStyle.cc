@@ -1,9 +1,9 @@
 /**
- * Ignore Styles. 
- * Illustration by George Brower. 
- * 
+ * Ignore Styles.
+ * Illustration by George Brower.
+ *
  * Shapes are loaded with style information that tells them how
- * to draw (the color, stroke weight, etc.) The disableStyle() 
+ * to draw (the color, stroke weight, etc.) The disableStyle()
  * method of PShape turns off this information. The enableStyle()
  * method turns it back on.
  */
@@ -16,11 +16,11 @@ void setup() {
   // of the current sketch to load successfully
   bot = loadShape("bot1.svg");
   noLoop();
-} 
+}
 
 void draw() {
   background(102);
-  
+
   // Draw left bot
   bot.disableStyle();  // Ignore the colors in the SVG
   fill(0, 102, 153);    // Set the SVG fill to blue

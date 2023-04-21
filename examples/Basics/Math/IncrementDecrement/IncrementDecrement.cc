@@ -1,10 +1,10 @@
 /**
- * Increment Decrement. 
- * 
- * Writing "a++" is equivalent to "a = a + 1".  
- * Writing "a--" is equivalent to "a = a - 1".   
+ * Increment Decrement.
+ *
+ * Writing "a++" is equivalent to "a = a + 1".
+ * Writing "a--" is equivalent to "a = a - 1".
  */
- 
+
 int a;
 int b;
 boolean direction;

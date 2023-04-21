@@ -1,8 +1,8 @@
 /**
- * Mouse Press. 
- * 
- * Move the mouse to position the shape. 
- * Press the mouse button to invert the color. 
+ * Mouse Press.
+ *
+ * Move the mouse to position the shape.
+ * Press the mouse button to invert the color.
  */
 
 
@@ -20,5 +20,5 @@ void draw() {
     stroke(0);
   }
   line(mouseX-66, mouseY, mouseX+66, mouseY);
-  line(mouseX, mouseY-66, mouseX, mouseY+66); 
+  line(mouseX, mouseY-66, mouseX, mouseY+66);
 }

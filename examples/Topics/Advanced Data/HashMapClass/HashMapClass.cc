@@ -1,20 +1,20 @@
 /**
  * HashMap example
- * by Daniel Shiffman.  
- * 
- * This example demonstrates how to use a HashMap to store 
- * a collection of objects referenced by a key. This is much like an array, 
+ * by Daniel Shiffman.
+ *
+ * This example demonstrates how to use a HashMap to store
+ * a collection of objects referenced by a key. This is much like an array,
  * only instead of accessing elements with a numeric index, we use a String.
  * If you are familiar with associative arrays from other languages,
  * this is the same idea.
  *
- * A simpler example is CountingStrings which uses IntDict instead of 
+ * A simpler example is CountingStrings which uses IntDict instead of
  * HashMap.  The Processing classes IntDict, FloatDict, and StringDict
  * offer a simpler way of pairing Strings with numbers or other Strings.
  * Here we use a HashMap because we want to pair a String with a custom
  * object, in this case a "Word" object that stores two numbers.
  *
- * In this example, words that appear in one book (Dracula) only are colored white 
+ * In this example, words that appear in one book (Dracula) only are colored white
  * while words the other (Frankenstein) are colored black.
  */
 
@@ -22,7 +22,7 @@ HashMap<String, Word> words;  // HashMap object
 
 void setup() {
   size(640, 360);
-  
+
   // Create the HashMap
   words = new HashMap<String, Word>();
 
@@ -36,14 +36,14 @@ void setup() {
 
 void draw() {
   background(126);
-  
+
   // Show words
   for (Word w : words.values()) {
     if (w.qualify()) {
-        w.display(); 
+        w.display();
         w.move();
     }
-  }  
+  }
 }
 
 // Load a file
@@ -51,7 +51,7 @@ void loadFile(String filename) {
   String[] lines = loadStrings(filename);
   String allText = join(lines, " ").toLowerCase();
   String[] tokens = splitTokens(allText, " ,.?!:;[]-\"'");
-  
+
   for (String s : tokens) {
     // Is the word in the HashMap
     if (words.containsKey(s)) {
@@ -61,11 +61,11 @@ void loadFile(String filename) {
       // Which book am I loading?
       if (filename.contains("dracula")) {
         w.incrementDracula();
-      } 
+      }
       else if (filename.contains("frankenstein")) {
         w.incrementFranken();
       }
-    } 
+    }
     else {
       // Otherwise make a new word
       Word w = new Word(s);

@@ -1,11 +1,11 @@
 /**
- * On/Off.  
- * 
+ * On/Off.
+ *
  * Uses the default lights to show a simple box. The lights() function
  * is used to turn on the default lighting. Click the mouse to turn the
  * lights off.
  */
- 
+
 float spin = 0.0;
 
 void setup() {
@@ -15,13 +15,13 @@ void setup() {
 
 void draw() {
   background(51);
-  
+
   if (!mousePressed) {
     lights();
   }
-  
+
   spin += 0.01;
-  
+
   pushMatrix();
   translate(width/2, height/2, 0);
   rotateX(PI/9);

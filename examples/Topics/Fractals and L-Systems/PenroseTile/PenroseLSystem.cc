@@ -14,7 +14,7 @@ class PenroseLSystem extends LSystem {
     ruleY = "-WF++XF[+++YF++ZF]-";
     ruleZ = "--YF++++WF[+ZF++++XF]--XF";
     startLength = 460.0;
-    theta = radians(36);  
+    theta = radians(36);
     reset();
   }
 
@@ -48,7 +48,7 @@ class PenroseLSystem extends LSystem {
     translate(width/2, height/2);
     int pushes = 0;
     int repeats = 1;
-    steps += 12;          
+    steps += 12;
     if (steps > production.length()) {
       steps = production.length();
     }
@@ -63,27 +63,27 @@ class PenroseLSystem extends LSystem {
           translate(0, -drawLength);
         }
         repeats = 1;
-      } 
+      }
       else if (step == '+') {
         for (int j = 0; j < repeats; j++) {
           rotate(theta);
         }
         repeats = 1;
-      } 
+      }
       else if (step == '-') {
         for (int j =0; j < repeats; j++) {
           rotate(-theta);
         }
         repeats = 1;
-      } 
+      }
       else if (step == '[') {
-        pushes++;            
+        pushes++;
         pushMatrix();
-      } 
+      }
       else if (step == ']') {
         popMatrix();
         pushes--;
-      } 
+      }
       else if ( (step >= 48) && (step <= 57) ) {
         repeats = (int)step - 48;
       }
@@ -102,16 +102,16 @@ class PenroseLSystem extends LSystem {
       char step = production.charAt(i);
       if (step == 'W') {
         newProduction = newProduction + ruleW;
-      } 
+      }
       else if (step == 'X') {
         newProduction = newProduction + ruleX;
       }
       else if (step == 'Y') {
         newProduction = newProduction + ruleY;
-      }  
+      }
       else if (step == 'Z') {
         newProduction = newProduction + ruleZ;
-      } 
+      }
       else {
         if (step != 'F') {
           newProduction = newProduction + step;

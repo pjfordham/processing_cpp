@@ -1,11 +1,11 @@
 /**
- * Rollover. 
- * 
+ * Rollover.
+ *
  * Roll over the colored squares in the center of the image
- * to change the color of the outside rectangle. 
+ * to change the color of the outside rectangle.
  */
- 
- 
+
+
 int rectX, rectY;      // Position of square button
 int circleX, circleY;  // Position of circle button
 int rectSize = 90;     // Diameter of rect
@@ -63,7 +63,7 @@ void update(int x, int y) {
 }
 
 boolean overRect(int x, int y, int width, int height) {
-  if (mouseX >= x && mouseX <= x+width && 
+  if (mouseX >= x && mouseX <= x+width &&
       mouseY >= y && mouseY <= y+height) {
     return true;
   } else {

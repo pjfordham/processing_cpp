@@ -1,13 +1,13 @@
 /**
  * Listing files in directories and subdirectories
- * by Daniel Shiffman.  
- * 
+ * by Daniel Shiffman.
+ *
  * This example has three functions:<br />
  * 1) List the names of files in a directory<br />
- * 2) List the names along with metadata (size, lastModified)<br /> 
+ * 2) List the names along with metadata (size, lastModified)<br />
  *    of files in a directory<br />
  * 3) List the names along with metadata (size, lastModified)<br />
- *    of files in a directory and all subdirectories (using recursion) 
+ *    of files in a directory and all subdirectories (using recursion)
  */
 
 import java.util.Date;
@@ -25,7 +25,7 @@ void setup() {
   println("\nListing info about all files in a directory: ");
   File[] files = listFiles(path);
   for (int i = 0; i < files.length; i++) {
-    File f = files[i];    
+    File f = files[i];
     println("Name: " + f.getName());
     println("Is directory: " + f.isDirectory());
     println("Size: " + f.length());
@@ -55,7 +55,7 @@ void setup() {
 void draw() {
 }
 
-// This function returns all the files in a directory as an array of Strings  
+// This function returns all the files in a directory as an array of Strings
 String[] listFileNames(String dir) {
   File file = new File(dir);
   if (file.isDirectory()) {
@@ -82,7 +82,7 @@ File[] listFiles(String dir) {
 
 // Function to get a list of all files in a directory and all subdirectories
 ArrayList<File> listFilesRecursive(String dir) {
-  ArrayList<File> fileList = new ArrayList<File>(); 
+  ArrayList<File> fileList = new ArrayList<File>();
   recurseDir(fileList, dir);
   return fileList;
 }
@@ -92,7 +92,7 @@ void recurseDir(ArrayList<File> a, String dir) {
   File file = new File(dir);
   if (file.isDirectory()) {
     // If you want to include directories in the list
-    a.add(file);  
+    a.add(file);
     File[] subfiles = file.listFiles();
     for (int i = 0; i < subfiles.length; i++) {
       // Call this function on all files in this directory

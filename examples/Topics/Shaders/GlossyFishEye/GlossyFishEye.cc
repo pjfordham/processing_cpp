@@ -1,9 +1,9 @@
 /**
  * Glossy Fish Eye
- * 
- * A fish-eye shader is used on the main surface and 
+ *
+ * A fish-eye shader is used on the main surface and
  * a glossy specular reflection shader is used on the
- * offscreen canvas. 
+ * offscreen canvas.
  */
 
 PShader fisheye;
@@ -15,13 +15,13 @@ PShape ball;
 boolean useFishEye = true;
 
 void setup() {
-  size(640, 640, P3D);  
+  size(640, 640, P3D);
   canvas = createGraphics(width, height, P3D);
 
   fisheye = loadShader("FishEye.glsl");
   fisheye.set("aperture", 180.0);
-  
-  glossy = loadShader("GlossyFrag.glsl", "GlossyVert.glsl");  
+
+  glossy = loadShader("GlossyFrag.glsl", "GlossyVert.glsl");
   glossy.set("AmbientColour", 0.0, 0.0, 0.0);
   glossy.set("DiffuseColour", 0.9, 0.2, 0.2);
   glossy.set("SpecularColour", 1.0, 1.0, 1.0);
@@ -30,7 +30,7 @@ void setup() {
   glossy.set("SpecularIntensity", 0.7);
   glossy.set("Roughness", 0.7);
   glossy.set("Sharpness", 0.0);
-  
+
   ball = createShape(SPHERE, 50);
   ball.setStroke(false);
 }
@@ -53,19 +53,19 @@ void draw() {
         canvas.popMatrix();
       }
     }
-  } 
-  canvas.endDraw(); 
+  }
+  canvas.endDraw();
 
   if (useFishEye == true) {
     shader(fisheye);
-  }  
+  }
   image(canvas, 0, 0, width, height);
 }
 
 void mousePressed() {
   if (useFishEye) {
     useFishEye = false;
-    resetShader();    
+    resetShader();
   } else {
     useFishEye = true;
   }

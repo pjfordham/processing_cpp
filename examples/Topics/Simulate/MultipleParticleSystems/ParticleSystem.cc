@@ -30,7 +30,7 @@ class ParticleSystem {
     // Add either a Particle or CrazyParticle to the system
     if (int(random(0, 2)) == 0) {
       p = new Particle(origin);
-    } 
+    }
     else {
       p = new CrazyParticle(origin);
     }

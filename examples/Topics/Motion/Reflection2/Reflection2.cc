@@ -1,7 +1,7 @@
 /**
- * Non-orthogonal Collision with Multiple Ground Segments 
- * by Ira Greenberg. 
- * 
+ * Non-orthogonal Collision with Multiple Ground Segments
+ * by Ira Greenberg.
+ *
  * Based on Keith Peter's Solution in
  * Foundation Actionscript Animation: Making Things Move!
  */
@@ -18,14 +18,14 @@ void setup(){
   // An orb object that will fall and bounce around
   orb = new Orb(50, 50, 3);
 
-  // Calculate ground peak heights 
+  // Calculate ground peak heights
   float[] peakHeights = new float[segments+1];
   for (int i=0; i<peakHeights.length; i++){
     peakHeights[i] = random(height-40, height-30);
   }
 
   /* Float value required for segment width (segs)
-   calculations so the ground spans the entire 
+   calculations so the ground spans the entire
    display window, regardless of segment number. */
   float segs = segments;
   for (int i=0; i<segments; i++){
@@ -39,7 +39,7 @@ void draw(){
   noStroke();
   fill(0, 15);
   rect(0, 0, width, height);
-  
+
   // Move and display the orb
   orb.move();
   orb.display();
@@ -51,7 +51,7 @@ void draw(){
     orb.checkGroundCollision(ground[i]);
   }
 
-  
+
   // Draw ground
   fill(127);
   beginShape();

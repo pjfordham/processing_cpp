@@ -1,14 +1,14 @@
 /**
- * Bezier. 
- * 
- * The first two parameters for the bezier() function specify the 
- * first point in the curve and the last two parameters specify 
+ * Bezier.
+ *
+ * The first two parameters for the bezier() function specify the
+ * first point in the curve and the last two parameters specify
  * the last point. The middle parameters set the control points
- * that define the shape of the curve. 
+ * that define the shape of the curve.
  */
 
 void setup() {
-  size(640, 360); 
+  size(640, 360);
   stroke(255);
   noFill();
 }

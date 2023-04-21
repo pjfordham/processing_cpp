@@ -1,26 +1,26 @@
 /**
- * Blur. 
- * 
+ * Blur.
+ *
  * A low-pass filter blurs an image. This program analyzes every
  * pixel in an image and blends it with the neighboring pixels
- * to blur the image. 
+ * to blur the image.
  */
 
 float v = 1.0 / 9.0;
-float[][] kernel = {{ v, v, v }, 
-                    { v, v, v }, 
+float[][] kernel = {{ v, v, v },
+                    { v, v, v },
                     { v, v, v }};
-                    
+
 PImage img;
 
 void setup() {
   size(640, 360);
   img = loadImage("moon.jpg"); // Load the original image
   noLoop();
-} 
+}
 
 void draw() {
-  image(img, 0, 0); // Displays the image from point (0,0) 
+  image(img, 0, 0); // Displays the image from point (0,0)
   img.loadPixels();
 
   // Create an opaque image of the same size as the original

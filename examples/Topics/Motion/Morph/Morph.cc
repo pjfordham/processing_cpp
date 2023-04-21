@@ -1,6 +1,6 @@
 /**
- * Morph. 
- * 
+ * Morph.
+ *
  * Changing one shape into another by interpolating
  * vertices from one to another
  */
@@ -24,7 +24,7 @@ void setup() {
   // Create a circle using vectors pointing from center
   for (int angle = 0; angle < 360; angle += 9) {
     // Note we are not starting from 0 in order to match the
-    // path of a circle.  
+    // path of a circle.
     PVector v = PVector.fromAngle(radians(angle-135));
     v.mult(100);
     circle.add(v);
@@ -56,7 +56,7 @@ void draw() {
 
   // We will keep how far the vertices are from their target
   float totalDistance = 0;
-  
+
   // Look at each vertex
   for (int i = 0; i < circle.size(); i++) {
     PVector v1;
@@ -74,12 +74,12 @@ void draw() {
     // Check how far we are from target
     totalDistance += PVector.dist(v1, v2);
   }
-  
+
   // If all the vertices are close, switch shape
   if (totalDistance < 0.1) {
     state = !state;
   }
-  
+
   // Draw relative to center
   translate(width/2, height/2);
   strokeWeight(4);

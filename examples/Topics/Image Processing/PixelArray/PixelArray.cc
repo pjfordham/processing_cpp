@@ -1,10 +1,10 @@
 /**
- * Pixel Array. 
- * 
- * Click and drag the mouse up and down to control the signal and 
- * press and hold any key to see the current pixel being read. 
+ * Pixel Array.
+ *
+ * Click and drag the mouse up and down to control the signal and
+ * press and hold any key to see the current pixel being read.
  * This program sequentially reads the color of every pixel of an image
- * and displays this color to fill the window.  
+ * and displays this color to fill the window.
  */
 
 PImage img;
@@ -20,8 +20,8 @@ void setup() {
 }
 
 void draw() {
-  if (signal > img.width*img.height-1 || signal < 0) { 
-    direction = direction * -1; 
+  if (signal > img.width*img.height-1 || signal < 0) {
+    direction = direction * -1;
   }
 
   if (mousePressed) {

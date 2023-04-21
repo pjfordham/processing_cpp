@@ -1,6 +1,6 @@
 /**
  * GroupPShape
- * 
+ *
  * How to group multiple PShapes into one PShape
  */
 
@@ -13,7 +13,7 @@ void setup() {
 
   // Create the shape as a group
   group = createShape(GROUP);
-  
+
   // Make a polygon PShape
   PShape star = createShape();
   star.beginShape();
@@ -30,7 +30,7 @@ void setup() {
   star.vertex(-47, -15);
   star.vertex(-14, -20);
   star.endShape(CLOSE);
-  
+
   // Make a path PShape
   PShape path = createShape();
   path.beginShape();
@@ -41,16 +41,16 @@ void setup() {
     path.vertex(r*cos(a), r*sin(a));
   }
   path.endShape();
-  
+
   // Make a primitive (Rectangle) PShape
   PShape rectangle = createShape(RECT,-10,-10,20,20);
   rectangle.setFill(false);
   rectangle.setStroke(color(255));
-  
+
   // Add them all to the group
   group.addChild(star);
   group.addChild(path);
-  group.addChild(rectangle);  
+  group.addChild(rectangle);
 }
 
 void draw() {
@@ -58,7 +58,7 @@ void draw() {
   PShape rectangle = group.getChild(2);
   // Shapes can be rotated
   rectangle.rotate(0.1);
-   
+
   background(52);
   // Display the group PShape
   translate(mouseX, mouseY);

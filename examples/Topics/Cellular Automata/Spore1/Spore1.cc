@@ -1,7 +1,7 @@
 /**
- * Spore 1 
- * by Mike Davis. 
- * 
+ * Spore 1
+ * by Mike Davis.
+ *
  * A short program for alife experiments. Click in the window to restart.
  * Each cell is represented by a pixel on the display as well as an entry in
  * the array 'cells'. Each cell has a run() method, which performs actions
@@ -17,7 +17,7 @@ color spore_color;
 // set lower for smoother animation, higher for faster simulation
 int runs_per_loop = 10000;
 color black = color(0, 0, 0);
-  
+
 void setup() {
   size(640, 360);
   frameRate(24);
@@ -25,7 +25,7 @@ void setup() {
 }
 
 void reset() {
-  clearScreen();  
+  clearScreen();
   w = new World();
   spore_color = color(172, 255, 128);
   seed();
@@ -79,7 +79,7 @@ class Cell {
     while(y > height - 1) {
       y-=height;
     }
-    
+
     // Cell instructions
     if (w.getpix(x + 1, y) == black) {
       move(0, 1);
@@ -87,7 +87,7 @@ class Cell {
       move((int)random(9) - 4, (int)random(9) - 4);
     }
   }
-  
+
   // Will move the cell (dx, dy) units if that space is empty
   void move(int dx, int dy) {
     if (w.getpix(x + dx, y + dy) == black) {
@@ -103,7 +103,7 @@ class Cell {
 //  display in the same way as getPixel and setPixel.  The only difference is that
 //  the World class's get and set do screen wraparound ("toroidal coordinates").
 class World {
-  
+
   void setpix(int x, int y, int c) {
     while(x < 0) x+=width;
     while(x > width - 1) x-=width;
@@ -111,7 +111,7 @@ class World {
     while(y > height - 1) y-=height;
     set(x, y, c);
   }
-  
+
   color getpix(int x, int y) {
     while(x < 0) x+=width;
     while(x > width - 1) x-=width;

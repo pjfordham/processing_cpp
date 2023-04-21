@@ -1,22 +1,22 @@
 // An object that wraps the PShape
 
 class Wiggler {
-  
+
   // The PShape to be "wiggled"
   PShape s;
   // Its location
   float x, y;
-  
+
   // For 2D Perlin noise
   float yoff = 0;
-  
+
   // We are using an ArrayList to keep a duplicate copy
   // of vertices original locations.
   ArrayList<PVector> original;
 
   Wiggler() {
     x = width/2;
-    y = height/2; 
+    y = height/2;
 
     // The "original" locations of the vertices make up a circle
     original = new ArrayList<PVector>();
@@ -25,7 +25,7 @@ class Wiggler {
       v.mult(100);
       original.add(v);
     }
-    
+
     // Now make the PShape with those vertices
     s = createShape();
     s.beginShape();

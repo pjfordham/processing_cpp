@@ -27,7 +27,7 @@ class Particle {
   // Note we are ignoring "mass" here
   void applyForce(PVector f) {
     acc.add(f);
-  }  
+  }
 
   // Method to update position
   void update() {

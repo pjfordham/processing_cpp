@@ -1,6 +1,6 @@
 /**
- * Loading URLs. 
- * 
+ * Loading URLs.
+ *
  * Click on the button to open a URL in a browser
  */
 
@@ -25,22 +25,22 @@ void draw() {
 }
 
 void mousePressed() {
-  if (overButton) { 
+  if (overButton) {
     link("http://www.processing.org");
   }
 }
 
-void mouseMoved() { 
-  checkButtons(); 
+void mouseMoved() {
+  checkButtons();
 }
-  
+
 void mouseDragged() {
-  checkButtons(); 
+  checkButtons();
 }
 
 void checkButtons() {
   if (mouseX > 105 && mouseX < 180 && mouseY > 60 && mouseY <135) {
-    overButton = true;   
+    overButton = true;
   } else {
     overButton = false;
   }

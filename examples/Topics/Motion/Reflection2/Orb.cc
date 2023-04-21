@@ -24,13 +24,13 @@ class Orb {
     fill(200);
     ellipse(position.x, position.y, r*2, r*2);
   }
-  
+
   // Check boundaries of window
   void checkWallCollision() {
     if (position.x > width-r) {
       position.x = width-r;
       velocity.x *= -damping;
-    } 
+    }
     else if (position.x < r) {
       position.x = r;
       velocity.x *= -damping;
@@ -47,15 +47,15 @@ class Orb {
     float cosine = cos(groundSegment.rot);
     float sine = sin(groundSegment.rot);
 
-    /* Rotate ground and velocity to allow 
+    /* Rotate ground and velocity to allow
      orthogonal collision calculations */
     float groundXTemp = cosine * deltaX + sine * deltaY;
     float groundYTemp = cosine * deltaY - sine * deltaX;
     float velocityXTemp = cosine * velocity.x + sine * velocity.y;
     float velocityYTemp = cosine * velocity.y - sine * velocity.x;
 
-    /* Ground collision - check for surface 
-     collision and also that orb is within 
+    /* Ground collision - check for surface
+     collision and also that orb is within
      left/rights bounds of ground segment */
     if (groundYTemp > -r &&
       position.x > groundSegment.x1 &&

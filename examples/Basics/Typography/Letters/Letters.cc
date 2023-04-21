@@ -1,7 +1,7 @@
 /**
- * Letters. 
- * 
- * Draws letters to the screen. This requires loading a font, 
+ * Letters.
+ *
+ * Draws letters to the screen. This requires loading a font,
  * setting the font, and then drawing the letters.
  */
 
@@ -16,7 +16,7 @@ void setup() {
   f = createFont("SourceCodePro-Regular.ttf", 24);
   textFont(f);
   textAlign(CENTER, CENTER);
-} 
+}
 
 void draw() {
   background(0);
@@ -27,15 +27,15 @@ void draw() {
 
   int gap = 46;
   int counter = 35;
-  
+
   for (int y = 0; y < height-gap; y += gap) {
     for (int x = 0; x < width-gap; x += gap) {
 
       char letter = char(counter);
-      
+
       if (letter == 'A' || letter == 'E' || letter == 'I' || letter == 'O' || letter == 'U') {
         fill(255, 204, 0);
-      } 
+      }
       else {
         fill(255);
       }

@@ -1,9 +1,9 @@
 /**
- * Chain. 
- * 
- * One mass is attached to the mouse position and the other 
+ * Chain.
+ *
+ * One mass is attached to the mouse position and the other
  * is attached the position of the other mass. The gravity
- * in the environment pulls down on both. 
+ * in the environment pulls down on both.
  */
 
 
@@ -36,14 +36,14 @@ class Spring2D {
   float radius = 30;
   float stiffness = 0.2;
   float damping = 0.7;
-  
+
   Spring2D(float xpos, float ypos, float m, float g) {
     x = xpos;
     y = ypos;
     mass = m;
     gravity = g;
   }
-  
+
   void update(float targetX, float targetY) {
     float forceX = (targetX - x) * stiffness;
     float ax = forceX / mass;
@@ -55,7 +55,7 @@ class Spring2D {
     vy = damping * (vy + ay);
     y += vy;
   }
-  
+
   void display(float nx, float ny) {
     noStroke();
     ellipse(x, y, radius*2, radius*2);

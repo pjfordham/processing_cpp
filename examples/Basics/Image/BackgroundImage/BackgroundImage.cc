@@ -1,6 +1,6 @@
 /**
- * Background Image. 
- * 
+ * Background Image.
+ *
  * This example presents the fastest way to load a background image
  * into Processing. To load an image as the background, it must be
  * the same width and height as the program.
@@ -19,12 +19,12 @@ void setup() {
 
 void draw() {
   background(bg);
-  
+
   stroke(226, 204, 0);
   line(0, y, width, y);
-  
+
   y++;
   if (y > height) {
-    y = 0; 
+    y = 0;
   }
 }

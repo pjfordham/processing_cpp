@@ -1,9 +1,9 @@
 /**
- * Reach 2  
+ * Reach 2
  * based on code from Keith Peters.
- * 
+ *
  * The arm follows the position of the mouse by
- * calculating the angles with atan2(). 
+ * calculating the angles with atan2().
  */
 
 int numSegments = 10;
@@ -23,28 +23,28 @@ void setup() {
 
 void draw() {
   background(0);
-  
+
   reachSegment(0, mouseX, mouseY);
   for(int i=1; i<numSegments; i++) {
     reachSegment(i, targetX, targetY);
   }
   for(int i=x.length-1; i>=1; i--) {
-    positionSegment(i, i-1);  
-  } 
+    positionSegment(i, i-1);
+  }
   for(int i=0; i<x.length; i++) {
-    segment(x[i], y[i], angle[i], (i+1)*2); 
+    segment(x[i], y[i], angle[i], (i+1)*2);
   }
 }
 
 void positionSegment(int a, int b) {
   x[b] = x[a] + cos(angle[a]) * segLength;
-  y[b] = y[a] + sin(angle[a]) * segLength; 
+  y[b] = y[a] + sin(angle[a]) * segLength;
 }
 
 void reachSegment(int i, float xin, float yin) {
   float dx = xin - x[i];
   float dy = yin - y[i];
-  angle[i] = atan2(dy, dx);  
+  angle[i] = atan2(dy, dx);
   targetX = xin - cos(angle[i]) * segLength;
   targetY = yin - sin(angle[i]) * segLength;
 }

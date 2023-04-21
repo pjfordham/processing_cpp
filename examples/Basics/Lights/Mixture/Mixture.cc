@@ -1,8 +1,8 @@
 /**
  * Mixture
- * by Simon Greenwold. 
- * 
- * Display a box with three different kinds of lights. 
+ * by Simon Greenwold.
+ *
+ * Display a box with three different kinds of lights.
  */
 
 void setup() {
@@ -13,7 +13,7 @@ void setup() {
 void draw() {
   background(0);
   translate(width / 2, height / 2);
-  
+
   // Orange point light on the right
   pointLight(150, 100, 0, // Color
              200, -150, 0); // Position
@@ -27,7 +27,7 @@ void draw() {
             0, 40, 200, // Position
             0, -0.5, -0.5, // Direction
             PI / 2, 2); // Angle, concentration
-  
+
   rotateY(map(mouseX, 0, width, 0, PI));
   rotateX(map(mouseY, 0, height, 0, PI));
   box(150);

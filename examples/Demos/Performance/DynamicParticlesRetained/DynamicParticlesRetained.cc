@@ -1,5 +1,5 @@
 PShape particles;
-PImage sprite;  
+PImage sprite;
 
 int npartTotal = 10000;
 int npartPerFrame = 25;
@@ -32,19 +32,19 @@ void setup() {
     part.vertex(+partSize/2, -partSize/2, sprite.width, 0);
     part.vertex(+partSize/2, +partSize/2, sprite.width, sprite.height);
     part.vertex(-partSize/2, +partSize/2, 0, sprite.height);
-    part.endShape();    
+    part.endShape();
     particles.addChild(part);
   }
 
   partLifetime = npartTotal / npartPerFrame;
   initVelocities();
-  initLifetimes(); 
+  initLifetimes();
 
   // Writing to the depth buffer is disabled to avoid rendering
   // artifacts due to the fact that the particles are semi-transparent
   // but not z-sorted.
   hint(DISABLE_DEPTH_MASK);
-} 
+}
 
 void draw () {
   background(0);
@@ -55,12 +55,12 @@ void draw () {
     lifetimes[n]++;
     if (lifetimes[n] == partLifetime) {
       lifetimes[n] = 0;
-    }      
+    }
 
     if (0 <= lifetimes[n]) {
       float opacity = 1.0 - float(lifetimes[n]) / partLifetime;
       part.setTint(color(255, opacity * 255));
-      
+
       if (lifetimes[n] == 0) {
         // Re-spawn dead particle
         part.resetMatrix();
@@ -79,15 +79,15 @@ void draw () {
   }
 
   shape(particles);
-  
+
   fcount += 1;
   int m = millis();
   if (m - lastm > 1000 * fint) {
     frate = float(fcount) / fint;
     fcount = 0;
     lastm = m;
-    println("fps: " + frate); 
-  } 
+    println("fps: " + frate);
+  }
 }
 
 void initVelocities() {
@@ -99,13 +99,13 @@ void initVelocities() {
 
 void initLifetimes() {
   // Initializing particles with negative lifetimes so they are added
-  // progressively into the screen during the first frames of the sketch   
+  // progressively into the screen during the first frames of the sketch
   lifetimes = new int[npartTotal];
   int t = -1;
-  for (int n = 0; n < lifetimes.length; n++) {    
+  for (int n = 0; n < lifetimes.length; n++) {
     if (n % npartPerFrame == 0) {
       t++;
     }
     lifetimes[n] = -t;
   }
-} 
+}

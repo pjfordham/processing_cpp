@@ -1,7 +1,7 @@
 // Ribbons, by Andres Colubri
 // ArcBall class by Ariel, V3ga and Robert Hodgin (flight404)
 // This sketch loads 3D atomic coordinates of a protein molecule
-// from a file in PDB format (http://www.pdb.org/) and displays 
+// from a file in PDB format (http://www.pdb.org/) and displays
 // the structure using a ribbon representation.
 
 String pdbFile = "4HHB.pdb"; // PDB file to read
@@ -23,17 +23,17 @@ Arcball arcball;
 
 void setup() {
   size(1024, 768, P3D);
-  
-  arcball = new Arcball(width/2, height/2, 600);  
+
+  arcball = new Arcball(width/2, height/2, 600);
   readPDB(pdbFile);
 }
 
 void draw() {
   background(0);
-   
-  ambient(80);   
+
+  ambient(80);
   lights();
-   
+
   translate(width/2, height/2, 200);
   arcball.run();
 

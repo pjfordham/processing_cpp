@@ -1,21 +1,21 @@
 /**
  * SaveFile 1
- * 
- * Saving files is a useful way to store data so it can be viewed after a 
- * program has stopped running. The saveStrings() function writes an array 
- * of strings to a file, with each string written to a new line. This file 
+ *
+ * Saving files is a useful way to store data so it can be viewed after a
+ * program has stopped running. The saveStrings() function writes an array
+ * of strings to a file, with each string written to a new line. This file
  * is saved to the sketch's folder.
  */
 
 int[] x = new int[0];
 int[] y = new int[0];
 
-void setup() 
+void setup()
 {
   size(200, 200);
 }
 
-void draw() 
+void draw()
 {
   background(204);
   stroke(0);

@@ -1,12 +1,12 @@
 /**
- * Milliseconds. 
- * 
- * A millisecond is 1/1000 of a second. 
+ * Milliseconds.
+ *
+ * A millisecond is 1/1000 of a second.
  * Processing keeps track of the number of milliseconds a program has run.
- * By modifying this number with the modulo(%) operator, 
- * different patterns in time are created.  
+ * By modifying this number with the modulo(%) operator,
+ * different patterns in time are created.
  */
- 
+
 float scale;
 
 void setup() {
@@ -15,7 +15,7 @@ void setup() {
   scale = width/20;
 }
 
-void draw() { 
+void draw() {
   for (int i = 0; i < scale; i++) {
     colorMode(RGB, (i+1) * scale * 10);
     fill(millis()%((i+1) * scale * 10));

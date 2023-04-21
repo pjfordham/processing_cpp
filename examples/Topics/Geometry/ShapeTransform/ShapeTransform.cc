@@ -1,18 +1,18 @@
 /**
  * Shape Transform
- * by Ira Greenberg.  
- * 
- * Illustrates the geometric relationship 
- * between Cube, Pyramid, Cone and 
+ * by Ira Greenberg.
+ *
+ * Illustrates the geometric relationship
+ * between Cube, Pyramid, Cone and
  * Cylinder 3D primitives.
- * 
+ *
  * Instructions:<br />
  * Up Arrow - increases points<br />
  * Down Arrow - decreases points<br />
  * 'p' key toggles between cube/pyramid<br />
  */
 
-int pts = 4; 
+int pts = 4;
 float angle = 0;
 float radius = 99;
 float cylinderLength = 95;
@@ -55,12 +55,12 @@ void draw(){
           vertices[i][j].x = cos(radians(angle)) * radius;
           vertices[i][j].y = sin(radians(angle)) * radius;
         }
-      } 
+      }
       else {
         vertices[i][j].x = cos(radians(angle)) * radius;
         vertices[i][j].y = sin(radians(angle)) * radius;
       }
-      vertices[i][j].z = cylinderLength; 
+      vertices[i][j].z = cylinderLength;
       // the .0 after the 360 is critical
       angle += 360.0/pts;
     }
@@ -91,23 +91,23 @@ void draw(){
  polygon detail.
  */
 void keyPressed(){
-  if(key == CODED) { 
+  if(key == CODED) {
     // pts
-    if (keyCode == UP) { 
+    if (keyCode == UP) {
       if (pts < 90){
         pts++;
-      } 
-    } 
-    else if (keyCode == DOWN) { 
+      }
+    }
+    else if (keyCode == DOWN) {
       if (pts > 4){
         pts--;
       }
-    } 
+    }
   }
   if (key =='p'){
     if (isPyramid){
       isPyramid = false;
-    } 
+    }
     else {
       isPyramid = true;
     }

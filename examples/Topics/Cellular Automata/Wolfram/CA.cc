@@ -1,6 +1,6 @@
 class CA {
 
-  int[] cells;     // An array of 0s and 1s 
+  int[] cells;     // An array of 0s and 1s
   int generation;  // How many generations?
   int scl;         // How many pixels wide/high is each cell?
 
@@ -12,19 +12,19 @@ class CA {
     cells = new int[width/scl];
     restart();
   }
-  
+
   // Set the rules of the CA
   void setRules(int[] r) {
     rules = r;
   }
-  
+
   // Make a random ruleset
   void randomize() {
     for (int i = 0; i < 8; i++) {
       rules[i] = int(random(2));
     }
   }
-  
+
   // Reset to generation 0
   void restart() {
     for (int i = 0; i < cells.length; i++) {
@@ -53,20 +53,20 @@ class CA {
     //cells = (int[]) nextgen.clone();
     generation++;
   }
-  
+
   // This is the easy part, just draw the cells, fill 255 for '1', fill 0 for '0'
   void render() {
     for (int i = 0; i < cells.length; i++) {
       if (cells[i] == 1) {
         fill(255);
-      } else { 
+      } else {
         fill(0);
       }
       noStroke();
       rect(i*scl,generation*scl, scl,scl);
     }
   }
-  
+
   // Implementing the Wolfram rules
   // Could be improved and made more concise, but here we can explicitly see what is going on for each case
   int executeRules (int a, int b, int c) {
@@ -80,7 +80,7 @@ class CA {
     if (a == 0 && b == 0 && c == 0) { return rules[7]; }
     return 0;
   }
-  
+
   // The CA is done if it reaches the bottom of the screen
   boolean finished() {
     if (generation > height/scl) {

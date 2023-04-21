@@ -1,7 +1,7 @@
 /**
- * Radial Gradient. 
- * 
- * Draws a series of concentric circles to create a gradient 
+ * Radial Gradient.
+ *
+ * Draws a series of concentric circles to create a gradient
  * from one color to another.
  */
 
@@ -21,7 +21,7 @@ void draw() {
   background(0);
   for (int x = 0; x <= width; x+=dim) {
     drawGradient(x, height/2);
-  } 
+  }
 }
 
 void drawGradient(float x, float y) {

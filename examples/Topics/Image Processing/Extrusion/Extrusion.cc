@@ -1,6 +1,6 @@
 /**
- * Extrusion. 
- * 
+ * Extrusion.
+ *
  * Converts a flat image into spatial data points and rotates the points
  * around the center.
  */
@@ -13,7 +13,7 @@ float angle;
 
 void setup() {
   size(640, 360, P3D);
-  
+
   aPixels = new int[width][height];
   values = new int[width][height];
   noFill();
@@ -34,11 +34,11 @@ void draw() {
   background(0);
   translate(width/2, height/2, -height/2);
   scale(2.0);
-  
+
   // Update and constrain the angle
   angle += 0.005;
-  rotateY(angle);  
-  
+  rotateY(angle);
+
   // Display the image mass
   for (int i = 0; i < a.height; i += 4) {
     for (int j = 0; j < a.width; j += 4) {

@@ -1,13 +1,13 @@
 /**
- * Keyboard. 
- * 
- * Click on the image to give it focus and press the letter keys 
- * to create forms in time and space. Each key has a unique identifying 
- * number. These numbers can be used to position shapes in space. 
+ * Keyboard.
+ *
+ * Click on the image to give it focus and press the letter keys
+ * to create forms in time and space. Each key has a unique identifying
+ * number. These numbers can be used to position shapes in space.
  */
 
 int rectWidth;
-   
+
 void setup() {
   size(640, 360);
   noStroke();
@@ -15,7 +15,7 @@ void setup() {
   rectWidth = width/4;
 }
 
-void draw() { 
+void draw() {
   // keep draw() here to continue looping while waiting for keys
 }
 
@@ -29,7 +29,7 @@ void keyPressed() {
   if (keyIndex == -1) {
     // If it's not a letter key, clear the screen
     background(0);
-  } else { 
+  } else {
     // It's a letter key, fill a rectangle
     fill(millis() % 255);
     float x = map(keyIndex, 0, 25, 0, width - rectWidth);

@@ -1,14 +1,14 @@
 // Simple bouncing ball class
 
 class Ball {
-  
+
   float x;
   float y;
   float speed;
   float gravity;
   float w;
   float life = 255;
-  
+
   Ball(float tempX, float tempY, float tempW) {
     x = tempX;
     y = tempY;
@@ -16,7 +16,7 @@ class Ball {
     speed = 0;
     gravity = 0.1;
   }
-  
+
     void move() {
     // Add gravity to speed
     speed = speed + gravity;
@@ -30,7 +30,7 @@ class Ball {
       y = height;
     }
   }
-  
+
   boolean finished() {
     // Balls fade out
     life--;
@@ -40,11 +40,11 @@ class Ball {
       return false;
     }
   }
-  
+
   void display() {
     // Display the circle
     fill(0,life);
     //stroke(0,life);
     ellipse(x,y,w,w);
   }
-}  
+}

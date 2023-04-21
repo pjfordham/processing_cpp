@@ -1,9 +1,9 @@
 /**
- * Zoom. 
- * 
+ * Zoom.
+ *
  * Move the cursor over the image to alter its position. Click and press
- * the mouse to zoom. This program displays a series of lines with their 
- * heights corresponding to a color value read from an image. 
+ * the mouse to zoom. This program displays a series of lines with their
+ * heights corresponding to a color value read from an image.
  */
 
 PImage img;
@@ -28,14 +28,14 @@ void setup() {
 void draw() {
   background(0);
 
-  nmx += (mouseX-nmx)/20; 
-  nmy += (mouseY-nmy)/20; 
+  nmx += (mouseX-nmx)/20;
+  nmy += (mouseY-nmy)/20;
 
-  if(mousePressed) { 
-    sval += 0.005; 
-  } 
+  if(mousePressed) {
+    sval += 0.005;
+  }
   else {
-    sval -= 0.01; 
+    sval -= 0.01;
   }
 
   sval = constrain(sval, 1.0, 2.0);
@@ -50,7 +50,7 @@ void draw() {
 
   for (int i = 0; i < img.height; i += res) {
     for (int j = 0; j < img.width; j += res) {
-      float rr = red(imgPixels[j][i]); 
+      float rr = red(imgPixels[j][i]);
       float gg = green(imgPixels[j][i]);
       float bb = blue(imgPixels[j][i]);
       float tt = rr+gg+bb;

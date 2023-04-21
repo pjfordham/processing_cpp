@@ -1,8 +1,8 @@
 /**
- * Color Variables (Homage to Albers). 
- * 
- * This example creates variables for colors that may be referred to 
- * in the program by a name, rather than a number. 
+ * Color Variables (Homage to Albers).
+ *
+ * This example creates variables for colors that may be referred to
+ * in the program by a name, rather than a number.
  */
 
 size(640, 360);

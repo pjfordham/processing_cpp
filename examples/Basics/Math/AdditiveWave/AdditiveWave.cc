@@ -1,10 +1,10 @@
 /**
  * Additive Wave
- * by Daniel Shiffman. 
- * 
- * Create a more complex wave by adding two waves together. 
+ * by Daniel Shiffman.
+ *
+ * Create a more complex wave by adding two waves together.
  */
- 
+
 int xspacing = 8;   // How far apart should each horizontal location be spaced
 int w;              // Width of entire wave
 int maxwaves = 4;   // total # of waves to add together
@@ -43,7 +43,7 @@ void calcWave() {
   for (int i = 0; i < yvalues.length; i++) {
     yvalues[i] = 0;
   }
- 
+
   // Accumulate wave height values
   for (int j = 0; j < maxwaves; j++) {
     float x = theta;

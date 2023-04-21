@@ -1,10 +1,10 @@
 /**
- * Shape Vertices. 
- * 
+ * Shape Vertices.
+ *
  * How to iterate over the vertices of a shape.
- * When loading an obj or SVG, getVertexCount() 
- * will typically return 0 since all the vertices 
- * are in the child shapes. 
+ * When loading an obj or SVG, getVertexCount()
+ * will typically return 0 since all the vertices
+ * are in the child shapes.
  *
  * You should iterate through the children and then
  * iterate through their vertices.
@@ -23,13 +23,13 @@ void draw() {
   background(51);
   // Center where we will draw all the vertices
   translate(width/2 - uk.width/2, height/2- uk.height/2);
-  
+
   // Iterate over the children
   int children = uk.getChildCount();
   for (int i = 0; i < children; i++) {
     PShape child = uk.getChild(i);
     int total = child.getVertexCount();
-    
+
     // Now we can actually get the vertices from each child
     for (int j = 0; j < total; j++) {
       PVector v = child.getVertex(j);

@@ -1,11 +1,11 @@
 /**
  * I Like Icosahedra
  * by Ira Greenberg.
- * 
+ *
  * This example plots icosahedra. The Icosahdron is a regular
  * polyhedron composed of twenty equalateral triangles.
  */
- 
+
 Icosahedron ico1;
 Icosahedron ico2;
 Icosahedron ico3;

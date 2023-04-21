@@ -1,11 +1,11 @@
 /**
- * Texture Sphere 
+ * Texture Sphere
  * by Gillian Ramsay
- * 
+ *
  * Rewritten by Gillian Ramsay to better display the poles.
- * Previous version by Mike 'Flux' Chang (and cleaned up by Aaron Koblin). 
+ * Previous version by Mike 'Flux' Chang (and cleaned up by Aaron Koblin).
  * Original based on code by Toxi.
- * 
+ *
  * A 3D textured sphere with simple rotation control.
  */
 
@@ -14,7 +14,7 @@ int ptsW, ptsH;
 PImage img;
 
 int numPointsW;
-int numPointsH_2pi; 
+int numPointsH_2pi;
 int numPointsH;
 
 float[] coorX;
@@ -48,14 +48,14 @@ void keyPressed() {
 
 void draw() {
   background(0);
-  camera(width/2+map(mouseX, 0, width, -2*width, 2*width), 
+  camera(width/2+map(mouseX, 0, width, -2*width, 2*width),
          height/2+map(mouseY, 0, height, -height, height),
-         height/2/tan(PI*30.0 / 180.0), 
-         width, height/2.0, 0, 
+         height/2/tan(PI*30.0 / 180.0),
+         width, height/2.0, 0,
          0, 1, 0);
-    
+
   pushMatrix();
-  translate(width/2, height/2, 0);  
+  translate(width/2, height/2, 0);
   textureSphere(200, 200, 200, img);
   popMatrix();
 }
@@ -77,28 +77,28 @@ void initializeSphere(int numPtsW, int numPtsH_2pi) {
     coorX[i]=sin(thetaW);
     coorZ[i]=cos(thetaW);
   }
-  
+
   for (int i=0; i<numPointsH; i++) {  // For all points from top to bottom
     if (int(numPointsH_2pi/2) != (float)numPointsH_2pi/2 && i==numPointsH-1) {  // If the numPointsH_2pi is odd and it is at the last pt
       float thetaH=(i-1)*2*PI/(numPointsH_2pi);
-      coorY[i]=cos(PI+thetaH); 
+      coorY[i]=cos(PI+thetaH);
       multXZ[i]=0;
-    } 
+    }
     else {
       //The numPointsH_2pi and 2 below allows there to be a flat bottom if the numPointsH is odd
       float thetaH=i*2*PI/(numPointsH_2pi);
 
       //PI+ below makes the top always the point instead of the bottom.
-      coorY[i]=cos(PI+thetaH); 
+      coorY[i]=cos(PI+thetaH);
       multXZ[i]=sin(thetaH);
     }
   }
 }
 
-void textureSphere(float rx, float ry, float rz, PImage t) { 
-  // These are so we can map certain parts of the image on to the shape 
-  float changeU=t.width/(float)(numPointsW-1); 
-  float changeV=t.height/(float)(numPointsH-1); 
+void textureSphere(float rx, float ry, float rz, PImage t) {
+  // These are so we can map certain parts of the image on to the shape
+  float changeU=t.width/(float)(numPointsW-1);
+  float changeV=t.height/(float)(numPointsH-1);
   float u=0;  // Width variable for the texture
   float v=0;  // Height variable for the texture
 

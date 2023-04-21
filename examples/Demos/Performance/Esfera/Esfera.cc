@@ -1,8 +1,8 @@
 /**
  * Esfera
- * by David Pena.  
- * 
- * Distribucion aleatoria uniforme sobre la superficie de una esfera. 
+ * by David Pena.
+ *
+ * Distribucion aleatoria uniforme sobre la superficie de una esfera.
  */
 
 int cuantos = 16000;
@@ -25,7 +25,7 @@ void setup() {
 
 void draw() {
   background(0);
-  
+
   float rxp = (mouseX-(width/2)) * 0.005;
   float ryp = (mouseY-(height/2)) * 0.005;
   rx = rx*0.9 + rxp*0.1;

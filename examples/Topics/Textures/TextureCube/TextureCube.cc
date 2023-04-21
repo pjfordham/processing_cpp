@@ -1,8 +1,8 @@
 /**
  * Texture Cube
  * by Dave Bollinger.
- * 
- * Drag mouse to rotate cube. Demonstrates use of u/v coords in 
+ *
+ * Drag mouse to rotate cube. Demonstrates use of u/v coords in
  * vertex() and effect on texture(). The textures get distorted using
  * the P3D renderer as you can see, but they look great using OPENGL.
 */
@@ -41,7 +41,7 @@ void TexturedCube(PImage tex) {
   // of the screen, but is not otherwised aligned with the X/Z faces. (This
   // just affects what type of symmetry is required if you need seamless
   // tiling all the way around the cube)
-  
+
   // +Z "front" face
   vertex(-1, -1,  1, 0, 0);
   vertex( 1, -1,  1, 1, 0);
