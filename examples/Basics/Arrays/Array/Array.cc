@@ -11,11 +11,11 @@
  */
 
 
-float[] coswave;
+std::vector<float> coswave;
 
 void setup() {
   size(640, 360);
-  coswave = new float[width];
+  coswave.resize(width);
   for (int i = 0; i < width; i++) {
     float amount = map(i, 0, width, 0, PI);
     coswave[i] = abs(cos(amount));

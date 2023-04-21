@@ -7,14 +7,17 @@
  * is colored in relation to its distance from the center of the image.
  */
 
-float[][] distances;
+std::vector<std::vector<float>> distances;
 float maxDistance;
 int spacer;
-
+ 
 void setup() {
   size(640, 360);
   maxDistance = dist(width/2, height/2, width, height);
-  distances = new float[width][height];
+  distances.resize(width);
+  for (int x = 0; x < width; x++) {
+    distances[x].resize(height);
+  }
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       float distance = dist(width/2, height/2, x, y);

@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# This script runs Processing, using the system GCC.
+
+# Set this to non-zero for logging
+LOGGING=0
+
+# Logs name and value of a variable to stdout if LOGGING is non-zero.
+# Expects the variable name as parameter $1.
+log() {
+  if [ $LOGGING -ne 0 ]; then
+    eval echo $1=\$$1
+  fi
+}
+
+# Get absolute path of directory where this script is located
+APPDIR=`readlink -f "$0"`
+APPDIR=`dirname "$APPDIR"`
+log APPDIR
+
+
+current_name=`basename $0`
+cmd_name='processing-java'
+log current_name
+log cmd_name
+
+# Start Processing in the same directory as this script
+if [ "$1" ]; then
+    SKETCH=`readlink -f "$1"`
+else
+    SHIT
+fi
+log SKETCH
+
+cd "$SKETCH"
+
+rm -f \*~ weak.o sketch.o sketch
+g++ -c -O3 $APPDIR/PerlinNoise.cc -o PerlinNoise.o
+g++ -c -O3 $APPDIR/weak.c -o weak.o
+g++ -c -O3 -I/usr/include/freetype2 -include $APPDIR/processing.h *.cc -o sketch.o
+g++ sketch.o weak.o PerlinNoise.o -lSDL2 -lSDL2_ttf -lfreetype  -lSDL2_image -lglfw -lGLEW -lGL -lcurl -lSDL2main -lfmt -lm -o ./sketch && ./sketch
