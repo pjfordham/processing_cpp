@@ -840,11 +840,15 @@ public:
    }
 
    void image(PGraphics &gfx, int x, int y) {
-      glTexturedQuad( {x, y},
-                      {x+gfx.width,y},
-                      {x+gfx.width,y+gfx.height},
-                      {x,y+gfx.height},
-                      1.0,1.0, gfx.bufferID, localFboID, tint_color);
+     float left = x;
+     float right = x + gfx.width;
+     float top = y;
+     float bottom = y + gfx.height;
+     glTexturedQuad( {left, top},
+                     {right,top},
+                     {right, bottom},
+                     {left, bottom},
+                     1.0,1.0, gfx.bufferID, localFboID, tint_color);
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
