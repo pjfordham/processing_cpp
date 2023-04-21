@@ -12,6 +12,7 @@ public:
    Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
    std::vector<PVector> vertices;
    std::vector<PShape> children;
+   std::vector<unsigned short> indices;
 
    int style = POLYGON;
    int type = OPEN;
@@ -25,6 +26,7 @@ public:
 
    PShape(PShape&& other) noexcept {
       std::swap(vertices, other.vertices);
+      std::swap(indices, other.indices);
       std::swap(children, other.children);
       std::swap(style, other.style);
       std::swap(type, other.type);
@@ -33,6 +35,7 @@ public:
 
    PShape& operator=(PShape&& other) noexcept {
       std::swap(vertices, other.vertices);
+      std::swap(indices, other.indices);
       std::swap(children, other.children);
       std::swap(style, other.style);
       std::swap(type, other.type);

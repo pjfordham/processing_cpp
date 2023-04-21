@@ -63,6 +63,14 @@ public:
    GLuint Vmatrix;
    GLuint uSampler;
 
+   GLuint index_buffer_id;
+   GLuint vertex_buffer_id;
+  GLuint coords_buffer_id;
+  GLuint normal_buffer_id;
+  GLuint vertex_attrib_id;
+  GLuint coords_attrib_id;
+  GLuint normal_attrib_id;
+  
    std::vector<Eigen::Matrix4f> matrix_stack;
    Eigen::Matrix4f move_matrix; // Default is identity
 
@@ -111,6 +119,13 @@ public:
       std::swap(Pmatrix, x.Pmatrix);
       std::swap(Vmatrix, x.Vmatrix);
       std::swap(uSampler, x.uSampler);
+      std::swap(index_buffer_id, x.index_buffer_id);
+      std::swap(vertex_buffer_id, x.vertex_buffer_id);
+      std::swap(coords_buffer_id, x.coords_buffer_id);
+      std::swap(normal_buffer_id, x.normal_buffer_id);
+      std::swap(vertex_attrib_id, x.vertex_attrib_id);
+      std::swap(coords_attrib_id, x.coords_attrib_id);
+      std::swap(normal_attrib_id, x.normal_attrib_id);
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
       std::swap(Mmatrix, x.Mmatrix);
@@ -159,6 +174,13 @@ public:
       std::swap(Pmatrix, x.Pmatrix);
       std::swap(Vmatrix, x.Vmatrix);
       std::swap(uSampler, x.uSampler);
+      std::swap(index_buffer_id, x.index_buffer_id);
+      std::swap(vertex_buffer_id, x.vertex_buffer_id);
+      std::swap(coords_buffer_id, x.coords_buffer_id);
+      std::swap(normal_buffer_id, x.normal_buffer_id);
+      std::swap(vertex_attrib_id, x.vertex_attrib_id);
+      std::swap(coords_attrib_id, x.coords_attrib_id);
+      std::swap(normal_attrib_id, x.normal_attrib_id);
 
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
@@ -238,6 +260,14 @@ public:
       Pmatrix = glGetUniformLocation(programID, "Pmatrix");
       Vmatrix = glGetUniformLocation(programID, "Vmatrix");
 
+
+      glGenBuffers(1, &index_buffer_id);
+      glGenBuffers(1, &vertex_buffer_id);
+      glGenBuffers(1, &coords_buffer_id);
+      glGenBuffers(1, &normal_buffer_id);
+      vertex_attrib_id = glGetAttribLocation(programID, "position");
+      normal_attrib_id = glGetAttribLocation(programID, "normal");
+      coords_attrib_id = glGetAttribLocation(programID, "coords");
 
       // Create a white OpenGL texture
       unsigned int white = 0xFFFFFFFF;
@@ -495,15 +525,10 @@ public:
       GLuint buffer_id = 0;
       GLuint attribId;
    public:
-      GL_FLOAT_buffer(GLuint programID, const void *data, int size, const char *attrib, int count, int stride, void* offset) {
+     GL_FLOAT_buffer(GLuint buffer_id, GLuint programID, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
          if (size > 0) {
-            glGenBuffers(1, &buffer_id);
             glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-            glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STATIC_DRAW);
-
-            attribId = glGetAttribLocation(programID, attrib);
-            glEnableVertexAttribArray(attribId);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+            glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STREAM_DRAW);
             glVertexAttribPointer(
                attribId,                         // attribute
                count,                                // size
@@ -512,12 +537,10 @@ public:
                stride,                           // stride
                offset                     // array buffer offset
                );
+            glEnableVertexAttribArray(attribId);
          }
       }
       ~GL_FLOAT_buffer() {
-         if (buffer_id) {
-            glDeleteBuffers(1, &buffer_id);
-         }
       }
    };
 
@@ -553,20 +576,15 @@ public:
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
 
-      GL_FLOAT_buffer vertex( programID, vertices.data(), vertices.size() * 3, "position", 3,
-                              sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer normal( programID, normals.data(),  normals.size() * 3,  "normal",   3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer coord(  programID, coords.data(),   coords.size() * 3,   "coords",   2, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer vertex( vertex_buffer_id, programID, vertices.data(), vertices.size() * 3, vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer normal( normal_buffer_id, programID, normals.data(),  normals.size() * 3,  normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   coords.size() * 3,   coords_attrib_id, 2, sizeof(PVector), (void*)offsetof(PVector,x));
 
       if ( indices.size() > 0 ) {
-         GLuint indexbuffer;
-         glGenBuffers(1, &indexbuffer);
-         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
+         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
          glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
 
          glDrawElements(element_type, indices.size(), GL_UNSIGNED_SHORT, 0);
-
-         glDeleteBuffers(1, &indexbuffer);
 
          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
       } else {
@@ -1133,32 +1151,29 @@ public:
       }
    }
 
-   void draw_vertices( std::vector<PVector> &vertices, GLuint element_type, color color) {
-
+   void shape_fill(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
       std::vector<PVector> normals;
       std::vector<PVector> coords;
-      std::vector<unsigned short> indicies;
-      return drawGeometry( vertices, normals, coords, indicies, element_type, localFboID, color );
-
-   }
-
-   void shape_fill(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
-      if (color.a == 0)
+     if (color.a == 0)
          return;
       switch( pshape.style ) {
       case POINTS:
          break;
       case POLYGON:
       {
-         std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
-         draw_vertices( triangles, GL_TRIANGLES, color );
+        if (pshape.indices.size() == 0) {
+          std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
+          drawGeometry(triangles, normals, coords, pshape.indices, GL_TRIANGLES, localFboID, color );
+        } else {
+          drawGeometry( pshape.vertices, normals, coords, pshape.indices, GL_TRIANGLES, localFboID, color );
+        }
       }
       break;
       case TRIANGLES:
-         draw_vertices( pshape.vertices, GL_TRIANGLES, color );
+        drawGeometry(  pshape.vertices, normals, coords, pshape.indices, GL_TRIANGLES, localFboID, color );
          break;
       case TRIANGLE_STRIP:
-         draw_vertices( pshape.vertices, GL_TRIANGLE_STRIP, color );
+         drawGeometry(  pshape.vertices, normals, coords, pshape.indices, GL_TRIANGLE_STRIP, localFboID, color );
          break;
       default:
          abort();
@@ -1290,6 +1305,7 @@ public:
       shape.vertex(x+width,y);
       shape.vertex(x+width,y+height);
       shape.vertex(x,y+height);
+      //shape.indices = { 0,1,2,0,2,3 };
       shape.endShape(CLOSE);
       return shape;
    }
