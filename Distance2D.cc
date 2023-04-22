@@ -22,6 +22,6 @@ void draw() {
       float size = dist(mouseX, mouseY, i, j);
       size = size/max_distance * 66;
       ellipse(i, j, size, size);
-    }
+   }
   }
 }

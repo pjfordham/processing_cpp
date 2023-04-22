@@ -337,8 +337,10 @@ int main(int argc, char* argv[]) {
 
             // Call the sketch's draw()
             draw();
+            g.glc.flush( g );
             if (g.localFboID != 0) {
                g.draw_main();
+               g.glc.flush( g );
             }
 
             SDL_GL_SwapWindow(window);
