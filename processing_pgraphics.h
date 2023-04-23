@@ -1261,8 +1261,17 @@ public:
          }
          break;
       case TRIANGLE_STRIP:
-         drawGeometry(  pshape.vertices, normals, coords, pshape.indices, GL_TRIANGLE_STRIP, localFboID, color );
-         break;
+      {
+         if (pshape.indices.size() != 0) { abort();}
+         std::vector<unsigned short> indices;
+         for (int i = 0; i < pshape.vertices.size()-2; i ++ ){
+            indices.push_back(i);
+            indices.push_back(i+1);
+            indices.push_back(i+2);
+         }
+         drawGeometry(  pshape.vertices, normals, coords, indices, GL_TRIANGLES, localFboID, color );
+      }
+      break;
       default:
          abort();
       }
