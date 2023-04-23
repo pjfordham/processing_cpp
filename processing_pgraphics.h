@@ -613,9 +613,9 @@ public:
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
                        GLuint textureID,
-                       GLuint frame_buffer_ID,
                       color color) {
-      if (indices.size() != 0 && frame_buffer_ID != 0 && textureID == whiteTextureID) {
+      if (indices.size() == 0) abort();
+      if (textureID == whiteTextureID) {
          glc.reserve( vertices.size(), *this );
          auto starti = glc.vbuffer.size();
          glc.vbuffer.insert(glc.vbuffer.end(), vertices.begin(), vertices.end());
@@ -631,13 +631,8 @@ public:
          glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
          glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
 
-         glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_ID);
+         glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
 
-         if (currentTextureID) {
-            glBindTexture(GL_TEXTURE_2D, currentTextureID);
-         } else {
-            glBindTexture(GL_TEXTURE_2D, whiteTextureID);
-         }
          glBindTexture(GL_TEXTURE_2D, textureID);
 
          float color_vec[] = {
@@ -647,30 +642,7 @@ public:
             color.a/255.0f };
          glUniform4fv(Color, 1, color_vec);
 
-         // Create a vertex array object (VAO)
-         GLuint VAO;
-         glGenVertexArrays(1, &VAO);
-         glBindVertexArray(VAO);
-
-         GL_FLOAT_buffer vertex( vertex_buffer_id, programID, vertices.data(), vertices.size() * 3, vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-         GL_FLOAT_buffer normal( normal_buffer_id, programID, normals.data(),  normals.size() * 3,  normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-         GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   coords.size() * 3,   coords_attrib_id, 2, sizeof(PVector), (void*)offsetof(PVector,x));
-
-         if ( indices.size() > 0 ) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
-
-            glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-         } else {
-            glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-         }
-
-         // Unbind the buffer objects and VAO
-         glDeleteVertexArrays(1, &VAO);
-         glBindBuffer(GL_ARRAY_BUFFER, 0);
-         glBindVertexArray(0);
+         drawTrianglesDirect(vertices, normals, coords, indices, indices.size());
       }
    }
 
@@ -874,9 +846,9 @@ public:
       };
 
       if (currentTextureID) {
-         drawTriangles(vertices, normals, coords, triangles, currentTextureID, localFboID, tint_color);
+         drawTriangles(vertices, normals, coords, triangles, currentTextureID, tint_color);
       }else {
-         drawTriangles(vertices, normals, coords, triangles, whiteTextureID, localFboID, fill_color);
+         drawTriangles(vertices, normals, coords, triangles, whiteTextureID, fill_color);
       }
    };
 
@@ -937,9 +909,9 @@ public:
          }
       }
       if (currentTextureID) {
-         drawTriangles(vertices, normals,coords, indices, currentTextureID, localFboID, tint_color);
+         drawTriangles(vertices, normals,coords, indices, currentTextureID, tint_color);
       } else {
-         drawTriangles(vertices, normals,coords, indices, whiteTextureID, localFboID, fill_color);
+         drawTriangles(vertices, normals,coords, indices, whiteTextureID, fill_color);
       }
    }
 
@@ -1110,7 +1082,7 @@ public:
          0,1,2, 0,2,3,
       };
 
-      drawTriangles( vertices, normals, coords, indices, textureID, localFboID, tint );
+      drawTriangles( vertices, normals, coords, indices, textureID, tint );
       glBindTexture(GL_TEXTURE_2D, 0);
    }
 
@@ -1232,8 +1204,7 @@ public:
    void shape_fill(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
       std::vector<PVector> normals;
       std::vector<PVector> coords;
-      GLuint textureID;
-      if (color.a == 0)
+       if (color.a == 0)
          return;
       switch( pshape.style ) {
       case POINTS:
@@ -1246,9 +1217,9 @@ public:
             for (int i = 0; i < triangles.size(); i ++ ){
                indices.push_back(i);
             }
-            drawTriangles(triangles, normals, coords, indices, whiteTextureID, localFboID, color );
+            drawTriangles(triangles, normals, coords, indices, whiteTextureID, color );
          } else {
-            drawTriangles( pshape.vertices, normals, coords,pshape.indices,  whiteTextureID, localFboID, color );
+            drawTriangles( pshape.vertices, normals, coords,pshape.indices,  whiteTextureID,  color );
          }
       }
       break;
@@ -1258,9 +1229,9 @@ public:
             for (int i = 0; i < pshape.indices.size(); i ++ ){
                indices.push_back(i);
             }
-            drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, localFboID, color );
+            drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, color );
          } else {
-            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, whiteTextureID, localFboID, color );
+            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, whiteTextureID, color );
          }
          break;
       case TRIANGLE_STRIP:
@@ -1272,7 +1243,7 @@ public:
             indices.push_back(i+1);
             indices.push_back(i+2);
          }
-         drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, localFboID, color );
+         drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, color );
       }
       break;
       default:
