@@ -1537,23 +1537,13 @@ public:
    void endDraw() {}
 
    void draw_main() {
+      glc.flush( *this );
       // Reset to default view settings to draw next frame and
       // draw the texture from the PGraphics flat.
       noLights();
       move_matrix = Eigen::Matrix4f::Identity();
 
-      Eigen::Matrix4f old_view_matrix = view_matrix;
-      Eigen::Matrix4f old_projection_matrix = projection_matrix;
-
-
-      view_matrix = Eigen::Matrix4f::Identity();
-      projection_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
-
-      // bind the real frame buffer
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      // Clear the color and depth buffers
-      glClearColor(0.0, 0.0, 0.0, 255.0);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      Eigen::Matrix4f new_projection_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
 
       // For drawing the main screen we need to flip the texture and remove any tint
       std::vector<PVector> vertices{
@@ -1574,10 +1564,20 @@ public:
          0,1,2, 0,2,3,
       };
 
-      drawTriangles( vertices, normals, coords, indices, bufferID, 0, WHITE);
+      // bind the real frame buffer
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      // Clear the color and depth buffers
+      glClearColor(0.0, 0.0, 0.0, 255.0);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      view_matrix = old_view_matrix;
-      projection_matrix = old_projection_matrix;
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+      glUniformMatrix4fv(Pmatrix, 1,false, new_projection_matrix.data());
+      glUniformMatrix4fv(Vmatrix, 1,false, move_matrix.data());
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glBindTexture(GL_TEXTURE_2D, bufferID);
+      float color_vec[] = {255.0f,255.0f,255.0f,255.0f };
+      glUniform4fv(Color, 1, color_vec);
+      drawTrianglesDirect( vertices, normals, coords, indices, indices.size());
 
       // Clear the depth buffer but not what was drawn for the next frame
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
