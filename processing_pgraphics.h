@@ -1385,7 +1385,7 @@ public:
       shape.vertex(x+width,y);
       shape.vertex(x+width,y+height);
       shape.vertex(x,y+height);
-      //shape.indices = { 0,1,2,0,2,3 };
+      shape.indices = { 0,1,2,0,2,3 };
       shape.endShape(CLOSE);
       return shape;
    }
@@ -1416,6 +1416,7 @@ public:
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
+      shape.indices = { 0,1,2 };
       shape.endShape(CLOSE);
       return shape;
    }
@@ -1464,9 +1465,14 @@ public:
       int NUMBER_OF_VERTICES=32;
       PShape shape;
       shape.beginShape(POLYGON);
-      for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
+      shape.vertex( ellipse_point( {x,y}, 0, 0, TWO_PI, width / 2.0, height /2.0) );
+      for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
          shape.vertex( ellipse_point( {x,y}, i, 0, TWO_PI, width / 2.0, height /2.0) );
+         shape.indices.push_back( 0 );
+         shape.indices.push_back( i );
+         shape.indices.push_back( i+1 );
       }
+      shape.vertex( ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, 0, TWO_PI, width / 2.0, height /2.0) );
       shape.endShape(CLOSE);
       return shape;
    }
