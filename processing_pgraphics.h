@@ -590,11 +590,11 @@ public:
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
 
-      GL_FLOAT_buffer vertex( vertex_buffer_id, programID, vertices.data(), count * 3,
+      GL_FLOAT_buffer vertex( vertex_buffer_id, programID, vertices.data(), vertices.size() * 3,
                               vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer normal( normal_buffer_id, programID, normals.data(),  count * 3,
+      GL_FLOAT_buffer normal( normal_buffer_id, programID, normals.data(),  normals.size() * 3,
                               normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   count  * 3,
+      GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   coords.size()  * 3,
                               coords_attrib_id, 2, sizeof(PVector), (void*)offsetof(PVector,x));
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
@@ -1538,7 +1538,6 @@ public:
       noLights();
       move_matrix = Eigen::Matrix4f::Identity();
 
-      Eigen::Matrix4f old_move_matrix = move_matrix;
       Eigen::Matrix4f old_view_matrix = view_matrix;
       Eigen::Matrix4f old_projection_matrix = projection_matrix;
 
