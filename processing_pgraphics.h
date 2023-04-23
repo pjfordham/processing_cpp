@@ -23,11 +23,13 @@ public:
    std::vector<PVector> vbuffer;
    std::vector<PVector> nbuffer;
    std::vector<PVector> cbuffer;
+   std::vector<float> xbuffer;
    std::vector<unsigned short> ibuffer;
    gl_context() {
       vbuffer.reserve(CAPACITY);
       nbuffer.reserve(CAPACITY);
       cbuffer.reserve(CAPACITY);
+      xbuffer.reserve(CAPACITY);
       ibuffer.reserve(CAPACITY);
    }
 
@@ -54,7 +56,6 @@ public:
    GLuint localFboID;
    GLuint depthBufferID;
    GLuint whiteTextureID;
-   GLuint Color;
    GLuint programID;
    GLuint currentTextureID = 0;
    gl_context glc;
@@ -101,9 +102,11 @@ public:
    GLuint index_buffer_id;
    GLuint vertex_buffer_id;
    GLuint coords_buffer_id;
+   GLuint colors_buffer_id;
    GLuint normal_buffer_id;
    GLuint vertex_attrib_id;
    GLuint coords_attrib_id;
+   GLuint colors_attrib_id;
    GLuint normal_attrib_id;
 
    std::vector<Eigen::Matrix4f> matrix_stack;
@@ -117,7 +120,6 @@ public:
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
       std::swap(depthBufferID, x.depthBufferID);
-      std::swap(Color, x.Color);
       std::swap(programID, x.programID);
       std::swap(currentTextureID, x.currentTextureID);
 
@@ -157,9 +159,11 @@ public:
       std::swap(index_buffer_id, x.index_buffer_id);
       std::swap(vertex_buffer_id, x.vertex_buffer_id);
       std::swap(coords_buffer_id, x.coords_buffer_id);
+      std::swap(colors_buffer_id, x.colors_buffer_id);
       std::swap(normal_buffer_id, x.normal_buffer_id);
       std::swap(vertex_attrib_id, x.vertex_attrib_id);
       std::swap(coords_attrib_id, x.coords_attrib_id);
+      std::swap(colors_attrib_id, x.colors_attrib_id);
       std::swap(normal_attrib_id, x.normal_attrib_id);
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
@@ -171,7 +175,6 @@ public:
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
       std::swap(depthBufferID, x.depthBufferID);
-      std::swap(Color, x.Color);
       std::swap(programID, x.programID);
       std::swap(currentTextureID, x.currentTextureID);
 
@@ -212,9 +215,11 @@ public:
       std::swap(index_buffer_id, x.index_buffer_id);
       std::swap(vertex_buffer_id, x.vertex_buffer_id);
       std::swap(coords_buffer_id, x.coords_buffer_id);
+      std::swap(colors_buffer_id, x.colors_buffer_id);
       std::swap(normal_buffer_id, x.normal_buffer_id);
       std::swap(vertex_attrib_id, x.vertex_attrib_id);
       std::swap(coords_attrib_id, x.coords_attrib_id);
+      std::swap(colors_attrib_id, x.colors_attrib_id);
       std::swap(normal_attrib_id, x.normal_attrib_id);
 
       std::swap(matrix_stack, x.matrix_stack);
@@ -280,7 +285,6 @@ public:
       programID = LoadShaders(Shaders3D());
       glUseProgram(programID);
 
-      Color = glGetUniformLocation(programID, "color");
       AmbientLight = glGetUniformLocation(programID, "ambientLight");
       DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
       DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
@@ -299,10 +303,12 @@ public:
       glGenBuffers(1, &index_buffer_id);
       glGenBuffers(1, &vertex_buffer_id);
       glGenBuffers(1, &coords_buffer_id);
+      glGenBuffers(1, &colors_buffer_id);
       glGenBuffers(1, &normal_buffer_id);
       vertex_attrib_id = glGetAttribLocation(programID, "position");
       normal_attrib_id = glGetAttribLocation(programID, "normal");
       coords_attrib_id = glGetAttribLocation(programID, "coords");
+      colors_attrib_id = glGetAttribLocation(programID, "colors");
 
       // Create a white OpenGL texture
       unsigned int white = 0xFFFFFFFF;
@@ -582,6 +588,7 @@ public:
    void drawTrianglesDirect( const std::vector<PVector> &vertices,
                        const std::vector<PVector> &normals,
                        const std::vector<PVector> &coords,
+                       const std::vector<float> &colors,
                        const std::vector<unsigned short> &indices,
                        int count ) {
 
@@ -596,6 +603,8 @@ public:
                               normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
       GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   coords.size()  * 3,
                               coords_attrib_id, 2, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer color(  colors_buffer_id, programID, colors.data(),   colors.size(),
+                              colors_attrib_id, 4, 0, 0);
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
@@ -613,36 +622,26 @@ public:
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
                        GLuint textureID,
-                      color color) {
+                       color color) {
       if (indices.size() == 0) abort();
-      if (textureID == whiteTextureID) {
-         glc.reserve( vertices.size(), *this );
-         auto starti = glc.vbuffer.size();
-         glc.vbuffer.insert(glc.vbuffer.end(), vertices.begin(), vertices.end());
-         glc.cbuffer.insert(glc.cbuffer.end(), coords.begin(),   coords.end());
-         glc.nbuffer.insert(glc.nbuffer.end(), normals.begin(),  normals.end());
-         for (auto index : indices) {
-            glc.ibuffer.push_back( starti + index  );
-         }
-      } else {
 
-         glc.flush( *this );
-         glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-         glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-         glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+      glc.reserve( vertices.size(), *this );
 
-         glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      auto starti = glc.vbuffer.size();
 
-         glBindTexture(GL_TEXTURE_2D, textureID);
+      glc.vbuffer.insert(glc.vbuffer.end(), vertices.begin(), vertices.end());
+      glc.cbuffer.insert(glc.cbuffer.end(), coords.begin(),   coords.end());
+      glc.nbuffer.insert(glc.nbuffer.end(), normals.begin(),  normals.end());
 
-         float color_vec[] = {
-            color.r/255.0f,
-            color.g/255.0f,
-            color.b/255.0f,
-            color.a/255.0f };
-         glUniform4fv(Color, 1, color_vec);
+      for (auto vertex : vertices) {
+         glc.xbuffer.push_back( color.r / 255.0f );
+         glc.xbuffer.push_back( color.g / 255.0f );
+         glc.xbuffer.push_back( color.b / 255.0f );
+         glc.xbuffer.push_back( color.a / 255.0f );
+      }
 
-         drawTrianglesDirect(vertices, normals, coords, indices, indices.size());
+      for (auto index : indices) {
+         glc.ibuffer.push_back( starti + index  );
       }
    }
 
@@ -1183,8 +1182,16 @@ public:
       }
       case POLYGON:
       {
-         PShape xshape = glLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE);
-         shape_fill( xshape,0,0,0,0,color );
+         if (pshape.vertices.size() > 2 ) {
+            PShape xshape = glLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE);
+            shape_fill( xshape,0,0,0,0,color );
+         } else {
+            PShape triangles;
+            triangles.beginShape(TRIANGLES);
+            glLine(triangles, pshape.vertices[0], pshape.vertices[1], stroke_weight);
+            triangles.endShape();
+            shape_fill( triangles,0,0,0,0,color );
+         }
          break;
       }
       case TRIANGLE_STRIP:
@@ -1204,29 +1211,31 @@ public:
    void shape_fill(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
       std::vector<PVector> normals;
       std::vector<PVector> coords;
-       if (color.a == 0)
+      if (color.a == 0)
          return;
       switch( pshape.style ) {
       case POINTS:
          break;
       case POLYGON:
       {
-         if (pshape.indices.size() == 0) {
-            std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
-            std::vector<unsigned short> indices;
-            for (int i = 0; i < triangles.size(); i ++ ){
-               indices.push_back(i);
+         if (pshape.vertices.size() > 2) {
+            if (pshape.indices.size() == 0) {
+               std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
+               std::vector<unsigned short> indices;
+               for (int i = 0; i < triangles.size(); i ++ ){
+                  indices.push_back(i);
+               }
+               drawTriangles(triangles, normals, coords, indices, whiteTextureID, color );
+            } else {
+               drawTriangles( pshape.vertices, normals, coords,pshape.indices,  whiteTextureID,  color );
             }
-            drawTriangles(triangles, normals, coords, indices, whiteTextureID, color );
-         } else {
-            drawTriangles( pshape.vertices, normals, coords,pshape.indices,  whiteTextureID,  color );
          }
       }
       break;
       case TRIANGLES:
          if (pshape.indices.size() == 0) {
             std::vector<unsigned short> indices;
-            for (int i = 0; i < pshape.indices.size(); i ++ ){
+            for (int i = 0; i < pshape.vertices.size(); i ++ ){
                indices.push_back(i);
             }
             drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, color );
@@ -1534,11 +1543,17 @@ public:
       std::vector<unsigned short>  indices = {
          0,1,2, 0,2,3,
       };
+      std::vector<float> colors {
+         1.0f, 1.0f, 1.0f, 1.0f,
+         1.0f, 1.0f, 1.0f, 1.0f,
+         1.0f, 1.0f, 1.0f, 1.0f,
+         1.0f, 1.0f, 1.0f, 1.0f,
+      };
 
       // bind the real frame buffer
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       // Clear the color and depth buffers
-      glClearColor(0.0, 0.0, 0.0, 255.0);
+      glClearColor(0.0, 0.0, 0.0, 1.0);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
@@ -1546,9 +1561,7 @@ public:
       glUniformMatrix4fv(Vmatrix, 1,false, move_matrix.data());
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       glBindTexture(GL_TEXTURE_2D, bufferID);
-      float color_vec[] = {255.0f,255.0f,255.0f,255.0f };
-      glUniform4fv(Color, 1, color_vec);
-      drawTrianglesDirect( vertices, normals, coords, indices, indices.size());
+      drawTrianglesDirect( vertices, normals, coords, colors, indices, indices.size());
 
       // Clear the depth buffer but not what was drawn for the next frame
       glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
@@ -1572,21 +1585,14 @@ void gl_context::flush(PGraphics &pg) {
 
    glBindFramebuffer(GL_FRAMEBUFFER, pg.localFboID);
 
-   auto color = WHITE;
    glBindTexture(GL_TEXTURE_2D, pg.whiteTextureID);
 
-   float color_vec[] = {
-      color.r/255.0f,
-      color.g/255.0f,
-      color.b/255.0f,
-      color.a/255.0f };
-   glUniform4fv(pg.Color, 1, color_vec);
-
-   pg.drawTrianglesDirect( vbuffer, nbuffer, cbuffer, ibuffer, ibuffer.size() );
+   pg.drawTrianglesDirect( vbuffer, nbuffer, cbuffer, xbuffer, ibuffer, ibuffer.size() );
    vbuffer.clear();
    nbuffer.clear();
    cbuffer.clear();
    ibuffer.clear();
+   xbuffer.clear();
 }
 
 #endif
