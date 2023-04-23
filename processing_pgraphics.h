@@ -579,7 +579,7 @@ public:
       }
    };
 
-   void drawTriangles( const std::vector<PVector> &vertices,
+   void drawTrianglesDirect( const std::vector<PVector> &vertices,
                        const std::vector<PVector> &normals,
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
@@ -608,14 +608,13 @@ public:
       glBindVertexArray(0);
    }
 
-   void drawGeometry( const std::vector<PVector> &vertices,
+   void drawTriangles( const std::vector<PVector> &vertices,
                       const std::vector<PVector> &normals,
                       const std::vector<PVector> &coords,
                       const std::vector<unsigned short> &indices,
-                      GLuint element_type,
                       GLuint frame_buffer_ID,
                       color color) {
-      if (element_type == GL_TRIANGLES && indices.size() != 0 && frame_buffer_ID != 0) {
+      if (indices.size() != 0 && frame_buffer_ID != 0) {
          glc.reserve( vertices.size(), *this );
          auto starti = glc.vbuffer.size();
          glc.vbuffer.insert(glc.vbuffer.end(), vertices.begin(), vertices.end());
@@ -659,11 +658,11 @@ public:
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
 
-            glDrawElements(element_type, indices.size(), GL_UNSIGNED_SHORT, 0);
+            glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
          } else {
-            glDrawArrays(element_type, 0, vertices.size());
+            glDrawArrays(GL_TRIANGLES, 0, vertices.size());
          }
 
          // Unbind the buffer objects and VAO
@@ -873,9 +872,9 @@ public:
       };
 
       if (currentTextureID) {
-         drawGeometry(vertices, normals, coords, triangles, GL_TRIANGLES, localFboID, tint_color);
+         drawTriangles(vertices, normals, coords, triangles, localFboID, tint_color);
       }else {
-         drawGeometry(vertices, normals, coords, triangles, GL_TRIANGLES, localFboID, fill_color);
+         drawTriangles(vertices, normals, coords, triangles, localFboID, fill_color);
       }
    };
 
@@ -935,7 +934,7 @@ public:
             indices.push_back(idx3);
          }
       }
-      drawGeometry(vertices, normals,coords, indices, GL_TRIANGLES, localFboID, fill_color);
+      drawTriangles(vertices, normals,coords, indices, localFboID, fill_color);
    }
 
    void image(PGraphics &gfx, int x, int y) {
@@ -1107,7 +1106,7 @@ public:
 
       auto tempID = currentTextureID;
       currentTextureID = textureID;
-      drawGeometry( vertices, normals, coords, indices, GL_TRIANGLES, frame_buffer_ID, tint );
+      drawTriangles( vertices, normals, coords, indices, frame_buffer_ID, tint );
       currentTextureID = tempID;
       glBindTexture(GL_TEXTURE_2D, 0);
    }
@@ -1243,9 +1242,9 @@ public:
             for (int i = 0; i < triangles.size(); i ++ ){
                indices.push_back(i);
             }
-            drawGeometry(triangles, normals, coords, indices, GL_TRIANGLES, localFboID, color );
+            drawTriangles(triangles, normals, coords, indices, localFboID, color );
          } else {
-            drawGeometry( pshape.vertices, normals, coords, pshape.indices, GL_TRIANGLES, localFboID, color );
+            drawTriangles( pshape.vertices, normals, coords, pshape.indices, localFboID, color );
          }
       }
       break;
@@ -1255,9 +1254,9 @@ public:
             for (int i = 0; i < pshape.indices.size(); i ++ ){
                indices.push_back(i);
             }
-            drawGeometry(  pshape.vertices, normals, coords, indices, GL_TRIANGLES, localFboID, color );
+            drawTriangles(  pshape.vertices, normals, coords, indices, localFboID, color );
          } else {
-            drawGeometry(  pshape.vertices, normals, coords, pshape.indices, GL_TRIANGLES, localFboID, color );
+            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, localFboID, color );
          }
          break;
       case TRIANGLE_STRIP:
@@ -1269,7 +1268,7 @@ public:
             indices.push_back(i+1);
             indices.push_back(i+2);
          }
-         drawGeometry(  pshape.vertices, normals, coords, indices, GL_TRIANGLES, localFboID, color );
+         drawTriangles(  pshape.vertices, normals, coords, indices, localFboID, color );
       }
       break;
       default:
@@ -1600,7 +1599,7 @@ void gl_context::flush(PGraphics &pg) {
       color.a/255.0f };
    glUniform4fv(pg.Color, 1, color_vec);
 
-   pg.drawTriangles( vbuffer, nbuffer, cbuffer, ibuffer, ibuffer.size() );
+   pg.drawTrianglesDirect( vbuffer, nbuffer, cbuffer, ibuffer, ibuffer.size() );
    vbuffer.clear();
    nbuffer.clear();
    cbuffer.clear();
