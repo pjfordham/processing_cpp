@@ -523,8 +523,8 @@ public:
          y = y - theight / 2;
       }
 
-      glTexturedQuad(PVector{x,y},PVector{x+twidth,y},PVector{x+twidth,y+theight}, PVector{x,y+theight},
-                     1.0, 1.0, textureID, localFboID, WHITE);
+      drawTexturedQuad(PVector{x,y},PVector{x+twidth,y},PVector{x+twidth,y+theight}, PVector{x,y+theight},
+                     1.0, 1.0, textureID, WHITE);
 
       glDeleteTextures(1, &textureID);
 
@@ -609,12 +609,13 @@ public:
    }
 
    void drawTriangles( const std::vector<PVector> &vertices,
-                      const std::vector<PVector> &normals,
-                      const std::vector<PVector> &coords,
-                      const std::vector<unsigned short> &indices,
-                      GLuint frame_buffer_ID,
+                       const std::vector<PVector> &normals,
+                       const std::vector<PVector> &coords,
+                       const std::vector<unsigned short> &indices,
+                       GLuint textureID,
+                       GLuint frame_buffer_ID,
                       color color) {
-      if (indices.size() != 0 && frame_buffer_ID != 0) {
+      if (indices.size() != 0 && frame_buffer_ID != 0 && textureID == whiteTextureID) {
          glc.reserve( vertices.size(), *this );
          auto starti = glc.vbuffer.size();
          glc.vbuffer.insert(glc.vbuffer.end(), vertices.begin(), vertices.end());
@@ -637,6 +638,7 @@ public:
          } else {
             glBindTexture(GL_TEXTURE_2D, whiteTextureID);
          }
+         glBindTexture(GL_TEXTURE_2D, textureID);
 
          float color_vec[] = {
             color.r/255.0f,
@@ -872,9 +874,9 @@ public:
       };
 
       if (currentTextureID) {
-         drawTriangles(vertices, normals, coords, triangles, localFboID, tint_color);
+         drawTriangles(vertices, normals, coords, triangles, currentTextureID, localFboID, tint_color);
       }else {
-         drawTriangles(vertices, normals, coords, triangles, localFboID, fill_color);
+         drawTriangles(vertices, normals, coords, triangles, whiteTextureID, localFboID, fill_color);
       }
    };
 
@@ -934,7 +936,11 @@ public:
             indices.push_back(idx3);
          }
       }
-      drawTriangles(vertices, normals,coords, indices, localFboID, fill_color);
+      if (currentTextureID) {
+         drawTriangles(vertices, normals,coords, indices, currentTextureID, localFboID, tint_color);
+      } else {
+         drawTriangles(vertices, normals,coords, indices, whiteTextureID, localFboID, fill_color);
+      }
    }
 
    void image(PGraphics &gfx, int x, int y) {
@@ -942,11 +948,11 @@ public:
       float right = x + gfx.width;
       float top = y;
       float bottom = y + gfx.height;
-      glTexturedQuad( {left, top},
+      drawTexturedQuad( {left, top},
                       {right,top},
                       {right, bottom},
                       {left, bottom},
-                      1.0,1.0, gfx.bufferID, localFboID, tint_color);
+                      1.0,1.0, gfx.bufferID, tint_color);
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
@@ -963,8 +969,8 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      glTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, 1.0,1.0,
-                     pimage.get_texture_id(), localFboID, tint_color);
+      drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, 1.0,1.0,
+                     pimage.get_texture_id(), tint_color);
    }
 
    void image(PImage &pimage, float x, float y) {
@@ -1089,7 +1095,7 @@ public:
       printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
    }
 
-   void glTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID, GLuint frame_buffer_ID, color tint) {
+   void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID, color tint) {
 
       std::vector<PVector> vertices{ p0, p1, p2, p3 };
       std::vector<PVector> coords {
@@ -1104,10 +1110,7 @@ public:
          0,1,2, 0,2,3,
       };
 
-      auto tempID = currentTextureID;
-      currentTextureID = textureID;
-      drawTriangles( vertices, normals, coords, indices, frame_buffer_ID, tint );
-      currentTextureID = tempID;
+      drawTriangles( vertices, normals, coords, indices, textureID, localFboID, tint );
       glBindTexture(GL_TEXTURE_2D, 0);
    }
 
@@ -1229,6 +1232,7 @@ public:
    void shape_fill(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
       std::vector<PVector> normals;
       std::vector<PVector> coords;
+      GLuint textureID;
       if (color.a == 0)
          return;
       switch( pshape.style ) {
@@ -1242,9 +1246,9 @@ public:
             for (int i = 0; i < triangles.size(); i ++ ){
                indices.push_back(i);
             }
-            drawTriangles(triangles, normals, coords, indices, localFboID, color );
+            drawTriangles(triangles, normals, coords, indices, whiteTextureID, localFboID, color );
          } else {
-            drawTriangles( pshape.vertices, normals, coords, pshape.indices, localFboID, color );
+            drawTriangles( pshape.vertices, normals, coords,pshape.indices,  whiteTextureID, localFboID, color );
          }
       }
       break;
@@ -1254,9 +1258,9 @@ public:
             for (int i = 0; i < pshape.indices.size(); i ++ ){
                indices.push_back(i);
             }
-            drawTriangles(  pshape.vertices, normals, coords, indices, localFboID, color );
+            drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, localFboID, color );
          } else {
-            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, localFboID, color );
+            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, whiteTextureID, localFboID, color );
          }
          break;
       case TRIANGLE_STRIP:
@@ -1268,7 +1272,7 @@ public:
             indices.push_back(i+1);
             indices.push_back(i+2);
          }
-         drawTriangles(  pshape.vertices, normals, coords, indices, localFboID, color );
+         drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, localFboID, color );
       }
       break;
       default:
@@ -1552,12 +1556,25 @@ public:
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // For drawing the main screen we need to flip the texture and remove any tint
-      glTexturedQuad(
-         {0.0f,           0.0f+height},
+      std::vector<PVector> vertices{
+         {0.0f,       0.0f+height},
          {0.0f+width ,0.0f+height},
          {0.0f+width, 0.0f},
-         {0.0f,           0.0f},
-         1.0,1.0, bufferID, 0, WHITE);
+         {0.0f,       0.0f}};
+
+      std::vector<PVector> coords {
+         { 0.0f, 0.0f},
+         { 1.0f, 0.0f},
+         { 1.0f, 1.0f},
+         { 0.0f, 1.0f},
+      };
+      std::vector<PVector> normals;
+
+      std::vector<unsigned short>  indices = {
+         0,1,2, 0,2,3,
+      };
+
+      drawTriangles( vertices, normals, coords, indices, bufferID, 0, WHITE);
 
       view_matrix = old_view_matrix;
       projection_matrix = old_projection_matrix;
@@ -1585,11 +1602,7 @@ void gl_context::flush(PGraphics &pg) {
    glBindFramebuffer(GL_FRAMEBUFFER, pg.localFboID);
 
    auto color = WHITE;
-   if (pg.currentTextureID) {
-      glBindTexture(GL_TEXTURE_2D, pg.currentTextureID);
-   } else {
-      glBindTexture(GL_TEXTURE_2D, pg.whiteTextureID);
-   }
+   glBindTexture(GL_TEXTURE_2D, pg.whiteTextureID);
 
    float color_vec[] = {
       color.r/255.0f,
