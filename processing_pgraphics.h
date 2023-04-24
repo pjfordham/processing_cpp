@@ -58,6 +58,9 @@ public:
    GLuint whiteTextureID;
    GLuint programID;
    GLuint currentTextureID = 0;
+   int nextTextureID = 2;
+   int currentTextureWidth;
+   int currentTextureHeight;
    gl_context glc;
 
    color stroke_color = WHITE;
@@ -122,6 +125,7 @@ public:
       std::swap(depthBufferID, x.depthBufferID);
       std::swap(programID, x.programID);
       std::swap(currentTextureID, x.currentTextureID);
+      std::swap(nextTextureID, x.nextTextureID);
 
       std::swap(stroke_color, x.stroke_color);
       std::swap(fill_color, x.fill_color);
@@ -177,6 +181,7 @@ public:
       std::swap(depthBufferID, x.depthBufferID);
       std::swap(programID, x.programID);
       std::swap(currentTextureID, x.currentTextureID);
+      std::swap(nextTextureID, x.nextTextureID);
 
       std::swap(stroke_color, x.stroke_color);
       std::swap(fill_color, x.fill_color);
@@ -237,10 +242,10 @@ public:
    ~PGraphics() {
       if (localFboID)
          glDeleteFramebuffers(1, &localFboID);
-      if (bufferID)
-         glDeleteTextures(1, &bufferID);
-      if (depthBufferID)
-         glDeleteRenderbuffers(1, &depthBufferID);
+      // if (bufferID)
+      //    glDeleteTextures(1, &bufferID);
+      // if (depthBufferID)
+      //    glDeleteRenderbuffers(1, &depthBufferID);
    }
 
    PGraphics(int z_width, int z_height, int mode, bool fb = false) {
@@ -256,6 +261,20 @@ public:
          abort();
       }
 
+      width = z_width;
+      height = z_height;
+
+      // create the texture array
+      glGenTextures(1, &bufferID);
+      glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
+      glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, width, height, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+      // set texture parameters
+      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
       if (fb) {
          // Use main framebuffer
          localFboID = 0;
@@ -263,24 +282,41 @@ public:
          // Create a framebuffer object
          glGenFramebuffers(1, &localFboID);
          glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      }
+         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, bufferID, 0, 1);
+
+         glGenRenderbuffers(1, &depthBufferID);
+         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+
+         // Attach the depth buffer to the framebuffer object
+         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+//         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, bufferID, 0, 2);
+         auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+         if (err != GL_FRAMEBUFFER_COMPLETE) {
+            fprintf(stderr,"%d\n",err);
+         }
+    }
+
+      // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
+      whiteTextureID = 0;
+      GLubyte white[4] = { 255, 255, 255, 255 };
+      GLubyte red[4] = { 255, 0, 0, 255 };
+      GLubyte green[4] = { 0, 255, 0, 255 };
+      GLubyte blue[4] = { 0, 0, 255, 255 };
+      glClearTexImage(bufferID, whiteTextureID, GL_RGBA, GL_UNSIGNED_BYTE, white);
+      glClearTexImage(bufferID, 1, GL_RGBA, GL_UNSIGNED_BYTE, red);
+      glClearTexImage(bufferID, 2, GL_RGBA, GL_UNSIGNED_BYTE, green);
+      glClearTexImage(bufferID, 3, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+      glClearTexImage(bufferID, 4, GL_RGBA, GL_UNSIGNED_BYTE, red);
+      glClearTexImage(bufferID, 5, GL_RGBA, GL_UNSIGNED_BYTE, green);
+      glClearTexImage(bufferID, 6, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+      glClearTexImage(bufferID, 7, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
       glDepthFunc(GL_LEQUAL);
       glEnable(GL_DEPTH_TEST);
-      // Create a renderbuffer for the depth buffer
-      if (!fb) {
-         glGenRenderbuffers(1, &depthBufferID);
-         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, z_width, z_height);
-
-         // Attach the depth buffer to the framebuffer object
-         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
-      }
-
-      width = z_width;
-      height = z_height;
 
       programID = LoadShaders(Shaders3D());
       glUseProgram(programID);
@@ -289,7 +325,7 @@ public:
       DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
       DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
 
-      uSampler = glGetUniformLocation(programID, "uSampler");
+      uSampler = glGetUniformLocation(programID, "myTextures");
 
       int textureUnitIndex = 0;
       glUniform1i(uSampler,0);
@@ -309,28 +345,6 @@ public:
       normal_attrib_id = glGetAttribLocation(programID, "normal");
       coords_attrib_id = glGetAttribLocation(programID, "coords");
       colors_attrib_id = glGetAttribLocation(programID, "colors");
-
-      // Create a white OpenGL texture
-      unsigned int white = 0xFFFFFFFF;
-      glGenTextures(1, &whiteTextureID);
-      glBindTexture(GL_TEXTURE_2D, currentTextureID);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0,
-                   GL_RGBA, GL_UNSIGNED_BYTE, &white);
-
-      if (!fb) {
-         // Create a texture to render to
-         glGenTextures(1, &bufferID);
-         glBindTexture(GL_TEXTURE_2D, bufferID);
-         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, z_width, z_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferID, 0);
-      }
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
       Mmatrix = glGetUniformLocation(programID, "Mmatrix");
 
@@ -361,40 +375,48 @@ public:
    }
 
    void popMatrix() {
+      flush();
       move_matrix = matrix_stack.back();
       matrix_stack.pop_back();
    }
 
    void translate(float x, float y, float z=0) {
+      flush();
       move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
    }
 
    void transform(Eigen::Matrix4f transform_matrix) {
+      flush();
       move_matrix = move_matrix * transform_matrix;
    }
 
    void scale(float x, float y,float z = 1) {
+      flush();
       move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
    }
 
    void scale(float x) {
+      flush();
       scale(x,x,x);
    }
 
    void rotate(float angle, PVector axis) {
+      flush();
       move_matrix = move_matrix * RotateMatrix(angle,axis);
    }
 
-
    void rotate(float angle) {
+      flush();
       move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
    }
 
    void rotateY(float angle) {
+      flush();
       move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
    }
 
    void rotateX(float angle) {
+      flush();
       move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
    }
 
@@ -434,6 +456,7 @@ public:
    }
 
    void perspective(float angle, float aspect, float minZ, float maxZ) {
+      flush();
       projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
    }
 
@@ -467,6 +490,7 @@ public:
          {0,      0,   1.0,    -eyeZ},
          {0.0f, 0.0f,  0.0f,    1.0f} };
 
+      flush();
       // Translate the camera to the origin
       view_matrix = view * translate;
    }
@@ -477,6 +501,7 @@ public:
    }
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
+      flush();
       xdirectionLightColor = {r/255.0f, r/255.0f, r/255.0f};
       xdirectionLightVector = {nx, ny, nz};
       glUniform3fv(DirectionLightColor, 1, xdirectionLightColor.data() );
@@ -484,6 +509,7 @@ public:
    }
 
    void ambientLight(float r, float g, float b) {
+      flush();
       xambientLight = { r/255.0f, g/255.0f, b/255.0f };
       glUniform3fv(AmbientLight, 1, xambientLight.data() );
    }
@@ -519,7 +545,8 @@ public:
 
 
    void text(std::string text, float x, float y, float twidth=-1, float theight=-1) {
-      GLuint textureID = currentFont.render_text(text, fill_color, twidth, theight);
+      int texture = getNextTextureID();
+      currentFont.render_text(bufferID, texture, text, fill_color, twidth, theight);
 
       // this works well enough for the Letters.cc example but it's not really general
       if ( xTextAlign == CENTER ) {
@@ -529,11 +556,10 @@ public:
          y = y - theight / 2;
       }
 
+      float xrange = (1.0 * twidth) / width;
+      float yrange = (1.0 * theight) / height;
       drawTexturedQuad(PVector{x,y},PVector{x+twidth,y},PVector{x+twidth,y+theight}, PVector{x,y+theight},
-                     1.0, 1.0, textureID, WHITE);
-
-      glDeleteTextures(1, &textureID);
-
+                       xrange, yrange, texture, WHITE);
    }
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
@@ -602,7 +628,7 @@ public:
       GL_FLOAT_buffer normal( normal_buffer_id, programID, normals.data(),  normals.size() * 3,
                               normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
       GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   coords.size()  * 3,
-                              coords_attrib_id, 2, sizeof(PVector), (void*)offsetof(PVector,x));
+                              coords_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
       GL_FLOAT_buffer color(  colors_buffer_id, programID, colors.data(),   colors.size(),
                               colors_attrib_id, 4, 0, 0);
 
@@ -621,7 +647,6 @@ public:
                        const std::vector<PVector> &normals,
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
-                       GLuint textureID,
                        color color) {
       if (indices.size() == 0) abort();
 
@@ -645,49 +670,19 @@ public:
       }
    }
 
-   GLuint createTextureCopy(GLuint srcTexture) {
-      // Get the width and height of the source texture
-      GLint tex_width, tex_height;
-      glBindTexture(GL_TEXTURE_2D, srcTexture);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &tex_width);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &tex_height);
-      glBindTexture(GL_TEXTURE_2D, 0);
-
-      // Create a new texture to hold the copy
-      GLuint dstTexture;
-      glGenTextures(1, &dstTexture);
-
-      // Bind the destination texture
-      glBindTexture(GL_TEXTURE_2D, dstTexture);
-
-      // Set texture parameters
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-      // Copy the pixels from the source texture
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-      glCopyImageSubData(srcTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
-                         dstTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
-                         tex_width, tex_height, 1);
-
-      // Unbind the textures
-      glBindTexture(GL_TEXTURE_2D, 0);
-
-      return dstTexture;
+   void flush() {
+      glc.flush(*this);
    }
 
    void noTexture() {
-      if (currentTextureID) {
-         glDeleteTextures(1, &currentTextureID);
-         currentTextureID = 0;
-         glBindTexture(GL_TEXTURE_2D, whiteTextureID);
-      }
+      currentTextureID = 0;
    }
+
    void texture(PImage &img) {
-      noTexture();
-      currentTextureID = createTextureCopy( img.get_texture_id() );
+      currentTextureID = getNextTextureID();
+      img.load_texture_to_layer( currentTextureID );
+      currentTextureWidth = img.width;
+      currentTextureHeight = img.height;
    }
 
    void imageMode(int iMode) {
@@ -767,37 +762,40 @@ public:
          { -w, h, -d},
       };
 
+      float z = currentTextureID;
+      float xrange = (1.0 * currentTextureWidth) / width;
+      float yrange = (1.0 * currentTextureHeight) / height;
       std::vector<PVector> coords = {
          // Front
-         {0.0,  0.0},
-         {1.0,  0.0},
-         {1.0,  1.0},
-         {0.0,  1.0},
+         {0.0,  0.0, z},
+         {xrange,  0.0, z},
+         {xrange,  yrange, z},
+         {0.0,  yrange, z},
          // Back
-         {0.0,  0.0},
-         {1.0,  0.0},
-         {1.0,  1.0},
-         {0.0,  1.0},
+         {0.0,  0.0, z},
+         {xrange,  0.0, z},
+         {xrange,  yrange, z},
+         {0.0,  yrange, z},
          // Top
-         {0.0,  0.0},
-         {1.0,  0.0},
-         {1.0,  1.0},
-         {0.0,  1.0},
+         {0.0,  0.0, z},
+         {xrange,  0.0, z},
+         {xrange,  yrange, z},
+         {0.0,  yrange, z},
          // Bottom
-         {0.0,  0.0},
-         {1.0,  0.0},
-         {1.0,  1.0},
-         {0.0,  1.0},
+         {0.0,  0.0, z},
+         {xrange,  0.0, z},
+         {xrange,  yrange, z},
+         {0.0,  yrange,z },
          // Right
-         {0.0,  0.0},
-         {1.0,  0.0},
-         {1.0,  1.0},
-         {0.0,  1.0},
+         {0.0,  0.0,z },
+         {xrange,  0.0,z },
+         {xrange,  yrange,z },
+         {0.0,  yrange, z},
          // Left
-         {0.0,  0.0},
-         {1.0,  0.0},
-         {1.0,  1.0},
-         {0.0,  1.0},
+         {0.0,  0.0,z},
+         {xrange,  0.0,z},
+         {xrange,  yrange,z},
+         {0.0,  yrange,z},
       };
 
       std::vector<PVector> normals = {
@@ -845,9 +843,9 @@ public:
       };
 
       if (currentTextureID) {
-         drawTriangles(vertices, normals, coords, triangles, currentTextureID, tint_color);
-      }else {
-         drawTriangles(vertices, normals, coords, triangles, whiteTextureID, fill_color);
+         drawTriangles(vertices, normals, coords, triangles, tint_color);
+      } else {
+         drawTriangles(vertices, normals, coords, triangles, fill_color);
       }
    };
 
@@ -908,10 +906,19 @@ public:
          }
       }
       if (currentTextureID) {
-         drawTriangles(vertices, normals,coords, indices, currentTextureID, tint_color);
+         drawTriangles(vertices, normals,coords, indices, tint_color);
       } else {
-         drawTriangles(vertices, normals,coords, indices, whiteTextureID, fill_color);
+         drawTriangles(vertices, normals,coords, indices, fill_color);
       }
+   }
+
+   int getNextTextureID() {
+      if (nextTextureID == 8) {
+         flush();
+      }
+      int textureID = nextTextureID;
+      nextTextureID++;
+      return textureID;
    }
 
    void image(PGraphics &gfx, int x, int y) {
@@ -919,11 +926,19 @@ public:
       float right = x + gfx.width;
       float top = y;
       float bottom = y + gfx.height;
+      int texture = getNextTextureID();
+      glBindTexture(GL_TEXTURE_2D_ARRAY, gfx.bufferID);
+      glCopyImageSubData(gfx.bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1,
+                         bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, texture,
+                         gfx.width, gfx.height, 1);
+      glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
+      float xrange = (1.0 * gfx.width) / width;
+      float yrange = (1.0 * gfx.height) / height;
       drawTexturedQuad( {left, top},
-                      {right,top},
-                      {right, bottom},
-                      {left, bottom},
-                      1.0,1.0, gfx.bufferID, tint_color);
+                        {right,top},
+                        {right, bottom},
+                        {left, bottom},
+                        xrange,yrange, texture, tint_color);
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
@@ -940,8 +955,13 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, 1.0,1.0,
-                     pimage.get_texture_id(), tint_color);
+      int texture = getNextTextureID();
+      pimage.load_texture_to_layer(texture);
+      float xrange = (1.0 * pimage.width) / width;
+      float yrange = (1.0 * pimage.height) / height;
+
+      drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, xrange,yrange,
+                     texture, tint_color);
    }
 
    void image(PImage &pimage, float x, float y) {
@@ -962,15 +982,13 @@ public:
 
    void loadPixels() {
       pixels.resize(width*height);
-      glBindTexture(GL_TEXTURE_2D, bufferID);
       // Read the pixel data from the framebuffer into the array
-      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+      glGetTextureSubImage(bufferID, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.size(), pixels.data());
    }
 
    void updatePixels() {
       // Write the pixel data to the framebuffer
-      glBindTexture(GL_TEXTURE_2D, bufferID);
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
       // _pixels.clear();
       // pixels = NULL;
    }
@@ -1066,14 +1084,15 @@ public:
       printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
    }
 
-   void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, GLuint textureID, color tint) {
+   void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, int textureLayer, color tint) {
 
       std::vector<PVector> vertices{ p0, p1, p2, p3 };
+      float z = (float)textureLayer;
       std::vector<PVector> coords {
-         { 0.0f, 0.0f},
-         { xrange, 0.0f},
-         { xrange, yrange},
-         { 0.0f, yrange},
+         { 0.0f, 0.0f,z},
+         { xrange, 0.0f,z},
+         { xrange, yrange,z},
+         { 0.0f, yrange,z},
       };
       std::vector<PVector> normals;
 
@@ -1081,8 +1100,7 @@ public:
          0,1,2, 0,2,3,
       };
 
-      drawTriangles( vertices, normals, coords, indices, textureID, tint );
-      glBindTexture(GL_TEXTURE_2D, 0);
+      drawTriangles( vertices, normals, coords, indices, tint );
    }
 
 
@@ -1225,9 +1243,9 @@ public:
                for (int i = 0; i < triangles.size(); i ++ ){
                   indices.push_back(i);
                }
-               drawTriangles(triangles, normals, coords, indices, whiteTextureID, color );
+               drawTriangles(triangles, normals, coords, indices, color );
             } else {
-               drawTriangles( pshape.vertices, normals, coords,pshape.indices,  whiteTextureID,  color );
+               drawTriangles( pshape.vertices, normals, coords,pshape.indices,  color );
             }
          }
       }
@@ -1238,9 +1256,9 @@ public:
             for (int i = 0; i < pshape.vertices.size(); i ++ ){
                indices.push_back(i);
             }
-            drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, color );
+            drawTriangles(  pshape.vertices, normals, coords, indices, color );
          } else {
-            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, whiteTextureID, color );
+            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, color );
          }
          break;
       case TRIANGLE_STRIP:
@@ -1252,7 +1270,7 @@ public:
             indices.push_back(i+1);
             indices.push_back(i+2);
          }
-         drawTriangles(  pshape.vertices, normals, coords, indices, whiteTextureID, color );
+         drawTriangles(  pshape.vertices, normals, coords, indices, color );
       }
       break;
       default:
@@ -1261,10 +1279,10 @@ public:
    }
 
    void shape(PShape &pshape, float x, float y, float swidth, float sheight) {
-      //pushMatrix();
-      //translate(x,y);
-      //scale(1,1); // Need to fix this properly
-      //transform( pshape.shape_matrix );
+      pushMatrix();
+      translate(x,y);
+      scale(1,1); // Need to fix this properly
+      transform( pshape.shape_matrix );
       if ( pshape.style == GROUP ) {
          for (auto &&child : pshape.children) {
             shape(child,0,0,0,0);
@@ -1273,7 +1291,7 @@ public:
          shape_fill(pshape, x,y,swidth,sheight,fill_color);
          shape_stroke(pshape, x,y,swidth,sheight, stroke_color);
       }
-      //popMatrix();
+      popMatrix();
    }
 
    void shape(PShape &pshape) {
@@ -1563,7 +1581,7 @@ public:
    void endDraw() {}
 
    void draw_main() {
-      glc.flush( *this );
+      flush();
       // Reset to default view settings to draw next frame and
       // draw the texture from the PGraphics flat.
       noLights();
@@ -1578,11 +1596,12 @@ public:
          {0.0f+width, 0.0f},
          {0.0f,       0.0f}};
 
+      float z = 1.0;
       std::vector<PVector> coords {
-         { 0.0f, 0.0f},
-         { 1.0f, 0.0f},
-         { 1.0f, 1.0f},
-         { 0.0f, 1.0f},
+         { 0.0f, 0.0f, z},
+         { 1.0f, 0.0f, z},
+         { 1.0f, 1.0f, z},
+         { 0.0f, 1.0f, z},
       };
       std::vector<PVector> normals;
 
@@ -1606,7 +1625,6 @@ public:
       glUniformMatrix4fv(Pmatrix, 1,false, new_projection_matrix.data());
       glUniformMatrix4fv(Vmatrix, 1,false, move_matrix.data());
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      glBindTexture(GL_TEXTURE_2D, bufferID);
       drawTrianglesDirect( vertices, normals, coords, colors, indices, indices.size());
 
       // Clear the depth buffer but not what was drawn for the next frame
@@ -1629,9 +1647,10 @@ void gl_context::flush(PGraphics &pg) {
    glUniformMatrix4fv(pg.Pmatrix, 1,false, pg.projection_matrix.data());
    glUniformMatrix4fv(pg.Vmatrix, 1,false, pg.view_matrix.data());
 
-   glBindFramebuffer(GL_FRAMEBUFFER, pg.localFboID);
+   pg.nextTextureID = 2;
 
-   glBindTexture(GL_TEXTURE_2D, pg.whiteTextureID);
+   glBindFramebuffer(GL_FRAMEBUFFER, pg.localFboID);
+   glBindTexture(GL_TEXTURE_2D_ARRAY, pg.bufferID);
 
    pg.drawTrianglesDirect( vbuffer, nbuffer, cbuffer, xbuffer, ibuffer, ibuffer.size() );
    vbuffer.clear();

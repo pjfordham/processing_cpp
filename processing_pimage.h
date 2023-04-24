@@ -131,30 +131,8 @@ public:
       }
    }
 
-   unsigned int next_power_of_2(unsigned int v) {
-      v--;
-      v |= v >> 1;
-      v |= v >> 2;
-      v |= v >> 4;
-      v |= v >> 8;
-      v |= v >> 16;
-      v++;
-      return v;
-   }
-
-   GLuint get_texture_id()  {
-      if (!textureID) {
-         glGenTextures(1, &textureID);
-      }
-      glBindTexture(GL_TEXTURE_2D, textureID);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0,
-                   GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-      return textureID;
+   void load_texture_to_layer(int layerIndex)  {
+      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layerIndex, surface->w, surface->h, 1, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
    }
 
    static void saveFrame(const GLuint framebufferID, int width, int height, const std::string& fileName) {

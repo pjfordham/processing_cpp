@@ -92,7 +92,7 @@ public:
       }
    }
 
-   GLuint render_text(std::string text, color color, float &width, float &height) {
+   void render_text(GLuint textureID, int layer, std::string text, color color, float &width, float &height) {
       SDL_Surface* surface = TTF_RenderText_Blended(fontMap[std::make_pair(name,size)], text.c_str(),
                                                     { (unsigned char)color.r,
                                                       (unsigned char)color.g,
@@ -110,21 +110,11 @@ public:
          abort();
       }
 
-      // Create an OpenGL texture from the SDL_Surface
-      GLuint textureID;
-      glGenTextures(1, &textureID);
-      glBindTexture(GL_TEXTURE_2D, textureID);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newSurface->w, newSurface->h, 0,
-                   GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
+      glTextureSubImage3D(textureID, 0, 0, 0, layer, newSurface->w, newSurface->h, 1,
+                          GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
 
       SDL_FreeSurface(surface);
       SDL_FreeSurface(newSurface);
-      return textureID;
    }
 
 };

@@ -17,7 +17,7 @@ inline std::tuple<const char*, const char*, const char*> Shaders3D() {
       #version 330
       in vec3 position;
       in vec3 normal;
-      in vec2 coords;
+      in vec3 coords;
       in vec4 colors;
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
@@ -26,7 +26,7 @@ inline std::tuple<const char*, const char*, const char*> Shaders3D() {
       uniform mat4 Vmatrix;
       uniform mat4 Mmatrix;
       out vec3 vLighting;
-      out vec2 vTexture;
+      out vec3 vTexture;
       out vec4 vColor;
       void main()
       {
@@ -45,14 +45,14 @@ inline std::tuple<const char*, const char*, const char*> Shaders3D() {
 
   const char *fragmentShader = R"glsl(
       #version 330
-      in vec2 vTexture;
+      in vec3 vTexture;
       in vec3 vLighting;
       in vec4 vColor;
       out vec4 fragColor;
-      uniform sampler2D uSampler;
+      uniform sampler2DArray myTextures;
       void main()
       {
-          vec4 texelColor = texture2D(uSampler, vTexture);
+          vec4 texelColor = texture(myTextures, vTexture);
           fragColor = vec4(vLighting,1.0) * vColor * texelColor;
       }
 )glsl";
