@@ -1421,6 +1421,46 @@ public:
       return shape;
    }
 
+   float sincos[32][2] = {
+      { 1.000000, -0.000000 },
+      { 0.980785, 0.195090 },
+      { 0.923880, 0.382683 },
+      { 0.831470, 0.555570 },
+      { 0.707107, 0.707107 },
+      { 0.555570, 0.831470 },
+      { 0.382683, 0.923880 },
+      { 0.195090, 0.980785 },
+      { 0.000000, 1.000000 },
+      { -0.195090, 0.980785 },
+      { -0.382683, 0.923880 },
+      { -0.555570, 0.831470 },
+      { -0.707107, 0.707107 },
+      { -0.831470, 0.555570 },
+      { -0.923880, 0.382683 },
+      { -0.980785, 0.195090 },
+      { -1.000000, -0.000000 },
+      { -0.980785, -0.195090 },
+      { -0.923880, -0.382683 },
+      { -0.831470, -0.555570 },
+      { -0.707107, -0.707107 },
+      { -0.555570, -0.831470 },
+      { -0.382683, -0.923880 },
+      { -0.195091, -0.980785 },
+      { -0.000000, -1.000000 },
+      { 0.195090, -0.980785 },
+      { 0.382683, -0.923880 },
+      { 0.555570, -0.831470 },
+      { 0.707107, -0.707107 },
+      { 0.831469, -0.555570 },
+      { 0.923880, -0.382684 },
+      { 0.980785, -0.195090 } };
+
+   PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius) {
+      return PVector( center.x + xradius * sincos[index][0],
+                      center.y + yradius * sincos[index][1],
+                      center.z);
+   }
+
    PVector ellipse_point(const PVector &center, int index, float start, float end, float xradius, float yradius) {
       float angle = map( index, 0, 32, start, end);
       return PVector( center.x + xradius * sin(-angle + HALF_PI),
@@ -1465,14 +1505,14 @@ public:
       int NUMBER_OF_VERTICES=32;
       PShape shape;
       shape.beginShape(POLYGON);
-      shape.vertex( ellipse_point( {x,y}, 0, 0, TWO_PI, width / 2.0, height /2.0) );
+      shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
       for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
-         shape.vertex( ellipse_point( {x,y}, i, 0, TWO_PI, width / 2.0, height /2.0) );
+         shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0, height /2.0) );
          shape.indices.push_back( 0 );
          shape.indices.push_back( i );
          shape.indices.push_back( i+1 );
       }
-      shape.vertex( ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, 0, TWO_PI, width / 2.0, height /2.0) );
+      shape.vertex( fast_ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, width / 2.0, height /2.0) );
       shape.endShape(CLOSE);
       return shape;
    }
