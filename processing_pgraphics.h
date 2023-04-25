@@ -1282,8 +1282,8 @@ public:
             default:
                abort();
             }
-         } else {
-            abort();
+         } else if (pshape.vertices.size() == 1) {
+            shape_fill( _createEllipse(pshape.vertices[0].x, pshape.vertices[0].y, stroke_weight, stroke_weight, CENTER),0,0,0,0,color );
          }
          break;
       }
