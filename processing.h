@@ -305,7 +305,8 @@ int main(int argc, char* argv[]) {
                   }
                   key = zkey;
                   keyCode = key;
-                  keyTyped();
+                  if (event.type == SDL_KEYDOWN)
+                     keyTyped();
                } else if (keyname[0] == 'S' && keyname[1] == 'p') {
                   key = ' ';
                   keyCode = key;

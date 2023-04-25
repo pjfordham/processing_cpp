@@ -67,15 +67,14 @@ public:
 
    // We can safely copy and don't have to delete as the
    // map gets garbage collected at the end of the program
-   PFont(const char *name_, int size_) {
-      size = size_;
+   PFont(const char *name_, int size_) : name(name_), size(size_) {
       if (PFont::fontFileMap.size() == 0) {
          PFont::list();
       }
-      name = fontFileMap[name_].c_str();
+      auto fontPath = fontFileMap[name].c_str();
       auto key = std::make_pair(name,size);
       if (PFont::fontMap.count(key) == 0) {
-         auto font = TTF_OpenFont(name, size);
+         auto font = TTF_OpenFont(fontPath, size);
          if (font == NULL) {
             printf("TTF_OpenFont failed: %s,%d %s\n", name, size, TTF_GetError());
             abort();
