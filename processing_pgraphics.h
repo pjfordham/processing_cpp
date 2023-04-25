@@ -1104,7 +1104,7 @@ public:
    }
 
 
-   PLine glLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
+   PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
       PLine l1{ p1, p2 };
       PLine l2{ p2, p3 };
       PLine low_l1 = l1.offset(-half_weight);
@@ -1114,7 +1114,7 @@ public:
       return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
    }
 
-   PShape glLinePoly(int points, const PVector *p, int weight, bool closed)  {
+   PShape drawLinePoly(int points, const PVector *p, int weight, bool closed)  {
       PLine start;
       PLine end;
 
@@ -1123,7 +1123,7 @@ public:
 
       float half_weight = weight / 2.0;
       if (closed) {
-         start = glLineMitred(p[points-1], p[0], p[1], half_weight );
+         start = drawLineMitred(p[points-1], p[0], p[1], half_weight );
          end = start;
       } else {
          PVector normal = (p[1] - p[0]).normal();
@@ -1140,12 +1140,12 @@ public:
       triangle_strip.vertex( start.end );
 
       for (int i =0; i<points-2;++i) {
-         PLine next = glLineMitred(p[i], p[i+1], p[i+2], half_weight);
+         PLine next = drawLineMitred(p[i], p[i+1], p[i+2], half_weight);
          triangle_strip.vertex( next.start );
          triangle_strip.vertex( next.end );
       }
       if (closed) {
-         PLine next = glLineMitred(p[points-2], p[points-1], p[0], half_weight);
+         PLine next = drawLineMitred(p[points-2], p[points-1], p[0], half_weight);
          triangle_strip.vertex( next.start );
          triangle_strip.vertex( next.end );
       }
@@ -1157,30 +1157,97 @@ public:
       return triangle_strip;
    }
 
-   // only used by glTriangleStrip as mitred line probably wouldn't work.
-   void glLine(PShape &triangles, PVector p1, PVector p2, int weight) const {
+   PShape drawRoundLine(PVector p1, PVector p2, int weight) const {
+
+      PShape shape;
+      shape.beginShape(POLYGON);
+      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+      normal.normalize();
+      normal.mult(weight/2.0);
+
+      int NUMBER_OF_VERTICES=16;
+
+      float start_angle = PVector{p2.x-p1.x,p2.y-p1.y}.heading() + HALF_PI;
+
+      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+         shape.vertex(p1.x + cos(i + start_angle) * weight/2, p1.y + sin(i+start_angle) * weight/2);
+      }
+
+      start_angle += PI;
+
+      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
+         shape.vertex(p2.x + cos(i+start_angle) * weight/2, p2.y + sin(i+start_angle) * weight/2);
+      }
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   PShape drawLine(PVector p1, PVector p2, int weight) const {
+
+      PShape shape;
+      shape.beginShape(POLYGON);
+      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+      normal.normalize();
+      normal.mult(weight/2.0);
+
+      shape.vertex(p1 + normal);
+      shape.vertex(p1 - normal);
+      shape.vertex(p2 - normal);
+      shape.vertex(p2 + normal);
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   PShape drawCappedLine(PVector p1, PVector p2, int weight) const {
+
+      PShape shape;
+      shape.beginShape(POLYGON);
+      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+      normal.normalize();
+      normal.mult(weight/2.0);
+
+      PVector end_offset = PVector{p2.x-p1.x,p2.y-p1.y};
+      end_offset.normalize();
+      end_offset.mult(weight/2.0);
+
+      shape.vertex(p1 + normal - end_offset);
+      shape.vertex(p1 - normal - end_offset);
+      shape.vertex(p2 - normal + end_offset);
+      shape.vertex(p2 + normal + end_offset);
+
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   void _line(PShape &triangles, PVector p1, PVector p2, int weight) const {
 
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
       normal.mult(weight/2.0);
 
-      triangles.vertex(p1 + normal);
-      triangles.vertex(p1 - normal);
-      triangles.vertex(p2 + normal);
+      PVector v[] = {
+         p1 + normal,
+         p1 - normal,
+         p2 - normal,
+         p2 + normal,
+      };
 
-      triangles.vertex(p2 + normal);
-      triangles.vertex(p2 - normal);
-      triangles.vertex(p1 - normal);
+      triangles.vertex( v[0] );
+      triangles.vertex( v[1] );
+      triangles.vertex( v[2] );
 
+      triangles.vertex( v[0] );
+      triangles.vertex( v[2] );
+      triangles.vertex( v[3] );
    }
 
-   PShape glTriangleStrip(int points, const PVector *p,int weight) {
+   PShape drawTriangleStrip(int points, const PVector *p,int weight) {
       PShape triangles;
       triangles.beginShape(TRIANGLES);
-      glLine(triangles, p[0], p[1], weight);
+      _line(triangles, p[0], p[1], weight);
       for (int i=2;i<points;++i) {
-         glLine(triangles, p[i-1], p[i], weight);
-         glLine(triangles, p[i], p[i-2], weight);
+         _line(triangles, p[i-1], p[i], weight);
+         _line(triangles, p[i], p[i-2], weight);
       }
       triangles.endShape();
       return triangles;
@@ -1193,29 +1260,36 @@ public:
       case POINTS:
       {
          for (auto z : pshape.vertices ) {
-            PShape xshape = _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER);
-            shape_fill( xshape,0,0,0,0,color );
+            shape_fill( _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER),0,0,0,0,color );
          }
          break;
       }
       case POLYGON:
       {
          if (pshape.vertices.size() > 2 ) {
-            PShape xshape = glLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE);
-            shape_fill( xshape,0,0,0,0,color );
+            shape_fill( drawLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE),0,0,0,0,color );
+         } else if (pshape.vertices.size() == 2) {
+            switch(line_end_cap) {
+            case ROUND:
+               shape_fill( drawRoundLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,0,0,color );
+               break;
+            case PROJECT:
+               shape_fill( drawCappedLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,0,0,color );
+               break;
+            case SQUARE:
+               shape_fill( drawLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,0,0,color );
+               break;
+            default:
+               abort();
+            }
          } else {
-            PShape triangles;
-            triangles.beginShape(TRIANGLES);
-            glLine(triangles, pshape.vertices[0], pshape.vertices[1], stroke_weight);
-            triangles.endShape();
-            shape_fill( triangles,0,0,0,0,color );
+            abort();
          }
          break;
       }
       case TRIANGLE_STRIP:
       {
-         PShape xshape = glTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight);
-         shape_fill( xshape,0,0,0,0,color );
+         shape_fill( drawTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight),0,0,0,0,color );
          break;
       }
       case TRIANGLES:
@@ -1226,7 +1300,7 @@ public:
       }
    }
 
-   void shape_fill(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
+   void shape_fill(const PShape &pshape, float x, float y, float swidth, float sheight, color color) {
       std::vector<PVector> normals;
       std::vector<PVector> coords;
       if (color.a == 0)
