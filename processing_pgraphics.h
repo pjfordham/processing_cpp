@@ -1153,7 +1153,7 @@ public:
       triangle_strip.vertex( end.start );
       triangle_strip.vertex( end.end );
 
-      triangle_strip.endShape(closed ? CLOSE : OPEN);
+      triangle_strip.endShape(CLOSE);
       return triangle_strip;
    }
 
@@ -1267,7 +1267,13 @@ public:
       case POLYGON:
       {
          if (pshape.vertices.size() > 2 ) {
-            shape_fill( drawLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE),0,0,0,0,color );
+            if (pshape.type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
+               shape_fill( drawLinePoly( pshape.vertices.size() - 1, pshape.vertices.data() + 1, stroke_weight, false),
+                           0,0,0,0,color );
+            } else {
+               shape_fill( drawLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE),
+                           0,0,0,0,color );
+            }
          } else if (pshape.vertices.size() == 2) {
             switch(line_end_cap) {
             case ROUND:
@@ -1610,23 +1616,45 @@ public:
    }
 
    PShape createArc(float x, float y, float width, float height, float start,
-                    float stop, int mode = DEFAULT) {
+                    float stop, int mode) {
 
       if (ellipse_mode != RADIUS) {
          width /=2;
          height /=2;
       }
+      int strokeMode, fillMode;
+      switch( mode ) {
+      case DEFAULT:
+         strokeMode = OPEN_SKIP_FIRST_VERTEX_FOR_STROKE;
+         fillMode = PIE;
+         break;
+      case PIE:
+         strokeMode = CLOSE;
+         fillMode = PIE;
+         break;
+      case CHORD:
+         strokeMode = CLOSE;
+         fillMode = CHORD;
+         break;
+      case OPEN:
+         strokeMode = OPEN;
+         fillMode = CHORD;
+         break;
+      default:
+         abort();
+      }
+
       PShape shape;
       shape.beginShape(POLYGON);
       int NUMBER_OF_VERTICES=32;
-      if ( mode == PIE ) {
+      if ( fillMode == PIE ) {
          shape.vertex(x,y);
       }
       for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
          shape.vertex( ellipse_point( {x,y}, i, start, stop, width, height ) );
       }
       shape.vertex( ellipse_point( {x,y}, 32, start, stop, width, height ) );
-      shape.endShape(CLOSE);
+      shape.endShape(strokeMode);
       return shape;
    }
 

@@ -6,23 +6,30 @@
  */
 
 void setup() {
-  size(400, 400);
+   size(400, 400);
 }
 
+float i = PI + QUARTER_PI;
+float inc = TWO_PI/600.0;
+
 void draw() {
-  background(220);
+   background(BLACK);
 
-  stroke(0);
-  fill(255);
-  arc(100, 100, 150, 150, 0, HALF_PI);
+   stroke(WHITE);
+   strokeWeight(5);
+   fill(YELLOW);
+   arc(100, 100, 150, 150, 0, HALF_PI);
 
-  noFill();
-  arc(100, 100, 160, 160, HALF_PI, PI);
-  arc(100, 100, 170, 170, PI, PI+QUARTER_PI);
-  arc(100, 100, 180, 180, PI+QUARTER_PI, TWO_PI);
+   noFill();
+   arc(100, 100, 180, 180, HALF_PI, PI);
+   arc(100, 100, 140, 140, PI, PI+QUARTER_PI);
+   arc(100, 100, 100, 100, PI+QUARTER_PI, TWO_PI);
 
-  fill(255);
-  arc(300, 100, 150, 150, 0, PI+QUARTER_PI, OPEN);
-  arc(100, 300, 170, 170, 0, PI+QUARTER_PI, CHORD);
-  arc(300, 300, 190, 190, 0, PI+QUARTER_PI, PIE);
+   fill(RED);
+   arc(300, 100, 150, 150, 0, i, OPEN);
+   fill(GREEN);
+   arc(100, 300, 170, 170, 0, i, CHORD);
+   fill(BLUE);
+   arc(300, 300, 190, 190, 0, i, PIE);
+   i = fmod(i + inc, TWO_PI);
 }
