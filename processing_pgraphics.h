@@ -1596,7 +1596,6 @@ public:
          width = width - x;
          height = height - y;
          break;
-         height;
       default:
          abort();
       }
