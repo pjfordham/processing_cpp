@@ -5,7 +5,13 @@
 #include <vector>
 
 
-bool isPointInTriangle(PVector point, PVector v0, PVector v1, PVector v2) {
+struct indexed_PVector : public PVector {
+   unsigned short int i;
+   indexed_PVector(PVector v,unsigned short i_) : PVector(v), i(i_) {}
+};
+
+bool isPointInTriangle(const indexed_PVector &point, const indexed_PVector &v0,
+                       const indexed_PVector &v1, const indexed_PVector &v2) {
     // Calculate barycentric coordinates of the point with respect to the triangle
     double alpha = ((v1.y - v2.y) * (point.x - v2.x) + (v2.x - v1.x) * (point.y - v2.y)) / 
                    ((v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y));
@@ -16,7 +22,7 @@ bool isPointInTriangle(PVector point, PVector v0, PVector v1, PVector v2) {
     return alpha >= 0 && beta >= 0 && gamma >= 0;
 }
 
-bool isEar(const std::vector<PVector>& polygon, int i) {
+bool isEar(const std::vector<indexed_PVector>& polygon, int i) {
     int n = polygon.size();
     int pi = (i + n - 1) % n;
     int ni = (i + 1) % n;
@@ -31,7 +37,7 @@ bool isEar(const std::vector<PVector>& polygon, int i) {
     return true;
 }
 
-bool isConvexPVector(const std::vector<PVector>& polygon, int i) {
+bool isConvexPVector(const std::vector<indexed_PVector>& polygon, int i) {
     int n = polygon.size();
     PVector prev = polygon[(i + n - 1) % n];
     PVector curr = polygon[i];
@@ -40,7 +46,7 @@ bool isConvexPVector(const std::vector<PVector>& polygon, int i) {
     return !(crossProduct < 0);
 }
 
-int findEar(const std::vector<PVector>& polygon) {
+int findEar(const std::vector<indexed_PVector>& polygon) {
     int n = polygon.size();
     for (int i = 0; i < n; i++) {
         // Check if vertex i is a convex vertex
@@ -67,30 +73,39 @@ bool isClockwise(const std::vector<PVector> &polygon) {
    return sum < 0;
 }
 
-std::vector<PVector> triangulatePolygon(std::vector<PVector> polygon) {
-    std::vector<PVector> triangles;
-    if (polygon.size() < 3) {
-        return triangles; // empty vector
-    }
-    if (isClockwise(polygon)) {
-       std::reverse(polygon.begin(),polygon.end());
-    }
-    while (polygon.size() > 3) {
-        int i = findEar(polygon); // find an ear of the polygon
-        // add the ear as separate triangles to the output vector
-        int n = polygon.size();
-        int pi = (i + n - 1) % n;
-        int ni = (i + 1) % n;
-        triangles.push_back(polygon[pi]);
-        triangles.push_back(polygon[i]);
-        triangles.push_back(polygon[ni]);
-        polygon.erase(polygon.begin() + i); // remove the ear vertex from the polygon
-    }
-    // add the final triangle to the output vector
-    triangles.push_back(polygon[0]);
-    triangles.push_back(polygon[1]);
-    triangles.push_back(polygon[2]);
-    return triangles;
+std::vector<unsigned short> triangulatePolygon(const std::vector<PVector> &polygon_) {
+   std::vector<indexed_PVector> polygon;
+   int index = 0;
+   if (isClockwise(polygon_)) {
+      for (auto v = polygon_.rbegin(); v != polygon_.rend(); v++ ) {
+         polygon.emplace_back( *v, index++ );
+      }
+   } else {
+      for (auto &&vertex : polygon_) {
+         polygon.emplace_back( vertex, index++ );
+     }
+   }
+
+   std::vector<unsigned short> triangles;
+   if (polygon.size() < 3) {
+      return triangles; // empty vector
+   }
+   while (polygon.size() > 3) {
+      int i = findEar(polygon); // find an ear of the polygon
+      // add the ear as separate triangles to the output vector
+      int n = polygon.size();
+      int pi = (i + n - 1) % n;
+      int ni = (i + 1) % n;
+      triangles.push_back(polygon[pi].i);
+      triangles.push_back(polygon[i].i);
+      triangles.push_back(polygon[ni].i);
+      polygon.erase(polygon.begin() + i); // remove the ear vertex from the polygon
+   }
+   // add the final triangle to the output vector
+   triangles.push_back(polygon[0].i);
+   triangles.push_back(polygon[1].i);
+   triangles.push_back(polygon[2].i);
+   return triangles;
 }
 
 #endif

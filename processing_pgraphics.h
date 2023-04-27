@@ -1318,12 +1318,8 @@ public:
       {
          if (pshape.vertices.size() > 2) {
             if (pshape.indices.size() == 0) {
-               std::vector<PVector> triangles = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
-               std::vector<unsigned short> indices;
-               for (int i = 0; i < triangles.size(); i ++ ){
-                  indices.push_back(i);
-               }
-               drawTriangles(triangles, normals, coords, indices, color );
+               std::vector<unsigned short> indices = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
+               drawTriangles( pshape.vertices, normals, coords, indices, color );
             } else {
                drawTriangles( pshape.vertices, normals, coords,pshape.indices,  color );
             }
