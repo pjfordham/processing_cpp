@@ -329,12 +329,13 @@ int main(int argc, char* argv[]) {
          Uint32 currentTicks = SDL_GetTicks();
          if (currentTicks - frameRateClock >= 10000) {
             float frameRate = 1000 * (float) zframeCount / (currentTicks - frameRateClock);
-            printf("Frame rate: %f fps\n", frameRate);
+            printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.flushes);
             zframeCount = 0;
             frameRateClock = currentTicks;
          }
 
          if (xloop || frameCount == 0) {
+            g.flushes = 0;
 
             // Call the sketch's draw()
             draw();

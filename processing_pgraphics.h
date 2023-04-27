@@ -63,6 +63,7 @@ public:
    int currentTextureHeight;
    gl_context glc;
 
+   int flushes = 0;
    color stroke_color = WHITE;
    color fill_color = WHITE;
    color tint_color = WHITE;
@@ -126,6 +127,7 @@ public:
       std::swap(programID, x.programID);
       std::swap(currentTextureID, x.currentTextureID);
       std::swap(nextTextureID, x.nextTextureID);
+      std::swap(flushes,x.flushes);
 
       std::swap(stroke_color, x.stroke_color);
       std::swap(fill_color, x.fill_color);
@@ -182,6 +184,7 @@ public:
       std::swap(programID, x.programID);
       std::swap(currentTextureID, x.currentTextureID);
       std::swap(nextTextureID, x.nextTextureID);
+      std::swap(flushes,x.flushes);
 
       std::swap(stroke_color, x.stroke_color);
       std::swap(fill_color, x.fill_color);
@@ -370,29 +373,38 @@ public:
       PImage::saveFrame( localFboID, width, height, fileName );
       counter++;
    }
+
    void pushMatrix() {
       matrix_stack.push_back(move_matrix);
    }
 
    void popMatrix() {
-      flush();
-      move_matrix = matrix_stack.back();
+      if ( move_matrix != matrix_stack.back() ) {
+         flush();
+         move_matrix = matrix_stack.back();
+      }
       matrix_stack.pop_back();
    }
 
-   void translate(float x, float y, float z=0) {
-      flush();
-      move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
+   void translate(float x, float y, float z=0.0 ) {
+      if ( x != 0.0 || y != 0.0 || z != 0.0 ) {
+         flush();
+         move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
+      }
    }
 
    void transform(Eigen::Matrix4f transform_matrix) {
-      flush();
-      move_matrix = move_matrix * transform_matrix;
+      if (transform_matrix != Eigen::Matrix4f::Identity()) {
+         flush();
+         move_matrix = move_matrix * transform_matrix;
+      }
    }
 
-   void scale(float x, float y,float z = 1) {
-      flush();
-      move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
+   void scale(float x, float y,float z = 1.0) {
+      if ( x != 1.0 || y != 1.0 || z != 1.0 ) {
+         flush();
+         move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
+      }
    }
 
    void scale(float x) {
@@ -401,23 +413,22 @@ public:
    }
 
    void rotate(float angle, PVector axis) {
-      flush();
-      move_matrix = move_matrix * RotateMatrix(angle,axis);
+      if ( angle != 0.0 ) {
+         flush();
+         move_matrix = move_matrix * RotateMatrix(angle,axis);
+      }
    }
 
    void rotate(float angle) {
-      flush();
-      move_matrix = move_matrix * RotateMatrix(angle,PVector{0,0,1});
+      rotate(angle ,PVector{0,0,1});
    }
 
    void rotateY(float angle) {
-      flush();
-      move_matrix = move_matrix * RotateMatrix(angle,PVector{0,1,0});
+      rotate(angle, PVector{0,1,0});
    }
 
    void rotateX(float angle) {
-      flush();
-      move_matrix = move_matrix * RotateMatrix(angle,PVector{1,0,0});
+      rotate(angle, PVector{1,0,0});
    }
 
    Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
@@ -671,7 +682,9 @@ public:
    }
 
    void flush() {
-      glc.flush(*this);
+     flushes++;
+     if (flushes > 1000) abort();
+     glc.flush(*this);
    }
 
    void noTexture() {
@@ -1253,14 +1266,14 @@ public:
       return triangles;
    }
 
-   void shape_stroke(PShape &pshape, float x, float y, float swidth, float sheight, color color) {
+   void shape_stroke(PShape &pshape, float x, float y, color color) {
       if (color.a == 0)
          return;
       switch( pshape.style ) {
       case POINTS:
       {
          for (auto z : pshape.vertices ) {
-            shape_fill( _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER),0,0,0,0,color );
+            shape_fill( _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER),0,0,color );
          }
          break;
       }
@@ -1269,33 +1282,33 @@ public:
          if (pshape.vertices.size() > 2 ) {
             if (pshape.type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
                shape_fill( drawLinePoly( pshape.vertices.size() - 1, pshape.vertices.data() + 1, stroke_weight, false),
-                           0,0,0,0,color );
+                           0,0,color );
             } else {
                shape_fill( drawLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE),
-                           0,0,0,0,color );
+                           0,0,color );
             }
          } else if (pshape.vertices.size() == 2) {
             switch(line_end_cap) {
             case ROUND:
-               shape_fill( drawRoundLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,0,0,color );
+               shape_fill( drawRoundLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,color );
                break;
             case PROJECT:
-               shape_fill( drawCappedLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,0,0,color );
+               shape_fill( drawCappedLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,color );
                break;
             case SQUARE:
-               shape_fill( drawLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,0,0,color );
+               shape_fill( drawLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,color );
                break;
             default:
                abort();
             }
          } else if (pshape.vertices.size() == 1) {
-            shape_fill( _createEllipse(pshape.vertices[0].x, pshape.vertices[0].y, stroke_weight, stroke_weight, CENTER),0,0,0,0,color );
+            shape_fill( _createEllipse(pshape.vertices[0].x, pshape.vertices[0].y, stroke_weight, stroke_weight, CENTER),0,0,color );
          }
          break;
       }
       case TRIANGLE_STRIP:
       {
-         shape_fill( drawTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight),0,0,0,0,color );
+         shape_fill( drawTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight),0,0,color );
          break;
       }
       case TRIANGLES:
@@ -1306,7 +1319,7 @@ public:
       }
    }
 
-   void shape_fill(const PShape &pshape, float x, float y, float swidth, float sheight, color color) {
+   void shape_fill(const PShape &pshape, float x, float y, color color) {
       std::vector<PVector> normals;
       std::vector<PVector> coords;
       if (color.a == 0)
@@ -1354,24 +1367,23 @@ public:
       }
    }
 
-   void shape(PShape &pshape, float x, float y, float swidth, float sheight) {
+   void shape(PShape &pshape, float x, float y) {
       pushMatrix();
       translate(x,y);
-      scale(1,1); // Need to fix this properly
       transform( pshape.shape_matrix );
       if ( pshape.style == GROUP ) {
          for (auto &&child : pshape.children) {
-            shape(child,0,0,0,0);
+            shape(child,0,0);
          }
       } else {
-         shape_fill(pshape, x,y,swidth,sheight,fill_color);
-         shape_stroke(pshape, x,y,swidth,sheight, stroke_color);
+         shape_fill(pshape, x,y,fill_color);
+         shape_stroke(pshape, x,y,stroke_color);
       }
       popMatrix();
    }
 
    void shape(PShape &pshape) {
-      shape(pshape,0,0,0,0);
+      shape(pshape,0,0);
    }
 
    void ellipse(float x, float y, float width, float height) {
@@ -1444,7 +1456,7 @@ public:
 
    void endShape(int type = OPEN) {
       _shape.endShape(type);
-      shape(_shape, 0,0,0,0);
+      shape(_shape, 0,0);
    }
 
    void rectMode(int mode){
