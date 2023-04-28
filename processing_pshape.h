@@ -17,6 +17,7 @@ public:
 
    Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
    std::vector<PVector> vertices;
+   std::vector<PVector> normals;
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
    std::vector<PVector> coords;
@@ -34,6 +35,7 @@ public:
 
    PShape(PShape&& other) noexcept {
       std::swap(texture_, other.texture_);
+      std::swap(normals, other.normals);
       std::swap(coords, other.coords);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
@@ -45,6 +47,7 @@ public:
 
    PShape& operator=(PShape&& other) noexcept {
       std::swap(texture_, other.texture_);
+      std::swap(normals, other.normals);
       std::swap(coords, other.coords);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
@@ -87,6 +90,14 @@ public:
 
    void noTexture() {
       texture_ = { 0,0,0,0,0 };
+   }
+
+   void normal(PVector p) {
+      normals.push_back( p );
+   }
+
+   void normal(float x, float y, float z) {
+      normals.push_back( {x, y, x} );
    }
 
    void vertex(float x, float y, float z) {

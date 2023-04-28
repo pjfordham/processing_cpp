@@ -781,43 +781,41 @@ public:
       cube.vertex( -w,  h,  d, 1.0, 1.0 );
       cube.vertex( -w,  h, -d, 0.0, 1.0 );
 
-      std::vector<PVector> normals = {
-         // Front
-         {0.0,  0.0,  1.0},
-         {0.0,  0.0,  1.0},
-         {0.0,  0.0,  1.0},
-         {0.0,  0.0,  1.0},
+      // Front
+      cube.normal(0.0,  0.0,  1.0);
+      cube.normal(0.0,  0.0,  1.0);
+      cube.normal(0.0,  0.0,  1.0);
+      cube.normal(0.0,  0.0,  1.0);
 
-         // Back
-         {0.0,  0.0, -1.0},
-         {0.0,  0.0, -1.0},
-         {0.0,  0.0, -1.0},
-         {0.0,  0.0, -1.0},
+      // Back
+      cube.normal(0.0,  0.0, -1.0);
+      cube.normal(0.0,  0.0, -1.0);
+      cube.normal(0.0,  0.0, -1.0);
+      cube.normal(0.0,  0.0, -1.0);
 
-         // Top
-         {0.0,  1.0,  0.0},
-         {0.0,  1.0,  0.0},
-         {0.0,  1.0,  0.0},
-         {0.0,  1.0,  0.0},
+      // Top
+      cube.normal(0.0,  1.0,  0.0);
+      cube.normal(0.0,  1.0,  0.0);
+      cube.normal(0.0,  1.0,  0.0);
+      cube.normal(0.0,  1.0,  0.0);
 
-         // Bottom
-         {0.0, -1.0,  0.0},
-         {0.0, -1.0,  0.0},
-         {0.0, -1.0,  0.0},
-         {0.0, -1.0,  0.0},
+      // Bottom
+      cube.normal(0.0, -1.0,  0.0);
+      cube.normal(0.0, -1.0,  0.0);
+      cube.normal(0.0, -1.0,  0.0);
+      cube.normal(0.0, -1.0,  0.0);
 
-         // Right
-         {1.0,  0.0,  0.0},
-         {1.0,  0.0,  0.0},
-         {1.0,  0.0,  0.0},
-         {1.0,  0.0,  0.0},
+      // Right
+      cube.normal(1.0,  0.0,  0.0);
+      cube.normal(1.0,  0.0,  0.0);
+      cube.normal(1.0,  0.0,  0.0);
+      cube.normal(1.0,  0.0,  0.0);
 
-         // Left
-         {-1.0,  0.0,  0.0},
-         {-1.0,  0.0,  0.0},
-         {-1.0,  0.0,  0.0},
-         {-1.0,  0.0,  0.0}
-      };
+      // Left
+      cube.normal(-1.0,  0.0,  0.0);
+      cube.normal(-1.0,  0.0,  0.0);
+      cube.normal(-1.0,  0.0,  0.0);
+      cube.normal(-1.0,  0.0,  0.0);
 
       cube.indices = {
          0,1,2, 0,2,3, 4,5,6, 4,6,7,
@@ -828,9 +826,9 @@ public:
       cube.endShape();
 
       if (currentTextureID) {
-         drawTriangles(cube.vertices, normals, cube.coords, cube.indices, tint_color);
+         drawTriangles(cube.vertices, cube.normals, cube.coords, cube.indices, tint_color);
       } else {
-         drawTriangles(cube.vertices, normals, cube.coords, cube.indices, fill_color);
+         drawTriangles(cube.vertices, cube.normals, cube.coords, cube.indices, fill_color);
       }
    };
 
@@ -851,8 +849,6 @@ public:
 
       PShape sphere;
 
-      std::vector<PVector> normals;
-
       float latStep = M_PI / xsphere_ures;
       float lonStep = 2 * M_PI / xsphere_vres;
 
@@ -870,7 +866,7 @@ public:
             float y = sinLat * sinLon;
             float z = cosLat;
 
-            normals.push_back( {x,y,z} );
+            sphere.normal( {x,y,z} );
             sphere.vertex( x * radius, y * radius, z * radius );
          }
       }
@@ -893,9 +889,9 @@ public:
       sphere.endShape();
 
       if (currentTextureID) {
-         drawTriangles(sphere.vertices, normals,sphere.coords, sphere.indices, tint_color);
+         drawTriangles(sphere.vertices, sphere.normals,sphere.coords, sphere.indices, tint_color);
       } else {
-         drawTriangles(sphere.vertices, normals,sphere.coords, sphere.indices, fill_color);
+         drawTriangles(sphere.vertices, sphere.normals,sphere.coords, sphere.indices, fill_color);
       }
    }
 
