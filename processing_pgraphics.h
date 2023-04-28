@@ -1173,7 +1173,7 @@ public:
    PShape drawRoundLine(PVector p1, PVector p2, int weight) const {
 
       PShape shape;
-      shape.beginShape(POLYGON);
+      shape.beginShape(CONVEX_POLYGON);
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
       normal.mult(weight/2.0);
@@ -1198,7 +1198,7 @@ public:
    PShape drawLine(PVector p1, PVector p2, int weight) const {
 
       PShape shape;
-      shape.beginShape(POLYGON);
+      shape.beginShape(CONVEX_POLYGON);
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
       normal.mult(weight/2.0);
@@ -1214,7 +1214,7 @@ public:
    PShape drawCappedLine(PVector p1, PVector p2, int weight) const {
 
       PShape shape;
-      shape.beginShape(POLYGON);
+      shape.beginShape(CONVEX_POLYGON);
       PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
       normal.normalize();
       normal.mult(weight/2.0);
@@ -1238,20 +1238,19 @@ public:
       normal.normalize();
       normal.mult(weight/2.0);
 
-      PVector v[] = {
-         p1 + normal,
-         p1 - normal,
-         p2 - normal,
-         p2 + normal,
-      };
+      unsigned short i = triangles.getCurrentIndex();
+      triangles.vertex( p1 + normal );
+      triangles.vertex( p1 - normal );
+      triangles.vertex( p2 - normal );
+      triangles.vertex( p2 + normal );
 
-      triangles.vertex( v[0] );
-      triangles.vertex( v[1] );
-      triangles.vertex( v[2] );
+      triangles.index( i + 0 );
+      triangles.index( i + 1 );
+      triangles.index( i + 2 );
 
-      triangles.vertex( v[0] );
-      triangles.vertex( v[2] );
-      triangles.vertex( v[3] );
+      triangles.index( i + 0 );
+      triangles.index( i + 2 );
+      triangles.index( i + 3 );
    }
 
    PShape drawTriangleStrip(int points, const PVector *p,int weight) {
@@ -1267,8 +1266,6 @@ public:
    }
 
    void shape_stroke(PShape &pshape, float x, float y, color color) {
-      if (color.a == 0)
-         return;
       switch( pshape.style ) {
       case POINTS:
       {
@@ -1278,6 +1275,7 @@ public:
          break;
       }
       case POLYGON:
+      case CONVEX_POLYGON:
       {
          if (pshape.vertices.size() > 2 ) {
             if (pshape.type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
@@ -1322,48 +1320,8 @@ public:
    void shape_fill(const PShape &pshape, float x, float y, color color) {
       std::vector<PVector> normals;
       std::vector<PVector> coords;
-      if (color.a == 0)
-         return;
-      switch( pshape.style ) {
-      case POINTS:
-         break;
-      case POLYGON:
-      {
-         if (pshape.vertices.size() > 2) {
-            if (pshape.indices.size() == 0) {
-               std::vector<unsigned short> indices = triangulatePolygon({pshape.vertices.begin(),pshape.vertices.end()});
-               drawTriangles( pshape.vertices, normals, coords, indices, color );
-            } else {
-               drawTriangles( pshape.vertices, normals, coords,pshape.indices,  color );
-            }
-         }
-      }
-      break;
-      case TRIANGLES:
-         if (pshape.indices.size() == 0) {
-            std::vector<unsigned short> indices;
-            for (int i = 0; i < pshape.vertices.size(); i ++ ){
-               indices.push_back(i);
-            }
-            drawTriangles(  pshape.vertices, normals, coords, indices, color );
-         } else {
-            drawTriangles(  pshape.vertices, normals, coords, pshape.indices, color );
-         }
-         break;
-      case TRIANGLE_STRIP:
-      {
-         if (pshape.indices.size() != 0) { abort();}
-         std::vector<unsigned short> indices;
-         for (int i = 0; i < pshape.vertices.size()-2; i ++ ){
-            indices.push_back(i);
-            indices.push_back(i+1);
-            indices.push_back(i+2);
-         }
-         drawTriangles(  pshape.vertices, normals, coords, indices, color );
-      }
-      break;
-      default:
-         abort();
+      if (pshape.vertices.size() > 2) {
+         drawTriangles(  pshape.vertices, normals, coords, pshape.indices, color );
       }
    }
 
@@ -1376,8 +1334,12 @@ public:
             shape(child,0,0);
          }
       } else {
-         shape_fill(pshape, x,y,fill_color);
-         shape_stroke(pshape, x,y,stroke_color);
+         if (fill_color.a != 0) {
+            shape_fill(pshape, x,y,fill_color);
+         }
+         if (stroke_color.a != 0) {
+            shape_stroke(pshape, x,y,stroke_color);
+         }
       }
       popMatrix();
    }
@@ -1465,7 +1427,7 @@ public:
 
    PShape createBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
       PShape bezier;
-      bezier.beginShape();
+      bezier.beginShape(POLYGON);
       bezier.vertex(x1, y1);
       bezier.bezierVertex(x2, y2, x3, y3, x4, y4);
       bezier.endShape(OPEN);
@@ -1486,7 +1448,7 @@ public:
          y = y - height / 2;
       }
       PShape shape;
-      shape.beginShape(POLYGON);
+      shape.beginShape(CONVEX_POLYGON);
       shape.vertex(x,y);
       shape.vertex(x+width,y);
       shape.vertex(x+width,y+height);
@@ -1576,7 +1538,7 @@ public:
 
    PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
       PShape shape;
-      shape.beginShape(POLYGON);
+      shape.beginShape(CONVEX_POLYGON);
       for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
          shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
       }
@@ -1609,7 +1571,7 @@ public:
       }
       int NUMBER_OF_VERTICES=32;
       PShape shape;
-      shape.beginShape(POLYGON);
+      shape.beginShape(TRIANGLES);
       shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
       for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
          shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0, height /2.0) );
@@ -1652,7 +1614,7 @@ public:
       }
 
       PShape shape;
-      shape.beginShape(POLYGON);
+      shape.beginShape(CONVEX_POLYGON);
       int NUMBER_OF_VERTICES=32;
       if ( fillMode == PIE ) {
          shape.vertex(x,y);

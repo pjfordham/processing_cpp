@@ -75,6 +75,10 @@ public:
       vertices.push_back(p);
    }
 
+   void index(unsigned short i) {
+      indices.push_back(i);
+   }
+
    void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
       bezierVertex( x2, y2, 0, x3, y3, 0, x4, y4, 0);
    }
@@ -94,11 +98,45 @@ public:
    void endShape(int type_ = OPEN) {
       // OPEN or CLOSE
       type = type_;
+      populateIndices();
+   }
+
+   unsigned short getCurrentIndex() {
+      return vertices.size();
+   }
+
+   void populateIndices() {
+      if (indices.size() != 0)
+         return;
+
+      if (vertices.size() == 0) abort();
+
+      if (style == TRIANGLE_STRIP) {
+         for (int i = 0; i < vertices.size() - 2; i++ ){
+            indices.push_back(i);
+            indices.push_back(i+1);
+            indices.push_back(i+2);
+         }
+      } else if (style == CONVEX_POLYGON) {
+         // Fill with triangle fan
+         for (int i = 1; i < vertices.size() - 1 ; i++ ) {
+            indices.push_back( 0 );
+            indices.push_back( i );
+            indices.push_back( i+1 );
+         }
+      } else if (style == POLYGON) {
+         indices = triangulatePolygon({vertices.begin(),vertices.end()});
+      } else if (style == TRIANGLES) {
+         for (int i = 0; i < vertices.size(); i++ ) {
+            indices.push_back( i );
+         }
+      }
    }
 
    void addChild(PShape &&shape) {
       children.emplace_back( std::move(shape) );
    }
+
 };
 
 
