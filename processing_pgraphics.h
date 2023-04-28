@@ -57,7 +57,7 @@ public:
    GLuint depthBufferID;
    GLuint whiteTextureID;
    GLuint programID;
-   GLuint currentTextureID = 0;
+   int currentTextureID = 0;
    int nextTextureID = 2;
    int currentTextureWidth;
    int currentTextureHeight;
@@ -737,79 +737,49 @@ public:
       w = w / 2;
       h = h / 2;
       d = d / 2;
-      std::vector<PVector> vertices = {
-         // Front face
-         { -w, -h, d},
-         {w, -h, d},
-         {w, h, d},
-         {-w, h, d},
 
-         // Back face
-         {-w, -h, -d},
-         {-w, h, -d},
-         {w, h, -d},
-         {w, -h, -d},
-
-         // Top face
-         {-w, h, -d},
-         {-w, h, d},
-         {w, h, d},
-         {w, h, -d},
-
-         // Bottom face
-         {  -w, -h, -d},
-         {  w, -h, -d},
-         {  w, -h, d},
-         {  -w, -h, d},
-
-         // Right face
-         {  w, -h, -d},
-         {  w, h, -d},
-         {  w, h, d},
-         {  w, -h, d},
-
-         // Left face
-         {  -w, -h, -d},
-         {-w, -h, d},
-         { -w, h, d},
-         { -w, h, -d},
-      };
-
-      float z = currentTextureID;
       float xrange = (1.0 * currentTextureWidth) / width;
       float yrange = (1.0 * currentTextureHeight) / height;
-      std::vector<PVector> coords = {
-         // Front
-         {0.0,  0.0, z},
-         {xrange,  0.0, z},
-         {xrange,  yrange, z},
-         {0.0,  yrange, z},
-         // Back
-         {0.0,  0.0, z},
-         {xrange,  0.0, z},
-         {xrange,  yrange, z},
-         {0.0,  yrange, z},
-         // Top
-         {0.0,  0.0, z},
-         {xrange,  0.0, z},
-         {xrange,  yrange, z},
-         {0.0,  yrange, z},
-         // Bottom
-         {0.0,  0.0, z},
-         {xrange,  0.0, z},
-         {xrange,  yrange, z},
-         {0.0,  yrange,z },
-         // Right
-         {0.0,  0.0,z },
-         {xrange,  0.0,z },
-         {xrange,  yrange,z },
-         {0.0,  yrange, z},
-         // Left
-         {0.0,  0.0,z},
-         {xrange,  0.0,z},
-         {xrange,  yrange,z},
-         {0.0,  yrange,z},
-      };
+
+      PShape cube;
+      cube.beginShape(TRIANGLES);
+      cube.texture(PTexture{currentTextureID, 0.0f,0.0f,xrange,yrange} );
+
+      // Front face
+      cube.vertex( -w, -h,  d, 0.0, 0.0 );
+      cube.vertex(  w, -h,  d, 1.0, 0.0 );
+      cube.vertex(  w,  h,  d, 1.0, 1.0 );
+      cube.vertex( -w,  h,  d, 0.0, 1.0 );
+
+      // Back face
+      cube.vertex( -w, -h, -d, 0.0, 0.0 );
+      cube.vertex( -w,  h, -d, 1.0, 0.0 );
+      cube.vertex(  w,  h, -d, 1.0, 1.0 );
+      cube.vertex(  w, -h, -d, 0.0, 1.0 );
+
+      // Top face
+      cube.vertex( -w,  h, -d, 0.0, 0.0 );
+      cube.vertex( -w,  h,  d, 1.0, 0.0 );
+      cube.vertex(  w,  h,  d, 1.0, 1.0 );
+      cube.vertex(  w,  h, -d, 0.0, 1.0 );
+
+      // Bottom face
+      cube.vertex( -w, -h, -d, 0.0, 0.0 );
+      cube.vertex(  w, -h, -d, 1.0, 0.0 );
+      cube.vertex(  w, -h,  d, 1.0, 1.0 );
+      cube.vertex( -w, -h,  d, 0.0, 1.0 );
+
+      // Right face
+      cube.vertex(  w, -h, -d, 0.0, 0.0 );
+      cube.vertex(  w,  h, -d, 1.0, 0.0 );
+      cube.vertex(  w,  h,  d, 1.0, 1.0 );
+      cube.vertex(  w, -h,  d, 0.0, 1.0 );
+
+      // Left face
+      cube.vertex( -w, -h, -d, 0.0, 0.0 );
+      cube.vertex( -w, -h,  d, 1.0, 0.0 );
+      cube.vertex( -w,  h,  d, 1.0, 1.0 );
+      cube.vertex( -w,  h, -d, 0.0, 1.0 );
 
       std::vector<PVector> normals = {
          // Front
@@ -849,16 +819,18 @@ public:
          {-1.0,  0.0,  0.0}
       };
 
-      std::vector<unsigned short>  triangles = {
+      cube.indices = {
          0,1,2, 0,2,3, 4,5,6, 4,6,7,
          8,9,10, 8,10,11, 12,13,14, 12,14,15,
          16,17,18, 16,18,19, 20,21,22, 20,22,23
       };
 
+      cube.endShape();
+
       if (currentTextureID) {
-         drawTriangles(vertices, normals, coords, triangles, tint_color);
+         drawTriangles(cube.vertices, normals, cube.coords, cube.indices, tint_color);
       } else {
-         drawTriangles(vertices, normals, coords, triangles, fill_color);
+         drawTriangles(cube.vertices, normals, cube.coords, cube.indices, fill_color);
       }
    };
 
@@ -877,9 +849,9 @@ public:
 
    void sphere(float radius) {
 
-      std::vector<PVector> vertices;
+      PShape sphere;
+
       std::vector<PVector> normals;
-      std::vector<PVector> coords;
 
       float latStep = M_PI / xsphere_ures;
       float lonStep = 2 * M_PI / xsphere_vres;
@@ -899,7 +871,7 @@ public:
             float z = cosLat;
 
             normals.push_back( {x,y,z} );
-            vertices.push_back( { x * radius, y * radius, z * radius} );
+            sphere.vertex( x * radius, y * radius, z * radius );
          }
       }
 
@@ -910,18 +882,20 @@ public:
             int idx1 = idx0 + 1;
             int idx2 = (i+1) * (xsphere_vres+1) + j;
             int idx3 = idx2 + 1;
-            indices.push_back(idx0);
-            indices.push_back(idx2);
-            indices.push_back(idx1);
-            indices.push_back(idx1);
-            indices.push_back(idx2);
-            indices.push_back(idx3);
+            sphere.index(idx0);
+            sphere.index(idx2);
+            sphere.index(idx1);
+            sphere.index(idx1);
+            sphere.index(idx2);
+            sphere.index(idx3);
          }
       }
+      sphere.endShape();
+
       if (currentTextureID) {
-         drawTriangles(vertices, normals,coords, indices, tint_color);
+         drawTriangles(sphere.vertices, normals,sphere.coords, sphere.indices, tint_color);
       } else {
-         drawTriangles(vertices, normals,coords, indices, fill_color);
+         drawTriangles(sphere.vertices, normals,sphere.coords, sphere.indices, fill_color);
       }
    }
 
@@ -1319,9 +1293,8 @@ public:
 
    void shape_fill(const PShape &pshape, float x, float y, color color) {
       std::vector<PVector> normals;
-      std::vector<PVector> coords;
       if (pshape.vertices.size() > 2) {
-         drawTriangles(  pshape.vertices, normals, coords, pshape.indices, color );
+         drawTriangles(  pshape.vertices, normals, pshape.coords, pshape.indices, color );
       }
    }
 

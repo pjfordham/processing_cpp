@@ -6,6 +6,12 @@
 #include "processing_earclipping.h"
 #include "processing_enum.h"
 
+class PTexture {
+public:
+   int layer;
+   float left, top, right, bottom;
+};
+
 class PShape {
 public:
 
@@ -13,10 +19,12 @@ public:
    std::vector<PVector> vertices;
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
+   std::vector<PVector> coords;
 
    int style = POLYGON;
    int type = OPEN;
 
+   PTexture texture_;
 
    PShape(const PShape& other) = delete;
    PShape& operator=(const PShape& other) = delete;
@@ -25,6 +33,8 @@ public:
    }
 
    PShape(PShape&& other) noexcept {
+      std::swap(texture_, other.texture_);
+      std::swap(coords, other.coords);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
       std::swap(children, other.children);
@@ -34,6 +44,8 @@ public:
    }
 
    PShape& operator=(PShape&& other) noexcept {
+      std::swap(texture_, other.texture_);
+      std::swap(coords, other.coords);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
       std::swap(children, other.children);
@@ -48,6 +60,8 @@ public:
 
    void clear() {
       vertices.clear();
+      coords.clear();
+      indices.clear();
    }
 
    void translate(float x, float y, float z=0) {
@@ -67,12 +81,48 @@ public:
       clear();
    }
 
-   void vertex(float x, float y, float z = 0.0) {
+   void texture(PTexture texure) {
+      texture_ = texure;
+   }
+
+   void noTexture() {
+      texture_ = { 0,0,0,0,0 };
+   }
+
+   void vertex(float x, float y, float z) {
       vertices.push_back({x, y, z});
+   }
+
+   void vertex(float x, float y) {
+      vertices.push_back({x, y, 0.0f});
    }
 
    void vertex(PVector p) {
       vertices.push_back(p);
+   }
+
+   void vertex(float x, float y, float z, float u, float v) {
+      vertices.push_back({x, y, z});
+       coords.push_back( {
+         map(u,0,1.0,texture_.left,texture_.right),
+         map(v,0,1.0,texture_.top,texture_.bottom),
+         (float)texture_.layer});
+   }
+
+   void vertex(float x, float y, float u, float v) {
+      vertices.push_back({x, y, 0.0f});
+      coords.push_back( {
+         map(u,0,1.0,texture_.left,texture_.right),
+         map(v,0,1.0,texture_.top,texture_.bottom),
+         (float)texture_.layer});
+   }
+
+   void vertex(PVector p, PVector t) {
+      vertices.push_back(p);
+      coords.push_back( {
+         map(t.x,0,1.0,texture_.left,texture_.right),
+         map(t.y,0,1.0,texture_.top,texture_.bottom),
+         (float)texture_.layer});
    }
 
    void index(unsigned short i) {
