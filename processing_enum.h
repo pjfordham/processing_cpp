@@ -5,6 +5,7 @@
 enum {
    CODED = -1,
 
+   TOP,
    LEFT,
    RIGHT,
    UP,

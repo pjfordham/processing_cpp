@@ -91,7 +91,7 @@ public:
       }
    }
 
-   void render_text(GLuint textureID, int layer, std::string text, color color, float &width, float &height) {
+   SDL_Surface *render_text(std::string text, color color) {
       SDL_Surface* surface = TTF_RenderText_Blended(fontMap[std::make_pair(name,size)], text.c_str(),
                                                     { (unsigned char)color.r,
                                                       (unsigned char)color.g,
@@ -101,19 +101,14 @@ public:
          printf("TTF_RenderText_Blended failed: %s\n", TTF_GetError());
          surface = SDL_CreateRGBSurfaceWithFormat(0, 10, 10, 32, SDL_PIXELFORMAT_ABGR8888);
        }
-      width = surface->w;
-      height = surface->h;
-
       SDL_Surface* newSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
       if (newSurface == NULL) {
          abort();
       }
 
-      glTextureSubImage3D(textureID, 0, 0, 0, layer, newSurface->w, newSurface->h, 1,
-                          GL_RGBA, GL_UNSIGNED_BYTE, newSurface->pixels);
-
       SDL_FreeSurface(surface);
-      SDL_FreeSurface(newSurface);
+
+      return newSurface;
    }
 
 };

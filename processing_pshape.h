@@ -8,9 +8,70 @@
 
 class PTexture {
 public:
-   int layer;
-   float left, top, right, bottom;
+   int layer = 0;
+   int left = 0;
+   int top = 0;
+   int right  = 1;
+   int bottom = 1;
+
+   int size() const {
+      return width() * height();
+   }
+
+   int width() const {
+      return right - left;
+   }
+
+   int height() const {
+      return bottom - top;
+   }
+
+   void print() const {
+      fprintf(stderr,"%d %d %d %d %d\n", layer, left, top, right, bottom);
+   }
+
+   bool operator<( const PTexture &other ) const {
+      return size() < other.size();
+   }
 };
+
+class TextureManager {
+public:
+   int width, height;
+   std::vector<PTexture> free;
+   TextureManager() {}
+   TextureManager( int w, int h) : width(w), height(h) {
+      clear();
+   };
+
+   void clear() {
+      free.clear();
+      free.push_back( {2, 0, 0, width, height} );
+      free.push_back( {3, 0, 0, width, height} );
+      free.push_back( {4, 0, 0, width, height} );
+      free.push_back( {5, 0, 0, width, height} );
+      free.push_back( {6, 0, 0, width, height} );
+      free.push_back( {7, 0, 0, width, height} );
+   }
+
+   PTexture getFreeBlock(int w, int h) {
+      std::sort( free.begin(), free.end() );
+      free.reserve( free.size() + 2 );
+      for( auto &block : free ) {
+         if (block.width() >= w && block.height() >= h) {
+            PTexture p{ block.layer, block.left, block.top,  block.left + w, block.top + h };
+            free.push_back( {block.layer, block.left + w, block.top, block.right,  block.top + h } );
+            block = {block.layer, block.left, block.top + h, block.right,  block.bottom };
+            return p;
+         }
+      }
+      return {};
+   }
+
+};
+
+extern int width;
+extern int height;
 
 class PShape {
 public:
@@ -113,27 +174,21 @@ public:
    }
 
    void vertex(float x, float y, float z, float u, float v) {
-      vertices.push_back({x, y, z});
-       coords.push_back( {
-         map(u,0,1.0,texture_.left,texture_.right),
-         map(v,0,1.0,texture_.top,texture_.bottom),
-         (float)texture_.layer});
+      vertex({x, y, z}, { u , v });
    }
 
    void vertex(float x, float y, float u, float v) {
-      vertices.push_back({x, y, 0.0f});
-      coords.push_back( {
-         map(u,0,1.0,texture_.left,texture_.right),
-         map(v,0,1.0,texture_.top,texture_.bottom),
-         (float)texture_.layer});
+      vertex({x, y, 0.0f}, { u , v });
    }
 
    void vertex(PVector p, PVector t) {
       vertices.push_back(p);
       coords.push_back( {
-         map(t.x,0,1.0,texture_.left,texture_.right),
-         map(t.y,0,1.0,texture_.top,texture_.bottom),
-         (float)texture_.layer});
+            map(t.x,0,1.0,(1.0*texture_.left)/width,(1.0*texture_.right)/width),
+            map(t.y,0,1.0,(1.0*texture_.top)/height,(1.0*texture_.bottom)/height),
+        (float)texture_.layer});
+      if ( coords.back().x > 1.0 || coords.back().y > 1.0)
+         abort();
    }
 
    void index(unsigned short i) {

@@ -52,15 +52,13 @@ public:
 
 class PGraphics {
 public:
+   TextureManager tm;
    GLuint bufferID;
    GLuint localFboID;
    GLuint depthBufferID;
    GLuint whiteTextureID;
    GLuint programID;
-   int currentTextureID = 0;
-   int nextTextureID = 2;
-   int currentTextureWidth;
-   int currentTextureHeight;
+   PTexture currentTexture;
    gl_context glc;
 
    int flushes = 0;
@@ -78,8 +76,8 @@ public:
    int height;
 
    PFont currentFont;
-   int xTextAlign;
-   int yTextAlign;
+   int xTextAlign = LEFT;
+   int yTextAlign = TOP;
 
    float xsphere_ures = 30;
    float xsphere_vres = 30;
@@ -121,12 +119,12 @@ public:
    PGraphics(const PGraphics &x) = delete;
 
    PGraphics(PGraphics &&x) {
+      std::swap(tm, x.tm);
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
       std::swap(depthBufferID, x.depthBufferID);
       std::swap(programID, x.programID);
-      std::swap(currentTextureID, x.currentTextureID);
-      std::swap(nextTextureID, x.nextTextureID);
+      std::swap(currentTexture, x.currentTexture);
       std::swap(flushes,x.flushes);
 
       std::swap(stroke_color, x.stroke_color);
@@ -178,12 +176,12 @@ public:
 
    PGraphics& operator=(const PGraphics&) = delete;
    PGraphics& operator=(PGraphics&&x){
+      std::swap(tm, x.tm);
       std::swap(bufferID, x.bufferID);
       std::swap(localFboID, x.localFboID);
       std::swap(depthBufferID, x.depthBufferID);
       std::swap(programID, x.programID);
-      std::swap(currentTextureID, x.currentTextureID);
-      std::swap(nextTextureID, x.nextTextureID);
+      std::swap(currentTexture, x.currentTexture);
       std::swap(flushes,x.flushes);
 
       std::swap(stroke_color, x.stroke_color);
@@ -245,13 +243,13 @@ public:
    ~PGraphics() {
       if (localFboID)
          glDeleteFramebuffers(1, &localFboID);
-      // if (bufferID)
-      //    glDeleteTextures(1, &bufferID);
-      // if (depthBufferID)
-      //    glDeleteRenderbuffers(1, &depthBufferID);
+      if (bufferID)
+         glDeleteTextures(1, &bufferID);
+      if (depthBufferID)
+         glDeleteRenderbuffers(1, &depthBufferID);
    }
 
-   PGraphics(int z_width, int z_height, int mode, bool fb = false) {
+   PGraphics(int z_width, int z_height, int mode, bool fb = false) : tm(z_width, z_height) {
       // Initialize GLEW
       glewExperimental = true; // Needed for core profile
       if (glewInit() != GLEW_OK) {
@@ -352,11 +350,14 @@ public:
       Mmatrix = glGetUniformLocation(programID, "Mmatrix");
 
       move_matrix = Eigen::Matrix4f::Identity();
+      view_matrix = Eigen::Matrix4f::Identity();
+      projection_matrix = Eigen::Matrix4f::Identity();
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
       camera();
       perspective();
+      noTexture();
 
       background(WHITE);
    }
@@ -555,9 +556,15 @@ public:
    }
 
 
-   void text(std::string text, float x, float y, float twidth=-1, float theight=-1) {
-      int texture = getNextTextureID();
-      currentFont.render_text(bufferID, texture, text, fill_color, twidth, theight);
+   void text(std::string text, float x, float y, float twidth = -1, float theight = -1) {
+      SDL_Surface *surface = currentFont.render_text(text, fill_color);
+      twidth = surface->w;
+      theight = surface->h;
+
+      PTexture texture = tm.getFreeBlock(twidth,theight);
+      glTextureSubImage3D(bufferID, 0, texture.left, texture.top, texture.layer, twidth, theight, 1,
+                          GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+      SDL_FreeSurface(surface);
 
       // this works well enough for the Letters.cc example but it's not really general
       if ( xTextAlign == CENTER ) {
@@ -567,10 +574,8 @@ public:
          y = y - theight / 2;
       }
 
-      float xrange = (1.0 * twidth) / width;
-      float yrange = (1.0 * theight) / height;
-      drawTexturedQuad(PVector{x,y},PVector{x+twidth,y},PVector{x+twidth,y+theight}, PVector{x,y+theight},
-                       xrange, yrange, texture, WHITE);
+      drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
+                       texture, WHITE);
    }
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
@@ -688,14 +693,15 @@ public:
    }
 
    void noTexture() {
-      currentTextureID = 0;
+      currentTexture = {};
    }
 
    void texture(PImage &img) {
-      currentTextureID = getNextTextureID();
-      img.load_texture_to_layer( currentTextureID );
-      currentTextureWidth = img.width;
-      currentTextureHeight = img.height;
+      currentTexture = tm.getFreeBlock(img.surface->w, img.surface->h);
+      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                      currentTexture.left, currentTexture.top, currentTexture.layer,
+                      img.surface->w, img.surface->h, 1,
+                      GL_RGBA, GL_UNSIGNED_BYTE, img.surface->pixels);
    }
 
    void imageMode(int iMode) {
@@ -738,12 +744,9 @@ public:
       h = h / 2;
       d = d / 2;
 
-      float xrange = (1.0 * currentTextureWidth) / width;
-      float yrange = (1.0 * currentTextureHeight) / height;
-
       PShape cube;
       cube.beginShape(TRIANGLES);
-      cube.texture(PTexture{currentTextureID, 0.0f,0.0f,xrange,yrange} );
+      cube.texture(currentTexture);
 
       // Front face
       cube.vertex( -w, -h,  d, 0.0, 0.0 );
@@ -825,11 +828,7 @@ public:
 
       cube.endShape();
 
-      if (currentTextureID) {
-         drawTriangles(cube.vertices, cube.normals, cube.coords, cube.indices, tint_color);
-      } else {
-         drawTriangles(cube.vertices, cube.normals, cube.coords, cube.indices, fill_color);
-      }
+      shape( cube );
    };
 
    void box(float size) {
@@ -871,7 +870,6 @@ public:
          }
       }
 
-      std::vector<unsigned short> indices;
       for (int i = 0; i < xsphere_ures; i++) {
          for (int j = 0; j < xsphere_vres; j++) {
             int idx0 = i * (xsphere_vres+1) + j;
@@ -888,20 +886,7 @@ public:
       }
       sphere.endShape();
 
-      if (currentTextureID) {
-         drawTriangles(sphere.vertices, sphere.normals,sphere.coords, sphere.indices, tint_color);
-      } else {
-         drawTriangles(sphere.vertices, sphere.normals,sphere.coords, sphere.indices, fill_color);
-      }
-   }
-
-   int getNextTextureID() {
-      if (nextTextureID == 8) {
-         flush();
-      }
-      int textureID = nextTextureID;
-      nextTextureID++;
-      return textureID;
+      shape( sphere );
    }
 
    void image(PGraphics &gfx, int x, int y) {
@@ -909,42 +894,41 @@ public:
       float right = x + gfx.width;
       float top = y;
       float bottom = y + gfx.height;
-      int texture = getNextTextureID();
+      PTexture texture = tm.getFreeBlock(gfx.width, gfx.height);
+
       glBindTexture(GL_TEXTURE_2D_ARRAY, gfx.bufferID);
       glCopyImageSubData(gfx.bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1,
-                         bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, texture,
+                         bufferID, GL_TEXTURE_2D_ARRAY, 0, texture.left, texture.top, texture.layer,
                          gfx.width, gfx.height, 1);
       glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
-      float xrange = (1.0 * gfx.width) / width;
-      float yrange = (1.0 * gfx.height) / height;
       drawTexturedQuad( {left, top},
                         {right,top},
                         {right, bottom},
                         {left, bottom},
-                        xrange,yrange, texture, tint_color);
+                        texture, tint_color);
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
-      if ( image_mode == CORNER ) {
-         float iwidth = right;
-         float iheight = bottom;
-         right = left + iwidth;
-         bottom = top + iheight;
+       if ( image_mode == CORNER ) {
+          float iwidth = right;
+          float iheight = bottom;
+          right = left + iwidth;
+          bottom = top + iheight;
       } else if ( image_mode == CENTER ) {
-         float iwidth = right;
-         float iheight = bottom;
-         left = left - ( iwidth / 2.0 );
-         top = top - ( iheight / 2.0 );
-         right = left + iwidth;
-         bottom = top + iheight;
-      }
-      int texture = getNextTextureID();
-      pimage.load_texture_to_layer(texture);
-      float xrange = (1.0 * pimage.width) / width;
-      float yrange = (1.0 * pimage.height) / height;
-
-      drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom}, xrange,yrange,
-                     texture, tint_color);
+          float iwidth = right;
+          float iheight = bottom;
+          left = left - ( iwidth / 2.0 );
+          top = top - ( iheight / 2.0 );
+          right = left + iwidth;
+          bottom = top + iheight;
+       }
+       PTexture texture = tm.getFreeBlock(pimage.surface->w, pimage.surface->h);
+       glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                       texture.left, texture.top, texture.layer,
+                       pimage.surface->w, pimage.surface->h, 1,
+                       GL_RGBA, GL_UNSIGNED_BYTE, pimage.surface->pixels);
+       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
+                      texture, tint_color);
    }
 
    void image(PImage &pimage, float x, float y) {
@@ -1067,25 +1051,20 @@ public:
       printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
    }
 
-   void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3, float xrange, float yrange, int textureLayer, color tint) {
+   void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
+                         PTexture texture, color tint) {
+       PShape quad;
+       quad.texture(texture);
+       quad.beginShape(TRIANGLES);
+       quad.vertex( p0, {0.0, 0.0} );
+       quad.vertex( p1, {1.0, 0.0} );
+       quad.vertex( p2, {1.0, 1.0} );
+       quad.vertex( p3, {0.0, 1.0} );
+       quad.indices = { 0,1,2, 0,2,3 };
+       quad.endShape();
 
-      std::vector<PVector> vertices{ p0, p1, p2, p3 };
-      float z = (float)textureLayer;
-      std::vector<PVector> coords {
-         { 0.0f, 0.0f,z},
-         { xrange, 0.0f,z},
-         { xrange, yrange,z},
-         { 0.0f, yrange,z},
-      };
-      std::vector<PVector> normals;
-
-      std::vector<unsigned short>  indices = {
-         0,1,2, 0,2,3,
-      };
-
-      drawTriangles( vertices, normals, coords, indices, tint );
+       shape( quad );
    }
-
 
    PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
       PLine l1{ p1, p2 };
@@ -1235,12 +1214,12 @@ public:
       return triangles;
    }
 
-   void shape_stroke(PShape &pshape, float x, float y, color color) {
+   void shape_stroke(PShape &pshape, color color) {
       switch( pshape.style ) {
       case POINTS:
       {
          for (auto z : pshape.vertices ) {
-            shape_fill( _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER),0,0,color );
+            shape_fill( _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER),color );
          }
          break;
       }
@@ -1250,33 +1229,33 @@ public:
          if (pshape.vertices.size() > 2 ) {
             if (pshape.type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
                shape_fill( drawLinePoly( pshape.vertices.size() - 1, pshape.vertices.data() + 1, stroke_weight, false),
-                           0,0,color );
+                           color );
             } else {
                shape_fill( drawLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE),
-                           0,0,color );
+                           color );
             }
          } else if (pshape.vertices.size() == 2) {
             switch(line_end_cap) {
             case ROUND:
-               shape_fill( drawRoundLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,color );
+               shape_fill( drawRoundLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), color );
                break;
             case PROJECT:
-               shape_fill( drawCappedLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,color );
+               shape_fill( drawCappedLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), color );
                break;
             case SQUARE:
-               shape_fill( drawLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), 0,0,color );
+               shape_fill( drawLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), color );
                break;
             default:
                abort();
             }
          } else if (pshape.vertices.size() == 1) {
-            shape_fill( _createEllipse(pshape.vertices[0].x, pshape.vertices[0].y, stroke_weight, stroke_weight, CENTER),0,0,color );
+            shape_fill( _createEllipse(pshape.vertices[0].x, pshape.vertices[0].y, stroke_weight, stroke_weight, CENTER),color );
          }
          break;
       }
       case TRIANGLE_STRIP:
       {
-         shape_fill( drawTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight),0,0,color );
+         shape_fill( drawTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight),color );
          break;
       }
       case TRIANGLES:
@@ -1287,10 +1266,9 @@ public:
       }
    }
 
-   void shape_fill(const PShape &pshape, float x, float y, color color) {
-      std::vector<PVector> normals;
+   void shape_fill(const PShape &pshape, color color) {
       if (pshape.vertices.size() > 2) {
-         drawTriangles(  pshape.vertices, normals, pshape.coords, pshape.indices, color );
+         drawTriangles(  pshape.vertices, pshape.normals, pshape.coords, pshape.indices, color );
       }
    }
 
@@ -1303,11 +1281,17 @@ public:
             shape(child,0,0);
          }
       } else {
-         if (fill_color.a != 0) {
-            shape_fill(pshape, x,y,fill_color);
+         if (currentTexture.layer != 0) {
+            if (tint_color.a != 0) {
+               shape_fill(pshape,tint_color);
+            }
+         } else {
+            if (fill_color.a != 0) {
+               shape_fill(pshape,fill_color);
+            }
          }
          if (stroke_color.a != 0) {
-            shape_stroke(pshape, x,y,stroke_color);
+            shape_stroke(pshape, stroke_color);
          }
       }
       popMatrix();
@@ -1687,7 +1671,7 @@ void gl_context::flush(PGraphics &pg) {
    glUniformMatrix4fv(pg.Pmatrix, 1,false, pg.projection_matrix.data());
    glUniformMatrix4fv(pg.Vmatrix, 1,false, pg.view_matrix.data());
 
-   pg.nextTextureID = 2;
+   pg.tm.clear();
 
    glBindFramebuffer(GL_FRAMEBUFFER, pg.localFboID);
    glBindTexture(GL_TEXTURE_2D_ARRAY, pg.bufferID);

@@ -27,7 +27,7 @@ public:
    operator bool() const {
       return surface;
    }
-   
+
    static void init() {
       // initialize SDL_image
       if (IMG_Init(IMG_INIT_JPG) != IMG_INIT_JPG) {
@@ -129,10 +129,6 @@ public:
             pixels[i] = y;
          }
       }
-   }
-
-   void load_texture_to_layer(int layerIndex)  {
-      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layerIndex, surface->w, surface->h, 1, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
    }
 
    static void saveFrame(const GLuint framebufferID, int width, int height, const std::string& fileName) {
