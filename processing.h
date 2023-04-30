@@ -36,6 +36,8 @@ PGraphics g;
 // the global namespace dispatching to the PGraphics object g.
 #define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }
 
+MAKE_GLOBAL(shader, g);
+MAKE_GLOBAL(loadShader, g);
 MAKE_GLOBAL(createGraphics, g);
 MAKE_GLOBAL(saveFrame, g);
 MAKE_GLOBAL(background, g);

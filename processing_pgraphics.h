@@ -6,7 +6,11 @@
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
 
-#include "processing_opengl_shaders.h"
+#include <fstream>     // For std::ifstream
+#include <sstream>     // For std::stringstream
+#include <string>
+
+#include "processing_pshader.h"
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_pshape.h"
@@ -57,6 +61,7 @@ public:
    GLuint localFboID;
    GLuint depthBufferID;
    GLuint whiteTextureID;
+   PShader defaultShader;
    GLuint programID;
    PTexture currentTexture;
    gl_context glc;
@@ -105,10 +110,12 @@ public:
    GLuint vertex_buffer_id;
    GLuint coords_buffer_id;
    GLuint colors_buffer_id;
+   GLuint tindex_buffer_id;
    GLuint normal_buffer_id;
    GLuint vertex_attrib_id;
    GLuint coords_attrib_id;
    GLuint colors_attrib_id;
+   GLuint tindex_attrib_id;
    GLuint normal_attrib_id;
 
    std::vector<Eigen::Matrix4f> matrix_stack;
@@ -164,10 +171,12 @@ public:
       std::swap(vertex_buffer_id, x.vertex_buffer_id);
       std::swap(coords_buffer_id, x.coords_buffer_id);
       std::swap(colors_buffer_id, x.colors_buffer_id);
+      std::swap(tindex_buffer_id, x.tindex_buffer_id);
       std::swap(normal_buffer_id, x.normal_buffer_id);
       std::swap(vertex_attrib_id, x.vertex_attrib_id);
       std::swap(coords_attrib_id, x.coords_attrib_id);
       std::swap(colors_attrib_id, x.colors_attrib_id);
+      std::swap(tindex_attrib_id, x.tindex_attrib_id);
       std::swap(normal_attrib_id, x.normal_attrib_id);
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
@@ -222,10 +231,12 @@ public:
       std::swap(vertex_buffer_id, x.vertex_buffer_id);
       std::swap(coords_buffer_id, x.coords_buffer_id);
       std::swap(colors_buffer_id, x.colors_buffer_id);
+      std::swap(tindex_buffer_id, x.tindex_buffer_id);
       std::swap(normal_buffer_id, x.normal_buffer_id);
       std::swap(vertex_attrib_id, x.vertex_attrib_id);
       std::swap(coords_attrib_id, x.coords_attrib_id);
       std::swap(colors_attrib_id, x.colors_attrib_id);
+      std::swap(tindex_attrib_id, x.tindex_attrib_id);
       std::swap(normal_attrib_id, x.normal_attrib_id);
 
       std::swap(matrix_stack, x.matrix_stack);
@@ -296,7 +307,7 @@ public:
          if (err != GL_FRAMEBUFFER_COMPLETE) {
             fprintf(stderr,"%d\n",err);
          }
-    }
+      }
 
       // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
       whiteTextureID = 0;
@@ -319,39 +330,23 @@ public:
       glDepthFunc(GL_LEQUAL);
       glEnable(GL_DEPTH_TEST);
 
-      programID = LoadShaders(Shaders3D());
-      glUseProgram(programID);
-
-      AmbientLight = glGetUniformLocation(programID, "ambientLight");
-      DirectionLightColor = glGetUniformLocation(programID, "directionLightColor");
-      DirectionLightVector = glGetUniformLocation(programID, "directionLightVector");
-
-      uSampler = glGetUniformLocation(programID, "myTextures");
-
-      int textureUnitIndex = 0;
-      glUniform1i(uSampler,0);
-      glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
-
-      // Get a handle for our "MVP" uniform
-      Pmatrix = glGetUniformLocation(programID, "Pmatrix");
-      Vmatrix = glGetUniformLocation(programID, "Vmatrix");
-
-
       glGenBuffers(1, &index_buffer_id);
       glGenBuffers(1, &vertex_buffer_id);
       glGenBuffers(1, &coords_buffer_id);
       glGenBuffers(1, &colors_buffer_id);
+      glGenBuffers(1, &tindex_buffer_id);
       glGenBuffers(1, &normal_buffer_id);
-      vertex_attrib_id = glGetAttribLocation(programID, "position");
-      normal_attrib_id = glGetAttribLocation(programID, "normal");
-      coords_attrib_id = glGetAttribLocation(programID, "coords");
-      colors_attrib_id = glGetAttribLocation(programID, "colors");
-
-      Mmatrix = glGetUniformLocation(programID, "Mmatrix");
 
       move_matrix = Eigen::Matrix4f::Identity();
       view_matrix = Eigen::Matrix4f::Identity();
       projection_matrix = Eigen::Matrix4f::Identity();
+
+      defaultShader = loadShader();
+      shader( defaultShader );
+
+      int textureUnitIndex = 0;
+      glUniform1i(uSampler,0);
+      glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -626,18 +621,42 @@ public:
       ~GL_FLOAT_buffer() {
       }
    };
+   class GL_INT_buffer {
+      GLuint buffer_id = 0;
+      GLuint attribId;
+   public:
+      GL_INT_buffer(GLuint buffer_id, GLuint programID, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
+         if (size > 0) {
+            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+            glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STREAM_DRAW);
+            glVertexAttribPointer(
+               attribId,                         // attribute
+               count,                                // size
+               GL_INT,                         // type
+               GL_FALSE,                         // normalized?
+               stride,                           // stride
+               offset                     // array buffer offset
+               );
+            glEnableVertexAttribArray(attribId);
+         }
+      }
+      ~GL_INT_buffer() {
+      }
+   };
 
    void drawTrianglesDirect( const std::vector<PVector> &vertices,
-                       const std::vector<PVector> &normals,
-                       const std::vector<PVector> &coords,
-                       const std::vector<float> &colors,
-                       const std::vector<unsigned short> &indices,
-                       int count ) {
-
+                             const std::vector<PVector> &normals,
+                             const std::vector<PVector> &coords,
+                             const std::vector<float> &colors,
+                             const std::vector<unsigned short> &indices,
+                             int count ) {
       // Create a vertex array object (VAO)
       GLuint VAO;
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
+
+      std::vector<int> tindex(0,10);
+      tindex.resize(vertices.size());
 
       GL_FLOAT_buffer vertex( vertex_buffer_id, programID, vertices.data(), vertices.size() * 3,
                               vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
@@ -647,6 +666,8 @@ public:
                               coords_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
       GL_FLOAT_buffer color(  colors_buffer_id, programID, colors.data(),   colors.size(),
                               colors_attrib_id, 4, 0, 0);
+      GL_INT_buffer  mindex(  tindex_buffer_id, programID, tindex.data(),   tindex.size(),
+                              tindex_attrib_id, 1, 0, 0);
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
@@ -687,9 +708,9 @@ public:
    }
 
    void flush() {
-     flushes++;
-     if (flushes > 1000) abort();
-     glc.flush(*this);
+      flushes++;
+      if (flushes > 1000) abort();
+      glc.flush(*this);
    }
 
    void noTexture() {
@@ -909,26 +930,26 @@ public:
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
-       if ( image_mode == CORNER ) {
-          float iwidth = right;
-          float iheight = bottom;
-          right = left + iwidth;
-          bottom = top + iheight;
+      if ( image_mode == CORNER ) {
+         float iwidth = right;
+         float iheight = bottom;
+         right = left + iwidth;
+         bottom = top + iheight;
       } else if ( image_mode == CENTER ) {
-          float iwidth = right;
-          float iheight = bottom;
-          left = left - ( iwidth / 2.0 );
-          top = top - ( iheight / 2.0 );
-          right = left + iwidth;
-          bottom = top + iheight;
-       }
-       PTexture texture = tm.getFreeBlock(pimage.surface->w, pimage.surface->h);
-       glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
-                       texture.left, texture.top, texture.layer,
-                       pimage.surface->w, pimage.surface->h, 1,
-                       GL_RGBA, GL_UNSIGNED_BYTE, pimage.surface->pixels);
-       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
-                      texture, tint_color);
+         float iwidth = right;
+         float iheight = bottom;
+         left = left - ( iwidth / 2.0 );
+         top = top - ( iheight / 2.0 );
+         right = left + iwidth;
+         bottom = top + iheight;
+      }
+      PTexture texture = tm.getFreeBlock(pimage.surface->w, pimage.surface->h);
+      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                      texture.left, texture.top, texture.layer,
+                      pimage.surface->w, pimage.surface->h, 1,
+                      GL_RGBA, GL_UNSIGNED_BYTE, pimage.surface->pixels);
+      drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
+                       texture, tint_color);
    }
 
    void image(PImage &pimage, float x, float y) {
@@ -1053,17 +1074,17 @@ public:
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
                          PTexture texture, color tint) {
-       PShape quad;
-       quad.texture(texture);
-       quad.beginShape(TRIANGLES);
-       quad.vertex( p0, {0.0, 0.0} );
-       quad.vertex( p1, {1.0, 0.0} );
-       quad.vertex( p2, {1.0, 1.0} );
-       quad.vertex( p3, {0.0, 1.0} );
-       quad.indices = { 0,1,2, 0,2,3 };
-       quad.endShape();
+      PShape quad;
+      quad.texture(texture);
+      quad.beginShape(TRIANGLES);
+      quad.vertex( p0, {0.0, 0.0} );
+      quad.vertex( p1, {1.0, 0.0} );
+      quad.vertex( p2, {1.0, 1.0} );
+      quad.vertex( p3, {0.0, 1.0} );
+      quad.indices = { 0,1,2, 0,2,3 };
+      quad.endShape();
 
-       shape( quad );
+      shape( quad );
    }
 
    PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
@@ -1588,7 +1609,62 @@ public:
       return shape;
    }
 
+   PShader loadShader(const char *fragShader, const char *vertShader) {
+      auto shader = PShader( 0, vertShader, fragShader );
+      shader.compileShaders();
+      return shader;
+   }
 
+   PShader loadShader(const char *fragShader) {
+      std::ifstream inputFile(fragShader);
+
+      if (!inputFile.is_open()) {
+         abort();
+      }
+
+      std::stringstream buffer;
+      buffer << inputFile.rdbuf();
+
+      inputFile.close();
+
+      auto shader = PShader( 0, buffer.str().c_str() );
+      shader.compileShaders();
+      return shader;
+   }
+
+   PShader loadShader() {
+      auto shader = PShader( 0 );
+      shader.compileShaders();
+      return shader;
+   }
+
+   void shader(PShader &shader, int kind = TRIANGLES) {
+      vertex_attrib_id = glGetAttribLocation(shader.ProgramID, "position");
+      normal_attrib_id = glGetAttribLocation(shader.ProgramID, "normal");
+      coords_attrib_id = glGetAttribLocation(shader.ProgramID, "coords");
+      colors_attrib_id = glGetAttribLocation(shader.ProgramID, "colors");
+      tindex_attrib_id = glGetAttribLocation(shader.ProgramID, "I");
+      Mmatrix = glGetUniformLocation(shader.ProgramID, "Mmatrix");
+      Pmatrix = glGetUniformLocation(shader.ProgramID, "Pmatrix");
+      Vmatrix = glGetUniformLocation(shader.ProgramID, "Vmatrix");
+      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
+      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
+      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
+      AmbientLight = glGetUniformLocation(shader.ProgramID, "ambientLight");
+      DirectionLightColor = glGetUniformLocation(shader.ProgramID, "directionLightColor");
+      DirectionLightVector = glGetUniformLocation(shader.ProgramID, "directionLightVector");
+      glUniform3fv(DirectionLightColor, 1, xdirectionLightColor.data() );
+      glUniform3fv(DirectionLightVector, 1,xdirectionLightVector.data() );
+      glUniform3fv(AmbientLight, 1, xambientLight.data() );
+      uSampler = glGetUniformLocation(programID, "myTextures");
+      glUseProgram(shader.ProgramID);
+      programID = shader.ProgramID;
+      shader.set_uniforms();
+   }
+
+   void resetShader(int kind = TRIANGLES) {
+      shader( defaultShader );
+   }
 
 // ----
 // End shapes managed by Pshape.
@@ -1675,6 +1751,11 @@ void gl_context::flush(PGraphics &pg) {
 
    glBindFramebuffer(GL_FRAMEBUFFER, pg.localFboID);
    glBindTexture(GL_TEXTURE_2D_ARRAY, pg.bufferID);
+
+   if ( vbuffer.size() == 0 ) {
+      // abort();
+      return;
+   }
 
    pg.drawTrianglesDirect( vbuffer, nbuffer, cbuffer, xbuffer, ibuffer, ibuffer.size() );
    vbuffer.clear();
