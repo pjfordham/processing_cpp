@@ -116,27 +116,27 @@ public:
    PShader(GLuint parent) : PShader() {
    }
 
-   std::map<const char *, float> uniforms1f;
-   std::map<const char *, std::array<float,2>> uniforms2fv;
+   std::map<GLuint, float> uniforms1f;
+   std::map<GLuint, std::array<float,2>> uniforms2fv;
 
    void set_uniforms() {
-      for (const auto& [uniform, value] : uniforms1f) {
-         GLuint Id = glGetUniformLocation(ProgramID, uniform);
-         glUniform1f(Id,value);
+      for (const auto& [id, value] : uniforms1f) {
+         glUniform1f(id,value);
       }
-      for (const auto& [uniform, value] : uniforms2fv) {
-         GLuint Id = glGetUniformLocation(ProgramID, uniform);
-         glUniform2fv(Id,1,value.data());
+      for (const auto& [id, value] : uniforms2fv) {
+         glUniform2fv(id,1,value.data());
       }
    }
 
    void set(const char *uniform, float value) {
-      uniforms1f[uniform] = value;
+      GLuint id = glGetUniformLocation(ProgramID, uniform);
+      uniforms1f[id] = value;
    }
 
    void set(const char *uniform, float v1, float v2) {
       std::array<float,2> vec = {v1,v2};
-      uniforms2fv[uniform] = vec;
+      GLuint id = glGetUniformLocation(ProgramID, uniform);
+      uniforms2fv[id] = vec;
    }
 };
 
