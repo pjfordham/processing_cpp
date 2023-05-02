@@ -36,8 +36,8 @@ PGraphics g;
 // the global namespace dispatching to the PGraphics object g.
 #define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }
 
-MAKE_GLOBAL(shader, g);
-MAKE_GLOBAL(loadShader, g);
+MAKE_GLOBAL(shader, g.glc);
+MAKE_GLOBAL(loadShader, g.glc);
 MAKE_GLOBAL(createGraphics, g);
 MAKE_GLOBAL(saveFrame, g);
 MAKE_GLOBAL(background, g);
@@ -105,41 +105,41 @@ std::vector<T> subset(const std::vector<T> &c, int start, int length) {
 }
 
 std::vector<std::string> split(const std::string& str, char delimiter) {
-  std::vector<std::string> result;
-  std::string token;
+   std::vector<std::string> result;
+   std::string token;
 
-  for (const char& c : str) {
-    if (c == delimiter) {
+   for (const char& c : str) {
+      if (c == delimiter) {
+         result.push_back(token);
+         token.clear();
+      } else {
+         token += c;
+      }
+   }
+
+   // Push back the last token, if any
+   if (!token.empty()) {
       result.push_back(token);
-      token.clear();
-    } else {
-      token += c;
-    }
-  }
+   }
 
-  // Push back the last token, if any
-  if (!token.empty()) {
-    result.push_back(token);
-  }
-
-  return result;
+   return result;
 }
 
 std::vector<std::string> loadStrings(const std::string& fileName) {
-    std::vector<std::string> lines;
-    std::ifstream inputFile(fileName);
+   std::vector<std::string> lines;
+   std::ifstream inputFile(fileName);
 
-    if (!inputFile.is_open()) {
-       abort();
-    }
+   if (!inputFile.is_open()) {
+      abort();
+   }
 
-    std::string line;
-    while (std::getline(inputFile, line)) {
-        lines.push_back(line);
-    }
+   std::string line;
+   while (std::getline(inputFile, line)) {
+      lines.push_back(line);
+   }
 
-    inputFile.close();
-    return lines;
+   inputFile.close();
+   return lines;
 }
 
 int setFrameRate = 60;
@@ -190,6 +190,7 @@ void size(int _width, int _height, int mode = P2D) {
    }
 
    g = PGraphics(width, height, mode);
+   g.glc.init( width, height );
 }
 
 
@@ -331,20 +332,21 @@ int main(int argc, char* argv[]) {
          Uint32 currentTicks = SDL_GetTicks();
          if (currentTicks - frameRateClock >= 10000) {
             float frameRate = 1000 * (float) zframeCount / (currentTicks - frameRateClock);
-            printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.flushes);
+            printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.glc.getFlushCount());
             zframeCount = 0;
             frameRateClock = currentTicks;
          }
 
          if (xloop || frameCount == 0) {
-            g.flushes = 0;
+            g.glc.resetFlushCount();
 
+            g.move_matrix = Eigen::Matrix4f::Identity();
             // Call the sketch's draw()
             draw();
-            g.glc.flush( g );
-            if (g.localFboID != 0) {
+            g.flush();
+            if (g.glc.localFboID != 0) {
                g.draw_main();
-               g.glc.flush( g );
+               g.flush();
             }
 
             SDL_GL_SwapWindow(window);

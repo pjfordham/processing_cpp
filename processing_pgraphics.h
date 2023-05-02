@@ -17,56 +17,13 @@
 #include "processing_pimage.h"
 #include "processing_pfont.h"
 #include "processing_enum.h"
-
-class PGraphics;
-
-class gl_context {
-public:
-   const int CAPACITY = 65536;
-
-   std::vector<PVector> vbuffer;
-   std::vector<PVector> nbuffer;
-   std::vector<PVector> cbuffer;
-   std::vector<float> xbuffer;
-   std::vector<unsigned short> ibuffer;
-   gl_context() {
-      vbuffer.reserve(CAPACITY);
-      nbuffer.reserve(CAPACITY);
-      cbuffer.reserve(CAPACITY);
-      xbuffer.reserve(CAPACITY);
-      ibuffer.reserve(CAPACITY);
-   }
-
-   void reserve(int n_vertices, PGraphics &pg) {
-      if (n_vertices > CAPACITY) {
-         abort();
-      } else {
-         int new_size = n_vertices + ibuffer.size();
-         if (new_size >= CAPACITY) {
-            flush(pg);
-         }
-      }
-
-   }
-
-   void flush(PGraphics &pg);
-
-
-};
+#include "processing_opengl.h"
 
 class PGraphics {
 public:
-   TextureManager tm;
-   GLuint bufferID;
-   GLuint localFboID;
-   GLuint depthBufferID;
-   GLuint whiteTextureID;
-   PShader defaultShader;
-   GLuint programID;
    PTexture currentTexture;
    gl_context glc;
 
-   int flushes = 0;
    color stroke_color = WHITE;
    color fill_color = WHITE;
    color tint_color = WHITE;
@@ -95,44 +52,18 @@ public:
    std::array<float,3> xdirectionLightColor;
    std::array<float,3> xdirectionLightVector;
 
-   GLuint AmbientLight;
-   GLuint DirectionLightColor;
-   GLuint DirectionLightVector;
-
    Eigen::Matrix4f projection_matrix; // Default is identity
    Eigen::Matrix4f view_matrix; // Default is identity
-
-   GLuint Pmatrix;
-   GLuint Vmatrix;
-   GLuint uSampler;
-
-   GLuint index_buffer_id;
-   GLuint vertex_buffer_id;
-   GLuint coords_buffer_id;
-   GLuint colors_buffer_id;
-   GLuint tindex_buffer_id;
-   GLuint normal_buffer_id;
-   GLuint vertex_attrib_id;
-   GLuint coords_attrib_id;
-   GLuint colors_attrib_id;
-   GLuint tindex_attrib_id;
-   GLuint normal_attrib_id;
-
-   std::vector<Eigen::Matrix4f> matrix_stack;
    Eigen::Matrix4f move_matrix; // Default is identity
 
-   GLuint Mmatrix;
+   std::vector<Eigen::Matrix4f> matrix_stack;
 
    PGraphics(const PGraphics &x) = delete;
 
-   PGraphics(PGraphics &&x) {
-      std::swap(tm, x.tm);
-      std::swap(bufferID, x.bufferID);
-      std::swap(localFboID, x.localFboID);
-      std::swap(depthBufferID, x.depthBufferID);
-      std::swap(programID, x.programID);
+   PGraphics(PGraphics &&x) : glc (x.width, x.height) {
+      x.flush();
       std::swap(currentTexture, x.currentTexture);
-      std::swap(flushes,x.flushes);
+      std::swap(glc, x.glc);
 
       std::swap(stroke_color, x.stroke_color);
       std::swap(fill_color, x.fill_color);
@@ -159,39 +90,18 @@ public:
       std::swap(xambientLight, x.xambientLight);
       std::swap(xdirectionLightColor, x.xdirectionLightColor);
       std::swap(xdirectionLightVector, x.xdirectionLightVector);
-      std::swap(AmbientLight, x.AmbientLight);
-      std::swap(DirectionLightColor, x.DirectionLightColor);
-      std::swap(DirectionLightVector, x.DirectionLightVector);
       std::swap(projection_matrix, x.projection_matrix);
       std::swap(view_matrix, x.view_matrix);
-      std::swap(Pmatrix, x.Pmatrix);
-      std::swap(Vmatrix, x.Vmatrix);
-      std::swap(uSampler, x.uSampler);
-      std::swap(index_buffer_id, x.index_buffer_id);
-      std::swap(vertex_buffer_id, x.vertex_buffer_id);
-      std::swap(coords_buffer_id, x.coords_buffer_id);
-      std::swap(colors_buffer_id, x.colors_buffer_id);
-      std::swap(tindex_buffer_id, x.tindex_buffer_id);
-      std::swap(normal_buffer_id, x.normal_buffer_id);
-      std::swap(vertex_attrib_id, x.vertex_attrib_id);
-      std::swap(coords_attrib_id, x.coords_attrib_id);
-      std::swap(colors_attrib_id, x.colors_attrib_id);
-      std::swap(tindex_attrib_id, x.tindex_attrib_id);
-      std::swap(normal_attrib_id, x.normal_attrib_id);
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
-      std::swap(Mmatrix, x.Mmatrix);
    }
 
    PGraphics& operator=(const PGraphics&) = delete;
    PGraphics& operator=(PGraphics&&x){
-      std::swap(tm, x.tm);
-      std::swap(bufferID, x.bufferID);
-      std::swap(localFboID, x.localFboID);
-      std::swap(depthBufferID, x.depthBufferID);
-      std::swap(programID, x.programID);
+      x.flush();
+      flush();
       std::swap(currentTexture, x.currentTexture);
-      std::swap(flushes,x.flushes);
+      std::swap(glc, x.glc);
 
       std::swap(stroke_color, x.stroke_color);
       std::swap(fill_color, x.fill_color);
@@ -218,49 +128,23 @@ public:
       std::swap(xambientLight, x.xambientLight);
       std::swap(xdirectionLightColor, x.xdirectionLightColor);
       std::swap(xdirectionLightVector, x.xdirectionLightVector);
-      std::swap(AmbientLight, x.AmbientLight);
-      std::swap(DirectionLightColor, x.DirectionLightColor);
-      std::swap(DirectionLightVector, x.DirectionLightVector);
 
       std::swap(projection_matrix, x.projection_matrix);
       std::swap(view_matrix, x.view_matrix);
-      std::swap(Pmatrix, x.Pmatrix);
-      std::swap(Vmatrix, x.Vmatrix);
-      std::swap(uSampler, x.uSampler);
-      std::swap(index_buffer_id, x.index_buffer_id);
-      std::swap(vertex_buffer_id, x.vertex_buffer_id);
-      std::swap(coords_buffer_id, x.coords_buffer_id);
-      std::swap(colors_buffer_id, x.colors_buffer_id);
-      std::swap(tindex_buffer_id, x.tindex_buffer_id);
-      std::swap(normal_buffer_id, x.normal_buffer_id);
-      std::swap(vertex_attrib_id, x.vertex_attrib_id);
-      std::swap(coords_attrib_id, x.coords_attrib_id);
-      std::swap(colors_attrib_id, x.colors_attrib_id);
-      std::swap(tindex_attrib_id, x.tindex_attrib_id);
-      std::swap(normal_attrib_id, x.normal_attrib_id);
 
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(move_matrix, x.move_matrix);
-      std::swap(Mmatrix, x.Mmatrix);
+
       return *this;
    }
 
-   PGraphics() {
-      localFboID = 0;
-      bufferID = 0;
-      depthBufferID = 0;
+   PGraphics() : glc( 0,0 ) {
    }
 
    ~PGraphics() {
-      if (localFboID)
-         glDeleteFramebuffers(1, &localFboID);
-      if (bufferID)
-         glDeleteTextures(1, &bufferID);
-      if (depthBufferID)
-         glDeleteRenderbuffers(1, &depthBufferID);
    }
 
-   PGraphics(int z_width, int z_height, int mode, bool fb = false) : tm(z_width, z_height) {
+   PGraphics(int z_width, int z_height, int mode) : glc( z_width, z_height ) {
       // Initialize GLEW
       glewExperimental = true; // Needed for core profile
       if (glewInit() != GLEW_OK) {
@@ -276,77 +160,10 @@ public:
       width = z_width;
       height = z_height;
 
-      // create the texture array
-      glGenTextures(1, &bufferID);
-      glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
-      glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, width, height, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-      // set texture parameters
-      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-      if (fb) {
-         // Use main framebuffer
-         localFboID = 0;
-      } else {
-         // Create a framebuffer object
-         glGenFramebuffers(1, &localFboID);
-         glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, bufferID, 0, 1);
-
-         glGenRenderbuffers(1, &depthBufferID);
-         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-
-         // Attach the depth buffer to the framebuffer object
-         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
-//         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, bufferID, 0, 2);
-         auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-         if (err != GL_FRAMEBUFFER_COMPLETE) {
-            fprintf(stderr,"%d\n",err);
-         }
-      }
-
-      // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
-      whiteTextureID = 0;
-      GLubyte white[4] = { 255, 255, 255, 255 };
-      GLubyte red[4] = { 255, 0, 0, 255 };
-      GLubyte green[4] = { 0, 255, 0, 255 };
-      GLubyte blue[4] = { 0, 0, 255, 255 };
-      glClearTexImage(bufferID, whiteTextureID, GL_RGBA, GL_UNSIGNED_BYTE, white);
-      glClearTexImage(bufferID, 1, GL_RGBA, GL_UNSIGNED_BYTE, red);
-      glClearTexImage(bufferID, 2, GL_RGBA, GL_UNSIGNED_BYTE, green);
-      glClearTexImage(bufferID, 3, GL_RGBA, GL_UNSIGNED_BYTE, blue);
-      glClearTexImage(bufferID, 4, GL_RGBA, GL_UNSIGNED_BYTE, red);
-      glClearTexImage(bufferID, 5, GL_RGBA, GL_UNSIGNED_BYTE, green);
-      glClearTexImage(bufferID, 6, GL_RGBA, GL_UNSIGNED_BYTE, blue);
-      glClearTexImage(bufferID, 7, GL_RGBA, GL_UNSIGNED_BYTE, blue);
-
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-      glDepthFunc(GL_LEQUAL);
-      glEnable(GL_DEPTH_TEST);
-
-      glGenBuffers(1, &index_buffer_id);
-      glGenBuffers(1, &vertex_buffer_id);
-      glGenBuffers(1, &coords_buffer_id);
-      glGenBuffers(1, &colors_buffer_id);
-      glGenBuffers(1, &tindex_buffer_id);
-      glGenBuffers(1, &normal_buffer_id);
-
       move_matrix = Eigen::Matrix4f::Identity();
       view_matrix = Eigen::Matrix4f::Identity();
       projection_matrix = Eigen::Matrix4f::Identity();
 
-      defaultShader = loadShader();
-      shader( defaultShader );
-
-      int textureUnitIndex = 0;
-      glUniform1i(uSampler,0);
-      glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -366,7 +183,7 @@ public:
          c /= 10;
          pos = fileName.rfind('#', pos - 1);
       }
-      PImage::saveFrame( localFboID, width, height, fileName );
+      PImage::saveFrame( glc.localFboID, width, height, fileName );
       counter++;
    }
 
@@ -375,44 +192,28 @@ public:
    }
 
    void popMatrix() {
-      if ( move_matrix != matrix_stack.back() ) {
-         flush();
-         move_matrix = matrix_stack.back();
-      }
+      move_matrix = matrix_stack.back();
       matrix_stack.pop_back();
    }
 
    void translate(float x, float y, float z=0.0 ) {
-      if ( x != 0.0 || y != 0.0 || z != 0.0 ) {
-         flush();
-         move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
-      }
+      move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
    }
 
    void transform(Eigen::Matrix4f transform_matrix) {
-      if (transform_matrix != Eigen::Matrix4f::Identity()) {
-         flush();
-         move_matrix = move_matrix * transform_matrix;
-      }
+      move_matrix = move_matrix * transform_matrix;
    }
 
    void scale(float x, float y,float z = 1.0) {
-      if ( x != 1.0 || y != 1.0 || z != 1.0 ) {
-         flush();
-         move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
-      }
+      move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
    }
 
    void scale(float x) {
-      flush();
       scale(x,x,x);
    }
 
    void rotate(float angle, PVector axis) {
-      if ( angle != 0.0 ) {
-         flush();
-         move_matrix = move_matrix * RotateMatrix(angle,axis);
-      }
+      move_matrix = move_matrix * RotateMatrix(angle,axis);
    }
 
    void rotate(float angle) {
@@ -511,14 +312,11 @@ public:
       flush();
       xdirectionLightColor = {r/255.0f, r/255.0f, r/255.0f};
       xdirectionLightVector = {nx, ny, nz};
-      glUniform3fv(DirectionLightColor, 1, xdirectionLightColor.data() );
-      glUniform3fv(DirectionLightVector, 1,xdirectionLightVector.data() );
    }
 
    void ambientLight(float r, float g, float b) {
       flush();
       xambientLight = { r/255.0f, g/255.0f, b/255.0f };
-      glUniform3fv(AmbientLight, 1, xambientLight.data() );
    }
 
    void lights() {
@@ -556,8 +354,8 @@ public:
       twidth = surface->w;
       theight = surface->h;
 
-      PTexture texture = tm.getFreeBlock(twidth,theight);
-      glTextureSubImage3D(bufferID, 0, texture.left, texture.top, texture.layer, twidth, theight, 1,
+      PTexture texture = glc.tm.getFreeBlock(twidth,theight);
+      glTextureSubImage3D(glc.bufferID, 0, texture.left, texture.top, texture.layer, twidth, theight, 1,
                           GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
       SDL_FreeSurface(surface);
 
@@ -579,12 +377,8 @@ public:
    }
 
    void background(float r, float g, float b) {
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
       auto color = flatten_color_mode(r,g,b,color::scaleA);
-      // Set clear color
-      glClearColor(color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0);
-      // Clear screen
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glc.clear( color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0 );
    }
 
    void background(color c) {
@@ -599,118 +393,25 @@ public:
       }
    }
 
-   class GL_FLOAT_buffer {
-      GLuint buffer_id = 0;
-      GLuint attribId;
-   public:
-      GL_FLOAT_buffer(GLuint buffer_id, GLuint programID, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
-         if (size > 0) {
-            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-            glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STREAM_DRAW);
-            glVertexAttribPointer(
-               attribId,                         // attribute
-               count,                                // size
-               GL_FLOAT,                         // type
-               GL_FALSE,                         // normalized?
-               stride,                           // stride
-               offset                     // array buffer offset
-               );
-            glEnableVertexAttribArray(attribId);
-         }
-      }
-      ~GL_FLOAT_buffer() {
-      }
-   };
-   class GL_INT_buffer {
-      GLuint buffer_id = 0;
-      GLuint attribId;
-   public:
-      GL_INT_buffer(GLuint buffer_id, GLuint programID, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
-         if (size > 0) {
-            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-            glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STREAM_DRAW);
-            glVertexAttribPointer(
-               attribId,                         // attribute
-               count,                                // size
-               GL_INT,                         // type
-               GL_FALSE,                         // normalized?
-               stride,                           // stride
-               offset                     // array buffer offset
-               );
-            glEnableVertexAttribArray(attribId);
-         }
-      }
-      ~GL_INT_buffer() {
-      }
-   };
-
-   void drawTrianglesDirect( const std::vector<PVector> &vertices,
-                             const std::vector<PVector> &normals,
-                             const std::vector<PVector> &coords,
-                             const std::vector<float> &colors,
-                             const std::vector<unsigned short> &indices,
-                             int count ) {
-      // Create a vertex array object (VAO)
-      GLuint VAO;
-      glGenVertexArrays(1, &VAO);
-      glBindVertexArray(VAO);
-
-      std::vector<int> tindex(0,10);
-      tindex.resize(vertices.size());
-
-      GL_FLOAT_buffer vertex( vertex_buffer_id, programID, vertices.data(), vertices.size() * 3,
-                              vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer normal( normal_buffer_id, programID, normals.data(),  normals.size() * 3,
-                              normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   coords.size()  * 3,
-                              coords_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer color(  colors_buffer_id, programID, colors.data(),   colors.size(),
-                              colors_attrib_id, 4, 0, 0);
-      GL_INT_buffer  mindex(  tindex_buffer_id, programID, tindex.data(),   tindex.size(),
-                              tindex_attrib_id, 1, 0, 0);
-
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
-      glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, 0);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-      // Unbind the buffer objects and VAO
-      glDeleteVertexArrays(1, &VAO);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glBindVertexArray(0);
-   }
-
    void drawTriangles( const std::vector<PVector> &vertices,
                        const std::vector<PVector> &normals,
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
                        color color) {
-      if (indices.size() == 0) abort();
-
-      glc.reserve( vertices.size(), *this );
-
-      auto starti = glc.vbuffer.size();
-
-      glc.vbuffer.insert(glc.vbuffer.end(), vertices.begin(), vertices.end());
-      glc.cbuffer.insert(glc.cbuffer.end(), coords.begin(),   coords.end());
-      glc.nbuffer.insert(glc.nbuffer.end(), normals.begin(),  normals.end());
-
-      for (auto vertex : vertices) {
-         glc.xbuffer.push_back( color.r / 255.0f );
-         glc.xbuffer.push_back( color.g / 255.0f );
-         glc.xbuffer.push_back( color.b / 255.0f );
-         glc.xbuffer.push_back( color.a / 255.0f );
-      }
-
-      for (auto index : indices) {
-         glc.ibuffer.push_back( starti + index  );
-      }
+      glc.reserve( vertices.size(), move_matrix,  projection_matrix.data(),
+                   view_matrix.data(),
+                   xdirectionLightColor.data(),
+                   xdirectionLightVector.data(),
+                   xambientLight.data());
+      glc.drawTriangles( vertices, normals, coords, indices, color);
    }
 
    void flush() {
-      flushes++;
-      if (flushes > 1000) abort();
-      glc.flush(*this);
+      glc.flush( projection_matrix.data(),
+                 view_matrix.data(),
+                 xdirectionLightColor.data(),
+                 xdirectionLightVector.data(),
+                 xambientLight.data() );
    }
 
    void noTexture() {
@@ -718,7 +419,7 @@ public:
    }
 
    void texture(PImage &img) {
-      currentTexture = tm.getFreeBlock(img.surface->w, img.surface->h);
+      currentTexture = glc.tm.getFreeBlock(img.surface->w, img.surface->h);
       glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
                       currentTexture.left, currentTexture.top, currentTexture.layer,
                       img.surface->w, img.surface->h, 1,
@@ -915,13 +616,13 @@ public:
       float right = x + gfx.width;
       float top = y;
       float bottom = y + gfx.height;
-      PTexture texture = tm.getFreeBlock(gfx.width, gfx.height);
+      PTexture texture = glc.tm.getFreeBlock(gfx.width, gfx.height);
 
-      glBindTexture(GL_TEXTURE_2D_ARRAY, gfx.bufferID);
-      glCopyImageSubData(gfx.bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1,
-                         bufferID, GL_TEXTURE_2D_ARRAY, 0, texture.left, texture.top, texture.layer,
+      glBindTexture(GL_TEXTURE_2D_ARRAY, gfx.glc.bufferID);
+      glCopyImageSubData(gfx.glc.bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1,
+                         glc.bufferID, GL_TEXTURE_2D_ARRAY, 0, texture.left, texture.top, texture.layer,
                          gfx.width, gfx.height, 1);
-      glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
+      glBindTexture(GL_TEXTURE_2D_ARRAY, glc.bufferID);
       drawTexturedQuad( {left, top},
                         {right,top},
                         {right, bottom},
@@ -943,7 +644,7 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      PTexture texture = tm.getFreeBlock(pimage.surface->w, pimage.surface->h);
+      PTexture texture = glc.tm.getFreeBlock(pimage.surface->w, pimage.surface->h);
       glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
                       texture.left, texture.top, texture.layer,
                       pimage.surface->w, pimage.surface->h, 1,
@@ -971,7 +672,7 @@ public:
    void loadPixels() {
       pixels.resize(width*height);
       // Read the pixel data from the framebuffer into the array
-      glGetTextureSubImage(bufferID, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.size(), pixels.data());
+      glGetTextureSubImage(glc.bufferID, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.size(), pixels.data());
    }
 
    void updatePixels() {
@@ -1609,62 +1310,6 @@ public:
       return shape;
    }
 
-   PShader loadShader(const char *fragShader, const char *vertShader) {
-      auto shader = PShader( 0, vertShader, fragShader );
-      shader.compileShaders();
-      return shader;
-   }
-
-   PShader loadShader(const char *fragShader) {
-      std::ifstream inputFile(fragShader);
-
-      if (!inputFile.is_open()) {
-         abort();
-      }
-
-      std::stringstream buffer;
-      buffer << inputFile.rdbuf();
-
-      inputFile.close();
-
-      auto shader = PShader( 0, buffer.str().c_str() );
-      shader.compileShaders();
-      return shader;
-   }
-
-   PShader loadShader() {
-      auto shader = PShader( 0 );
-      shader.compileShaders();
-      return shader;
-   }
-
-   void shader(PShader &shader, int kind = TRIANGLES) {
-      vertex_attrib_id = glGetAttribLocation(shader.ProgramID, "position");
-      normal_attrib_id = glGetAttribLocation(shader.ProgramID, "normal");
-      coords_attrib_id = glGetAttribLocation(shader.ProgramID, "coords");
-      colors_attrib_id = glGetAttribLocation(shader.ProgramID, "colors");
-      tindex_attrib_id = glGetAttribLocation(shader.ProgramID, "I");
-      Mmatrix = glGetUniformLocation(shader.ProgramID, "Mmatrix");
-      Pmatrix = glGetUniformLocation(shader.ProgramID, "Pmatrix");
-      Vmatrix = glGetUniformLocation(shader.ProgramID, "Vmatrix");
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-      glUniformMatrix4fv(Pmatrix, 1,false, projection_matrix.data());
-      glUniformMatrix4fv(Vmatrix, 1,false, view_matrix.data());
-      AmbientLight = glGetUniformLocation(shader.ProgramID, "ambientLight");
-      DirectionLightColor = glGetUniformLocation(shader.ProgramID, "directionLightColor");
-      DirectionLightVector = glGetUniformLocation(shader.ProgramID, "directionLightVector");
-      glUniform3fv(DirectionLightColor, 1, xdirectionLightColor.data() );
-      glUniform3fv(DirectionLightVector, 1,xdirectionLightVector.data() );
-      glUniform3fv(AmbientLight, 1, xambientLight.data() );
-      uSampler = glGetUniformLocation(programID, "myTextures");
-      glUseProgram(shader.ProgramID);
-      programID = shader.ProgramID;
-      shader.set_uniforms();
-   }
-
-   void resetShader(int kind = TRIANGLES) {
-      shader( defaultShader );
-   }
 
 // ----
 // End shapes managed by Pshape.
@@ -1715,54 +1360,36 @@ public:
          1.0f, 1.0f, 1.0f, 1.0f,
       };
 
+      std::vector<int> mindex(vertices.size(), 0);
+
+      glc.loadDirectionLightColor( xdirectionLightColor.data() );
+      glc.loadDirectionLightVector( xdirectionLightVector.data() );
+      glc.loadAmbientLight( xambientLight.data() );
+      glc.loadMoveMatrix( move_matrix.data() );
+      glc.loadProjectionMatrix( new_projection_matrix.data());
+      glc.loadViewMatrix( move_matrix.data());
+
       // bind the real frame buffer
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       // Clear the color and depth buffers
       glClearColor(0.0, 0.0, 0.0, 1.0);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      glUniformMatrix4fv(Mmatrix, 1,false, move_matrix.data());
-      glUniformMatrix4fv(Pmatrix, 1,false, new_projection_matrix.data());
-      glUniformMatrix4fv(Vmatrix, 1,false, move_matrix.data());
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      drawTrianglesDirect( vertices, normals, coords, colors, indices, indices.size());
-
-      // Clear the depth buffer but not what was drawn for the next frame
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      glClear(GL_DEPTH_BUFFER_BIT);
-   }
+      glc.drawTrianglesDirect( vertices, normals, coords, colors, mindex, indices,
+                               indices.size());
+      glc.clearDepthBuffer();
+    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
       PGraphics pg{ width, height, mode };
       pg.view_matrix = view_matrix;
       pg.projection_matrix = projection_matrix;
+      pg.glc.init(width,height);
       return pg;
    }
 
 };
 
 
-void gl_context::flush(PGraphics &pg) {
-   glUniformMatrix4fv(pg.Mmatrix, 1,false, pg.move_matrix.data());
-   glUniformMatrix4fv(pg.Pmatrix, 1,false, pg.projection_matrix.data());
-   glUniformMatrix4fv(pg.Vmatrix, 1,false, pg.view_matrix.data());
-
-   pg.tm.clear();
-
-   glBindFramebuffer(GL_FRAMEBUFFER, pg.localFboID);
-   glBindTexture(GL_TEXTURE_2D_ARRAY, pg.bufferID);
-
-   if ( vbuffer.size() == 0 ) {
-      // abort();
-      return;
-   }
-
-   pg.drawTrianglesDirect( vbuffer, nbuffer, cbuffer, xbuffer, ibuffer, ibuffer.size() );
-   vbuffer.clear();
-   nbuffer.clear();
-   cbuffer.clear();
-   ibuffer.clear();
-   xbuffer.clear();
-}
 
 #endif

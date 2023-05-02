@@ -147,7 +147,7 @@ const char *PShader::defaultVertexShader = R"glsl(
       in vec3 normal;
       in vec3 coords;
       in vec4 colors;
-      in int I;
+      in int mindex;
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
       uniform vec3 directionLightVector;
@@ -160,7 +160,7 @@ const char *PShader::defaultVertexShader = R"glsl(
 
       void main()
       {
-          mat4 M = Mmatrix[I];
+          mat4 M = Mmatrix[mindex];
           vec4 Mposition = M * vec4(position,1.0);
           vec3 Mnormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - Mposition).xyz;
 
