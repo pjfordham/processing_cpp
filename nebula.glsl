@@ -1,3 +1,4 @@
+#version 330
 #define PROCESSING_COLOR_SHADER
 
 uniform float time;
@@ -62,11 +63,11 @@ float surface3 ( vec3 coord, float frequency ) {
 	
 	float n = 0.0;	
 		
-	n += 1.0	* abs( cnoise4( coord * frequency ) );
-	n += 0.5	* abs( cnoise4( coord * frequency * 2.0 ) );
-	n += 0.25	* abs( cnoise4( coord * frequency * 4.0 ) );
-	n += 0.125	* abs( cnoise4( coord * frequency * 8.0 ) );
-	n += 0.0625	* abs( cnoise4( coord * frequency * 16.0 ) );
+	n += (0.5     + 0.00625) * abs( cnoise4( coord * frequency ) );
+	n += (0.25    + 0.00625) * abs( cnoise4( coord * frequency * 2.0 ) );
+	n += (0.125   + 0.00625) * abs( cnoise4( coord * frequency * 4.0 ) );
+	n += (0.0625  + 0.00625) * abs( cnoise4( coord * frequency * 8.0 ) );
+	n += (0.03125 + 0.00625) * abs( cnoise4( coord * frequency * 16.0 ) );
 	
 	return n;
 }
