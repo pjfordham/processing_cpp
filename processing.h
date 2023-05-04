@@ -1,13 +1,7 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
-
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
 #include <algorithm>
 #include <cmath>
 #include <fmt/core.h>
@@ -24,10 +18,6 @@
 #include "processing_pgraphics.h"
 #include "processing_pfont.h"
 #include "processing_time.h"
-
-SDL_Window *window;
-SDL_Renderer *renderer;
-SDL_GLContext glContext = NULL;
 
 // This is the global PGraphcs object that forms the top level canvas.
 PGraphics g;
@@ -164,33 +154,7 @@ void size(int _width, int _height, int mode = P2D) {
    // Create a window
    width = _width;
    height = _height;
-
-   window = SDL_CreateWindow("Proce++ing",
-                             SDL_WINDOWPOS_UNDEFINED,
-                             SDL_WINDOWPOS_UNDEFINED,
-                             width,
-                             height,
-                             SDL_WINDOW_OPENGL);
-
-   if (window == nullptr) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
-      abort();
-   }
-
-   // Set OpenGL attributes
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-   // Create OpenGL context
-   glContext = SDL_GL_CreateContext(window);
-   if (glContext == nullptr) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
-      abort();
-   }
-
    g = PGraphics(width, height, mode);
-   g.glc.init( width, height );
 }
 
 
@@ -343,13 +307,7 @@ int main(int argc, char* argv[]) {
             g.move_matrix = Eigen::Matrix4f::Identity();
             // Call the sketch's draw()
             draw();
-            g.flush();
-            if (g.glc.localFboID != 0) {
-               g.draw_main();
-               g.flush();
-            }
-
-            SDL_GL_SwapWindow(window);
+            g.commit_draw();
 
             // Only update once per frame so we don't miss positions
             pmouseX = mouseX;
@@ -370,8 +328,6 @@ int main(int argc, char* argv[]) {
    PImage::close();
 
    // Clean up
-   SDL_GL_DeleteContext(glContext);
-   SDL_DestroyWindow(window);
    SDL_Quit();
 
    return 0;

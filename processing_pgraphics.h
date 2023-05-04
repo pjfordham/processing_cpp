@@ -1,10 +1,7 @@
 #ifndef PROCESSING_PGRAPHICS_H
 #define PROCESSING_PGRAPHICS_H
 
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
+#include <SDL2/SDL.h>
 
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
@@ -145,18 +142,6 @@ public:
    }
 
    PGraphics(int z_width, int z_height, int mode) : glc( z_width, z_height ) {
-      // Initialize GLEW
-      glewExperimental = true; // Needed for core profile
-      if (glewInit() != GLEW_OK) {
-         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
-         abort();
-      }
-
-      if (!glewIsSupported("GL_EXT_framebuffer_object")) {
-         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
-         abort();
-      }
-
       width = z_width;
       height = z_height;
 
@@ -183,7 +168,7 @@ public:
          c /= 10;
          pos = fileName.rfind('#', pos - 1);
       }
-      PImage::saveFrame( glc.localFboID, width, height, fileName );
+      glc.saveFrame( fileName );
       counter++;
    }
 
@@ -351,12 +336,12 @@ public:
 
    void text(std::string text, float x, float y, float twidth = -1, float theight = -1) {
       SDL_Surface *surface = currentFont.render_text(text, fill_color);
+
       twidth = surface->w;
       theight = surface->h;
 
-      PTexture texture = glc.tm.getFreeBlock(twidth,theight);
-      glTextureSubImage3D(glc.bufferID, 0, texture.left, texture.top, texture.layer, twidth, theight, 1,
-                          GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+      PTexture texture = glc.getTexture( surface );
+
       SDL_FreeSurface(surface);
 
       // this works well enough for the Letters.cc example but it's not really general
@@ -419,11 +404,7 @@ public:
    }
 
    void texture(PImage &img) {
-      currentTexture = glc.tm.getFreeBlock(img.surface->w, img.surface->h);
-      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
-                      currentTexture.left, currentTexture.top, currentTexture.layer,
-                      img.surface->w, img.surface->h, 1,
-                      GL_RGBA, GL_UNSIGNED_BYTE, img.surface->pixels);
+      currentTexture = glc.getTexture( img );
    }
 
    void imageMode(int iMode) {
@@ -616,13 +597,7 @@ public:
       float right = x + gfx.width;
       float top = y;
       float bottom = y + gfx.height;
-      PTexture texture = glc.tm.getFreeBlock(gfx.width, gfx.height);
-
-      glBindTexture(GL_TEXTURE_2D_ARRAY, gfx.glc.bufferID);
-      glCopyImageSubData(gfx.glc.bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1,
-                         glc.bufferID, GL_TEXTURE_2D_ARRAY, 0, texture.left, texture.top, texture.layer,
-                         gfx.width, gfx.height, 1);
-      glBindTexture(GL_TEXTURE_2D_ARRAY, glc.bufferID);
+      PTexture texture = glc.getTexture( gfx.glc );
       drawTexturedQuad( {left, top},
                         {right,top},
                         {right, bottom},
@@ -644,11 +619,7 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      PTexture texture = glc.tm.getFreeBlock(pimage.surface->w, pimage.surface->h);
-      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
-                      texture.left, texture.top, texture.layer,
-                      pimage.surface->w, pimage.surface->h, 1,
-                      GL_RGBA, GL_UNSIGNED_BYTE, pimage.surface->pixels);
+      PTexture texture = glc.getTexture( pimage );
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
                        texture, tint_color);
    }
@@ -670,16 +641,11 @@ public:
    }
 
    void loadPixels() {
-      pixels.resize(width*height);
-      // Read the pixel data from the framebuffer into the array
-      glGetTextureSubImage(glc.bufferID, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.size(), pixels.data());
+      glc.loadPixels( pixels );
    }
 
    void updatePixels() {
-      // Write the pixel data to the framebuffer
-      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-      // _pixels.clear();
-      // pixels = NULL;
+      glc.updatePixels( pixels );
    }
 
    // ----
@@ -1325,66 +1291,15 @@ public:
    void beginDraw() {}
    void endDraw() {}
 
-   void draw_main() {
+   void commit_draw() {
       flush();
-      // Reset to default view settings to draw next frame and
-      // draw the texture from the PGraphics flat.
-      noLights();
-      move_matrix = Eigen::Matrix4f::Identity();
-
-      Eigen::Matrix4f new_projection_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
-
-      // For drawing the main screen we need to flip the texture and remove any tint
-      std::vector<PVector> vertices{
-         {0.0f,       0.0f+height},
-         {0.0f+width ,0.0f+height},
-         {0.0f+width, 0.0f},
-         {0.0f,       0.0f}};
-
-      float z = 1.0;
-      std::vector<PVector> coords {
-         { 0.0f, 0.0f, z},
-         { 1.0f, 0.0f, z},
-         { 1.0f, 1.0f, z},
-         { 0.0f, 1.0f, z},
-      };
-      std::vector<PVector> normals;
-
-      std::vector<unsigned short>  indices = {
-         0,1,2, 0,2,3,
-      };
-      std::vector<float> colors {
-         1.0f, 1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f, 1.0f,
-      };
-
-      std::vector<int> mindex(vertices.size(), 0);
-
-      glc.loadDirectionLightColor( xdirectionLightColor.data() );
-      glc.loadDirectionLightVector( xdirectionLightVector.data() );
-      glc.loadAmbientLight( xambientLight.data() );
-      glc.loadMoveMatrix( move_matrix.data() );
-      glc.loadProjectionMatrix( new_projection_matrix.data());
-      glc.loadViewMatrix( move_matrix.data());
-
-      // bind the real frame buffer
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      // Clear the color and depth buffers
-      glClearColor(0.0, 0.0, 0.0, 1.0);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-      glc.drawTrianglesDirect( vertices, normals, coords, colors, mindex, indices,
-                               indices.size());
-      glc.clearDepthBuffer();
-    }
+      glc.draw_main();
+   }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
       PGraphics pg{ width, height, mode };
       pg.view_matrix = view_matrix;
       pg.projection_matrix = projection_matrix;
-      pg.glc.init(width,height);
       return pg;
    }
 

@@ -1,11 +1,6 @@
 #ifndef PROCESSING_PFONT_H
 #define PROCESSING_PFONT_H
 
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <map>

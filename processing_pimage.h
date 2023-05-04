@@ -1,11 +1,6 @@
 #ifndef PROCESSING_PIMAGE_H
 #define PROCESSING_PIMAGE_H
 
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
@@ -22,7 +17,6 @@ public:
    int height;
    unsigned int *pixels;
    SDL_Surface *surface;
-   GLuint textureID = 0;
 
    operator bool() const {
       return surface;
@@ -48,8 +42,6 @@ public:
       if (surface) {
          SDL_FreeSurface(surface);
       }
-      if (textureID)
-         glDeleteTextures(1, &textureID);
    }
 
    PImage(const PImage &x){
@@ -64,7 +56,6 @@ public:
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(pixels, x.pixels);
-      std::swap(textureID, x.textureID);
    }
 
    PImage& operator=(const PImage&) = delete;
@@ -73,7 +64,6 @@ public:
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(pixels, x.pixels);
-      std::swap(textureID, x.textureID);
       return *this;
    }
 
@@ -129,27 +119,6 @@ public:
             pixels[i] = y;
          }
       }
-   }
-
-   static void saveFrame(const GLuint framebufferID, int width, int height, const std::string& fileName) {
-
-      // Bind the framebuffer and get its dimensions
-      glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);
-
-      // Create SDL surface from framebuffer data
-      SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
-      glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
-
-      // Flip the image vertically
-      SDL_Surface* flippedSurface = SDL_CreateRGBSurface(0, width, height, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
-      SDL_BlitSurface(surface, nullptr, flippedSurface, nullptr);
-      SDL_FreeSurface(surface);
-
-      // Save the image as PNG
-      IMG_SavePNG(flippedSurface, fileName.c_str());
-
-      // Cleanup
-      SDL_FreeSurface(flippedSurface);
    }
 
 };
