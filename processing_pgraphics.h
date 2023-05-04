@@ -1260,10 +1260,10 @@ public:
       if ( fillMode == PIE ) {
          shape.vertex(x,y);
       }
-      for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-         shape.vertex( ellipse_point( {x,y}, i, start, stop, width, height ) );
+      for(float i = start; i < stop; i = i + (TWO_PI / NUMBER_OF_VERTICES) ) {
+         shape.vertex( { x + width * sin(-i + HALF_PI), y + height * cos(-i + HALF_PI) } );
       }
-      shape.vertex( ellipse_point( {x,y}, 32, start, stop, width, height ) );
+      shape.vertex( { x + width * sin(-stop + HALF_PI), y + height * cos(-stop + HALF_PI) } );
       shape.endShape(strokeMode);
       return shape;
    }
