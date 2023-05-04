@@ -452,7 +452,7 @@ public:
             flush(projection, view, directionLightColor, directionLightVector, ambientLight);
          }
       }
-      if ( move.size() == 8) {
+      if ( move.size() == 16) {
          flush(projection, view, directionLightColor, directionLightVector, ambientLight);
       }
       if ( move.size() > 0 && move_matrix == move.back() ) {

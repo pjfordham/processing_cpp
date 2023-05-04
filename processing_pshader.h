@@ -153,7 +153,7 @@ const char *PShader::defaultVertexShader = R"glsl(
       uniform vec3 directionLightVector;
       uniform mat4 Pmatrix;
       uniform mat4 Vmatrix;
-      uniform mat4 Mmatrix[8];
+      uniform mat4 Mmatrix[16];
       out vec3 vLighting;
       out vec3 vTexture;
       out vec4 vColor;
