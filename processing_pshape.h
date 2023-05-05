@@ -7,23 +7,22 @@
 #include "processing_enum.h"
 #include "processing_texture_manager.h"
 
-extern int width;
-extern int height;
-
 class PShape {
+   PVector n = { 0.0, 0.0, 1.0 };
+
 public:
 
+   PTexture texture_;
    Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
+
    std::vector<PVector> vertices;
    std::vector<PVector> normals;
-   std::vector<PShape> children;
    std::vector<unsigned short> indices;
    std::vector<PVector> coords;
+   std::vector<PShape> children;
 
    int style = POLYGON;
    int type = OPEN;
-
-   PTexture texture_;
 
    PShape(const PShape& other) = delete;
    PShape& operator=(const PShape& other) = delete;
@@ -32,15 +31,7 @@ public:
    }
 
    PShape(PShape&& other) noexcept {
-      std::swap(texture_, other.texture_);
-      std::swap(normals, other.normals);
-      std::swap(coords, other.coords);
-      std::swap(vertices, other.vertices);
-      std::swap(indices, other.indices);
-      std::swap(children, other.children);
-      std::swap(style, other.style);
-      std::swap(type, other.type);
-      std::swap(shape_matrix, other.shape_matrix);
+      *this = std::move(other);
    }
 
    PShape& operator=(PShape&& other) noexcept {
@@ -61,8 +52,10 @@ public:
 
    void clear() {
       vertices.clear();
-      coords.clear();
+      normals.clear();
       indices.clear();
+      coords.clear();
+      children.clear();
    }
 
    void translate(float x, float y, float z=0) {
@@ -121,8 +114,8 @@ public:
    void vertex(PVector p, PVector t) {
       vertices.push_back(p);
       coords.push_back( {
-            map(t.x,0,1.0,(1.0*texture_.left)/width,(1.0*texture_.right)/width),
-            map(t.y,0,1.0,(1.0*texture_.top)/height,(1.0*texture_.bottom)/height),
+            map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
+            map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
         (float)texture_.layer});
       if ( coords.back().x > 1.0 || coords.back().y > 1.0)
          abort();

@@ -154,7 +154,7 @@ void size(int _width, int _height, int mode = P2D) {
    // Create a window
    width = _width;
    height = _height;
-   g = PGraphics(width, height, mode);
+   g = PGraphics(width, height, mode, 2.0);
 }
 
 

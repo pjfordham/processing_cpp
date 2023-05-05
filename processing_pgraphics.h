@@ -33,6 +33,7 @@ public:
 
    int width;
    int height;
+   float aaFactor;
 
    PFont currentFont;
    int xTextAlign = LEFT;
@@ -57,46 +58,12 @@ public:
 
    PGraphics(const PGraphics &x) = delete;
 
-   PGraphics(PGraphics &&x) : glc (x.width, x.height) {
-      x.flush();
-      std::swap(currentTexture, x.currentTexture);
-      std::swap(glc, x.glc);
-
-      std::swap(stroke_color, x.stroke_color);
-      std::swap(fill_color, x.fill_color);
-      std::swap(tint_color, x.tint_color);
-
-      std::swap(stroke_weight, x.stroke_weight);
-      std::swap(line_end_cap, x.line_end_cap);
-      std::swap(ellipse_mode, x.ellipse_mode);
-      std::swap(rect_mode, x.rect_mode);
-      std::swap(image_mode, x.image_mode);
-
-      std::swap(width, x.width);
-      std::swap(height, x.height);
-
-      std::swap(currentFont, x.currentFont);
-      std::swap(xTextAlign, x.xTextAlign);
-      std::swap(yTextAlign, x.yTextAlign);
-      std::swap(xsphere_ures, x.xsphere_ures);
-      std::swap(xsphere_vres, x.xsphere_vres);
-      std::swap(xSmoothing, x.xSmoothing);
-      std::swap(_shape, x._shape);
-      std::swap(pixels, x.pixels);
-
-      std::swap(xambientLight, x.xambientLight);
-      std::swap(xdirectionLightColor, x.xdirectionLightColor);
-      std::swap(xdirectionLightVector, x.xdirectionLightVector);
-      std::swap(projection_matrix, x.projection_matrix);
-      std::swap(view_matrix, x.view_matrix);
-      std::swap(matrix_stack, x.matrix_stack);
-      std::swap(move_matrix, x.move_matrix);
+   PGraphics(PGraphics &&x) noexcept {
+      *this = std::move(x);
    }
 
    PGraphics& operator=(const PGraphics&) = delete;
-   PGraphics& operator=(PGraphics&&x){
-      x.flush();
-      flush();
+   PGraphics& operator=(PGraphics&&x) noexcept {
       std::swap(currentTexture, x.currentTexture);
       std::swap(glc, x.glc);
 
@@ -112,12 +79,15 @@ public:
 
       std::swap(width, x.width);
       std::swap(height, x.height);
+      std::swap(aaFactor, x.aaFactor);
 
       std::swap(currentFont, x.currentFont);
       std::swap(xTextAlign, x.xTextAlign);
       std::swap(yTextAlign, x.yTextAlign);
+
       std::swap(xsphere_ures, x.xsphere_ures);
       std::swap(xsphere_vres, x.xsphere_vres);
+
       std::swap(xSmoothing, x.xSmoothing);
       std::swap(_shape, x._shape);
       std::swap(pixels, x.pixels);
@@ -128,27 +98,27 @@ public:
 
       std::swap(projection_matrix, x.projection_matrix);
       std::swap(view_matrix, x.view_matrix);
+      std::swap(move_matrix, x.move_matrix);
 
       std::swap(matrix_stack, x.matrix_stack);
-      std::swap(move_matrix, x.move_matrix);
 
       return *this;
    }
 
-   PGraphics() : glc( 0,0 ) {
+   PGraphics() {
    }
 
    ~PGraphics() {
    }
 
-   PGraphics(int z_width, int z_height, int mode) : glc( z_width, z_height ) {
-      width = z_width;
-      height = z_height;
+   PGraphics(int width, int height, int mode, float aaFactor) : glc( width, height, aaFactor ) {
+      this->width = width;
+      this->height = height;
+      this->aaFactor = aaFactor;
 
       move_matrix = Eigen::Matrix4f::Identity();
       view_matrix = Eigen::Matrix4f::Identity();
       projection_matrix = Eigen::Matrix4f::Identity();
-
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -168,6 +138,7 @@ public:
          c /= 10;
          pos = fileName.rfind('#', pos - 1);
       }
+      flush();
       glc.saveFrame( fileName );
       counter++;
    }
@@ -641,10 +612,12 @@ public:
    }
 
    void loadPixels() {
+      flush();
       glc.loadPixels( pixels );
    }
 
    void updatePixels() {
+      flush();
       glc.updatePixels( pixels );
    }
 
@@ -969,7 +942,7 @@ public:
             shape(child,0,0);
          }
       } else {
-         if (currentTexture.layer != 0) {
+         if (pshape.texture_.layer != 0) {
             if (tint_color.a != 0) {
                shape_fill(pshape,tint_color);
             }
@@ -1297,7 +1270,7 @@ public:
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
-      PGraphics pg{ width, height, mode };
+      PGraphics pg{ width, height, mode, aaFactor };
       pg.view_matrix = view_matrix;
       pg.projection_matrix = projection_matrix;
       return pg;

@@ -16,63 +16,132 @@
 #include "processing_color.h"
 #include "processing_texture_manager.h"
 
+class PFrame {
+public:
+   GLuint id = 0;
+   int width = 0;
+   int height = 0;
+   GLuint depthBufferID = 0;
+   GLuint colorBufferID = 0;
+
+   PFrame() {
+   }
+
+   PFrame(int width_, int height_)  : width(width_), height(height_) {
+      glGenFramebuffers(1, &id);
+      bind();
+
+      glGenRenderbuffers(1, &depthBufferID);
+      glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, this->width, this->height);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+
+      glGenRenderbuffers(1, &colorBufferID);
+      glBindRenderbuffer(GL_RENDERBUFFER, colorBufferID);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, this->width, this->height);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colorBufferID);
+
+      auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+      if (err != GL_FRAMEBUFFER_COMPLETE) {
+         fprintf(stderr,"Z %d\n",err);
+      }
+   }
+
+   PFrame( int width_, int height_, GLuint colorBufferID, int layer ) : width(width_), height(height_) {
+      glGenFramebuffers(1, &id);
+      bind();
+
+      glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorBufferID, 0, layer);
+      glGenRenderbuffers(1, &depthBufferID);
+      glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, this->width, this->height);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+
+      auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+      if (err != GL_FRAMEBUFFER_COMPLETE) {
+         fprintf(stderr,"%d\n",err);
+      }
+   }
+
+   PFrame(const PFrame &x) = delete;
+
+   PFrame(PFrame &&x) noexcept {
+      *this = std::move(x);
+   }
+
+   PFrame& operator=(const PFrame&) = delete;
+
+   PFrame& operator=(PFrame&&x) noexcept {
+      std::swap(id,x.id);
+      std::swap(depthBufferID,x.depthBufferID);
+      std::swap(colorBufferID,x.colorBufferID);
+      std::swap(width,x.width);
+      std::swap(height,x.height);
+      return *this;
+   }
+
+    ~PFrame() {
+      if (id)
+         glDeleteFramebuffers(1, &id);
+      if (depthBufferID)
+         glDeleteRenderbuffers(1, &depthBufferID);
+      if (colorBufferID)
+         glDeleteRenderbuffers(1, &colorBufferID);
+   }
+
+   void bind() {
+      // Bind the framebuffer and get its dimensions
+      glBindFramebuffer(GL_FRAMEBUFFER, id);
+      glViewport(0, 0, width, height);
+   }
+};
 
 class gl_context {
 
-   class GL_FLOAT_buffer {
-      GLuint buffer_id = 0;
-      GLuint attribId;
-   public:
-      GL_FLOAT_buffer(GLuint buffer_id, GLuint programID, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
-         if (size > 0) {
-            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-            glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STREAM_DRAW);
-            glVertexAttribPointer(
-               attribId,                         // attribute
-               count,                                // size
-               GL_FLOAT,                         // type
-               GL_FALSE,                         // normalized?
-               stride,                           // stride
-               offset                     // array buffer offset
-               );
-            glEnableVertexAttribArray(attribId);
-         }
+   void GL_FLOAT_buffer(GLuint buffer_id, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
+      if (size > 0) {
+         glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+         glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STREAM_DRAW);
+         glVertexAttribPointer(
+            attribId, // attribute
+            count,    // size
+            GL_FLOAT, // type
+            GL_FALSE, // normalized
+            stride,   // stride
+            offset    // array buffer offset
+            );
+         glEnableVertexAttribArray(attribId);
       }
-      ~GL_FLOAT_buffer() {
+   }
+
+   void GL_INT_buffer(GLuint buffer_id, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
+      if (size > 0) {
+         glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+         glBufferData(GL_ARRAY_BUFFER, size * sizeof(int), data, GL_STREAM_DRAW);
+         glVertexAttribIPointer(
+            attribId, // attribute
+            count,    // size
+            GL_INT,   // type
+            stride,   // stride
+            offset    // array buffer offset
+            );
+         glEnableVertexAttribArray(attribId);
       }
-   };
-   class GL_INT_buffer {
-      GLuint buffer_id = 0;
-      GLuint attribId;
-   public:
-      GL_INT_buffer(GLuint buffer_id, GLuint programID, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
-         if (size > 0) {
-            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-            glBufferData(GL_ARRAY_BUFFER, size * sizeof(int), data, GL_STREAM_DRAW);
-            glVertexAttribIPointer(
-               attribId,                         // attribute
-               count,                                // size
-               GL_INT,                         // type
-               stride,                           // stride
-               offset                     // array buffer offset
-               );
-            glEnableVertexAttribArray(attribId);
-         }
-      }
-      ~GL_INT_buffer() {
-      }
-   };
+   }
+
+   const int CAPACITY = 65536;
 
    SDL_Window *window = NULL;
    SDL_Renderer *renderer =NULL;
    SDL_GLContext glContext = NULL;
 
-   const int CAPACITY = 65536;
    int currentM;
    int flushes = 0;
 
    int width;
    int height;
+   int window_width;
+   int window_height;
    TextureManager tm;
    std::vector<Eigen::Matrix4f> move;
    std::vector<PVector> vbuffer;
@@ -84,8 +153,10 @@ class gl_context {
 
    GLuint bufferID;
 
-   GLuint localFboID;
-   GLuint depthBufferID;
+   PFrame localFrame;
+   PFrame windowFrame;
+
+   float aaFactor;
 
    GLuint index_buffer_id;
    GLuint vertex_buffer_id;
@@ -106,19 +177,32 @@ class gl_context {
    GLuint AmbientLight;
    GLuint DirectionLightColor;
    GLuint DirectionLightVector;
-   GLuint programID;
 
 public:
-   gl_context(int width, int height) : tm(width, height) {
-      this->width = width;
-      this->height = height;
-      localFboID = 0;
+   gl_context() : width(0), height(0) {
       bufferID = 0;
-      depthBufferID = 0;
+      index_buffer_id = 0;
+      vertex_buffer_id = 0;
+      coords_buffer_id = 0;
+      colors_buffer_id = 0;
+      tindex_buffer_id = 0;
+      normal_buffer_id = 0;
+   }
+
+   gl_context(int width, int height, float aaFactor) : tm(width * aaFactor, height * aaFactor) {
+      this->aaFactor = aaFactor;
+      this->width = width * aaFactor;
+      this->height = height * aaFactor;
+      this->window_width = width;
+      this->window_height = height;
+
+      bufferID = 0;
+
+      windowFrame.id = 0;
+      windowFrame.width = window_width;
+      windowFrame.height = window_height;
 
       bool useMainFramebuffer = false;
-      if (width == 0 && height == 0)
-         return;
       vbuffer.reserve(CAPACITY);
       nbuffer.reserve(CAPACITY);
       cbuffer.reserve(CAPACITY);
@@ -130,8 +214,8 @@ public:
       window = SDL_CreateWindow("Proce++ing",
                                 SDL_WINDOWPOS_UNDEFINED,
                                 SDL_WINDOWPOS_UNDEFINED,
-                                width,
-                                height,
+                                window_width,
+                                window_height,
                                 SDL_WINDOW_OPENGL);
 
       if (window == nullptr) {
@@ -179,7 +263,7 @@ public:
       // create the texture array
       glGenTextures(1, &bufferID);
       glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
-      glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, width, height, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+      glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, this->width, this->height, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
       // set texture parameters
       glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -187,26 +271,8 @@ public:
       glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
       glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-      if (useMainFramebuffer) {
-         // Use main framebuffer
-         localFboID = 0;
-      } else {
-         // Create a framebuffer object
-         glGenFramebuffers(1, &localFboID);
-         glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, bufferID, 0, 1);
-
-         glGenRenderbuffers(1, &depthBufferID);
-         glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-
-         // Attach the depth buffer to the framebuffer object
-         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
-//         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, bufferID, 0, 2);
-         auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-         if (err != GL_FRAMEBUFFER_COMPLETE) {
-            fprintf(stderr,"%d\n",err);
-         }
+      if (!useMainFramebuffer) {
+         localFrame = PFrame( this->width, this->height, bufferID, 1 );
       }
 
       // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
@@ -218,63 +284,27 @@ public:
 
       glDepthFunc(GL_LEQUAL);
       glEnable(GL_DEPTH_TEST);
-
    }
    gl_context(const gl_context &x) = delete;
 
-   gl_context(gl_context &&x) {
-      std::swap(window, x.window);
-      std::swap(renderer, x.renderer);
-      std::swap(glContext, x.glContext);
-
-      std::swap(width,x.width);
-      std::swap(height,x.height);
-      std::swap(currentM,x.currentM);
-      std::swap(flushes,x.flushes);
-      std::swap(tm,x.tm);
-      std::swap(move,x.move);
-      std::swap(vbuffer,x.vbuffer);
-      std::swap(nbuffer,x.nbuffer);
-      std::swap(cbuffer,x.cbuffer);
-      std::swap(xbuffer,x.xbuffer);
-      std::swap(tbuffer,x.tbuffer);
-      std::swap(ibuffer,x.ibuffer);
-      std::swap(bufferID,x.bufferID);
-      std::swap(localFboID,x.localFboID);
-      std::swap(depthBufferID,x.depthBufferID);
-      std::swap(defaultShader,x.defaultShader);
-      std::swap(Mmatrix,x.Mmatrix);
-      std::swap(Pmatrix,x.Pmatrix);
-      std::swap(Vmatrix,x.Vmatrix);
-      std::swap(uSampler,x.uSampler);
-      std::swap(AmbientLight,x.AmbientLight);
-      std::swap(DirectionLightColor,x.DirectionLightColor);
-      std::swap(DirectionLightVector,x.DirectionLightVector);
-      std::swap(programID,x.programID);
-      std::swap(index_buffer_id,x.index_buffer_id);
-      std::swap(vertex_buffer_id,x.vertex_buffer_id);
-      std::swap(coords_buffer_id,x.coords_buffer_id);
-      std::swap(colors_buffer_id,x.colors_buffer_id);
-      std::swap(tindex_buffer_id,x.tindex_buffer_id);
-      std::swap(normal_buffer_id,x.normal_buffer_id);
-      std::swap(vertex_attrib_id,x.vertex_attrib_id);
-      std::swap(coords_attrib_id,x.coords_attrib_id);
-      std::swap(colors_attrib_id,x.colors_attrib_id);
-      std::swap(tindex_attrib_id,x.tindex_attrib_id);
-      std::swap(normal_attrib_id,x.normal_attrib_id);
+   gl_context(gl_context &&x) noexcept : gl_context() {
+      *this = std::move(x);
    }
 
    gl_context& operator=(const gl_context&) = delete;
 
-   gl_context& operator=(gl_context&&x){
+   gl_context& operator=(gl_context&&x) noexcept {
       std::swap(window, x.window);
       std::swap(renderer, x.renderer);
       std::swap(glContext, x.glContext);
 
-      std::swap(width,x.width);
-      std::swap(height,x.height);
       std::swap(currentM,x.currentM);
       std::swap(flushes,x.flushes);
+
+      std::swap(width,x.width);
+      std::swap(height,x.height);
+      std::swap(window_width,x.window_width);
+      std::swap(window_height,x.window_height);
       std::swap(tm,x.tm);
       std::swap(move,x.move);
       std::swap(vbuffer,x.vbuffer);
@@ -283,18 +313,14 @@ public:
       std::swap(xbuffer,x.xbuffer);
       std::swap(tbuffer,x.tbuffer);
       std::swap(ibuffer,x.ibuffer);
+
       std::swap(bufferID,x.bufferID);
-      std::swap(localFboID,x.localFboID);
-      std::swap(depthBufferID,x.depthBufferID);
-      std::swap(defaultShader,x.defaultShader);
-      std::swap(Mmatrix,x.Mmatrix);
-      std::swap(Pmatrix,x.Pmatrix);
-      std::swap(Vmatrix,x.Vmatrix);
-      std::swap(uSampler,x.uSampler);
-      std::swap(AmbientLight,x.AmbientLight);
-      std::swap(DirectionLightColor,x.DirectionLightColor);
-      std::swap(DirectionLightVector,x.DirectionLightVector);
-      std::swap(programID,x.programID);
+
+      std::swap(localFrame,x.localFrame);
+      std::swap(windowFrame,x.windowFrame);
+
+      std::swap(aaFactor,x.aaFactor);
+
       std::swap(index_buffer_id,x.index_buffer_id);
       std::swap(vertex_buffer_id,x.vertex_buffer_id);
       std::swap(coords_buffer_id,x.coords_buffer_id);
@@ -306,35 +332,49 @@ public:
       std::swap(colors_attrib_id,x.colors_attrib_id);
       std::swap(tindex_attrib_id,x.tindex_attrib_id);
       std::swap(normal_attrib_id,x.normal_attrib_id);
+      std::swap(defaultShader,x.defaultShader);
+      std::swap(Mmatrix,x.Mmatrix);
+      std::swap(Pmatrix,x.Pmatrix);
+      std::swap(Vmatrix,x.Vmatrix);
+      std::swap(uSampler,x.uSampler);
+      std::swap(AmbientLight,x.AmbientLight);
+      std::swap(DirectionLightColor,x.DirectionLightColor);
+      std::swap(DirectionLightVector,x.DirectionLightVector);
+
       return *this;
    }
 
    ~gl_context() {
-      if (localFboID)
-         glDeleteFramebuffers(1, &localFboID);
       if (bufferID)
          glDeleteTextures(1, &bufferID);
-      if (depthBufferID)
-         glDeleteRenderbuffers(1, &depthBufferID);
       if (glContext)
          SDL_GL_DeleteContext(glContext);
       if (window)
          SDL_DestroyWindow(window);
+      if (index_buffer_id)
+         glDeleteBuffers(1, &index_buffer_id);
+      if (vertex_buffer_id)
+         glDeleteBuffers(1, &vertex_buffer_id);
+      if (coords_buffer_id)
+         glDeleteBuffers(1, &coords_buffer_id);
+      if (colors_buffer_id)
+         glDeleteBuffers(1, &colors_buffer_id);
+      if (tindex_buffer_id)
+         glDeleteBuffers(1, &tindex_buffer_id);
+      if (normal_buffer_id)
+         glDeleteBuffers(1, &normal_buffer_id);
    }
 
    void saveFrame(const std::string& fileName) {
 
-      // Bind the framebuffer and get its dimensions
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+      PFrame frame(windowFrame.width, windowFrame.height);
+
+      draw_texture_over_framebuffer(PTexture {1,0,0,width, height, width, height}, frame);
 
       // Create SDL surface from framebuffer data
-      SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
-      // glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
-      glGetTextureSubImage(bufferID,
-                           0,
-                           0, 0, 0,
-                           width, height, 1,
-                           GL_RGBA, GL_UNSIGNED_BYTE, width * height, surface->pixels);
+      SDL_Surface* surface = SDL_CreateRGBSurface(0, windowFrame.width, windowFrame.height,
+                                                  24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
+      glReadPixels(0, 0, windowFrame.width, windowFrame.height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
 
       // Save the image as PNG
       IMG_SavePNG(surface, fileName.c_str());
@@ -344,33 +384,35 @@ public:
    }
 
    void loadPixels( std::vector<unsigned int> &pixels ) {
-      pixels.resize(width*height);
-      // Read the pixel data from the framebuffer into the array
-      glGetTextureSubImage(bufferID,
-                           0,
-                           0, 0, 1,
-                           width, height, 1,
-                           GL_RGBA, GL_UNSIGNED_BYTE, width * height, pixels.data());
+       PFrame frame(windowFrame.width, windowFrame.height);
+
+       draw_texture_over_framebuffer(PTexture {1,0,0,width, height, width, height}, frame);
+
+       pixels.resize(width*height);
+       glReadPixels(0, 0, windowFrame.width, windowFrame.height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
    }
 
+   // Draw our pixels into a new texture and call drawTexturedQuad over whole screen
    void updatePixels( std::vector<unsigned int> &pixels ) {
-      // Write the pixel data to the framebuffer
-      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-      // _pixels.clear();
-      // pixels = NULL;
+      PTexture texture = getTexture(window_width, window_height, pixels.data());
+      draw_texture_over_framebuffer(texture, localFrame);
+   }
+
+   PTexture getTexture( int width, int height, void *pixels ) {
+      PTexture texture = tm.getFreeBlock(width, height);
+      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                      texture.left, texture.top, texture.layer,
+                      width, height, 1,
+                      GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+      return texture;
+   }
+
+   PTexture getTexture( SDL_Surface *surface ) {
+      return getTexture( surface->w, surface->h, surface->pixels );
    }
 
    PTexture getTexture( PImage &pimage ) {
       return getTexture( pimage.surface );
-   }
-
-   PTexture getTexture( SDL_Surface  *surface ) {
-      PTexture texture = tm.getFreeBlock(surface->w, surface->h);
-      glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
-                      texture.left, texture.top, texture.layer,
-                      surface->w, surface->h, 1,
-                      GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-      return texture;
    }
 
    PTexture getTexture( gl_context &source ) {
@@ -383,42 +425,39 @@ public:
       return texture;
    }
 
-   void clear(GLuint fb, float r, float g, float b, float a) {
-      glBindFramebuffer(GL_FRAMEBUFFER, fb);
+   void clear(PFrame &fb, float r, float g, float b, float a) {
+      fb.bind();
       glClearColor(r, g, b, a);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    }
 
    void clear( float r, float g, float b, float a) {
-      clear( localFboID, r, g, b, a);
+      clear( localFrame, r, g, b, a);
    }
 
-   void clearDepthBuffer(GLuint fb) {
-      glBindFramebuffer(GL_FRAMEBUFFER, fb);
-      // Clear the depth buffer but not what was drawn for the next frame
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
+   void clearDepthBuffer(PFrame &fb) {
+      fb.bind();
       glClear(GL_DEPTH_BUFFER_BIT);
    }
 
    void clearDepthBuffer() {
-      clearDepthBuffer( localFboID );
+      clearDepthBuffer( localFrame );
    }
 
    void shader(PShader &shader, int kind = TRIANGLES) {
-      vertex_attrib_id = glGetAttribLocation(shader.ProgramID, "position");
-      normal_attrib_id = glGetAttribLocation(shader.ProgramID, "normal");
-      coords_attrib_id = glGetAttribLocation(shader.ProgramID, "coords");
-      colors_attrib_id = glGetAttribLocation(shader.ProgramID, "colors");
-      tindex_attrib_id = glGetAttribLocation(shader.ProgramID, "mindex");
-      Mmatrix = glGetUniformLocation(shader.ProgramID, "Mmatrix");
-      Pmatrix = glGetUniformLocation(shader.ProgramID, "Pmatrix");
-      Vmatrix = glGetUniformLocation(shader.ProgramID, "Vmatrix");
-      AmbientLight = glGetUniformLocation(shader.ProgramID, "ambientLight");
-      DirectionLightColor = glGetUniformLocation(shader.ProgramID, "directionLightColor");
-      DirectionLightVector = glGetUniformLocation(shader.ProgramID, "directionLightVector");
-      uSampler = glGetUniformLocation(shader.ProgramID, "myTextures");
-      glUseProgram(shader.ProgramID);
-      programID = shader.ProgramID;
+      vertex_attrib_id = shader.getAttribLocation("position");
+      normal_attrib_id = shader.getAttribLocation("normal");
+      coords_attrib_id = shader.getAttribLocation("coords");
+      colors_attrib_id = shader.getAttribLocation("colors");
+      tindex_attrib_id = shader.getAttribLocation("mindex");
+      Mmatrix = shader.getUniformLocation("Mmatrix");
+      Pmatrix = shader.getUniformLocation("Pmatrix");
+      Vmatrix = shader.getUniformLocation("Vmatrix");
+      AmbientLight = shader.getUniformLocation("ambientLight");
+      DirectionLightColor = shader.getUniformLocation("directionLightColor");
+      DirectionLightVector = shader.getUniformLocation("directionLightVector");
+      uSampler = shader.getUniformLocation("myTextures");
+      shader.useProgram();
       shader.set_uniforms();
    }
 
@@ -468,40 +507,42 @@ public:
 
    void flush( float *projection, float *view,
                float *directionLightColor, float *directionLightVector, float *ambientLight ) {
+
       flushes++;
       if (flushes > 1000) abort();
-      // Push back array of Ms
-      if (vbuffer.size() == 0 ) return;
 
-      std::vector<float> movePack;
-      for (const auto& mat : move) {
-         for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-               movePack.push_back(mat(j, i));
+      if (vbuffer.size() != 0 ) {
+
+         // Push back array of Ms
+         std::vector<float> movePack;
+         for (const auto& mat : move) {
+            for (int i = 0; i < 4; i++) {
+               for (int j = 0; j < 4; j++) {
+                  movePack.push_back(mat(j, i));
+               }
             }
          }
+
+         loadMoveMatrix( movePack.data(), move.size() );
+         loadProjectionMatrix( projection );
+         loadViewMatrix( view );
+         loadDirectionLightColor( directionLightColor );
+         loadDirectionLightVector( directionLightVector );
+         loadAmbientLight( ambientLight );
+
+         drawTrianglesDirect( localFrame, vbuffer, nbuffer, cbuffer, xbuffer, tbuffer, ibuffer, ibuffer.size() );
+
+         vbuffer.clear();
+         nbuffer.clear();
+         cbuffer.clear();
+         ibuffer.clear();
+         tbuffer.clear();
+         xbuffer.clear();
       }
 
-      loadMoveMatrix( movePack.data(), move.size() );
-      loadProjectionMatrix( projection );
-      loadViewMatrix( view );
-      loadDirectionLightColor( directionLightColor );
-      loadDirectionLightVector( directionLightVector );
-      loadAmbientLight( ambientLight );
-
-      tm.clear();
       move.clear();
-
-      glBindFramebuffer(GL_FRAMEBUFFER, localFboID);
-      glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
-
-      drawTrianglesDirect( localFboID, vbuffer, nbuffer, cbuffer, xbuffer, tbuffer, ibuffer, ibuffer.size() );
-      vbuffer.clear();
-      nbuffer.clear();
-      cbuffer.clear();
-      ibuffer.clear();
-      tbuffer.clear();
-      xbuffer.clear();
+      tm.clear();
+      return;
    }
 
    void drawTriangles( const std::vector<PVector> &vertices,
@@ -530,7 +571,7 @@ public:
       }
    }
 
-   void drawTrianglesDirect( GLuint fb,
+   void drawTrianglesDirect( PFrame &fb,
                              const std::vector<PVector> &vertices,
                              const std::vector<PVector> &normals,
                              const std::vector<PVector> &coords,
@@ -539,22 +580,22 @@ public:
                              const std::vector<unsigned short> &indices,
                              int count ) {
 
-      glBindFramebuffer(GL_FRAMEBUFFER, fb);
+      fb.bind();
       // Create a vertex array object (VAO)
       GLuint VAO;
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
 
-      GL_FLOAT_buffer vertex( vertex_buffer_id, programID, vertices.data(), vertices.size() * 3,
-                              vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer normal( normal_buffer_id, programID, normals.data(),  normals.size() * 3,
-                              normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer coord(  coords_buffer_id, programID, coords.data(),   coords.size()  * 3,
-                              coords_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-      GL_FLOAT_buffer color(  colors_buffer_id, programID, colors.data(),   colors.size(),
-                              colors_attrib_id, 4, 0, 0);
-      GL_INT_buffer  mindex(  tindex_buffer_id, programID, tindex.data(),   tindex.size(),
-                              tindex_attrib_id, 1, 0, 0);
+      GL_FLOAT_buffer( vertex_buffer_id, vertices.data(), vertices.size() * 3,
+                       vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer( normal_buffer_id, normals.data(),  normals.size() * 3,
+                       normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer( coords_buffer_id, coords.data(),   coords.size()  * 3,
+                       coords_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
+      GL_FLOAT_buffer( colors_buffer_id, colors.data(),   colors.size(),
+                       colors_attrib_id, 4, 0, 0);
+      GL_INT_buffer( tindex_buffer_id, tindex.data(),   tindex.size(),
+                     tindex_attrib_id, 1, 0, 0);
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
@@ -567,7 +608,7 @@ public:
       glBindVertexArray(0);
    }
 
-   int getFlushCount() {
+   int getFlushCount() const {
       return flushes;
    }
 
@@ -608,15 +649,9 @@ public:
       shader( defaultShader );
    }
 
-   void draw_main() {
+   void draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb) {
 
-      // Already drawn directly to framebuffer so we don't need to do anything
-      if (localFboID == 0) {
-         SDL_GL_SwapWindow(window);
-         return;
-      }
-
-      // Reset to default view & lighting settings to draw buffered frame.
+     // Reset to default view & lighting settings to draw buffered frame.
       std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
       std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
       std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
@@ -640,10 +675,10 @@ public:
       float z = 1.0;
       // For drawing the main screen we need to flip the texture and remove any tint
       std::vector<PVector> coords {
-         { 0.0f, 1.0f, z},
-         { 1.0f, 1.0f, z},
-         { 1.0f, 0.0f, z},
-         { 0.0f, 0.0f, z},
+         { texture.nleft(),  texture.nbottom(), (float)texture.layer},
+         { texture.nright(), texture.nbottom(), (float)texture.layer},
+         { texture.nright(), texture.ntop(),    (float)texture.layer},
+         { texture.nleft(),  texture.ntop(),    (float)texture.layer},
       };
       std::vector<PVector> normals;
 
@@ -659,11 +694,17 @@ public:
 
       std::vector<int> mindex(vertices.size(), 0);
 
-      // Clear the color and depth buffers
-      clear( 0, 0.0, 0.0, 0.0, 1.0);
-      drawTrianglesDirect( 0, vertices, normals, coords, colors, mindex, indices,
+      clear( fb, 0.0, 0.0, 0.0, 1.0);
+      drawTrianglesDirect( fb, vertices, normals, coords, colors, mindex, indices,
                            indices.size());
-      clearDepthBuffer();
+   }
+
+   void draw_main() {
+      // Already drawn directly to framebuffer so we don't need to do anything
+      if (localFrame.id != 0) {
+         draw_texture_over_framebuffer(PTexture{1,0,0,width, height, width, height}, windowFrame);
+         clearDepthBuffer(windowFrame);
+      }
       SDL_GL_SwapWindow(window);
    }
 

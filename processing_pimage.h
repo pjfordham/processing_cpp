@@ -51,15 +51,12 @@ public:
       pixels = (Uint32 *)surface->pixels;
    }
 
-   PImage(PImage &&x) {
-      std::swap(surface, x.surface);
-      std::swap(width, x.width);
-      std::swap(height, x.height);
-      std::swap(pixels, x.pixels);
+   PImage(PImage &&x) noexcept : PImage() {
+      *this = std::move(x);
    }
 
    PImage& operator=(const PImage&) = delete;
-   PImage& operator=(PImage&&x){
+   PImage& operator=(PImage&&x) noexcept {
       std::swap(surface, x.surface);
       std::swap(width, x.width);
       std::swap(height, x.height);
@@ -75,7 +72,7 @@ public:
       }
    }
 
-   color get(int x, int y) {
+   color get(int x, int y) const {
       return { pixels[y * width + x], false };
    }
 
@@ -86,7 +83,7 @@ public:
       }
       // Clear the surface to black
       SDL_FillRect(surface, NULL, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
-      pixels =  (Uint32*)surface->pixels;
+      pixels = (Uint32*)surface->pixels;
    }
 
    PImage(SDL_Surface *surface_) {
@@ -96,14 +93,14 @@ public:
       }
       width = surface->w;
       height = surface->h;
-      pixels =  (Uint32*)surface->pixels;
+      pixels = (Uint32*)surface->pixels;
    }
 
    void loadPixels() {
-      pixels =  (Uint32*)surface->pixels;
+      pixels = (Uint32*)surface->pixels;
    }
 
-   int pixels_length() {
+   int pixels_length() const {
       return width * height;
    }
 

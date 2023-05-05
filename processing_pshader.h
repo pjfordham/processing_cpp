@@ -7,44 +7,47 @@
 #include <GL/glut.h>
 
 #include <vector>
-#include <tuple>
 #include <map>
 
 #include <fmt/core.h>
 #include "processing_enum.h"
 
 class PShader {
-public:
    static const char *defaultVertexShader;
    static const char *defaultFragmentShader;
 
+   std::map<GLuint, float> uniforms1f;
+   std::map<GLuint, std::array<float,2>> uniforms2fv;
+
    std::string vertexShader;
    std::string fragmentShader;
-   GLuint ProgramID;
+
+   GLuint programID;
+public:
 
    PShader(const PShader& other) = delete;
    PShader& operator=(const PShader& other) = delete;
 
-   PShader(PShader&& other) noexcept {
-      std::swap(vertexShader, other.vertexShader);
-      std::swap(fragmentShader, other.fragmentShader);
-      std::swap(ProgramID, other.ProgramID);
+   PShader(PShader&& other) noexcept : programID( 0 ) {
+      *this = std::move(other);
    }
 
    PShader& operator=(PShader&& other) noexcept {
+      std::swap(uniforms1f, other.uniforms1f);
+      std::swap(uniforms2fv, other.uniforms2fv);
       std::swap(vertexShader, other.vertexShader);
       std::swap(fragmentShader, other.fragmentShader);
-      std::swap(ProgramID, other.ProgramID);
+      std::swap(programID, other.programID);
       return *this;
    }
 
    ~PShader() {
-      if (ProgramID) {
-         glDeleteProgram(ProgramID);
+      if (programID) {
+         glDeleteProgram(programID);
       }
    }
 
-   GLuint compileShaders() {
+   void compileShaders() {
       // Create the shaders
       GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
       GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -80,31 +83,30 @@ public:
       }
 
       // Link the program
-      ProgramID = glCreateProgram();
-      glAttachShader(ProgramID, VertexShaderID);
-      glAttachShader(ProgramID, FragmentShaderID);
-      glLinkProgram(ProgramID);
+      programID = glCreateProgram();
+      glAttachShader(programID, VertexShaderID);
+      glAttachShader(programID, FragmentShaderID);
+      glLinkProgram(programID);
 
       // Check the program
-      glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
-      glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+      glGetProgramiv(programID, GL_LINK_STATUS, &Result);
+      glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &InfoLogLength);
       if ( InfoLogLength > 0 ){
          std::vector<char> ProgramErrorMessage(InfoLogLength+1);
-         glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+         glGetProgramInfoLog(programID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
          fmt::print("{}\n", &ProgramErrorMessage[0]);
       }
 
-      glDetachShader(ProgramID, VertexShaderID);
-      glDetachShader(ProgramID, FragmentShaderID);
+      glDetachShader(programID, VertexShaderID);
+      glDetachShader(programID, FragmentShaderID);
 
       glDeleteShader(VertexShaderID);
       glDeleteShader(FragmentShaderID);
-      return ProgramID;
    }
 
 public:
    PShader(GLuint parent, const char *vertSource, const char *fragSource) :
-      vertexShader( vertSource ) , fragmentShader( fragSource ), ProgramID( 0 ) {
+      vertexShader( vertSource ) , fragmentShader( fragSource ), programID( 0 ) {
    }
 
    PShader(GLuint parent, const char *fragSource) : PShader( 0, defaultVertexShader, fragSource ) {
@@ -116,9 +118,6 @@ public:
    PShader(GLuint parent) : PShader() {
    }
 
-   std::map<GLuint, float> uniforms1f;
-   std::map<GLuint, std::array<float,2>> uniforms2fv;
-
    void set_uniforms() {
       for (const auto& [id, value] : uniforms1f) {
          glUniform1f(id,value);
@@ -129,15 +128,28 @@ public:
    }
 
    void set(const char *uniform, float value) {
-      GLuint id = glGetUniformLocation(ProgramID, uniform);
+      GLuint id = glGetUniformLocation(programID, uniform);
       uniforms1f[id] = value;
    }
 
    void set(const char *uniform, float v1, float v2) {
       std::array<float,2> vec = {v1,v2};
-      GLuint id = glGetUniformLocation(ProgramID, uniform);
+      GLuint id = glGetUniformLocation(programID, uniform);
       uniforms2fv[id] = vec;
    }
+
+   GLuint getAttribLocation(const char *attribute) {
+      return glGetAttribLocation(programID, attribute);;
+   }
+
+   GLuint getUniformLocation(const char *uniform) {
+      return glGetUniformLocation(programID, uniform);
+   }
+
+   void useProgram() {
+      glUseProgram(programID);
+   }
+
 };
 
 
