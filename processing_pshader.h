@@ -165,6 +165,7 @@ const char *PShader::defaultVertexShader = R"glsl(
           vec3 Mnormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - Mposition).xyz;
 
           gl_Position = Pmatrix * Vmatrix * Mposition;
+          gl_Position.y = -gl_Position.y;
           float directional = max(dot(Mnormal, -directionLightVector), 0.0);
           vLighting = ambientLight + (directionLightColor * directional);
           vTexture = coords;

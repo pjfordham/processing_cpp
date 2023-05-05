@@ -329,24 +329,28 @@ public:
 
       // Create SDL surface from framebuffer data
       SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
-      glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
-
-      // Flip the image vertically
-      SDL_Surface* flippedSurface = SDL_CreateRGBSurface(0, width, height, 24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
-      SDL_BlitSurface(surface, nullptr, flippedSurface, nullptr);
-      SDL_FreeSurface(surface);
+      // glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
+      glGetTextureSubImage(bufferID,
+                           0,
+                           0, 0, 0,
+                           width, height, 1,
+                           GL_RGBA, GL_UNSIGNED_BYTE, width * height, surface->pixels);
 
       // Save the image as PNG
-      IMG_SavePNG(flippedSurface, fileName.c_str());
+      IMG_SavePNG(surface, fileName.c_str());
 
       // Cleanup
-      SDL_FreeSurface(flippedSurface);
+      SDL_FreeSurface(surface);
    }
 
    void loadPixels( std::vector<unsigned int> &pixels ) {
       pixels.resize(width*height);
       // Read the pixel data from the framebuffer into the array
-      glGetTextureSubImage(bufferID, 0, 0, 0, 1, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.size(), pixels.data());
+      glGetTextureSubImage(bufferID,
+                           0,
+                           0, 0, 1,
+                           width, height, 1,
+                           GL_RGBA, GL_UNSIGNED_BYTE, width * height, pixels.data());
    }
 
    void updatePixels( std::vector<unsigned int> &pixels ) {
@@ -613,34 +617,33 @@ public:
       }
 
       // Reset to default view & lighting settings to draw buffered frame.
-      std::array<float,3> directionLightColor =  { 0.0 ,0.0,0.0 };
-      std::array<float,3> directionLightVector = { 0.0 ,0.0,0.0 };
-      std::array<float,3> ambientLight =         { 1.0 ,1.0,1.0 };
+      std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
+      std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
+      std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
 
       loadDirectionLightColor( directionLightColor.data() );
       loadDirectionLightVector( directionLightVector.data() );
       loadAmbientLight( ambientLight.data() );
 
       Eigen::Matrix4f identity_matrix = Eigen::Matrix4f::Identity();
-      Eigen::Matrix4f projection_matrix = TranslateMatrix(PVector{-1,-1,0}) * ScaleMatrix(PVector{2.0f/width, 2.0f/height,1.0});
 
       loadMoveMatrix( identity_matrix.data() );
-      loadProjectionMatrix( projection_matrix.data());
+      loadProjectionMatrix( identity_matrix.data());
       loadViewMatrix( identity_matrix.data());
 
-      // For drawing the main screen we need to flip the texture and remove any tint
       std::vector<PVector> vertices{
-         {0.0f,       0.0f+height},
-         {0.0f+width ,0.0f+height},
-         {0.0f+width, 0.0f},
-         {0.0f,       0.0f}};
+         {-1.0f, -1.0f},
+         { 1.0f, -1.0f},
+         { 1.0f,  1.0f},
+         {-1.0f,  1.0f}};
 
       float z = 1.0;
+      // For drawing the main screen we need to flip the texture and remove any tint
       std::vector<PVector> coords {
-         { 0.0f, 0.0f, z},
-         { 1.0f, 0.0f, z},
-         { 1.0f, 1.0f, z},
          { 0.0f, 1.0f, z},
+         { 1.0f, 1.0f, z},
+         { 1.0f, 0.0f, z},
+         { 0.0f, 0.0f, z},
       };
       std::vector<PVector> normals;
 
