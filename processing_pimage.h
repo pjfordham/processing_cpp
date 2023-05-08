@@ -107,14 +107,86 @@ public:
    void updatePixels() {
    }
 
-   void filter(int x) {
-      if (x == GRAY) {
+   void convolve (const std::vector<std::vector<float>> &kernel) {
+      // Create a new surface of the same size as the original surface
+      SDL_Surface* blurred_surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h, surface->format->BitsPerPixel, surface->format->format);
+
+      for (int y = 0; y < surface->h; y++) {
+         for (int x = 0; x < surface->w; x++) {
+            float r = 0, g = 0, b = 0, a = 0;
+            float weight_sum = 0;
+
+            for (int j = 0; j < kernel.size(); j++) {
+               for (int i = 0; i < kernel[0].size(); i++) {
+                  int neighbor_x = x + i - ( (kernel.size() - 1 ) / 2 );
+                  int neighbor_y = y + j - ( (kernel[i].size() - 1 ) / 2 );;
+                  if (neighbor_x >= 0 && neighbor_x < surface->w && neighbor_y >= 0 && neighbor_y < surface->h) {
+                     Uint32 neighbor_pixel = ((Uint32*)surface->pixels)[neighbor_y * width + neighbor_x];
+                     Uint8 neighbor_r, neighbor_g, neighbor_b, neighbor_a;
+                     SDL_GetRGBA(neighbor_pixel, surface->format, &neighbor_r, &neighbor_g, &neighbor_b, &neighbor_a);
+                     float weight = kernel[i][j];
+                     r += weight * neighbor_r;
+                     g += weight * neighbor_g;
+                     b += weight * neighbor_b;
+                     a += weight * neighbor_a;
+                     weight_sum += weight;
+                  }
+               }
+            }
+
+            // Set the value of the pixel in the new surface to the computed average
+            r /= weight_sum;
+            g /= weight_sum;
+            b /= weight_sum;
+            a /= weight_sum;
+            Uint32 blurred_pixel = SDL_MapRGBA(blurred_surface->format, r, g, b, a);
+            ((Uint32*)blurred_surface->pixels)[y * width + x] = blurred_pixel;
+         }
+      }
+
+      // Replace the original surface with the blurred surface
+      SDL_FreeSurface(surface);
+      surface = blurred_surface;
+   }
+
+   void filter(int x, float level=1.0) {
+      switch (x) {
+      case GRAY:
          for(int i = 0; i< width * height; ++i) {
             Uint32 p = pixels[i];
             Uint32 x = (red(p) + green(p) + blue(p)) / 3;
-            Uint32 y =  ((Uint32)alpha(p) << 24) | (x << 16) | (x << 8) | x;
-            pixels[i] = y;
+            pixels[i] = color( x,x,x, alpha(p) );
          }
+         break;
+      case THRESHOLD:
+         for(int i = 0; i< width * height; ++i) {
+            Uint32 p = pixels[i];
+            Uint32 x = (red(p) + green(p) + blue(p)) / 3;
+            if ( x > level )
+               pixels[i] = color( WHITE, alpha(p) );
+            else
+               pixels[i] = color( BLACK, alpha(p) );
+         }
+         break;
+      case BLUR:
+         convolve( { { 1, 2, 1},
+                     { 2, 4, 2},
+                     { 1, 2, 1}} );
+         break;
+      case OPAQUE:
+         for(int i = 0; i< width * height; ++i) {
+            Uint32 p = pixels[i];
+            pixels[i] = color( red(p), green(p), blue(p), 255);
+         }
+         break;
+      case INVERT:
+         for(int i = 0; i< width * height; ++i) {
+            Uint32 p = pixels[i];
+            pixels[i] = color( 255-red(p), 255-green(p), 255-blue(p), alpha(p));;
+         }
+         break;
+      default:
+         abort();
       }
    }
 
