@@ -42,6 +42,7 @@ MAKE_GLOBAL(shape, g);
 MAKE_GLOBAL(bezier, g);
 MAKE_GLOBAL(beginShape, g);
 MAKE_GLOBAL(vertex, g);
+MAKE_GLOBAL(normal, g);
 MAKE_GLOBAL(bezierVertex, g);
 MAKE_GLOBAL(endShape, g);
 MAKE_GLOBAL(image, g);

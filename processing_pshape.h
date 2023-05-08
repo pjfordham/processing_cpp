@@ -17,8 +17,10 @@ public:
 
    std::vector<PVector> vertices;
    std::vector<PVector> normals;
-   std::vector<unsigned short> indices;
    std::vector<PVector> coords;
+
+   std::vector<unsigned short> indices;
+
    std::vector<PShape> children;
 
    int style = POLYGON;
@@ -36,6 +38,7 @@ public:
 
    PShape& operator=(PShape&& other) noexcept {
       std::swap(texture_, other.texture_);
+      std::swap(n, other.n);
       std::swap(normals, other.normals);
       std::swap(coords, other.coords);
       std::swap(vertices, other.vertices);
@@ -84,23 +87,28 @@ public:
    }
 
    void normal(PVector p) {
-      normals.push_back( p );
+      n = p;
    }
 
    void normal(float x, float y, float z) {
-      normals.push_back( {x, y, x} );
+      n.x = x;
+      n.y = y;
+      n.z = z;
    }
 
    void vertex(float x, float y, float z) {
       vertices.push_back({x, y, z});
+      normals.push_back( n );
    }
 
    void vertex(float x, float y) {
       vertices.push_back({x, y, 0.0f});
+      normals.push_back( n );
    }
 
    void vertex(PVector p) {
       vertices.push_back(p);
+      normals.push_back( n );
    }
 
    void vertex(float x, float y, float z, float u, float v) {
@@ -113,6 +121,7 @@ public:
 
    void vertex(PVector p, PVector t) {
       vertices.push_back(p);
+      normals.push_back( n) ;
       coords.push_back( {
             map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
             map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),

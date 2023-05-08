@@ -423,76 +423,46 @@ public:
       cube.texture(currentTexture);
 
       // Front face
+      cube.normal(0.0,  0.0,  1.0);
       cube.vertex( -w, -h,  d, 0.0, 0.0 );
       cube.vertex(  w, -h,  d, 1.0, 0.0 );
       cube.vertex(  w,  h,  d, 1.0, 1.0 );
       cube.vertex( -w,  h,  d, 0.0, 1.0 );
 
       // Back face
+      cube.normal(0.0,  0.0, -1.0);
       cube.vertex( -w, -h, -d, 0.0, 0.0 );
       cube.vertex( -w,  h, -d, 1.0, 0.0 );
       cube.vertex(  w,  h, -d, 1.0, 1.0 );
       cube.vertex(  w, -h, -d, 0.0, 1.0 );
 
       // Top face
+      cube.normal(0.0,  1.0,  0.0);
       cube.vertex( -w,  h, -d, 0.0, 0.0 );
       cube.vertex( -w,  h,  d, 1.0, 0.0 );
       cube.vertex(  w,  h,  d, 1.0, 1.0 );
       cube.vertex(  w,  h, -d, 0.0, 1.0 );
 
       // Bottom face
+      cube.normal(0.0, -1.0,  0.0);
       cube.vertex( -w, -h, -d, 0.0, 0.0 );
       cube.vertex(  w, -h, -d, 1.0, 0.0 );
       cube.vertex(  w, -h,  d, 1.0, 1.0 );
       cube.vertex( -w, -h,  d, 0.0, 1.0 );
 
       // Right face
+      cube.normal(1.0,  0.0,  0.0);
       cube.vertex(  w, -h, -d, 0.0, 0.0 );
       cube.vertex(  w,  h, -d, 1.0, 0.0 );
       cube.vertex(  w,  h,  d, 1.0, 1.0 );
       cube.vertex(  w, -h,  d, 0.0, 1.0 );
 
       // Left face
+      cube.normal(-1.0,  0.0,  0.0);
       cube.vertex( -w, -h, -d, 0.0, 0.0 );
       cube.vertex( -w, -h,  d, 1.0, 0.0 );
       cube.vertex( -w,  h,  d, 1.0, 1.0 );
       cube.vertex( -w,  h, -d, 0.0, 1.0 );
-
-      // Front
-      cube.normal(0.0,  0.0,  1.0);
-      cube.normal(0.0,  0.0,  1.0);
-      cube.normal(0.0,  0.0,  1.0);
-      cube.normal(0.0,  0.0,  1.0);
-
-      // Back
-      cube.normal(0.0,  0.0, -1.0);
-      cube.normal(0.0,  0.0, -1.0);
-      cube.normal(0.0,  0.0, -1.0);
-      cube.normal(0.0,  0.0, -1.0);
-
-      // Top
-      cube.normal(0.0,  1.0,  0.0);
-      cube.normal(0.0,  1.0,  0.0);
-      cube.normal(0.0,  1.0,  0.0);
-      cube.normal(0.0,  1.0,  0.0);
-
-      // Bottom
-      cube.normal(0.0, -1.0,  0.0);
-      cube.normal(0.0, -1.0,  0.0);
-      cube.normal(0.0, -1.0,  0.0);
-      cube.normal(0.0, -1.0,  0.0);
-
-      // Right
-      cube.normal(1.0,  0.0,  0.0);
-      cube.normal(1.0,  0.0,  0.0);
-      cube.normal(1.0,  0.0,  0.0);
-      cube.normal(1.0,  0.0,  0.0);
-
-      // Left
-      cube.normal(-1.0,  0.0,  0.0);
-      cube.normal(-1.0,  0.0,  0.0);
-      cube.normal(-1.0,  0.0,  0.0);
-      cube.normal(-1.0,  0.0,  0.0);
 
       cube.indices = {
          0,1,2, 0,2,3, 4,5,6, 4,6,7,
@@ -1024,6 +994,10 @@ public:
 
    void vertex(float x, float y, float z = 0.0) {
       _shape.vertex(x, y, z);
+   }
+
+   void normal(float x, float y, float z) {
+      _shape.normal(x, y, z);
    }
 
    void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
