@@ -398,6 +398,22 @@ public:
       draw_texture_over_framebuffer(texture, localFrame);
    }
 
+   SDL_Surface* crop_surface(SDL_Surface* surface, int max_width, int max_height) {
+      // Determine the width and height of the cropped surface
+      int crop_width = SDL_min(max_width, surface->w);
+      int crop_height = SDL_min(max_height, surface->h);
+
+      // Create a new surface with the desired dimensions
+      SDL_Surface* cropped_surface = SDL_CreateRGBSurfaceWithFormat(0, crop_width, crop_height, surface->format->BitsPerPixel, surface->format->format);
+
+      // Copy the portion of the original surface that fits within the new surface
+      SDL_Rect src_rect = { 0, 0, crop_width, crop_height };
+      SDL_Rect dst_rect = { 0, 0, crop_width, crop_height };
+      SDL_BlitSurface(surface, &src_rect, cropped_surface, &dst_rect);
+
+      return cropped_surface;
+   }
+
    PTexture getTexture( int width, int height, void *pixels ) {
       PTexture texture = tm.getFreeBlock(width, height);
       glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
@@ -408,7 +424,16 @@ public:
    }
 
    PTexture getTexture( SDL_Surface *surface ) {
-      return getTexture( surface->w, surface->h, surface->pixels );
+      if ( surface->w > width || surface->h > height ) {
+         int new_width = std::min(surface->w, width);
+         int new_height = std::min(surface->h, height );
+         SDL_Surface *new_surface = crop_surface( surface, new_width, new_height);
+         PTexture tex = getTexture( new_surface );
+         SDL_FreeSurface( new_surface );
+         return tex;
+      } else {
+         return getTexture( surface->w, surface->h, surface->pixels );
+      }
    }
 
    PTexture getTexture( PImage &pimage ) {
