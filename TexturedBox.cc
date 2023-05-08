@@ -9,10 +9,12 @@
  */
 
 PImage img;
+PImage earth;
 void setup() {
   size(640, 360, P3D); 
   background(0);
   img = loadImage("moon.jpg");
+  earth = loadImage("earth.png");
 }
 
 float a = 0;
@@ -35,7 +37,9 @@ void draw() {
   stroke(255);
   pushMatrix();
   translate(500, height*0.35, -200);
-  noTexture();
-  sphere(mouseX);
+  rotateY(1.25 + a);
+  noTint();
+  texture( earth );
+  sphere( mouseX );
   popMatrix();
 }

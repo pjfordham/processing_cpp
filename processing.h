@@ -48,6 +48,7 @@ MAKE_GLOBAL(endShape, g);
 MAKE_GLOBAL(image, g);
 MAKE_GLOBAL(imageMode, g);
 MAKE_GLOBAL(tint, g);
+MAKE_GLOBAL(noTint, g);
 MAKE_GLOBAL(texture, g);
 MAKE_GLOBAL(noTexture, g);
 MAKE_GLOBAL(box, g);

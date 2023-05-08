@@ -491,6 +491,8 @@ public:
    void sphere(float radius) {
 
       PShape sphere;
+      sphere.beginShape(TRIANGLES);
+      sphere.texture(currentTexture);
 
       float latStep = M_PI / xsphere_ures;
       float lonStep = 2 * M_PI / xsphere_vres;
@@ -506,11 +508,13 @@ public:
             float sinLon = std::sin(lon);
 
             float x = sinLat * cosLon;
-            float y = sinLat * sinLon;
-            float z = cosLat;
+            float y = cosLat;
+            float z = sinLat * sinLon;
 
             sphere.normal( {x,y,z} );
-            sphere.vertex( x * radius, y * radius, z * radius );
+            sphere.vertex( x * radius, y * radius, z * radius,
+                           map(j,0,xsphere_vres+1, 1.0, 0.0),
+                           map(i,0,xsphere_ures+1, 1.0, 0.0));
          }
       }
 
