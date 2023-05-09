@@ -160,40 +160,52 @@ const char *PShader::defaultVertexShader = R"glsl(
       in vec3 coords;
       in vec4 colors;
       in int mindex;
-      uniform vec3 ambientLight;
-      uniform vec3 directionLightColor;
-      uniform vec3 directionLightVector;
       uniform mat4 Pmatrix;
       uniform mat4 Vmatrix;
       uniform mat4 Mmatrix[16];
-      out vec3 vLighting;
       out vec3 vTexture;
       out vec4 vColor;
+      out vec3 vNormal;
+      out vec4 vPosition;
 
       void main()
       {
           mat4 M = Mmatrix[mindex];
-          vec4 Mposition = M * vec4(position,1.0);
-          vec3 Mnormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - Mposition).xyz;
-
-          gl_Position = Pmatrix * Vmatrix * Mposition;
-          gl_Position.y = -gl_Position.y;
-          float directional = max(dot(Mnormal, -directionLightVector), 0.0);
-          vLighting = ambientLight + (directionLightColor * directional);
+          vPosition = M * vec4(position,1.0);
+          vNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vPosition).xyz;
           vTexture = coords;
           vColor = colors;
+
+          gl_Position = Pmatrix * Vmatrix * vPosition;
+          gl_Position.y = -gl_Position.y;
        }
 )glsl";
 
 const char *PShader::defaultFragmentShader = R"glsl(
       #version 330
       in vec3 vTexture;
-      in vec3 vLighting;
+      in vec3 vNormal;
       in vec4 vColor;
+      in vec4 vPosition;
       out vec4 fragColor;
       uniform sampler2DArray myTextures;
+      uniform vec3 ambientLight;
+      uniform vec3 directionLightColor;
+      uniform vec3 directionLightVector;
+      uniform vec3 pointLightColor;
+      uniform vec3 pointLightPosition;
+      uniform vec3 pointLightFalloff;
       void main()
       {
+          vec3 pointLightDirection = vPosition.xyz - pointLightPosition;
+
+          float d = length(pointLightDirection);
+          float pointLightIntensity = 1 / ( pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
+          float pointLight = max(dot(vNormal, -pointLightDirection), 0.0) * pointLightIntensity;
+
+          float directional = max(dot(vNormal, -directionLightVector), 0.0);
+          vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
+
           vec4 texelColor = texture(myTextures, vTexture);
           fragColor = vec4(vLighting,1.0) * vColor * texelColor;
       }

@@ -16,7 +16,7 @@ void setup() {
 void draw() {
   background(51);
 
-  if (!mousePressed) {
+  if (!mousePressedb) {
     lights();
   }
 

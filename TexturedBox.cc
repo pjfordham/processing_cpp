@@ -22,6 +22,9 @@ void draw() {
   background(48);
   lights();
 
+  pointLight( 0,255.0,0.0, 0.0,-500.0,0.0 );
+  lightFalloff(  1.0,0.5,0.0 );
+
   noStroke();
   pushMatrix();
   translate(130, height/2, 0);

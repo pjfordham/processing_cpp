@@ -177,6 +177,9 @@ class gl_context {
    GLuint AmbientLight;
    GLuint DirectionLightColor;
    GLuint DirectionLightVector;
+   GLuint PointLightColor;
+   GLuint PointLightPosition;
+   GLuint PointLightFalloff;
 
 public:
    gl_context() : width(0), height(0) {
@@ -340,6 +343,9 @@ public:
       std::swap(AmbientLight,x.AmbientLight);
       std::swap(DirectionLightColor,x.DirectionLightColor);
       std::swap(DirectionLightVector,x.DirectionLightVector);
+      std::swap(PointLightPosition,x.PointLightPosition);
+      std::swap(PointLightColor,x.PointLightColor);
+      std::swap(PointLightFalloff,x.PointLightFalloff);
 
       return *this;
    }
@@ -481,6 +487,9 @@ public:
       AmbientLight = shader.getUniformLocation("ambientLight");
       DirectionLightColor = shader.getUniformLocation("directionLightColor");
       DirectionLightVector = shader.getUniformLocation("directionLightVector");
+      PointLightColor = shader.getUniformLocation("pointLightColor");
+      PointLightPosition = shader.getUniformLocation("pointLightPosition");
+      PointLightFalloff = shader.getUniformLocation("pointLightFalloff");
       uSampler = shader.getUniformLocation("myTextures");
       shader.useProgram();
       shader.set_uniforms();
@@ -510,18 +519,33 @@ public:
       glUniform3fv(AmbientLight, 1, data );
    }
 
+   void loadPointLightColor( float *data ){
+      glUniform3fv(PointLightColor, 1, data );
+   }
+
+   void loadPointLightPosition( float *data ){
+      glUniform3fv(PointLightPosition, 1, data );
+   }
+
+   void loadPointLightFalloff( float *data ){
+      glUniform3fv(PointLightFalloff, 1, data );
+   }
+
    void reserve(int n_vertices, const Eigen::Matrix4f &move_matrix, float *projection, float *view,
-                float *directionLightColor, float *directionLightVector, float *ambientLight) {
+                float *directionLightColor, float *directionLightVector, float *ambientLight,
+                float *pointLightColor, float *pointLightPosition, float *pointLightFalloff) {
       if (n_vertices > CAPACITY) {
          abort();
       } else {
          int new_size = n_vertices + ibuffer.size();
          if (new_size >= CAPACITY) {
-            flush(projection, view, directionLightColor, directionLightVector, ambientLight);
+            flush(projection, view, directionLightColor, directionLightVector, ambientLight,
+                  pointLightColor, pointLightPosition, pointLightFalloff);
          }
       }
       if ( move.size() == 16) {
-         flush(projection, view, directionLightColor, directionLightVector, ambientLight);
+         flush(projection, view, directionLightColor, directionLightVector, ambientLight,
+               pointLightColor, pointLightPosition, pointLightFalloff);
       }
       if ( move.size() > 0 && move_matrix == move.back() ) {
       } else {
@@ -531,7 +555,8 @@ public:
    }
 
    void flush( float *projection, float *view,
-               float *directionLightColor, float *directionLightVector, float *ambientLight ) {
+               float *directionLightColor, float *directionLightVector, float *ambientLight,
+               float *pointLightColor, float *pointLightPosition, float *pointLightFalloff) {
 
       flushes++;
       if (flushes > 1000) abort();
@@ -554,6 +579,9 @@ public:
          loadDirectionLightColor( directionLightColor );
          loadDirectionLightVector( directionLightVector );
          loadAmbientLight( ambientLight );
+         loadPointLightColor( pointLightColor );
+         loadPointLightPosition( pointLightPosition );
+         loadPointLightFalloff( pointLightFalloff );
 
          drawTrianglesDirect( localFrame, vbuffer, nbuffer, cbuffer, xbuffer, tbuffer, ibuffer, ibuffer.size() );
 
@@ -676,14 +704,20 @@ public:
 
    void draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb) {
 
-     // Reset to default view & lighting settings to draw buffered frame.
+      // Reset to default view & lighting settings to draw buffered frame.
       std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
       std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
       std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
+      std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
+      std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
+      std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
 
       loadDirectionLightColor( directionLightColor.data() );
       loadDirectionLightVector( directionLightVector.data() );
       loadAmbientLight( ambientLight.data() );
+      loadPointLightColor( pointLightColor.data() );
+      loadPointLightPosition( pointLightPosition.data() );
+      loadPointLightFalloff( pointLightFalloff.data() );
 
       Eigen::Matrix4f identity_matrix = Eigen::Matrix4f::Identity();
 

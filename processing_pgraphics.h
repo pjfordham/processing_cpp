@@ -46,9 +46,13 @@ public:
    PShape _shape;
    std::vector<Uint32> pixels;
 
-   std::array<float,3> xambientLight;
-   std::array<float,3> xdirectionLightColor;
-   std::array<float,3> xdirectionLightVector;
+   bool lights_ = false;
+   std::array<float,3> ambientLightColor;
+   std::array<float,3> directionLightColor;
+   std::array<float,3> directionLightVector;
+   std::array<float,3> pointLightColor;
+   std::array<float,3> pointLightPosition;
+   std::array<float,3> pointLightFalloff;
 
    Eigen::Matrix4f projection_matrix; // Default is identity
    Eigen::Matrix4f view_matrix; // Default is identity
@@ -92,9 +96,13 @@ public:
       std::swap(_shape, x._shape);
       std::swap(pixels, x.pixels);
 
-      std::swap(xambientLight, x.xambientLight);
-      std::swap(xdirectionLightColor, x.xdirectionLightColor);
-      std::swap(xdirectionLightVector, x.xdirectionLightVector);
+      std::swap(lights_, x.lights_);
+      std::swap(ambientLightColor, x.ambientLightColor);
+      std::swap(directionLightColor, x.directionLightColor);
+      std::swap(directionLightVector, x.directionLightVector);
+      std::swap(pointLightColor, x.pointLightColor);
+      std::swap(pointLightPosition, x.pointLightPosition);
+      std::swap(pointLightFalloff, x.pointLightFalloff);
 
       std::swap(projection_matrix, x.projection_matrix);
       std::swap(view_matrix, x.view_matrix);
@@ -266,25 +274,50 @@ public:
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
       flush();
-      xdirectionLightColor = {r/255.0f, r/255.0f, r/255.0f};
-      xdirectionLightVector = {nx, ny, nz};
+      lights_ = true;
+      directionLightColor = {r/255.0f, g/255.0f, b/255.0f};
+      directionLightVector = {nx, ny, nz};
+   }
+
+   void pointLight(float r, float g, float b, float nx, float ny, float nz) {
+      flush();
+      lights_ = true;
+      pointLightColor = { r/255.0f, g/255.0f,  b/255.0f };
+      pointLightPosition = {nx, ny, nz};
+   }
+
+   void lightFalloff(float r, float g, float b) {
+      flush();
+      pointLightFalloff = { r, g, b };
    }
 
    void ambientLight(float r, float g, float b) {
       flush();
-      xambientLight = { r/255.0f, g/255.0f, b/255.0f };
+      lights_ = true;
+      ambientLightColor = { r/255.0f, g/255.0f, b/255.0f };
    }
 
    void lights() {
-      ambientLight(128, 128, 128);
-      directionalLight(128, 128, 128, 0, 0, -1);
-      //lightFalloff(1, 0, 0);
+      flush();
+      lights_ = true;
+      ambientLightColor =    { 0.5, 0.5, 0.5 };
+      directionLightColor =  { 0.5, 0.5, 0.5 };
+      directionLightVector = { 0.0, 0.0,-1.0 };
+      pointLightColor =      { 0.0, 0.0, 0.0 };
+      pointLightPosition =   { 0.0, 0.0, 0.0 };
+      pointLightFalloff =    { 1.0, 0.0, 0.0 };
       //lightSpecular(0, 0, 0);
    };
 
    void noLights() {
-      ambientLight(255.0, 255.0, 255.0);
-      directionalLight(0.0,0.0,0.0, 0.0,0.0,-1.0);
+      flush();
+      lights_ = false;
+      ambientLightColor =    { 0.0, 0.0, 0.0};
+      directionLightColor =  { 0.0, 0.0, 0.0};
+      directionLightVector = { 0.0, 0.0,-1.0};
+      pointLightColor =      { 0.0, 0.0, 0.0};
+      pointLightPosition =   { 0.0, 0.0, 0.0};
+      pointLightFalloff =    { 1.0, 0.0, 0.0};
    }
 
    void textFont(PFont font) {
@@ -354,20 +387,52 @@ public:
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
                        color color) {
-      glc.reserve( vertices.size(), move_matrix,  projection_matrix.data(),
-                   view_matrix.data(),
-                   xdirectionLightColor.data(),
-                   xdirectionLightVector.data(),
-                   xambientLight.data());
+      if (lights_) {
+        glc.reserve( vertices.size(), move_matrix,  projection_matrix.data(),
+                      view_matrix.data(),
+                      directionLightColor.data(),
+                      directionLightVector.data(),
+                      ambientLightColor.data(),
+                      pointLightColor.data(),
+                      pointLightPosition.data(),
+                      pointLightFalloff.data());
+      } else {
+         std::array<float,3> white = {1.0f,1.0f,1.0f};
+         std::array<float,3> black = {0.0f,0.0f,0.0f};
+         glc.reserve( vertices.size(), move_matrix, projection_matrix.data(),
+                    view_matrix.data(),
+                    black.data(),
+                    directionLightVector.data(),
+                    white.data(),
+                    black.data(),
+                    pointLightPosition.data(),
+                    pointLightFalloff.data());
+      }
       glc.drawTriangles( vertices, normals, coords, indices, color);
    }
 
    void flush() {
-      glc.flush( projection_matrix.data(),
+       if (lights_) {
+          glc.flush( projection_matrix.data(),
                  view_matrix.data(),
-                 xdirectionLightColor.data(),
-                 xdirectionLightVector.data(),
-                 xambientLight.data() );
+                 directionLightColor.data(),
+                 directionLightVector.data(),
+                 ambientLightColor.data(),
+                 pointLightColor.data(),
+                 pointLightPosition.data(),
+                 pointLightFalloff.data());
+      } else {
+         std::array<float,3> white = {1.0f,1.0f,1.0f};
+         std::array<float,3> black = {0.0f,0.0f,0.0f};
+         glc.flush( projection_matrix.data(),
+                    view_matrix.data(),
+                    black.data(),
+                    directionLightVector.data(),
+                    white.data(),
+                    black.data(),
+                    pointLightPosition.data(),
+                    pointLightFalloff.data());
+      }
    }
 
    void noTexture() {
