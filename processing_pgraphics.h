@@ -968,7 +968,34 @@ public:
 
    void shape_fill(const PShape &pshape, color color) {
       if (pshape.vertices.size() > 2) {
-         drawTriangles(  pshape.vertices, pshape.normals, pshape.coords, pshape.indices, color );
+         if (pshape.normals.size() == 0) {
+            std::vector<PVector> normals( pshape.vertices.size(), {0.0f,0.0f,0.0f });
+            // Iterate over all triangles
+            for (int i = 0; i < pshape.indices.size()/3; i++) {
+               // Get the vertices of the current triangle
+               PVector v1 = pshape.vertices[pshape.indices[i * 3]];
+               PVector v2 = pshape.vertices[pshape.indices[i * 3 + 1]];
+               PVector v3 = pshape.vertices[pshape.indices[i * 3 + 2]];
+
+               // Calculate the normal vector of the current triangle
+               PVector edge1 = v2 - v1;
+               PVector edge2 = v3 - v1;
+               PVector normal = (edge1.cross(edge2)).normalize();
+
+               // Add the normal to the normals list for each vertex of the triangle
+               normals[pshape.indices[i * 3]] = normals[pshape.indices[i * 3]] + normal;
+               normals[pshape.indices[i * 3 + 1]] = normals[pshape.indices[i * 3 + 1]] + normal;
+               normals[pshape.indices[i * 3 + 2]] = normals[pshape.indices[i * 3 + 2]] + normal;
+            }
+
+            // Normalize all the normals
+            for (int i = 0; i < normals.size(); i++) {
+               normals[i].normalize();
+            }
+            drawTriangles(  pshape.vertices, normals, pshape.coords, pshape.indices, color );
+         } else {
+            drawTriangles(  pshape.vertices, pshape.normals, pshape.coords, pshape.indices, color );
+         }
       }
    }
 
@@ -1067,6 +1094,10 @@ public:
 
    void normal(float x, float y, float z) {
       _shape.normal(x, y, z);
+   }
+
+   void noNormal() {
+      _shape.noNormal();
    }
 
    void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {

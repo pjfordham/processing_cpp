@@ -19,6 +19,7 @@ public:
    std::vector<PVector> normals;
    std::vector<PVector> coords;
 
+   bool setNormals = false;
    std::vector<unsigned short> indices;
 
    std::vector<PShape> children;
@@ -40,6 +41,7 @@ public:
       std::swap(texture_, other.texture_);
       std::swap(n, other.n);
       std::swap(normals, other.normals);
+      std::swap(setNormals, other.setNormals);
       std::swap(coords, other.coords);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
@@ -86,11 +88,17 @@ public:
       texture_ = { 0,0,0,0,0 };
    }
 
+   void noNormal() {
+      setNormals = false;
+   }
+
    void normal(PVector p) {
+      setNormals = true;
       n = p;
    }
 
    void normal(float x, float y, float z) {
+      setNormals = true;
       n.x = x;
       n.y = y;
       n.z = z;
@@ -98,17 +106,20 @@ public:
 
    void vertex(float x, float y, float z) {
       vertices.push_back({x, y, z});
-      normals.push_back( n );
+      if (setNormals)
+         normals.push_back( n );
    }
 
    void vertex(float x, float y) {
       vertices.push_back({x, y, 0.0f});
-      normals.push_back( n );
+      if (setNormals)
+         normals.push_back( n );
    }
 
    void vertex(PVector p) {
       vertices.push_back(p);
-      normals.push_back( n );
+      if (setNormals)
+         normals.push_back( n );
    }
 
    void vertex(float x, float y, float z, float u, float v) {
@@ -121,7 +132,8 @@ public:
 
    void vertex(PVector p, PVector t) {
       vertices.push_back(p);
-      normals.push_back( n) ;
+      if (setNormals)
+         normals.push_back( n) ;
       coords.push_back( {
             map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
             map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
