@@ -11,7 +11,7 @@ void setup() {
 
 void draw() {
   stroke(255);
-  if (mousePressed == true) {
+  if (mousePressedb == true) {
     line(mouseX, mouseY, pmouseX, pmouseY);
   }
 }

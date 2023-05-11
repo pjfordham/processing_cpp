@@ -8,6 +8,17 @@
 
 color a, b, c, d, e;
 
+void drawBand(color v, color w, color x, color y, color z, int ypos, int barWidth) {
+  int num = 5;
+  std::vector<color> colorOrder = { v, w, x, y, z };
+  for(int i = 0; i < width; i += barWidth*num) {
+    for(int j = 0; j < num; j++) {
+      fill(colorOrder[j]);
+      rect(i+j*barWidth, ypos, barWidth, height/2);
+    }
+  }
+}
+
 void setup() {
   size(640, 360);
   noStroke();
@@ -23,20 +34,3 @@ void draw() {
   drawBand(a, b, c, d, e, 0, width/128);
   drawBand(c, a, d, b, e, height/2, width/128);
 }
-
-void drawBand(color v, color w, color x, color y, color z, int ypos, int barWidth) {
-  int num = 5;
-  color[] colorOrder = { v, w, x, y, z };
-  for(int i = 0; i < width; i += barWidth*num) {
-    for(int j = 0; j < num; j++) {
-      fill(colorOrder[j]);
-      rect(i+j*barWidth, ypos, barWidth, height/2);
-    }
-  }
-}
-
-
-
-
-
-

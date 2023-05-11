@@ -21,6 +21,12 @@ void setup() {
   y = height * 0.5;
 }
 
+void segment(float x, float y, float a) {
+  translate(x, y);
+  rotate(a);
+  line(0, 0, segLength, 0);
+}
+
 void draw() {
   background(0);
 
@@ -31,10 +37,4 @@ void draw() {
   segment(x, y, angle1);
   segment(segLength, 0, angle2);
   popMatrix();
-}
-
-void segment(float x, float y, float a) {
-  translate(x, y);
-  rotate(a);
-  line(0, 0, segLength, 0);
 }

@@ -20,7 +20,7 @@ int y = 0;                      // Y position of the letters
 boolean newletter;
 
 int numChars = 26;      // There are 26 characters in the alphabet
-color[] colors = new color[numChars];
+std::vector<color> colors(numChars);
 
 void setup() {
   size(640, 360);

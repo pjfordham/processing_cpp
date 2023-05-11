@@ -10,6 +10,14 @@
 float segLength = 80;
 float x, y, x2, y2;
 
+void segment(float x, float y, float a) {
+  pushMatrix();
+  translate(x, y);
+  rotate(a);
+  line(0, 0, segLength, 0);
+  popMatrix();
+}
+
 void setup() {
   size(640, 360);
   strokeWeight(20.0);
@@ -39,12 +47,3 @@ void draw() {
   segment(x, y, angle1);
   segment(x2, y2, angle2);
 }
-
-void segment(float x, float y, float a) {
-  pushMatrix();
-  translate(x, y);
-  rotate(a);
-  line(0, 0, segLength, 0);
-  popMatrix();
-}
-

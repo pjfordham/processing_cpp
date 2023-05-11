@@ -7,22 +7,16 @@
  * position of the next is calculated with sin() and cos().
  */
 
-float[] x = new float[20];
-float[] y = new float[20];
+std::vector<float> x(20);
+std::vector<float> y(20);
 float segLength = 18;
 
-void setup() {
-  size(640, 360);
-  strokeWeight(9);
-  stroke(255, 100);
-}
-
-void draw() {
-  background(0);
-  dragSegment(0, mouseX, mouseY);
-  for(int i=0; i<x.length-1; i++) {
-    dragSegment(i+1, x[i], y[i]);
-  }
+void segment(float x, float y, float a) {
+  pushMatrix();
+  translate(x, y);
+  rotate(a);
+  line(0, 0, segLength, 0);
+  popMatrix();
 }
 
 void dragSegment(int i, float xin, float yin) {
@@ -34,10 +28,16 @@ void dragSegment(int i, float xin, float yin) {
   segment(x[i], y[i], angle);
 }
 
-void segment(float x, float y, float a) {
-  pushMatrix();
-  translate(x, y);
-  rotate(a);
-  line(0, 0, segLength, 0);
-  popMatrix();
+void setup() {
+  size(640, 360);
+  strokeWeight(9);
+  stroke(255, 100);
+}
+
+void draw() {
+  background(0);
+  dragSegment(0, mouseX, mouseY);
+  for(int i=0; i<x.size()-1; i++) {
+    dragSegment(i+1, x[i], y[i]);
+  }
 }

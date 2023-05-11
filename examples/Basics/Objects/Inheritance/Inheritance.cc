@@ -7,26 +7,11 @@
  * inherits from is called a superclass. A subclass extends the superclass.
  */
 
-SpinSpots spots;
-SpinArm arm;
-
-void setup() {
-  size(640, 360);
-  arm = new SpinArm(width/2, height/2, 0.01);
-  spots = new SpinSpots(width/2, height/2, -0.02, 90.0);
-}
-
-void draw() {
-  background(204);
-  arm.update();
-  arm.display();
-  spots.update();
-  spots.display();
-}
-
 class Spin {
+public:
   float x, y, speed;
   float angle = 0.0;
+  Spin() {}
   Spin(float xpos, float ypos, float s) {
     x = xpos;
     y = ypos;
@@ -35,11 +20,12 @@ class Spin {
   void update() {
     angle += speed;
   }
-}
+};
 
-class SpinArm extends Spin {
-  SpinArm(float x, float y, float s) {
-    super(x, y, s);
+class SpinArm : public Spin {
+public:
+  SpinArm() {}
+  SpinArm(float x, float y, float s) : Spin( x, y, s) {
   }
   void display() {
     strokeWeight(1);
@@ -51,12 +37,13 @@ class SpinArm extends Spin {
     line(0, 0, 165, 0);
     popMatrix();
   }
-}
+};
 
-class SpinSpots extends Spin {
+class SpinSpots : public Spin {
+public:
   float dim;
-  SpinSpots(float x, float y, float s, float d) {
-    super(x, y, s);
+  SpinSpots() {}
+  SpinSpots(float x, float y, float s, float d) : Spin( x, y, s) {
     dim = d;
   }
   void display() {
@@ -69,4 +56,21 @@ class SpinSpots extends Spin {
     ellipse(dim/2, 0, dim, dim);
     popMatrix();
   }
+};
+
+SpinSpots spots;
+SpinArm arm;
+
+void setup() {
+  size(640, 360);
+  arm = SpinArm(width/2, height/2, 0.01);
+  spots = SpinSpots(width/2, height/2, -0.02, 90.0);
+}
+
+void draw() {
+  background(204);
+  arm.update();
+  arm.display();
+  spots.update();
+  spots.display();
 }

@@ -7,8 +7,8 @@
 int num = 2000;
 int range = 6;
 
-float[] ax = new float[num];
-float[] ay = new float[num];
+std::vector<float> ax(num);
+std::vector<float> ay(num);
 
 
 void setup()

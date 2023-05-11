@@ -23,7 +23,11 @@
 // Logical OR: ||
 // Assignment: = += -= *= /= %=
 
+void setup() {
 size(640, 360);
+}
+
+void draw() {
 background(51);
 noFill();
 stroke(51);
@@ -54,5 +58,5 @@ for (int i = 0; i < width; i+= 2) {
     line(i, 151, i, height-1);
   }
 }
-
+}
 

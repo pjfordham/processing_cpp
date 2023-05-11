@@ -8,7 +8,11 @@
  * determine the shape's position and size.
  */
 
+void setup() {
 size(640, 360);
+}
+
+void draw() {
 background(0);
 noStroke();
 
@@ -29,4 +33,4 @@ triangle(288, 18, 351, 360, 288, 360);
 
 fill(255);
 arc(479, 300, 280, 280, PI, TWO_PI);
-
+}

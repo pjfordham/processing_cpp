@@ -36,6 +36,6 @@ cd "$SKETCH"
 
 rm -f \*~ weak.o sketch.o sketch
 g++ -c -O3 $APPDIR/PerlinNoise.cc -o PerlinNoise.o
-g++ -c -O3 $APPDIR/weak.c -o weak.o
+g++ -c -O3 $APPDIR/weak.cc -o weak.o
 g++ -c -O3 -I/usr/include/freetype2 -include $APPDIR/processing.h *.cc -o sketch.o
 g++ sketch.o weak.o PerlinNoise.o -lSDL2 -lSDL2_ttf -lfreetype  -lSDL2_image -lglfw -lGLEW -lGL -lcurl -lSDL2main -lfmt -lm -o ./sketch && ./sketch

@@ -120,6 +120,14 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
    return result;
 }
 
+template<typename T> void printArray(const std::vector<T> &data) {
+  int i = 0;
+  for ( auto &&item : data ) {
+     fmt::print("[{}] {}\n",i++,item);
+  }
+}
+
+
 std::vector<std::string> loadStrings(const std::string& fileName) {
    std::vector<std::string> lines;
    std::ifstream inputFile(fileName);
@@ -310,6 +318,7 @@ int main(int argc, char* argv[]) {
             g.glc.resetFlushCount();
 
             g.move_matrix = Eigen::Matrix4f::Identity();
+            g.noLights();
             // Call the sketch's draw()
             draw();
             g.commit_draw();

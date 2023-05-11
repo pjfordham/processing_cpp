@@ -9,8 +9,8 @@
  */
 
 int num = 60;
-float mx[] = new float[num];
-float my[] = new float[num];
+std::vector<float> mx(num);
+std::vector<float> my(num);
 
 void setup() {
   size(640, 360);

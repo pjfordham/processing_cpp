@@ -17,13 +17,6 @@ void setup() {
   frameRate(1);
 }
 
-void draw() {
-  background(0);
-  for (int x = 0; x <= width; x+=dim) {
-    drawGradient(x, height/2);
-  }
-}
-
 void drawGradient(float x, float y) {
   int radius = dim/2;
   float h = random(0, 360);
@@ -34,3 +27,9 @@ void drawGradient(float x, float y) {
   }
 }
 
+void draw() {
+  background(0);
+  for (int x = 0; x <= width; x+=dim) {
+    drawGradient(x, height/2);
+  }
+}

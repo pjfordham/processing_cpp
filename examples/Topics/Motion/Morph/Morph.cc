@@ -8,12 +8,12 @@
 // Two ArrayLists to store the vertices for two shapes
 // This example assumes that each shape will have the same
 // number of vertices, i.e. the size of each ArrayList will be the same
-ArrayList<PVector> circle = new ArrayList<PVector>();
-ArrayList<PVector> square = new ArrayList<PVector>();
+std::vector<PVector> circle;
+std::vector<PVector> square;
 
 // An ArrayList for a third set of vertices, the ones we will be drawing
 // in the window
-ArrayList<PVector> morph = new ArrayList<PVector>();
+std::vector<PVector> morph;
 
 // This boolean variable will control if we are morphing to a circle or square
 boolean state = false;
@@ -25,29 +25,29 @@ void setup() {
   for (int angle = 0; angle < 360; angle += 9) {
     // Note we are not starting from 0 in order to match the
     // path of a circle.
-    PVector v = PVector.fromAngle(radians(angle-135));
+    PVector v = PVector::fromAngle(radians(angle-135));
     v.mult(100);
-    circle.add(v);
+    circle.push_back(v);
     // Let's fill out morph ArrayList with blank PVectors while we are at it
-    morph.add(new PVector());
+    morph.push_back(PVector());
   }
 
   // A square is a bunch of vertices along straight lines
   // Top of square
   for (int x = -50; x < 50; x += 10) {
-    square.add(new PVector(x, -50));
+    square.emplace_back(x, -50);
   }
   // Right side
   for (int y = -50; y < 50; y += 10) {
-    square.add(new PVector(50, y));
+    square.emplace_back(50, y);
   }
   // Bottom
   for (int x = 50; x > -50; x -= 10) {
-    square.add(new PVector(x, 50));
+    square.emplace_back(x, 50);
   }
   // Left side
   for (int y = 50; y > -50; y -= 10) {
-    square.add(new PVector(-50, y));
+    square.emplace_back(-50, y);
   }
 }
 
@@ -62,17 +62,17 @@ void draw() {
     PVector v1;
     // Are we lerping to the circle or square?
     if (state) {
-      v1 = circle.get(i);
+      v1 = circle[i];
     }
     else {
-      v1 = square.get(i);
+      v1 = square[i];
     }
     // Get the vertex we will draw
-    PVector v2 = morph.get(i);
+    PVector &v2 = morph[i];
     // Lerp to the target
     v2.lerp(v1, 0.1);
     // Check how far we are from target
-    totalDistance += PVector.dist(v1, v2);
+    totalDistance += PVector::dist(v1, v2);
   }
 
   // If all the vertices are close, switch shape
@@ -92,4 +92,3 @@ void draw() {
   }
   endShape(CLOSE);
 }
-

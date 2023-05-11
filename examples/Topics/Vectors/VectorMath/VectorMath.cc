@@ -14,9 +14,9 @@ void draw() {
   background(0);
 
   // A vector that points to the mouse location
-  PVector mouse = new PVector(mouseX,mouseY);
+  PVector mouse(mouseX,mouseY);
   // A vector that points to the center of the window
-  PVector center = new PVector(width/2,height/2);
+  PVector center(width/2,height/2);
   // Subtract center from mouse which results in a vector that points from center to mouse
   mouse.sub(center);
 

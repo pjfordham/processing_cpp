@@ -7,16 +7,16 @@
  * and the bottom row is the signal from "mousePressed".
  */
 
-int[] xvals;
-int[] yvals;
-int[] bvals;
+std::vector<int> xvals;
+std::vector<int> yvals;
+std::vector<int> bvals;
 
 void setup() {
   size(640, 360);
   noSmooth();
-  xvals = new int[width];
-  yvals = new int[width];
-  bvals = new int[width];
+  xvals.resize(width);
+  yvals.resize(width);
+  bvals.resize(width);
 }
 
 int arrayindex = 0;
@@ -33,7 +33,7 @@ void draw() {
   xvals[width-1] = mouseX;
   yvals[width-1] = mouseY;
 
-  if (mousePressed == true) {
+  if (mousePressedb == true) {
     bvals[width-1] = 0;
   } else {
     bvals[width-1] = height/3;

@@ -14,6 +14,20 @@
 
 int a = 80;  // Create a global variable "a"
 
+void drawAnotherLine() {
+  // Create a new variable "a" local to this method
+  int a = 320;
+  // Draw a line using the local variable "a"
+  line(a, 0, a, height);
+}
+
+void drawYetAnotherLine() {
+  // Because no new local variable "a" is set,
+  // this line draws using the original global
+  // variable "a", which is set to the value 80.
+  line(a+2, 0, a+2, height);
+}
+
 void setup() {
   size(640, 360);
   background(0);
@@ -40,18 +54,4 @@ void draw() {
 
   // Make a call to the custom function setYetAnotherLine()
   drawYetAnotherLine();
-}
-
-void drawAnotherLine() {
-  // Create a new variable "a" local to this method
-  int a = 320;
-  // Draw a line using the local variable "a"
-  line(a, 0, a, height);
-}
-
-void drawYetAnotherLine() {
-  // Because no new local variable "a" is set,
-  // this line draws using the original global
-  // variable "a", which is set to the value 80.
-  line(a+2, 0, a+2, height);
 }

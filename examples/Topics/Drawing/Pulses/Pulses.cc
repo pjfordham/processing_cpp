@@ -17,7 +17,7 @@ void setup() {
 
 void draw() {
   // Draw only when mouse is pressed
-  if (mousePressed == true) {
+  if (mousePressedb == true) {
     angle += 5;
     float val = cos(radians(angle)) * 12.0;
     for (int a = 0; a < 360; a += 75) {

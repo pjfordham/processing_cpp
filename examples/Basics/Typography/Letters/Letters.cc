@@ -12,7 +12,7 @@ void setup() {
   background(0);
 
   // Create the font
-  printArray(PFont.list());
+  printArray(PFont::list());
   f = createFont("SourceCodePro-Regular.ttf", 24);
   textFont(f);
   textAlign(CENTER, CENTER);
