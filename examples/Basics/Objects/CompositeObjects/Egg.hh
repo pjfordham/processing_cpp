@@ -1,8 +1,11 @@
 class Egg {
+public:
   float x, y; // X-coordinate, y-coordinate
   float tilt; // Left and right angle offset
   float angle; // Used to define the tilt
   float scalar; // Height of the egg
+
+  Egg() {}
 
   // Constructor
   Egg(float xpos, float ypos, float t, float s) {
@@ -33,4 +36,4 @@ class Egg {
     endShape();
     popMatrix();
   }
-}
+};

@@ -7,9 +7,9 @@
  */
 
 float v = 1.0 / 9.0;
-float[][] kernel = {{ v, v, v },
-                    { v, v, v },
-                    { v, v, v }};
+std::vector<std::vector<float>> kernel = {{ v, v, v },
+                                          { v, v, v },
+                                          { v, v, v }};
 
 PImage img;
 

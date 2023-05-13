@@ -7,7 +7,7 @@
 // Includes methods to calculate midPVectors along the line according to the Koch algorithm
 
 class KochLine {
-
+public:
   // Two PVectors,
   // a is the "left" PVector and
   // b is the "right PVector
@@ -15,8 +15,8 @@ class KochLine {
   PVector b;
 
   KochLine(PVector start, PVector end) {
-    a = start.copy();
-    b = end.copy();
+    a = start;
+    b = end;
   }
 
   void display() {
@@ -25,16 +25,16 @@ class KochLine {
   }
 
   PVector start() {
-    return a.copy();
+    return a;
   }
 
   PVector end() {
-    return b.copy();
+    return b;
   }
 
   // This is easy, just 1/3 of the way
   PVector kochleft() {
-    PVector v = PVector.sub(b, a);
+    PVector v = PVector::sub(b, a);
     v.div(3);
     v.add(a);
     return v;
@@ -42,10 +42,10 @@ class KochLine {
 
   // More complicated, have to use a little trig to figure out where this PVector is!
   PVector kochmiddle() {
-    PVector v = PVector.sub(b, a);
+    PVector v = PVector::sub(b, a);
     v.div(3);
 
-    PVector p = a.copy();
+    PVector p = a;
     p.add(v);
 
     v.rotate(-radians(60));
@@ -56,9 +56,9 @@ class KochLine {
 
   // Easy, just 2/3 of the way
   PVector kochright() {
-    PVector v = PVector.sub(a, b);
+    PVector v = PVector::sub(a, b);
     v.div(3);
     v.add(b);
     return v;
   }
-}
+};

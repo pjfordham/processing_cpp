@@ -12,19 +12,9 @@ void setup() {
   size(640, 360);
 
   // Create the font
-  printArray(PFont.list());
+  printArray(PFont::list());
   f = createFont("SourceCodePro-Regular.ttf", 24);
   textFont(f);
-}
-
-void draw() {
-  background(102);
-  textAlign(RIGHT);
-  drawType(width * 0.25);
-  textAlign(CENTER);
-  drawType(width * 0.5);
-  textAlign(LEFT);
-  drawType(width * 0.75);
 }
 
 void drawType(float x) {
@@ -38,4 +28,14 @@ void drawType(float x) {
   text("san", x, 165);
   fill(255);
   text("shi", x, 210);
+}
+
+void draw() {
+  background(102);
+  textAlign(RIGHT);
+  drawType(width * 0.25);
+  textAlign(CENTER);
+  drawType(width * 0.5);
+  textAlign(LEFT);
+  drawType(width * 0.75);
 }

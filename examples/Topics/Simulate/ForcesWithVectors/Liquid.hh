@@ -7,15 +7,19 @@
  * Bodies experience fluid resistance when in "water"
  */
 
+#include "Mover.hh"
+
 // Liquid class
 class Liquid {
-
 
   // Liquid is a rectangle
   float x, y, w, h;
   // Coefficient of drag
   float c;
 
+public:
+  Liquid() {}
+   
   Liquid(float x_, float y_, float w_, float h_, float c_) {
     x = x_;
     y = y_;
@@ -41,7 +45,7 @@ class Liquid {
     float dragMagnitude = c * speed * speed;
 
     // Direction is inverse of velocity
-    PVector drag = m.velocity.copy();
+    PVector drag = m.velocity;
     drag.mult(-1);
 
     // Scale according to magnitude
@@ -54,4 +58,4 @@ class Liquid {
     fill(127);
     rect(x, y, w, h);
   }
-}
+};

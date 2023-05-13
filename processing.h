@@ -99,6 +99,7 @@ std::vector<T> subset(const std::vector<T> &c, int start, int length) {
    return { c.begin() + start, c.begin() + start + length };
 }
 
+const char TAB = '\t';
 std::vector<std::string> split(const std::string& str, char delimiter) {
    std::vector<std::string> result;
    std::string token;
@@ -204,7 +205,8 @@ int main(int argc, char* argv[]) {
    PFont::init();
    PImage::init();
 
-   // Call the sketch's setup.
+   g.move_matrix = Eigen::Matrix4f::Identity();
+   g.noLights();
    setup();
 
    Uint32 clock = SDL_GetTicks();

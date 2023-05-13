@@ -1,9 +1,16 @@
+#include "Egg.hh"
+#include "Ring.hh"
+
 class EggRing {
+public:
+
   Egg ovoid;
-  Ring circle = new Ring();
+  Ring circle;
+
+  EggRing() {}
 
   EggRing(float x, float y, float t, float sp) {
-    ovoid = new Egg(x, y, t, sp);
+    ovoid = Egg(x, y, t, sp);
     circle.start(x, y - sp/2);
   }
 
@@ -16,4 +23,4 @@ class EggRing {
       circle.on = true;
     }
   }
-}
+};

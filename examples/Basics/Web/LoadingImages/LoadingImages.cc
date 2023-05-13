@@ -15,7 +15,7 @@ void setup() {
 
 void draw() {
   background(0);
-  if (img != null) {
+  if (img) {
     for (int i = 0; i < 5; i++) {
       image(img, 0, img.height * i);
     }

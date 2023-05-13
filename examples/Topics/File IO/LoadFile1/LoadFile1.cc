@@ -5,7 +5,7 @@
  * A new pair of numbers is loaded each frame and used to draw a point on the screen.
  */
 
-String[] lines;
+std::vector<std::string> lines;
 int index = 0;
 
 void setup() {
@@ -17,11 +17,11 @@ void setup() {
 }
 
 void draw() {
-  if (index < lines.length) {
-    String[] pieces = split(lines[index], '\t');
-    if (pieces.length == 2) {
-      int x = int(pieces[0]) * 2;
-      int y = int(pieces[1]) * 2;
+  if (index < lines.size()) {
+    std::vector<std::string> pieces = split(lines[index], '\t');
+    if (pieces.size() == 2) {
+      int x = std::stoi(pieces[0]) * 2;
+      int y = std::stoi(pieces[1]) * 2;
       point(x, y);
     }
     // Go to the next line for the next run through draw()

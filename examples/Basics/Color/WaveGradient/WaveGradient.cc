@@ -35,7 +35,7 @@ void setup() {
     }
   }
   // Draw the image to the screen
-  set(0, 0, gradient);
+  //set(0, 0, gradient);
   // Another alternative for drawing to the screen
-  //image(gradient, 0, 0);
+  image(gradient, 0, 0);
 }

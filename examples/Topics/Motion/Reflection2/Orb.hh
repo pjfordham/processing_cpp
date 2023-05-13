@@ -1,15 +1,22 @@
+#include "Ground.hh"
+
 class Orb {
+public:
   // Orb has positio and velocity
   PVector position;
   PVector velocity;
+  PVector gravity;
   float r;
   // A damping of 80% slows it down when it hits the ground
   float damping = 0.8;
 
-  Orb(float x, float y, float r_) {
-    position = new PVector(x, y);
-    velocity = new PVector(.5, 0);
+  Orb() {}
+
+  Orb(float x, float y, float r_, PVector g_) {
+    position = PVector(x, y);
+    velocity = PVector(.5, 0);
     r = r_;
+    gravity = g_;
   }
 
   void move() {
@@ -75,5 +82,5 @@ class Orb {
     position.x = groundSegment.x + deltaX;
     position.y = groundSegment.y + deltaY;
   }
-}
+};
 

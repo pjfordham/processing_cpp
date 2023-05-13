@@ -2,21 +2,16 @@
 // A simple Particle class, renders the particle as an image
 
 class Particle {
+public:
   PVector loc;
   PVector vel;
   PVector acc;
   float lifespan;
   PImage img;
 
-  Particle(PVector l, PImage img_) {
-    acc = new PVector(0, 0);
-    float vx = randomGaussian()*0.3;
-    float vy = randomGaussian()*0.3 - 1.0;
-    vel = new PVector(vx, vy);
-    loc = l.copy();
-    lifespan = 100.0;
-    img = img_;
-  }
+   Particle(PVector l, PImage img_) :
+      loc(l),  vel(randomGaussian()*0.3, randomGaussian()*0.3 - 1.0),
+      acc(0, 0), lifespan(100.0), img(img_) {}
 
   void run() {
     update();
@@ -56,4 +51,4 @@ class Particle {
       return false;
     }
   }
-}
+};

@@ -10,8 +10,8 @@ PImage img;
 void setup() {
   size(640, 360);
   img = createImage(230, 230, ARGB);
-  for(int i = 0; i < img.pixels.length; i++) {
-    float a = map(i, 0, img.pixels.length, 255, 0);
+  for(int i = 0; i < img.pixels_length(); i++) {
+    float a = map(i, 0, img.pixels_length(), 255, 0);
     img.pixels[i] = color(0, 153, 204, a);
   }
 }

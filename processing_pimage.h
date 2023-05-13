@@ -76,6 +76,10 @@ public:
       return { pixels[y * width + x], false };
    }
 
+   void set(int x, int y, color c) const {
+      pixels[y * width + x] = c;
+   }
+
    PImage(int w, int h, int mode) : width(w), height(h){
       surface = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_ABGR8888);
       if (surface == NULL) {

@@ -20,7 +20,7 @@ log APPDIR
 
 
 current_name=`basename $0`
-cmd_name='processing-java'
+cmd_name='processing-c++'
 log current_name
 log cmd_name
 
@@ -34,8 +34,23 @@ log SKETCH
 
 cd "$SKETCH"
 
-rm -f \*~ weak.o sketch.o sketch
+rm -f \*~ weak.o sketch.o sketch sketch.cc
 g++ -c -O3 $APPDIR/PerlinNoise.cc -o PerlinNoise.o
 g++ -c -O3 $APPDIR/weak.cc -o weak.o
+
+if [ $(echo *.cc | wc -w) -eq 1 ]; then
+    FILE=$(echo *.cc)    # Save the name of the file to a variable
+    if ! grep -q 'void\s*setup\s*[(]\s*[)]' "$FILE"; then
+        # Sketch is a single file that doesn't contain a void setup()
+        echo "void setup() {" > sketch.cc
+        echo "#include \"$FILE\"" >> sketch.cc
+        echo "noLoop();" >> sketch.cc
+        echo "}" >> sketch.cc
+        g++ -c -O3 -I/usr/include/freetype2 -include $APPDIR/processing.h sketch.cc -o sketch.o
+        g++ sketch.o weak.o PerlinNoise.o -lSDL2 -lSDL2_ttf -lfreetype  -lSDL2_image -lglfw -lGLEW -lGL -lcurl -lSDL2main -lfmt -lm -o ./sketch && ( cd data && ../sketch) || ./sketch
+        exit
+    fi
+fi
+
 g++ -c -O3 -I/usr/include/freetype2 -include $APPDIR/processing.h *.cc -o sketch.o
-g++ sketch.o weak.o PerlinNoise.o -lSDL2 -lSDL2_ttf -lfreetype  -lSDL2_image -lglfw -lGLEW -lGL -lcurl -lSDL2main -lfmt -lm -o ./sketch && ./sketch
+g++ sketch.o weak.o PerlinNoise.o -lSDL2 -lSDL2_ttf -lfreetype  -lSDL2_image -lglfw -lGLEW -lGL -lcurl -lSDL2main -lfmt -lm -o ./sketch && ( cd data && ../sketch) || ./sketch

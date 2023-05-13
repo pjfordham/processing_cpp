@@ -5,46 +5,22 @@
  * Multiple-object collision.
  */
 
-
 int numBalls = 12;
 float spring = 0.05;
 float gravity = 0.03;
 float friction = -0.9;
-Ball[] balls = new Ball[numBalls];
-
-void setup() {
-  size(640, 360);
-  for (int i = 0; i < numBalls; i++) {
-    balls[i] = new Ball(random(width), random(height), random(30, 70), i, balls);
-  }
-  noStroke();
-  fill(255, 204);
-}
-
-void draw() {
-  background(0);
-  for (Ball ball : balls) {
-    ball.collide();
-    ball.move();
-    ball.display();
-  }
-}
 
 class Ball {
-
+public:
   float x, y;
   float diameter;
   float vx = 0;
   float vy = 0;
   int id;
-  Ball[] others;
+  std::vector<Ball> &others;
 
-  Ball(float xin, float yin, float din, int idin, Ball[] oin) {
-    x = xin;
-    y = yin;
-    diameter = din;
-    id = idin;
-    others = oin;
+  Ball(float xin, float yin, float din, int idin, std::vector<Ball> &oin) :
+      x(xin), y(yin), diameter(din), id(idin), others(oin) {
   }
 
   void collide() {
@@ -91,5 +67,25 @@ class Ball {
 
   void display() {
     ellipse(x, y, diameter, diameter);
+  }
+};
+
+std::vector<Ball> balls;
+
+void setup() {
+  size(640, 360);
+  for (int i = 0; i < numBalls; i++) {
+    balls.emplace_back(random(width), random(height), random(30, 70), i, balls);
+  }
+  noStroke();
+  fill(255, 204);
+}
+
+void draw() {
+  background(0);
+  for (Ball &ball : balls) {
+    ball.collide();
+    ball.move();
+    ball.display();
   }
 }

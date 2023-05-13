@@ -10,6 +10,7 @@
 
 class Mover {
 
+public:
   // position, velocity, and acceleration
   PVector position;
   PVector velocity;
@@ -20,22 +21,21 @@ class Mover {
 
   Mover(float m, float x, float y) {
     mass = m;
-    position = new PVector(x, y);
-    velocity = new PVector(0, 0);
-    acceleration = new PVector(0, 0);
+    position = PVector(x, y);
+    velocity = PVector(0, 0);
+    acceleration = PVector(0, 0);
   }
 
   // Newton's 2nd law: F = M * A
   // or A = F / M
   void applyForce(PVector force) {
     // Divide by mass
-    PVector f = PVector.div(force, mass);
+    PVector f = PVector::div(force, mass);
     // Accumulate all forces in acceleration
     acceleration.add(f);
   }
 
   void update() {
-
     // Velocity changes according to acceleration
     velocity.add(acceleration);
     // position changes by velocity
@@ -59,4 +59,4 @@ class Mover {
       position.y = height;
     }
   }
-}
+};

@@ -5,24 +5,34 @@
  * Demonstration of multiple force acting on bodies (Mover class)
  * Bodies experience gravity continuously
  * Bodies experience fluid resistance when in "water"
- *
- * For the basics of working with PVector, see
- * http://processing.org/learning/pvector/
- * as well as examples in Topics/Vectors/
- *
  */
 
+#include "Liquid.hh"
+
+
 // Five moving bodies
-Mover[] movers = new Mover[10];
+std::vector<Mover> movers;
 
 // Liquid
 Liquid liquid;
 
+// Restart all the Mover objects randomly
+void reset() {
+  movers.clear();
+  for (int i = 0; i < 10; i++) {
+    movers.emplace_back(random(0.5, 3), 40+i*70, 0);
+  }
+}
+
+PFont f;
+
 void setup() {
   size(640, 360);
+  //f = createFont("SourceCodePro-Regular.ttf", 18);
+  //textFont(f);
   reset();
   // Create liquid object
-  liquid = new Liquid(0, height/2, width, height/2, 0.1);
+  liquid = Liquid(0, height/2, width, height/2, 0.1);
 }
 
 void draw() {
@@ -31,7 +41,7 @@ void draw() {
   // Draw water
   liquid.display();
 
-  for (Mover mover : movers) {
+  for (Mover &mover : movers) {
 
     // Is the Mover in the liquid?
     if (liquid.contains(mover)) {
@@ -42,7 +52,7 @@ void draw() {
     }
 
     // Gravity is scaled by mass here!
-    PVector gravity = new PVector(0, 0.1*mover.mass);
+    PVector gravity(0, 0.1*mover.mass);
     // Apply gravity
     mover.applyForce(gravity);
 
@@ -60,9 +70,3 @@ void mousePressed() {
   reset();
 }
 
-// Restart all the Mover objects randomly
-void reset() {
-  for (int i = 0; i < movers.length; i++) {
-    movers[i] = new Mover(random(0.5, 3), 40+i*70, 0);
-  }
-}

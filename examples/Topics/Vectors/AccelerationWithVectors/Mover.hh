@@ -9,7 +9,7 @@
 
 
 class Mover {
-
+public:
   // The Mover tracks location, velocity, and acceleration
   PVector location;
   PVector velocity;
@@ -19,16 +19,16 @@ class Mover {
 
   Mover() {
     // Start in the center
-    location = new PVector(width/2,height/2);
-    velocity = new PVector(0,0);
+    location = PVector(width/2,height/2);
+    velocity = PVector(0,0);
     topspeed = 5;
   }
 
   void update() {
 
     // Compute a vector that points from location to mouse
-    PVector mouse = new PVector(mouseX,mouseY);
-    PVector acceleration = PVector.sub(mouse,location);
+    PVector mouse = PVector(mouseX,mouseY);
+    PVector acceleration = PVector::sub(mouse,location);
     // Set magnitude of acceleration
     acceleration.setMag(0.2);
 
@@ -47,7 +47,7 @@ class Mover {
     ellipse(location.x,location.y,48,48);
   }
 
-}
+};
 
 
 

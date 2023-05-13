@@ -1,5 +1,5 @@
 class Ring {
-
+public:
   float x, y; // X-coordinate, y-coordinate
   float diameter; // Diameter of the ring
   boolean on = false; // Turns the display on and off
@@ -28,4 +28,4 @@ class Ring {
       ellipse(x, y, diameter, diameter);
     }
   }
-}
+};

@@ -15,7 +15,7 @@ PVector base2;
 float baseLength;
 
 // An array of subpoints along the floor path
-PVector[] coords;
+std::vector<PVector> coords;
 
 // Variables related to moving ball
 PVector position;
@@ -23,19 +23,33 @@ PVector velocity;
 float r = 6;
 float speed = 3.5;
 
+// Calculate variables for the ground
+void createGround() {
+  // calculate length of base top
+  baseLength = PVector::dist(base1, base2);
+
+  coords.clear();
+  // fill base top coordinate array
+  for (int i=0; i<ceil(baseLength); i++) {
+     coords.emplace_back(
+           base1.x + ((base2.x-base1.x)/baseLength)*i,
+           base1.y + ((base2.y-base1.y)/baseLength)*i );
+  }
+}
+
 void setup() {
   size(640, 360);
 
   fill(128);
-  base1 = new PVector(0, height-150);
-  base2 = new PVector(width, height);
+  base1 = PVector(0, height-150);
+  base2 = PVector(width, height);
   createGround();
 
   // start ellipse at middle top of screen
-  position = new PVector(width/2, 0);
+  position = PVector(width/2, 0);
 
   // calculate initial random velocity
-  velocity = PVector.random2D();
+  velocity = PVector::random2D();
   velocity.mult(speed);
 }
 
@@ -50,9 +64,9 @@ void draw() {
   quad(base1.x, base1.y, base2.x, base2.y, base2.x, height, 0, height);
 
   // calculate base top normal
-  PVector baseDelta = PVector.sub(base2, base1);
+  PVector baseDelta = PVector::sub(base2, base1);
   baseDelta.normalize();
-  PVector normal = new PVector(-baseDelta.y, baseDelta.x);
+  PVector normal(-baseDelta.y, baseDelta.x);
 
   // draw ellipse
   noStroke();
@@ -63,20 +77,19 @@ void draw() {
   position.add(velocity);
 
   // normalized incidence vector
-  PVector incidence = PVector.mult(velocity, -1);
+  PVector incidence = PVector::mult(velocity, -1);
   incidence.normalize();
 
   // detect and handle collision
-  for (int i=0; i<coords.length; i++) {
+  for (int i=0; i<coords.size(); i++) {
     // check distance between ellipse and base top coordinates
-    if (PVector.dist(position, coords[i]) < r) {
-
+    if (PVector::dist(position, coords[i]) < r) {
       // calculate dot product of incident vector and base top normal
       float dot = incidence.dot(normal);
 
       // calculate reflection vector
       // assign reflection vector to direction vector
-      velocity.set(2*normal.x*dot - incidence.x, 2*normal.y*dot - incidence.y, 0);
+      velocity = PVector{ 2*normal.x*dot - incidence.x, 2*normal.y*dot - incidence.y };
       velocity.mult(speed);
 
       // draw base top normal at collision point
@@ -106,19 +119,3 @@ void draw() {
     createGround();
   }
 }
-
-
-// Calculate variables for the ground
-void createGround() {
-  // calculate length of base top
-  baseLength = PVector.dist(base1, base2);
-
-  // fill base top coordinate array
-  coords = new PVector[ceil(baseLength)];
-  for (int i=0; i<coords.length; i++) {
-    coords[i] = new PVector();
-    coords[i].x = base1.x + ((base2.x-base1.x)/baseLength)*i;
-    coords[i].y = base1.y + ((base2.y-base1.y)/baseLength)*i;
-  }
-}
-

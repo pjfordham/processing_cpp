@@ -7,8 +7,10 @@
  * makes and models. Press a mouse button to advance to the next group of entries.
  */
 
-Record[] records;
-String[] lines;
+#include "Record.hh"
+
+std::vector<Record> records;
+std::vector<std::string> lines;
 int recordCount;
 PFont body;
 int num = 9; // Display this many entries on each screen.
@@ -19,20 +21,20 @@ void setup() {
   fill(255);
   noLoop();
 
-  body = loadFont("TheSans-Plain-12.vlw");
-  textFont(body);
+  // body = loadFont("TheSans-Plain-12.vlw");
+  // textFont(body);
 
   lines = loadStrings("cars2.tsv");
-  records = new Record[lines.length];
-  for (int i = 0; i < lines.length; i++) {
-    String[] pieces = split(lines[i], TAB); // Load data into array
-    if (pieces.length == 9) {
-      records[recordCount] = new Record(pieces);
+  records.resize(lines.size());
+  for (int i = 0; i < lines.size(); i++) {
+     std::vector<std::string> pieces = split(lines[i], TAB); // Load data into array
+     if (pieces.size() == 9) {
+      records[recordCount] = Record(pieces);
       recordCount++;
     }
   }
-  if (recordCount != records.length) {
-    records = (Record[]) subset(records, 0, recordCount);
+  if (recordCount != records.size()) {
+    records = subset(records, 0, recordCount);
   }
 }
 
@@ -48,7 +50,7 @@ void draw() {
 
 void mousePressed() {
   startingEntry += num;
-  if (startingEntry > records.length) {
+  if (startingEntry > records.size()) {
     startingEntry = 0;  // go back to the beginning
   }
   redraw();

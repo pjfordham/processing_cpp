@@ -10,12 +10,14 @@
  * Simulate/ForcesWithVectors, Simulate/GravitationalAttraction3D
  */
 
+#include "Mover.hh"
+
 // A Mover object
 Mover mover;
 
 void setup() {
   size(640,360);
-  mover = new Mover();
+  mover = Mover();
 }
 
 void draw() {

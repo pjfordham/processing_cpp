@@ -7,18 +7,18 @@
  * different patterns in time are created.
  */
 
-float scale;
+float scl;
 
 void setup() {
   size(640, 360);
   noStroke();
-  scale = width/20;
+  scl = width/20;
 }
 
 void draw() {
-  for (int i = 0; i < scale; i++) {
-    colorMode(RGB, (i+1) * scale * 10);
-    fill(millis()%((i+1) * scale * 10));
-    rect(i*scale, 0, scale, height);
+  for (int i = 0; i < scl; i++) {
+    colorMode(RGB, (i+1) * scl * 10);
+    fill(fmod(millis(),((i+1) * scl * 10)));
+    rect(i*scl, 0, scl, height);
   }
 }

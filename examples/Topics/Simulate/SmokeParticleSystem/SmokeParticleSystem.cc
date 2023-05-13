@@ -6,28 +6,14 @@
  * is rendered as an alpha masked image.
  */
 
+#include "ParticleSystem.hh"
+
 ParticleSystem ps;
 
 void setup() {
   size(640, 360);
   PImage img = loadImage("texture.png");
-  ps = new ParticleSystem(0, new PVector(width/2, height-60), img);
-}
-
-void draw() {
-  background(0);
-
-  // Calculate a "wind" force based on mouse horizontal position
-  float dx = map(mouseX, 0, width, -0.2, 0.2);
-  PVector wind = new PVector(dx, 0);
-  ps.applyForce(wind);
-  ps.run();
-  for (int i = 0; i < 2; i++) {
-    ps.addParticle();
-  }
-
-  // Draw an arrow representing the wind force
-  drawVector(wind, new PVector(width/2, 50, 0), 500);
+  ps = ParticleSystem(0, PVector(width/2, height-60), img);
 }
 
 // Renders a vector object 'v' as an arrow and a position 'loc'
@@ -46,4 +32,20 @@ void drawVector(PVector v, PVector loc, float scayl) {
   line(len, 0, len-arrowsize, +arrowsize/2);
   line(len, 0, len-arrowsize, -arrowsize/2);
   popMatrix();
+}
+
+void draw() {
+  background(0);
+
+  // Calculate a "wind" force based on mouse horizontal position
+  float dx = map(mouseX, 0, width, -0.2, 0.2);
+  PVector wind(dx, 0);
+  ps.applyForce(wind);
+  ps.run();
+  for (int i = 0; i < 2; i++) {
+    ps.addParticle();
+  }
+
+  // Draw an arrow representing the wind force
+  drawVector(wind, PVector(width/2, 50, 0), 500);
 }

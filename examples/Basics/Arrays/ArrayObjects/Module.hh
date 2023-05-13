@@ -1,4 +1,5 @@
 class Module {
+public:
   int xOffset;
   int yOffset;
   float x, y;
@@ -36,4 +37,4 @@ class Module {
     fill(255);
     ellipse(xOffset + x, yOffset + y, 6, 6);
   }
-}
+};

@@ -1,16 +1,18 @@
 // Koch Curve
 // A class to manage the list of line segments in the snowflake pattern
 
+#include "KochLine.hh"
+
 class KochFractal {
+public:
   PVector start;       // A PVector for the start
   PVector end;         // A PVector for the end
-  ArrayList<KochLine> lines;   // A list to keep track of all the lines
+  std::vector<KochLine> lines;   // A list to keep track of all the lines
   int count;
 
   KochFractal() {
-    start = new PVector(0,height-20);
-    end = new PVector(width,height-20);
-    lines = new ArrayList<KochLine>();
+    start = PVector(0,height-20);
+    end = PVector(width,height-20);
     restart();
   }
 
@@ -24,7 +26,7 @@ class KochFractal {
   void restart() {
     count = 0;      // Reset count
     lines.clear();  // Empty the array list
-    lines.add(new KochLine(start,end));  // Add the initial line (from one end PVector to the other)
+    lines.emplace_back(start,end);  // Add the initial line (from one end PVector to the other)
   }
 
   int getCount() {
@@ -33,7 +35,7 @@ class KochFractal {
 
   // This is easy, just draw all the lines
   void render() {
-    for(KochLine l : lines) {
+    for(KochLine &l : lines) {
       l.display();
     }
   }
@@ -46,8 +48,8 @@ class KochFractal {
   // Step 3: Return the new arraylist and it becomes the list of line segments for the structure
 
   // As we do this over and over again, each line gets broken into 4 lines, which gets broken into 4 lines, and so on. . .
-  ArrayList iterate(ArrayList<KochLine> before) {
-    ArrayList now = new ArrayList<KochLine>();    // Create emtpy list
+  std::vector<KochLine> iterate(std::vector<KochLine> &before) {
+    std::vector<KochLine> now;    // Create emtpy list
     for(KochLine l : before) {
       // Calculate 5 koch PVectors (done for us by the line object)
       PVector a = l.start();
@@ -56,12 +58,11 @@ class KochFractal {
       PVector d = l.kochright();
       PVector e = l.end();
       // Make line segments between all the PVectors and add them
-      now.add(new KochLine(a,b));
-      now.add(new KochLine(b,c));
-      now.add(new KochLine(c,d));
-      now.add(new KochLine(d,e));
+      now.emplace_back(a,b);
+      now.emplace_back(b,c);
+      now.emplace_back(c,d);
+      now.emplace_back(d,e);
     }
     return now;
   }
-
-}
+};

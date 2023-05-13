@@ -6,21 +6,23 @@
  * Foundation Actionscript Animation: Making Things Move!
  */
 
+#include "Orb.hh"
+
 Orb orb;
 
-PVector gravity = new PVector(0,0.05);
+PVector gravity(0,0.05);
 // The ground is an array of "Ground" objects
 int segments = 40;
-Ground[] ground = new Ground[segments];
+std::vector<Ground> ground(segments);
 
 void setup(){
   size(640, 360);
   // An orb object that will fall and bounce around
-  orb = new Orb(50, 50, 3);
+  orb = Orb(50, 50, 3, gravity);
 
   // Calculate ground peak heights
-  float[] peakHeights = new float[segments+1];
-  for (int i=0; i<peakHeights.length; i++){
+  std::vector<float> peakHeights(segments+1);
+  for (int i=0; i<peakHeights.size(); i++){
     peakHeights[i] = random(height-40, height-30);
   }
 
@@ -29,7 +31,7 @@ void setup(){
    display window, regardless of segment number. */
   float segs = segments;
   for (int i=0; i<segments; i++){
-    ground[i]  = new Ground(width/segs*i, peakHeights[i], width/segs*(i+1), peakHeights[i+1]);
+    ground[i] = Ground(width/segs*i, peakHeights[i], width/segs*(i+1), peakHeights[i+1]);
   }
 }
 

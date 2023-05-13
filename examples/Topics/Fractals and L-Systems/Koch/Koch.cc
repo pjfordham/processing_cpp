@@ -6,13 +6,14 @@
  * Each recursive level is drawn in sequence.
  */
 
+#include "KochFractal.hh"
 
 KochFractal k;
 
 void setup() {
   size(640, 360);
   frameRate(1);  // Animate slowly
-  k = new KochFractal();
+  k = KochFractal(); // redo it here to pick up width and height.
 }
 
 void draw() {
