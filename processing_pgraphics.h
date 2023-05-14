@@ -967,7 +967,7 @@ public:
    }
 
    void shape_fill(const PShape &pshape, color color) {
-      if (pshape.vertices.size() > 2) {
+      if (pshape.vertices.size() > 2 && pshape.style != POINTS) {
          if (pshape.normals.size() == 0) {
             std::vector<PVector> normals( pshape.vertices.size(), {0.0f,0.0f,0.0f });
             // Iterate over all triangles
