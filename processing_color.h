@@ -60,6 +60,7 @@ float color::scaleG = 255.0f;
 float color::scaleB = 255.0f;
 float color::scaleA = 255.0f;
 
+const color DEFAULT_GRAY = color(240);
 const color BLACK = color(0);
 const color WHITE = color(255);
 //const color GRAY = color(127);

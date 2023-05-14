@@ -134,7 +134,9 @@ public:
       perspective();
       noTexture();
 
-      background(WHITE);
+      background(DEFAULT_GRAY);
+      stroke(BLACK);
+      fill(WHITE);
    }
 
    void saveFrame( std::string fileName = "frame-####.png" ) {
