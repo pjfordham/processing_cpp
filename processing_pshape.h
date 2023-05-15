@@ -105,19 +105,19 @@ public:
    }
 
    void vertex(float x, float y, float z) {
-      vertices.push_back({x, y, z});
+      vertex({x, y, z}, {0.0f,0.0f});
       if (setNormals)
          normals.push_back( n );
    }
 
    void vertex(float x, float y) {
-      vertices.push_back({x, y, 0.0f});
+      vertex({x, y, 0.0f}, {0.0f,0.0f});
       if (setNormals)
          normals.push_back( n );
    }
 
    void vertex(PVector p) {
-      vertices.push_back(p);
+      vertex(p, {0.0f,0.0f});
       if (setNormals)
          normals.push_back( n );
    }

@@ -206,7 +206,17 @@ const char *PShader::defaultFragmentShader = R"glsl(
           float directional = max(dot(vNormal, -directionLightVector), 0.0);
           vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
 
-          vec4 texelColor = texture(myTextures, vTexture);
+          vec4 texelColor;
+          if ( vTexture.z == 8 ) { // It's a circle
+              vec2 pos = vTexture.xy;
+              vec2 centre = vec2(0.5,0.5);
+               if (distance(pos,centre) > 0.5)
+                   discard;
+               else
+                   texelColor = vec4(1.0,1.0,1.0,1.0);
+          } else {
+              texelColor = texture(myTextures, vTexture);
+          }
           fragColor = vec4(vLighting,1.0) * vColor * texelColor;
       }
 )glsl";

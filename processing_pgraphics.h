@@ -1010,7 +1010,7 @@ public:
             shape(child,0,0);
          }
       } else {
-         if (pshape.texture_.layer != 0) {
+         if (pshape.texture_.layer != 0 && pshape.texture_.layer != 8) {
             if (tint_color.a != 0) {
                shape_fill(pshape,tint_color);
             }
@@ -1259,19 +1259,59 @@ public:
       default:
          abort();
       }
-      int NUMBER_OF_VERTICES=32;
-      PShape shape;
-      shape.beginShape(TRIANGLES);
-      shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
-      for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
-         shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0, height /2.0) );
-         shape.indices.push_back( 0 );
-         shape.indices.push_back( i );
-         shape.indices.push_back( i+1 );
+      if (stroke_color.a == 0.0 && currentTexture.layer == 0) {
+         // If there's no stroke and no texture use circle optimization here
+         PShape shape;
+         shape.texture( { 8, 0,0, this->width, this->height, this->width, this->height } );
+         shape.beginShape(TRIANGLES);
+         x = x - width / 2.0;
+         y = y - height / 2.0;
+         shape.vertex(x,y,0,0);
+         shape.vertex(x+width,y,1.0,0);
+         shape.vertex(x+width,y+height,1.0,1.0);
+         shape.vertex(x,y+height,0,1.0);
+         shape.indices = { 0,1,2,0,2,3 };
+         shape.endShape(CLOSE);
+         return shape;
+      } else {
+         int NUMBER_OF_VERTICES=32;
+         PShape shape;
+         shape.beginShape(TRIANGLES);
+         shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
+         for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
+            shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0, height /2.0) );
+            shape.indices.push_back( 0 );
+            shape.indices.push_back( i );
+            shape.indices.push_back( i+1 );
+         }
+         shape.vertex( fast_ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, width / 2.0, height /2.0) );
+         shape.endShape(CLOSE);
+         return shape;
       }
-      shape.vertex( fast_ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, width / 2.0, height /2.0) );
-      shape.endShape(CLOSE);
-      return shape;
+   }
+
+   PVector posOnUnitSquare( float angle ) {
+      float x = 2 * sin(-angle + HALF_PI);
+      float y = 2 * cos(-angle + HALF_PI);
+      if ( x > 1.0 ) {
+         y = y / x;
+         x = 1.0;
+      } else if ( x < -1.0 ) {
+         y = y / -x;
+         x = -1.0;
+      }
+      if ( y > 1.0 ) {
+         x = x / y;
+         y = 1.0;
+      } else if ( y < -1.0 ) {
+         x = x / -y;
+         y = -1.0;
+      }
+      return {x,y};
+   }
+
+   PVector posOnUnitCircle( float angle ) {
+      return { sin(-angle + HALF_PI), cos(-angle + HALF_PI) };
    }
 
    PShape createArc(float x, float y, float width, float height, float start,
@@ -1303,18 +1343,63 @@ public:
          abort();
       }
 
-      PShape shape;
-      shape.beginShape(CONVEX_POLYGON);
-      int NUMBER_OF_VERTICES=32;
-      if ( fillMode == PIE ) {
-         shape.vertex(x,y);
+      if (stroke_color.a == 0.0 && currentTexture.layer == 0) {
+         // If there's no stroke and no texture use circle optimization here
+
+         PShape shape;
+         shape.texture( { 8, 0,0, this->width, this->height, this->width, this->height } );
+         if (fillMode == PIE) {
+            // This isn't really a CONVEX_POLYGON but I know
+            // it will fill ok with a traingle fan
+            shape.beginShape(CONVEX_POLYGON);
+            shape.vertex(x,y,0.5,0.5);
+         } else {
+            // We could probably do better here to avoid the
+            // triangulation pass but this works.
+            shape.beginShape(POLYGON);
+         }
+         for(float i = start; i < stop; i = i + (TWO_PI / 8) ) {
+            PVector pos = posOnUnitSquare( i );
+            shape.vertex(
+               x + pos.x * width,
+               y + pos.y * height,
+               0.5 + pos.x/2.0, 0.5 + pos.y/2.0 );
+         }
+         PVector pos = posOnUnitSquare( stop );
+         shape.vertex(
+            x + pos.x * width,
+            y + pos.y * height,
+            0.5 + pos.x/2.0, 0.5 + pos.y/2.0);
+         if (fillMode == CHORD) {
+            // For Chord mode we need to add two extra vertices at the radius at
+            // begining and end.
+            PVector pos = posOnUnitCircle( stop );
+            shape.vertex(
+               x + pos.x * width,
+               y + pos.y * height,
+               0.5 + pos.x/2.0, 0.5 + pos.y/2.0 );
+            pos = posOnUnitCircle( start );
+            shape.vertex(
+               x + pos.x * width,
+               y + pos.y * height,
+               0.5 + pos.x/2.0, 0.5 + pos.y/2.0 );
+         }
+         shape.endShape(strokeMode);
+         return shape;
+      } else {
+         PShape shape;
+         shape.beginShape(CONVEX_POLYGON);
+         int NUMBER_OF_VERTICES=32;
+         if ( fillMode == PIE ) {
+            shape.vertex(x,y);
+         }
+         for(float i = start; i < stop; i = i + (TWO_PI / NUMBER_OF_VERTICES) ) {
+            shape.vertex( { x + width * sin(-i + HALF_PI), y + height * cos(-i + HALF_PI) } );
+         }
+         shape.vertex( { x + width * sin(-stop + HALF_PI), y + height * cos(-stop + HALF_PI) } );
+         shape.endShape(strokeMode);
+         return shape;
       }
-      for(float i = start; i < stop; i = i + (TWO_PI / NUMBER_OF_VERTICES) ) {
-         shape.vertex( { x + width * sin(-i + HALF_PI), y + height * cos(-i + HALF_PI) } );
-      }
-      shape.vertex( { x + width * sin(-stop + HALF_PI), y + height * cos(-stop + HALF_PI) } );
-      shape.endShape(strokeMode);
-      return shape;
    }
 
    PShape createPoint(float x, float y) {
