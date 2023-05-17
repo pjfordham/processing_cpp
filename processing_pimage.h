@@ -243,4 +243,9 @@ PImage loadImage(const char *URL)
    return image;
 }
 
+PImage requestImage(const std::string &URL) {
+   // This should be an async load
+   return loadImage(URL.c_str());
+}
+
 #endif

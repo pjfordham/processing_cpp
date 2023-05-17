@@ -94,6 +94,12 @@ MAKE_GLOBAL(rotate, g);
 MAKE_GLOBAL(rotateY, g);
 MAKE_GLOBAL(rotateX, g);
 
+using namespace std::literals;
+template <typename T>
+std::string nf(T num, int digits) {
+   return fmt::format("{0:0{1}}", num, digits);
+}
+
 template <typename T>
 std::vector<T> subset(const std::vector<T> &c, int start, int length) {
    return { c.begin() + start, c.begin() + start + length };
