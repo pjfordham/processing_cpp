@@ -31,7 +31,7 @@ void draw() {
   // Draw the letter to the center of the screen
   textSize(14);
   text("Click on the program, then type to add to the String", 50, 50);
-  text("Current key: " + letter, 50, 70);
+  text("Current key: "s + letter, 50, 70);
   auto message = fmt::format("The String is {} characters long", words.length());
   text(message, 50, 90);
 

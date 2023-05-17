@@ -86,7 +86,7 @@ public:
       }
    }
 
-   SDL_Surface *render_text(std::string text, color color) {
+   SDL_Surface *render_text(const std::string &text, color color) {
       SDL_Surface* surface = TTF_RenderText_Blended(fontMap[std::make_pair(name,size)], text.c_str(),
                                                     { (unsigned char)color.r,
                                                       (unsigned char)color.g,
