@@ -1049,12 +1049,12 @@ public:
    }
 
    void line(float x1, float y1, float x2, float y2) {
-      PShape pshape = createLine( x1, y1, x2, y2);
-      shape( pshape );
+      line( x1, y1, 0.0f, x2, y2, 0.0f);
    }
 
    void line(float x1, float y1, float z1, float x2, float y2, float z2) {
-      abort();
+      PShape pshape = createLine( x1, y1, 0.0f, x2, y2, 0.0f);
+      shape( pshape );
    }
 
    void line(PVector start, PVector end) {
@@ -1159,11 +1159,11 @@ public:
       return shape;
    }
 
-   PShape createLine(float x1, float y1, float x2, float y2) {
+   PShape createLine(float x1, float y1, float z1, float x2, float y2, float z2) {
       PShape shape;
       shape.beginShape(POLYGON);
-      shape.vertex(x1,y1);
-      shape.vertex(x2,y2);
+      shape.vertex(x1,y1,y2);
+      shape.vertex(x2,y2,z2);
       shape.endShape(OPEN);
       return shape;
    }
