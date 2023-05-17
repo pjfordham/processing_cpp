@@ -1110,9 +1110,9 @@ public:
 
    void vertex(float x, float y, float z, float u, float v) {
       if (textureMode_ == NORMAL) {
-        _shape.vertex(x, y, z, u, v);
+         _shape.vertex(x, y, z, u, v);
       } else {
-        _shape.vertex(x,y,z,u/currentTexture.width(),v/currentTexture.height() );
+         _shape.vertex(x,y,z,u/currentTexture.width(),v/currentTexture.height() );
       }
    }
 

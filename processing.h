@@ -265,6 +265,11 @@ int main(int argc, char* argv[]) {
                key = CODED;
                keyCode = UP;
                break;
+            case SDLK_RETURN:
+            case SDLK_KP_ENTER:
+               key = CODED;
+               keyCode = ENTER;
+               break;
             case SDLK_DOWN:
                key = CODED;
                keyCode = DOWN;

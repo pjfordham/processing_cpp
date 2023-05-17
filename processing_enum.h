@@ -10,6 +10,7 @@ enum {
    RIGHT,
    UP,
    DOWN,
+   ENTER,
 
    P2D,
    P3D,
