@@ -185,6 +185,10 @@ public:
    }
 
    void rotate(float angle) {
+      rotateZ(angle);
+   }
+
+   void rotateZ(float angle) {
       rotate(angle ,PVector{0,0,1});
    }
 

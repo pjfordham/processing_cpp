@@ -93,8 +93,9 @@ MAKE_GLOBAL(translate, g);
 MAKE_GLOBAL(transform, g);
 MAKE_GLOBAL(scale, g);
 MAKE_GLOBAL(rotate, g);
-MAKE_GLOBAL(rotateY, g);
 MAKE_GLOBAL(rotateX, g);
+MAKE_GLOBAL(rotateY, g);
+MAKE_GLOBAL(rotateZ, g);
 
 void link(const char *link) {
    (void)!system(fmt::format("xdg-open {} >nul 2>nul",link).c_str());
