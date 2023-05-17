@@ -187,12 +187,13 @@ public:
             }
          }
          style = TRIANGLES;
-      } else if (style == TRIANGLE_STRIP) {
+      } else if (style == TRIANGLE_STRIP || style == QUAD_STRIP) {
          for (int i = 0; i < vertices.size() - 2; i++ ){
             indices.push_back(i);
             indices.push_back(i+1);
             indices.push_back(i+2);
          }
+         style = TRIANGLE_STRIP;
       } else if (style == CONVEX_POLYGON) {
          // Fill with triangle fan
          for (int i = 1; i < vertices.size() - 1 ; i++ ) {

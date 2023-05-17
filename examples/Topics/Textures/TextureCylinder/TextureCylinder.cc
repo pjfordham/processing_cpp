@@ -5,8 +5,8 @@
  */
 
 int tubeRes = 32;
-float[] tubeX = new float[tubeRes];
-float[] tubeY = new float[tubeRes];
+std::vector<float> tubeX(tubeRes);
+std::vector<float> tubeY(tubeRes);
 PImage img;
 
 void setup() {
