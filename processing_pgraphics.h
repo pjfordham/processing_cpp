@@ -925,6 +925,7 @@ public:
          }
          break;
       }
+      case TRIANGLES:
       case POLYGON:
       case CONVEX_POLYGON:
       {
@@ -960,8 +961,6 @@ public:
          shape_fill( drawTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight),color );
          break;
       }
-      case TRIANGLES:
-         break;
       default:
          abort();
          break;
