@@ -8,7 +8,7 @@
 
 int numFrames = 12;  // The number of frames in the animation
 int currentFrame = 0;
-PImage[] images = new PImage[numFrames];
+std::vector<PImage> images(numFrames);
 
 void setup() {
   size(640, 360);
