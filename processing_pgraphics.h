@@ -357,6 +357,12 @@ public:
       if ( yTextAlign == CENTER ) {
          y = y - theight / 2;
       }
+      if ( xTextAlign == RIGHT ) {
+         x = x - twidth;
+      }
+      if ( yTextAlign == RIGHT ) {
+         y = y - theight;
+      }
 
       drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
                        texture, WHITE);
@@ -757,7 +763,7 @@ public:
                          PTexture texture, color tint) {
       PShape quad;
       quad.texture(texture);
-      quad.beginShape(TRIANGLES);
+      quad.beginShape(TRIANGLES_NOSTROKE);
       quad.vertex( p0, {0.0, 0.0} );
       quad.vertex( p1, {1.0, 0.0} );
       quad.vertex( p2, {1.0, 1.0} );
@@ -925,6 +931,8 @@ public:
          }
          break;
       }
+      case TRIANGLES_NOSTROKE:
+         break;
       case TRIANGLES:
       case POLYGON:
       case CONVEX_POLYGON:
