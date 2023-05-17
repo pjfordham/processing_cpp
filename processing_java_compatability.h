@@ -12,6 +12,7 @@
 
 using FloatArrayList = std::vector<float>;
 
+using std::max;
 using std::min;
 
 typedef bool boolean;
