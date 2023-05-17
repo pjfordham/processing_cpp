@@ -8,6 +8,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstdlib>
 
 #include "weak.h"
 #include "processing_math.h"
@@ -93,6 +94,10 @@ MAKE_GLOBAL(scale, g);
 MAKE_GLOBAL(rotate, g);
 MAKE_GLOBAL(rotateY, g);
 MAKE_GLOBAL(rotateX, g);
+
+void link(const char *link) {
+   (void)!system(fmt::format("xdg-open {} >nul 2>nul",link).c_str());
+}
 
 using namespace std::literals;
 template <typename T>
@@ -233,6 +238,8 @@ int main(int argc, char* argv[]) {
             mouseY = event.motion.y;
             if (mousePressedb) {
                mouseDragged();
+            } else {
+               mouseMoved();
             }
          } else if (event.type == SDL_MOUSEBUTTONDOWN) {
             if (event.button.button == SDL_BUTTON_LEFT) {

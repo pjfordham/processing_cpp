@@ -10,6 +10,28 @@ void setup() {
   size(640, 360);
 }
 
+void mousePressed() {
+  if (overButton) {
+    link("http://www.processing.org");
+  }
+}
+
+void checkButtons() {
+  if (mouseX > 105 && mouseX < 180 && mouseY > 60 && mouseY <135) {
+    overButton = true;
+  } else {
+    overButton = false;
+  }
+}
+
+void mouseMoved() {
+  checkButtons();
+}
+
+void mouseDragged() {
+  checkButtons();
+}
+
 void draw() {
   background(204);
 
@@ -22,26 +44,4 @@ void draw() {
   line(135, 105, 155, 85);
   line(140, 85, 155, 85);
   line(155, 85, 155, 100);
-}
-
-void mousePressed() {
-  if (overButton) {
-    link("http://www.processing.org");
-  }
-}
-
-void mouseMoved() {
-  checkButtons();
-}
-
-void mouseDragged() {
-  checkButtons();
-}
-
-void checkButtons() {
-  if (mouseX > 105 && mouseX < 180 && mouseY > 60 && mouseY <135) {
-    overButton = true;
-  } else {
-    overButton = false;
-  }
 }

@@ -8,6 +8,7 @@ void setup();
 void draw();
 void mousePressed();
 void mouseDragged();
+void mouseMoved();
 void mouseReleased();
 
 #endif

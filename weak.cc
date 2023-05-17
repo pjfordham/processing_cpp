@@ -6,4 +6,5 @@ __attribute__((weak)) void setup() {}
 __attribute__((weak)) void draw() {}
 __attribute__((weak)) void mousePressed() {}
 __attribute__((weak)) void mouseDragged() {}
+__attribute__((weak)) void mouseMoved() {}
 __attribute__((weak)) void mouseReleased() {}
