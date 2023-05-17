@@ -34,6 +34,7 @@ enum {
    OPEN_SKIP_FIRST_VERTEX_FOR_STROKE,
    LINES,
    GROUP,
+   QUADS,
    TRIANGLE_STRIP,
    TRIANGLE_FAN,
    CONVEX_POLYGON,
@@ -52,6 +53,8 @@ enum {
    PIE,
    DEFAULT,
    DIAMETER,
+   NORMAL,
+   IMAGE
 };
 
 

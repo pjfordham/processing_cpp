@@ -178,7 +178,16 @@ public:
 
       if (vertices.size() == 0) abort();
 
-      if (style == TRIANGLE_STRIP) {
+      if (style == QUADS) {
+         if (vertices.size() % 4 != 0) abort();
+         for (int i= 0; i< vertices.size(); i+=4) {
+            auto quad = triangulatePolygon( {vertices.begin() + i, vertices.begin() + i + 4} );
+            for( auto &&j : quad ) {
+               indices.push_back(j + i);
+            }
+         }
+         style = TRIANGLES;
+      } else if (style == TRIANGLE_STRIP) {
          for (int i = 0; i < vertices.size() - 2; i++ ){
             indices.push_back(i);
             indices.push_back(i+1);

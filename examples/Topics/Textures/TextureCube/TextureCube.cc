@@ -19,16 +19,6 @@ void setup() {
   stroke(color(44,48,32));
 }
 
-void draw() {
-  background(0);
-  noStroke();
-  translate(width/2.0, height/2.0, -100);
-  rotateX(rotx);
-  rotateY(roty);
-  scale(90);
-  TexturedCube(tex);
-}
-
 void TexturedCube(PImage tex) {
   beginShape(QUADS);
   texture(tex);
@@ -79,6 +69,16 @@ void TexturedCube(PImage tex) {
   vertex(-1,  1, -1, 0, 1);
 
   endShape();
+}
+
+void draw() {
+  background(0);
+  noStroke();
+  translate(width/2.0, height/2.0, -100);
+  rotateX(rotx);
+  rotateY(roty);
+  scale(90);
+  TexturedCube(tex);
 }
 
 void mouseDragged() {

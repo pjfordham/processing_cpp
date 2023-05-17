@@ -19,6 +19,7 @@
 class PGraphics {
 public:
    PTexture currentTexture;
+   int textureMode_ = IMAGE;
    gl_context glc;
 
    color stroke_color = WHITE;
@@ -69,6 +70,7 @@ public:
    PGraphics& operator=(const PGraphics&) = delete;
    PGraphics& operator=(PGraphics&&x) noexcept {
       std::swap(currentTexture, x.currentTexture);
+      std::swap(textureMode_, x.textureMode_);
       std::swap(glc, x.glc);
 
       std::swap(stroke_color, x.stroke_color);
@@ -441,6 +443,10 @@ public:
                     pointLightPosition.data(),
                     pointLightFalloff.data());
       }
+   }
+
+   void textureMode( int mode ) {
+      textureMode_ = mode;
    }
 
    void noTexture() {
@@ -1094,11 +1100,24 @@ public:
 
    void beginShape(int points = POLYGON) {
       _shape = PShape();
+      _shape.texture( currentTexture );
       _shape.beginShape(points);
    }
 
-   void vertex(float x, float y, float z = 0.0) {
-      _shape.vertex(x, y, z);
+   void vertex(float x, float y, float z, float u, float v) {
+      if (textureMode_ == NORMAL) {
+        _shape.vertex(x, y, z, u, v);
+      } else {
+        _shape.vertex(x,y,z,u/currentTexture.width(),v/currentTexture.height() );
+      }
+   }
+
+   void vertex(float x, float y, float u, float v) {
+      vertex(x,y,0.0,u,v);
+   }
+
+   void vertex(float x, float y) {
+      vertex(x,y,0.0,0.0,0.0);
    }
 
    void normal(float x, float y, float z) {
