@@ -27,7 +27,7 @@ b = byte(c / 2);   // Sets b to 32
 //println(i);
 //println(b);
 
-text("The value of variable c is " + c, 50, 100);
-text("The value of variable f is " + f, 50, 150);
-text("The value of variable i is " + i, 50, 200);
-text("The value of variable b is " + b, 50, 250);
+text(fmt::format("The value of variable c is {}", c), 50, 100);
+text(fmt::format("The value of variable f is {}", f), 50, 150);
+text(fmt::format("The value of variable i is {}", i), 50, 200);
+text(fmt::format("The value of variable b is {}", b), 50, 250);
