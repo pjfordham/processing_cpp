@@ -73,11 +73,15 @@ public:
    }
 
    color get(int x, int y) const {
-      return { pixels[y * width + x], false };
+      if ( 0 <= x && x < width && 0 <= y && y < height)
+         return { pixels[y * width + x], false };
+      else
+         return BLACK;
    }
 
-   void set(int x, int y, color c) const {
-      pixels[y * width + x] = c;
+   void set(int x, int y, color c) {
+      if ( 0 <= x && x < width && 0 <= y && y < height)
+         pixels[y * width + x] = c;
    }
 
    PImage(int w, int h, int mode) : width(w), height(h){
