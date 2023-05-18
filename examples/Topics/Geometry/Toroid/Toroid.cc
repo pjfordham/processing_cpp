@@ -28,7 +28,8 @@ float latheAngle = 0;
 float latheRadius = 100.0;
 
 //vertices
-PVector vertices[], vertices2[];
+std::vector<PVector> vertices;
+std::vector<PVector> vertices2;
 
 // for shaded or wireframe rendering
 boolean isWireFrame = false;
@@ -63,13 +64,11 @@ void draw(){
   rotateZ(frameCount*PI/90);
 
   // initialize point arrays
-  vertices = new PVector[pts+1];
-  vertices2 = new PVector[pts+1];
+  vertices.resize(pts+1);
+  vertices2.resize(pts+1);
 
   // fill arrays
   for(int i=0; i<=pts; i++){
-    vertices[i] = new PVector();
-    vertices2[i] = new PVector();
     vertices[i].x = latheRadius + sin(radians(angle))*radius;
     if (isHelix){
       vertices[i].z = cos(radians(angle))*radius-(helixOffset*

@@ -1120,6 +1120,10 @@ public:
       vertex(x,y,0.0,u,v);
    }
 
+   void vertex(float x, float y, float z) {
+      vertex(x,y,z,0.0,0.0);
+   }
+
    void vertex(float x, float y) {
       vertex(x,y,0.0,0.0,0.0);
    }
