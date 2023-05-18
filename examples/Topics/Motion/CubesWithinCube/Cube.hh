@@ -2,6 +2,7 @@
 // Custom Cube Class
 
 class Cube {
+public:
   // Position, velocity vectors
   PVector position;
   PVector velocity;
@@ -9,18 +10,19 @@ class Cube {
   PVector rotation;
 
   // Vertices of the cube
-  PVector[] vertices = new PVector[24];
+  std::vector<PVector> vertices;
   // width, height, depth
   float w, h, d;
 
   // colors for faces of cube
-  color[] quadBG = new color[6];
+  std::vector<color> quadBG;
 
   Cube(float w, float h, float d) {
-    this.w = w;
-    this.h = h;
-    this.d = d;
+    this->w = w;
+    this->h = h;
+    this->d = d;
 
+    quadBG.resize(6);
     // Colors are hardcoded
     quadBG[0] = color(0);
     quadBG[1] = color(51);
@@ -30,43 +32,43 @@ class Cube {
     quadBG[5] = color(255);
 
     // Start in center
-    position = new PVector();
     // Random velocity vector
-    velocity = PVector.random3D();
+    velocity = PVector::random3D();
     // Random rotation
-    rotation = new PVector(random(40, 100), random(40, 100), random(40, 100));
+    rotation = PVector(random(40, 100), random(40, 100), random(40, 100));
 
+    vertices.resize(24);
     // cube composed of 6 quads
     //front
-    vertices[0] = new PVector(-w/2, -h/2, d/2);
-    vertices[1] = new PVector(w/2, -h/2, d/2);
-    vertices[2] = new PVector(w/2, h/2, d/2);
-    vertices[3] = new PVector(-w/2, h/2, d/2);
+    vertices[0] = PVector(-w/2, -h/2, d/2);
+    vertices[1] = PVector(w/2, -h/2, d/2);
+    vertices[2] = PVector(w/2, h/2, d/2);
+    vertices[3] = PVector(-w/2, h/2, d/2);
     //left
-    vertices[4] = new PVector(-w/2, -h/2, d/2);
-    vertices[5] = new PVector(-w/2, -h/2, -d/2);
-    vertices[6] = new PVector(-w/2, h/2, -d/2);
-    vertices[7] = new PVector(-w/2, h/2, d/2);
+    vertices[4] = PVector(-w/2, -h/2, d/2);
+    vertices[5] = PVector(-w/2, -h/2, -d/2);
+    vertices[6] = PVector(-w/2, h/2, -d/2);
+    vertices[7] = PVector(-w/2, h/2, d/2);
     //right
-    vertices[8] = new PVector(w/2, -h/2, d/2);
-    vertices[9] = new PVector(w/2, -h/2, -d/2);
-    vertices[10] = new PVector(w/2, h/2, -d/2);
-    vertices[11] = new PVector(w/2, h/2, d/2);
+    vertices[8] = PVector(w/2, -h/2, d/2);
+    vertices[9] = PVector(w/2, -h/2, -d/2);
+    vertices[10] = PVector(w/2, h/2, -d/2);
+    vertices[11] = PVector(w/2, h/2, d/2);
     //back
-    vertices[12] = new PVector(-w/2, -h/2, -d/2);
-    vertices[13] = new PVector(w/2, -h/2, -d/2);
-    vertices[14] = new PVector(w/2, h/2, -d/2);
-    vertices[15] = new PVector(-w/2, h/2, -d/2);
+    vertices[12] = PVector(-w/2, -h/2, -d/2);
+    vertices[13] = PVector(w/2, -h/2, -d/2);
+    vertices[14] = PVector(w/2, h/2, -d/2);
+    vertices[15] = PVector(-w/2, h/2, -d/2);
     //top
-    vertices[16] = new PVector(-w/2, -h/2, d/2);
-    vertices[17] = new PVector(-w/2, -h/2, -d/2);
-    vertices[18] = new PVector(w/2, -h/2, -d/2);
-    vertices[19] = new PVector(w/2, -h/2, d/2);
+    vertices[16] = PVector(-w/2, -h/2, d/2);
+    vertices[17] = PVector(-w/2, -h/2, -d/2);
+    vertices[18] = PVector(w/2, -h/2, -d/2);
+    vertices[19] = PVector(w/2, -h/2, d/2);
     //bottom
-    vertices[20] = new PVector(-w/2, h/2, d/2);
-    vertices[21] = new PVector(-w/2, h/2, -d/2);
-    vertices[22] = new PVector(w/2, h/2, -d/2);
-    vertices[23] = new PVector(w/2, h/2, d/2);
+    vertices[20] = PVector(-w/2, h/2, d/2);
+    vertices[21] = PVector(-w/2, h/2, -d/2);
+    vertices[22] = PVector(w/2, h/2, -d/2);
+    vertices[23] = PVector(w/2, h/2, d/2);
   }
 
   // Cube shape itself
@@ -83,7 +85,7 @@ class Cube {
   }
 
   // Update location
-  void update() {
+  void update( float bounds ) {
     position.add(velocity);
 
     // Check wall collisions
@@ -110,5 +112,5 @@ class Cube {
     drawCube(); // Farm out shape to another method
     popMatrix();
   }
-}
+};
 

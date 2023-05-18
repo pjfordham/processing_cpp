@@ -6,8 +6,10 @@
  * outer cube's surfaces.
  */
 
+#include "Cube.hh"
+
 // 20 little internal cubes
-Cube[] cubies = new Cube[20];
+std::vector<Cube> cubies;
 
 // Size of outer cube
 float bounds = 300;
@@ -15,10 +17,10 @@ float bounds = 300;
 void setup() {
   size(640, 360, P3D);
 
-  for (int i = 0; i < cubies.length; i++) {
+  for (int i = 0; i < 20; i++) {
     // Cubies are randomly sized
     float cubieSize = random(5, 15);
-    cubies[i] =  new Cube(cubieSize, cubieSize, cubieSize);
+    cubies.emplace_back(cubieSize, cubieSize, cubieSize);
   }
 
 }
@@ -42,8 +44,8 @@ void draw() {
   box(bounds);
 
   // Move and rotate cubies
-  for (Cube c : cubies) {
-    c.update();
+  for (Cube &c : cubies) {
+    c.update( bounds );
     c.display();
   }
 }
