@@ -201,6 +201,13 @@ public:
             indices.push_back( i );
             indices.push_back( i+1 );
          }
+      }  else if (style == TRIANGLE_FAN) {
+         // Fill with triangle fan
+         for (int i = 1; i < vertices.size() - 1 ; i++ ) {
+            indices.push_back( 0 );
+            indices.push_back( i );
+            indices.push_back( i+1 );
+         }
       } else if (style == POLYGON) {
          indices = triangulatePolygon({vertices.begin(),vertices.end()});
       } else if (style == TRIANGLES) {

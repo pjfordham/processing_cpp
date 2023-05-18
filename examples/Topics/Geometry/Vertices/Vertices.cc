@@ -12,20 +12,6 @@ void setup() {
   size(640, 360, P3D);
 }
 
-void draw() {
-  background(0);
-  lights();
-  translate(width / 2, height / 2);
-  rotateY(map(mouseX, 0, width, 0, PI));
-  rotateZ(map(mouseY, 0, height, 0, -PI));
-  noStroke();
-  fill(255, 255, 255);
-  translate(0, -40, 0);
-  drawCylinder(10, 180, 200, 16); // Draw a mix between a cylinder and a cone
-  //drawCylinder(70, 70, 120, 64); // Draw a cylinder
-  //drawCylinder(0, 180, 200, 4); // Draw a pyramid
-}
-
 void drawCylinder(float topRadius, float bottomRadius, float tall, int sides) {
   float angle = 0;
   float angleIncrement = TWO_PI / sides;
@@ -64,4 +50,18 @@ void drawCylinder(float topRadius, float bottomRadius, float tall, int sides) {
     }
     endShape();
   }
+}
+
+void draw() {
+  background(0);
+  lights();
+  translate(width / 2, height / 2);
+  rotateY(map(mouseX, 0, width, 0, PI));
+  rotateZ(map(mouseY, 0, height, 0, -PI));
+  noStroke();
+  fill(255, 255, 255);
+  translate(0, -40, 0);
+  drawCylinder(10, 180, 200, 16); // Draw a mix between a cylinder and a cone
+  //drawCylinder(70, 70, 120, 64); // Draw a cylinder
+  //drawCylinder(0, 180, 200, 4); // Draw a pyramid
 }
