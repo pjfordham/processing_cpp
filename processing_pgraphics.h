@@ -200,6 +200,16 @@ public:
       rotate(angle, PVector{1,0,0});
    }
 
+   float screenX(float x, float y, float z = 0.0) {
+      Eigen::Vector4f in = { x, y, z, 1.0 };
+      return (projection_matrix * view_matrix * in)[0];
+   }
+
+   float screenY(float x, float y, float z = 0.0) {
+      Eigen::Vector4f in = { x, y, z, 1.0 };
+      return (projection_matrix * view_matrix * in)[1];
+   }
+
    Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
       float f = 1 / tan(0.5 * fov);
       float rangeInv = 1.0 / (near - far);
@@ -946,6 +956,7 @@ public:
       case TRIANGLES:
       case POLYGON:
       case CONVEX_POLYGON:
+      case LINES:
       {
          if (pshape.vertices.size() > 2 ) {
             if (pshape.type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {

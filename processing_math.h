@@ -20,7 +20,7 @@ void noiseSeed(int seed) {
    perlin_noise = PerlinNoise(seed);
 }
 
-void noiseDetail(int lod, float falloff) {
+void noiseDetail(int lod, float falloff = 0.5) {
    perlin_octaves = lod;
    perlin_falloff = falloff;
 }

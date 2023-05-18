@@ -5,47 +5,10 @@
  * Uniform random distribution on the surface of a sphere.
  */
 
-int cuantos = 4000;
-Pelo[] lista ;
-float[] z = new float[cuantos];
-float[] phi = new float[cuantos];
-float[] largos = new float[cuantos];
 float radio;
-float rx = 0;
-float ry =0;
-
-void setup() {
-  size(640, 360, P3D);
-  radio = height/3;
-  lista = new Pelo[cuantos];
-  for (int i=0; i<cuantos; i++) {
-    lista[i] = new Pelo();
-  }
-  noiseDetail(3);
-}
-
-void draw() {
-  background(0);
-  translate(width/2, height/2);
-
-  float rxp = ((mouseX-(width/2))*0.005);
-  float ryp = ((mouseY-(height/2))*0.005);
-  rx = (rx*0.9)+(rxp*0.1);
-  ry = (ry*0.9)+(ryp*0.1);
-  rotateY(rx);
-  rotateX(ry);
-  fill(0);
-  noStroke();
-  sphere(radio);
-
-  for (int i = 0;i < cuantos; i++) {
-    lista[i].dibujar();
-  }
-}
-
 
 class Pelo {
-
+public:
   float z = random(-radio, radio);
   float phi = random(TWO_PI);
   float largo = random(1.15, 1.2);
@@ -77,6 +40,39 @@ class Pelo {
     stroke(200, 150);
     vertex(xb, yb, zb);
     endShape();
+  }
+};
+
+int cuantos = 4000;
+std::vector<Pelo> lista(cuantos);
+std::vector<float> z(cuantos);
+std::vector<float> phi(cuantos);
+std::vector<float> largos(cuantos);
+float rx = 0;
+float ry =0;
+
+void setup() {
+  size(640, 360, P3D);
+  radio = height/3;
+  noiseDetail(3);
+}
+
+void draw() {
+  background(0);
+  translate(width/2, height/2);
+
+  float rxp = ((mouseX-(width/2))*0.005);
+  float ryp = ((mouseY-(height/2))*0.005);
+  rx = (rx*0.9)+(rxp*0.1);
+  ry = (ry*0.9)+(ryp*0.1);
+  rotateY(rx);
+  rotateX(ry);
+  fill(0);
+  noStroke();
+  sphere(radio);
+
+  for (int i = 0;i < cuantos; i++) {
+    lista[i].dibujar();
   }
 }
 
