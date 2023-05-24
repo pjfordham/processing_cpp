@@ -1,16 +1,7 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-#include <SDL2/SDL.h>
-#include <algorithm>
-#include <cmath>
-#include <fmt/core.h>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <cstdlib>
-
-#include "weak.h"
+#include "processing_utils.h"
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_java_compatability.h"
@@ -21,7 +12,7 @@
 #include "processing_time.h"
 
 // This is the global PGraphcs object that forms the top level canvas.
-PGraphics g;
+extern PGraphics g;
 
 // This macro and it's following uses pull the API from PGraphcs into
 // the global namespace dispatching to the PGraphics object g.
@@ -99,87 +90,26 @@ MAKE_GLOBAL(rotateX, g);
 MAKE_GLOBAL(rotateY, g);
 MAKE_GLOBAL(rotateZ, g);
 
-void link(const char *link) {
-   (void)!system(fmt::format("xdg-open {} >nul 2>nul",link).c_str());
-}
 
-using namespace std::literals;
-template <typename T>
-std::string nf(T num, int digits) {
-   return fmt::format("{0:0{1}}", num, digits);
-}
-
-template <typename T>
-std::vector<T> subset(const std::vector<T> &c, int start, int length) {
-   return { c.begin() + start, c.begin() + start + length };
-}
-
-const char TAB = '\t';
-std::vector<std::string> split(const std::string& str, char delimiter) {
-   std::vector<std::string> result;
-   std::string token;
-
-   for (const char& c : str) {
-      if (c == delimiter) {
-         result.push_back(token);
-         token.clear();
-      } else {
-         token += c;
-      }
-   }
-
-   // Push back the last token, if any
-   if (!token.empty()) {
-      result.push_back(token);
-   }
-
-   return result;
-}
-
-template<typename T> void printArray(const std::vector<T> &data) {
-  int i = 0;
-  for ( auto &&item : data ) {
-     fmt::print("[{}] {}\n",i++,item);
-  }
-}
-
-
-std::vector<std::string> loadStrings(const std::string& fileName) {
-   std::vector<std::string> lines;
-   std::ifstream inputFile(fileName);
-
-   if (!inputFile.is_open()) {
-      abort();
-   }
-
-   std::string line;
-   while (std::getline(inputFile, line)) {
-      lines.push_back(line);
-   }
-
-   inputFile.close();
-   return lines;
-}
-
-int setFrameRate = 60;
-void frameRate(int rate) {
+extern int setFrameRate;
+inline void frameRate(int rate) {
    setFrameRate = rate;
 }
 
-bool xloop = true;
+extern bool xloop;
 
-void noLoop() {
+inline void noLoop() {
    xloop = false;
 }
 
-void loop() {
+inline void loop() {
    xloop = true;
 }
 
-int width = 0;
-int height = 0;
+extern int width;
+extern int height;
 
-void size(int _width, int _height, int mode = P2D) {
+inline void size(int _width, int _height, int mode = P2D) {
    // Create a window
    width = _width;
    height = _height;
@@ -187,188 +117,40 @@ void size(int _width, int _height, int mode = P2D) {
 }
 
 
-Uint32 *pixels; // pointer to the texture's pixel data in the desired format
+extern unsigned int *pixels; // pointer to the texture's pixel data in the desired format
 
-void loadPixels() {
+inline void loadPixels() {
    g.loadPixels();
    pixels = g.pixels.data();
 }
 
-int frameCount = 0;
-int zframeCount = 0;
-int mouseX = 0;
-int mouseY = 0;
-int pmouseX = 0;
-int pmouseY = 0;
+extern int frameCount;
+extern int zframeCount;
+extern int mouseX;
+extern int mouseY;
+extern int pmouseX;
+extern int pmouseY;
 
-void redraw() {
+inline void redraw() {
    frameCount = 0;
 }
 
-char key = 0;
-int keyCode = 0;
+extern char key;
+extern int keyCode;
 
-bool mousePressedb = false;
+extern bool mousePressedb;
 
-int main(int argc, char* argv[]) {
-   // Initialize SDL
-   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-      return 1;
-   }
+bool dispatchEvents();
+void drawFrame();
 
-   PFont::init();
-   PImage::init();
-
-   g.move_matrix = Eigen::Matrix4f::Identity();
-   g.noLights();
-   setup();
-
-   Uint32 clock = SDL_GetTicks();
-   Uint32 frameRateClock = clock;
-   bool quit = false;
-
-   // Set the initial tick count
-   Uint32 ticks = SDL_GetTicks();
-
-   while (!quit) {
-      // Handle events
-      SDL_Event event;
-      while (SDL_PollEvent(&event)) {
-         if (event.type == SDL_QUIT) {
-            quit = true;
-         } else if (event.type == SDL_MOUSEMOTION ) {
-            mouseX = event.motion.x;
-            mouseY = event.motion.y;
-            if (mousePressedb) {
-               mouseDragged();
-            } else {
-               mouseMoved();
-            }
-         } else if (event.type == SDL_MOUSEBUTTONDOWN) {
-            if (event.button.button == SDL_BUTTON_LEFT) {
-               mousePressed();
-               mousePressedb = true;
-            } else if (event.button.button == SDL_BUTTON_RIGHT) {
-            }
-         } else if (event.type == SDL_MOUSEBUTTONUP) {
-            if (event.button.button == SDL_BUTTON_LEFT) {
-               mouseReleased();
-               mousePressedb = false;
-            } else if (event.button.button == SDL_BUTTON_RIGHT) {
-            }
-         } else if (event.type == SDL_MOUSEWHEEL) {
-         } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
-            switch (event.key.keysym.sym) {
-            case SDLK_ESCAPE:
-               quit = true;
-               break;
-            case SDLK_UP:
-               key = CODED;
-               keyCode = UP;
-               break;
-            case SDLK_RETURN:
-            case SDLK_KP_ENTER:
-               key = CODED;
-               keyCode = ENTER;
-               break;
-            case SDLK_DOWN:
-               key = CODED;
-               keyCode = DOWN;
-               break;
-            case SDLK_RIGHT:
-               key = CODED;
-               keyCode = RIGHT;
-               break;
-            case SDLK_LEFT:
-               key = CODED;
-               keyCode = LEFT;
-               break;
-            default:
-            {
-               // Get the key code from the event
-               SDL_Keycode sdl_keycode = event.key.keysym.sym;
-
-               // Check if any of the modifier keys are pressed
-               SDL_Keymod mod_state = SDL_GetModState();
-               bool shift_pressed = mod_state & KMOD_SHIFT;
-
-               // Convert the key code to a string
-               const char* keyname = SDL_GetKeyName(sdl_keycode);
-
-               key = 1;
-               keyCode = 0;
-               // Get the first character of the string and convert to lowercase if shift is not pressed
-               if ( keyname[1] == 0) {
-                  char zkey = keyname[0];
-                  if (shift_pressed) {
-                     // Leave the key uppercase if shift is pressed
-                  } else if (zkey >= 'A' && zkey <= 'Z') {
-                     // Convert to lowercase if the key is a letter
-                     zkey += 'a' - 'A';
-                  }
-                  key = zkey;
-                  keyCode = key;
-                  if (event.type == SDL_KEYDOWN)
-                     keyTyped();
-               } else if (keyname[0] == 'S' && keyname[1] == 'p') {
-                  key = ' ';
-                  keyCode = key;
-                  if (event.type == SDL_KEYDOWN)
-                     keyTyped();
-               }
-            }
-            }
-            if (event.type == SDL_KEYDOWN)
-               keyPressed();
-            else
-               keyReleased();
-         }
-      }
-
-      // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
-      if (SDL_GetTicks() - ticks >= (1000 / setFrameRate))
-      {
-         // Print the frame rate every 10 seconds
-         Uint32 currentTicks = SDL_GetTicks();
-         if (currentTicks - frameRateClock >= 10000) {
-            float frameRate = 1000 * (float) zframeCount / (currentTicks - frameRateClock);
-            printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.glc.getFlushCount());
-            zframeCount = 0;
-            frameRateClock = currentTicks;
-         }
-
-         if (xloop || frameCount == 0) {
-            g.glc.resetFlushCount();
-
-            g.move_matrix = Eigen::Matrix4f::Identity();
-            g.noLights();
-            // Call the sketch's draw()
-            draw();
-            g.commit_draw();
-
-            // Only update once per frame so we don't miss positions
-            pmouseX = mouseX;
-            pmouseY = mouseY;
-
-            // Update the screen
-            frameCount++;
-            zframeCount++;
-         } else {
-            SDL_Delay(5);
-         }
-         ticks = SDL_GetTicks();
-      }
-
-   }
-
-   PFont::close();
-   PImage::close();
-
-   // Clean up
-   SDL_Quit();
-
-   return 0;
-}
+void keyPressed();
+void keyReleased();
+void keyTyped();
+void setup();
+void draw();
+void mousePressed();
+void mouseDragged();
+void mouseMoved();
+void mouseReleased();
 
 #endif

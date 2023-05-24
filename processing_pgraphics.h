@@ -1,13 +1,8 @@
 #ifndef PROCESSING_PGRAPHICS_H
 #define PROCESSING_PGRAPHICS_H
 
-#include <SDL2/SDL.h>
-
-#include <fstream>     // For std::ifstream
-#include <sstream>     // For std::stringstream
 #include <string>
 
-#include "processing_pshader.h"
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_pshape.h"
@@ -18,6 +13,10 @@
 
 class PGraphics {
 public:
+   static void init();
+
+   static void close();
+
    PTexture currentTexture;
    int textureMode_ = IMAGE;
    gl_context glc;
@@ -45,7 +44,7 @@ public:
 
    bool xSmoothing = true;
    PShape _shape;
-   std::vector<Uint32> pixels;
+   std::vector<unsigned int> pixels;
 
    bool lights_ = false;
    std::array<float,3> ambientLightColor;
@@ -55,11 +54,11 @@ public:
    std::array<float,3> pointLightPosition;
    std::array<float,3> pointLightFalloff;
 
-   Eigen::Matrix4f projection_matrix; // Default is identity
-   Eigen::Matrix4f view_matrix; // Default is identity
-   Eigen::Matrix4f move_matrix; // Default is identity
+   PMatrix projection_matrix = PMatrix::Identity();
+   PMatrix view_matrix = PMatrix::Identity();
+   PMatrix move_matrix = PMatrix::Identity();
 
-   std::vector<Eigen::Matrix4f> matrix_stack;
+   std::vector<PMatrix> matrix_stack;
 
    PGraphics(const PGraphics &x) = delete;
 
@@ -126,9 +125,9 @@ public:
       this->height = height;
       this->aaFactor = aaFactor;
 
-      move_matrix = Eigen::Matrix4f::Identity();
-      view_matrix = Eigen::Matrix4f::Identity();
-      projection_matrix = Eigen::Matrix4f::Identity();
+      move_matrix = PMatrix::Identity();
+      view_matrix = PMatrix::Identity();
+      projection_matrix = PMatrix::Identity();
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -168,7 +167,7 @@ public:
       move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
    }
 
-   void transform(Eigen::Matrix4f transform_matrix) {
+   void transform(const PMatrix &transform_matrix) {
       move_matrix = move_matrix * transform_matrix;
    }
 
@@ -201,25 +200,25 @@ public:
    }
 
    float screenX(float x, float y, float z = 0.0) {
-      Eigen::Vector4f in = { x, y, z, 1.0 };
-      return (projection_matrix * view_matrix * in)[0];
+      PVector4 in = { x, y, z, 1.0 };
+      return (projection_matrix * view_matrix * in).data[0];
    }
 
    float screenY(float x, float y, float z = 0.0) {
-      Eigen::Vector4f in = { x, y, z, 1.0 };
-      return (projection_matrix * view_matrix * in)[1];
+      PVector4 in = { x, y, z, 1.0 };
+      return (projection_matrix * view_matrix * in).data[1];
    }
 
-   Eigen::Matrix4f get_projection_matrix(float fov, float a, float near, float far) {
+   PMatrix get_projection_matrix(float fov, float a, float near, float far) {
       float f = 1 / tan(0.5 * fov);
       float rangeInv = 1.0 / (near - far);
       float A = (near + far) * rangeInv;
       float B = near * far * rangeInv * 2;
-      Eigen::Matrix4f ret = Eigen::Matrix4f{
-         { f/a,  0,  0,  0 },
-         {   0,  f,  0,  0 },
-         {   0,  0,  A,  B },
-         {   0,  0, -1,  0 }
+      PMatrix ret = PMatrix{
+         {f/a,  0,  0,  0} ,
+         {0,  f,  0,  0} ,
+         {0,  0,  A,  B} ,
+         {0,  0, -1,  0}
       };
       return ret;
    }
@@ -229,11 +228,11 @@ public:
       float ty = -(top + bottom) / (top - bottom);
       float tz = -(far + near) / (far - near);
 
-      projection_matrix = Eigen::Matrix4f{
-         { 2/(right-left),               0,              0,  tx },
-         {              0,  2/(top-bottom),              0,  ty },
-         {              0,               0, -2/(far - near), tz },
-         {              0,               0,              0,   1 }
+      projection_matrix = PMatrix{
+         { 2/(right-left),               0,              0,  tx},
+         {             0,  2/(top-bottom),              0,  ty},
+         {           0,               0, -2/(far - near), tz},
+         {0,               0,              0,   1}
       };
    }
 
@@ -260,26 +259,26 @@ public:
                 float centerX, float centerY, float centerZ,
                 float upX, float upY, float upZ ) {
 
-      Eigen::Vector3f center = Eigen::Vector3f{centerX, centerY, centerZ};
-      Eigen::Vector3f eye =  Eigen::Vector3f{eyeX,eyeY,eyeZ};
-      Eigen::Vector3f _up = Eigen::Vector3f{upX,upY,upZ};
+      PVector center{centerX, centerY, centerZ};
+      PVector eye{eyeX,eyeY,eyeZ};
+      PVector _up{upX,upY,upZ};
 
-      Eigen::Vector3f forward = (center - eye).normalized();
-      Eigen::Vector3f side = forward.cross(_up).normalized();
-      Eigen::Vector3f up = side.cross(forward).normalized();
+      PVector forward = (center - eye).normalize();
+      PVector side = forward.cross(_up).normalize();
+      PVector up = side.cross(forward).normalize();
 
-      Eigen::Matrix4f view{
-         {    side[0],     side[1],     side[2], 0.0f},
-         {      up[0],       up[1],       up[2], 0.0f},
-         {-forward[0], -forward[1], -forward[2], 0.0f},
-         {       0.0f,        0.0f,        0.0f, 1.0f} };
+      PMatrix view{
+         {     side.x,     side.y,     side.z, 0.0f},
+         {      up.x,       up.y,       up.z, 0.0f},
+         {-forward.x, -forward.y, -forward.z, 0.0f},
+         {0.0f,       0.0f,       0.0f, 1.0f} };
 
-      Eigen::Matrix4f translate{
-         {1.0,    0,     0,    -eyeX} ,
+      PMatrix translate{
+         {1.0,    0,     0,    -eyeX},
          {0,    1.0,     0,    -eyeY},
          {0,      0,   1.0,    -eyeZ},
          {0.0f, 0.0f,  0.0f,    1.0f} };
-
+      
       flush();
       // Translate the camera to the origin
       view_matrix = view * translate;
@@ -356,33 +355,7 @@ public:
    }
 
 
-   void text(std::string text, float x, float y, float twidth = -1, float theight = -1) {
-      SDL_Surface *surface = currentFont.render_text(text, fill_color);
-
-      twidth = surface->w;
-      theight = surface->h;
-
-      PTexture texture = glc.getTexture( surface );
-
-      SDL_FreeSurface(surface);
-
-      // this works well enough for the Letters.cc example but it's not really general
-      if ( xTextAlign == CENTER ) {
-         x = x - twidth / 2;
-      }
-      if ( yTextAlign == CENTER ) {
-         y = y - theight / 2;
-      }
-      if ( xTextAlign == RIGHT ) {
-         x = x - twidth;
-      }
-      if ( yTextAlign == RIGHT ) {
-         y = y - theight;
-      }
-
-      drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
-                       texture, WHITE);
-   }
+   void text(std::string text, float x, float y, float twidth = -1, float theight = -1);
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
       std::string s(&c,1);
@@ -412,8 +385,8 @@ public:
                        const std::vector<unsigned short> &indices,
                        color color) {
       if (lights_) {
-        glc.reserve( vertices.size(), move_matrix,  projection_matrix.data(),
-                      view_matrix.data(),
+         glc.reserve( vertices.size(), move_matrix,  projection_matrix.data,
+                      view_matrix.data,
                       directionLightColor.data(),
                       directionLightVector.data(),
                       ambientLightColor.data(),
@@ -423,8 +396,8 @@ public:
       } else {
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
-         glc.reserve( vertices.size(), move_matrix, projection_matrix.data(),
-                    view_matrix.data(),
+         glc.reserve( vertices.size(), move_matrix, projection_matrix.data,
+                    view_matrix.data,
                     black.data(),
                     directionLightVector.data(),
                     white.data(),
@@ -437,8 +410,8 @@ public:
 
    void flush() {
        if (lights_) {
-          glc.flush( projection_matrix.data(),
-                 view_matrix.data(),
+          glc.flush( projection_matrix.data,
+                 view_matrix.data,
                  directionLightColor.data(),
                  directionLightVector.data(),
                  ambientLightColor.data(),
@@ -448,8 +421,8 @@ public:
       } else {
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
-         glc.flush( projection_matrix.data(),
-                    view_matrix.data(),
+         glc.flush( projection_matrix.data,
+                    view_matrix.data,
                     black.data(),
                     directionLightVector.data(),
                     white.data(),
@@ -468,7 +441,7 @@ public:
    }
 
    void texture(PImage &img) {
-      currentTexture = glc.getTexture( img );
+      currentTexture = glc.getTexture( img.surface );
    }
 
    void imageMode(int iMode) {
@@ -657,7 +630,7 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      PTexture texture = glc.getTexture( pimage );
+      PTexture texture = glc.getTexture( pimage.surface );
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
                        texture, tint_color);
    }
@@ -770,13 +743,6 @@ public:
 
    void ellipseMode(int mode) {
       ellipse_mode = mode;
-   }
-
-   void printMatrix4f(const Eigen::Matrix4f& mat) {
-      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(0, 0), mat(0, 1), mat(0, 2), mat(0, 3));
-      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(1, 0), mat(1, 1), mat(1, 2), mat(1, 3));
-      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(2, 0), mat(2, 1), mat(2, 2), mat(2, 3));
-      printf("[ %8.4f, %8.4f, %8.4f, %8.4f ]\n", mat(3, 0), mat(3, 1), mat(3, 2), mat(3, 3));
    }
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
@@ -1356,7 +1322,7 @@ public:
    }
 
    PVector posOnUnitCircle( float angle ) {
-      return { sin(-angle + HALF_PI), cos(-angle + HALF_PI) };
+      return { sinf(-angle + HALF_PI), cosf(-angle + HALF_PI) };
    }
 
    PShape createArc(float x, float y, float width, float height, float start,
@@ -1439,9 +1405,9 @@ public:
             shape.vertex(x,y);
          }
          for(float i = start; i < stop; i = i + (TWO_PI / NUMBER_OF_VERTICES) ) {
-            shape.vertex( { x + width * sin(-i + HALF_PI), y + height * cos(-i + HALF_PI) } );
+            shape.vertex( { x + width * sinf(-i + HALF_PI), y + height * cosf(-i + HALF_PI) } );
          }
-         shape.vertex( { x + width * sin(-stop + HALF_PI), y + height * cos(-stop + HALF_PI) } );
+         shape.vertex( { x + width * sinf(-stop + HALF_PI), y + height * cosf(-stop + HALF_PI) } );
          shape.endShape(strokeMode);
          return shape;
       }

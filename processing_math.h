@@ -8,34 +8,18 @@
 #include <cmath>
 #include <cstdlib>
 #include <random>
-#include <Eigen/Dense>
-#include <fmt/core.h>
-#include "PerlinNoise.h"
 
-PerlinNoise perlin_noise;
-int perlin_octaves = 4 ;
-float perlin_falloff = 0.5;
-
-void noiseSeed(int seed) {
-   perlin_noise = PerlinNoise(seed);
-}
-
-void noiseDetail(int lod, float falloff = 0.5) {
-   perlin_octaves = lod;
-   perlin_falloff = falloff;
-}
-
-float noise(float x, float y = 0, float z = 0) {
-   return perlin_noise.octave(x,y,z,perlin_octaves,perlin_falloff);
-}
+void noiseSeed(int seed);
+void noiseDetail(int lod, float falloff = 0.5);
+float noise(float x, float y = 0, float z = 0);
 
 const float PI = M_PI;
 const float TWO_PI = M_PI * 2.0;
 const float HALF_PI = M_PI / 2.0;
 const float QUARTER_PI = M_PI / 4.0;
 
-std::mt19937 randomNumbers( 1 );
 inline float random(float min, float max) {
+   static std::mt19937 randomNumbers( 1 );
    std::uniform_real_distribution<float> randomLocationRange(min, max);
    return randomLocationRange( randomNumbers );
 }
@@ -49,9 +33,7 @@ public:
    float x, y,z;
    PVector() : x(0), y(0),z(0) {}
    PVector(float _x, float _y, float _z=0.0) : x(_x), y(_y),z(_z) {}
-   void print() {
-      fmt::print(" {:>8.2} {:>8.2} {:>8.2}\n",x,y,z);
-   }
+   void print();
    void sub(PVector b) {
       x = x - b.x;
       y = y - b.y;
@@ -202,6 +184,7 @@ public:
          y - other.y,
          z - other.z};
    }
+
    PVector operator*(const float &other) const {
       return PVector{
          x * other,
@@ -210,6 +193,72 @@ public:
    }
    bool operator==(const PVector &other) const {
       return x == other.x && y == other.y && z == other.z;
+   }
+};
+
+struct PVector4 {
+   float data[4];
+};
+
+struct PMatrix {
+   float data[16];
+   PMatrix() {}
+   PMatrix( const PVector4 &a, const PVector4 &b, const PVector4 &c, const PVector4 &d) {
+      for(int i = 0; i< 4; i++ ){
+         data[i*4] = a.data[i];
+         data[(i*4)+1] = b.data[i];
+         data[(i*4)+2] = c.data[i];
+         data[(i*4)+3] = d.data[i];
+      }
+   }
+
+   void print();
+
+   static PMatrix Identity() {
+      return PMatrix(
+         PVector4{ 1.0, 0.0, 0.0, 0.0 },
+         PVector4{ 0.0, 1.0, 0.0, 0.0 },
+         PVector4{ 0.0, 0.0, 1.0, 0.0 } ,
+         PVector4{ 0.0, 0.0, 0.0, 1.0 } );
+   }
+
+   bool operator==(const PMatrix &x) const {
+      for (int i = 0 ; i< 16 ; i++ ) {
+         if (data[i] != x.data[i])
+            return false;
+      }
+      return true;
+   }
+
+   const float &mat(int row, int col) const {
+      return data[row * 4 + col];
+   }
+   float &mat(int row, int col) {
+      return data[row * 4 + col];
+   }
+
+   PMatrix operator*(const PMatrix &x) const {
+      PMatrix result;
+      for (int col = 0; col < 4; col++) {
+         for (int row = 0; row < 4; row++) {
+            result.mat(col,row) = 0.0;
+            for (int k = 0; k < 4; k++) {
+               result.mat(col,row) += mat(k, row) * x.mat(col, k);
+            }
+         }
+      }
+      return result;
+   }
+
+   PVector4 operator*(const PVector4 &x) const {
+      PVector4 result;
+      for (int col = 0; col < 4; col++) {
+         result.data[col] = 0.0;
+         for (int row = 0; row < 4; row++) {
+            result.data[col] += mat(row,col) * x.data[row];
+         }
+      }
+      return result;
    }
 };
 
@@ -239,25 +288,25 @@ struct PLine {
 
 };
 
-Eigen::Matrix4f TranslateMatrix(const PVector &in) {
-  Eigen::Matrix4f ret {
-     {1.0,    0,     0,    in.x} ,
+inline PMatrix TranslateMatrix(const PVector &in) {
+  PMatrix ret {
+     {1.0,    0,     0,    in.x},
      {0,    1.0,     0,    in.y},
      {0,      0,   1.0,    in.z},
      {0.0f, 0.0f,  0.0f,    1.0f} };
   return ret;
 }
 
-Eigen::Matrix4f ScaleMatrix(const PVector &in) {
-   Eigen::Matrix4f ret {
-      {in.x,    0,     0,    0} ,
+inline PMatrix ScaleMatrix(const PVector &in) {
+   PMatrix ret {
+      {in.x,    0,     0,    0},
       {0,    in.y,     0,    0},
-      {0,      0,   in.z,   0},
-      {0.0f, 0.0f,  0.0f,    1.0f} };
+      {0,      0,   in.z,    0},
+      {0.0f, 0.0f,  0.0f, 1.0f} };
    return ret;
 }
 
-Eigen::Matrix4f RotateMatrix(const float angle, const PVector& in) {
+inline PMatrix RotateMatrix(const float angle, const PVector& in) {
    float c = cos(angle);
    float s = sin(angle);
    float omc = 1.0f - c;
@@ -265,11 +314,11 @@ Eigen::Matrix4f RotateMatrix(const float angle, const PVector& in) {
    float y = in.y;
    float z = in.z;
 
-   Eigen::Matrix4f ret;
-   ret << x * x * omc + c, x * y * omc - z * s, x * z * omc + y * s, 0,
-      x * y * omc + z * s, y * y * omc + c, y * z * omc - x * s, 0,
-      x * z * omc - y * s, y * z * omc + x * s, z * z * omc + c, 0,
-      0, 0, 0, 1;
+   PMatrix ret {
+      {x * x * omc + c, x * y * omc - z * s, x * z * omc + y * s, 0},
+      {x * y * omc + z * s, y * y * omc + c, y * z * omc - x * s, 0},
+      {x * z * omc - y * s, y * z * omc + x * s, z * z * omc + c, 0},
+      {0, 0, 0, 1}};
    return ret;
 }
 
@@ -290,8 +339,9 @@ inline float dist(float x1, float y1, float x2, float y2) {
 
 inline float randomGaussian()
 {
-    static std::normal_distribution<float> dist(0.0f, 1.0f);
-    return dist(randomNumbers);
+   static std::mt19937 randomNumbers( 1 );
+   static std::normal_distribution<float> dist(0.0f, 1.0f);
+   return dist(randomNumbers);
 }
 
 inline float radians(float degrees) {
@@ -317,7 +367,7 @@ inline float constrain(float value, float lower, float upper) {
    }
 }
 
-float sq(float a) {
+inline float sq(float a) {
    return a * a;
 }
 

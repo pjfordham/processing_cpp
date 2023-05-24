@@ -2,8 +2,6 @@
 #define PROCESSING_PSHAPE_H
 
 #include "processing_math.h"
-#include "processing_color.h"
-#include "processing_earclipping.h"
 #include "processing_enum.h"
 #include "processing_texture_manager.h"
 
@@ -13,7 +11,7 @@ class PShape {
 public:
 
    PTexture texture_;
-   Eigen::Matrix4f shape_matrix = Eigen::Matrix4f::Identity();
+   PMatrix shape_matrix = PMatrix::Identity();
 
    std::vector<PVector> vertices;
    std::vector<PVector> normals;
@@ -172,50 +170,7 @@ public:
       return vertices.size();
    }
 
-   void populateIndices() {
-      if (indices.size() != 0)
-         return;
-
-      if (vertices.size() == 0) abort();
-
-      if (style == QUADS) {
-         if (vertices.size() % 4 != 0) abort();
-         for (int i= 0; i< vertices.size(); i+=4) {
-            auto quad = triangulatePolygon( {vertices.begin() + i, vertices.begin() + i + 4} );
-            for( auto &&j : quad ) {
-               indices.push_back(j + i);
-            }
-         }
-         style = TRIANGLES;
-      } else if (style == TRIANGLE_STRIP || style == QUAD_STRIP) {
-         for (int i = 0; i < vertices.size() - 2; i++ ){
-            indices.push_back(i);
-            indices.push_back(i+1);
-            indices.push_back(i+2);
-         }
-         style = TRIANGLE_STRIP;
-      } else if (style == CONVEX_POLYGON) {
-         // Fill with triangle fan
-         for (int i = 1; i < vertices.size() - 1 ; i++ ) {
-            indices.push_back( 0 );
-            indices.push_back( i );
-            indices.push_back( i+1 );
-         }
-      }  else if (style == TRIANGLE_FAN) {
-         // Fill with triangle fan
-         for (int i = 1; i < vertices.size() - 1 ; i++ ) {
-            indices.push_back( 0 );
-            indices.push_back( i );
-            indices.push_back( i+1 );
-         }
-      } else if (style == POLYGON) {
-         indices = triangulatePolygon({vertices.begin(),vertices.end()});
-      } else if (style == TRIANGLES) {
-         for (int i = 0; i < vertices.size(); i++ ) {
-            indices.push_back( i );
-         }
-      }
-   }
+   void populateIndices();
 
    void addChild(PShape &&shape) {
       children.emplace_back( std::move(shape) );

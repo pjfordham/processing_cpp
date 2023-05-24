@@ -1,0 +1,68 @@
+[
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing.cc.o -c /home/pete/github/processing_cpp/processing.cc",
+  "file": "/home/pete/github/processing_cpp/processing.cc",
+  "output": "CMakeFiles/Processing.dir/processing.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/PerlinNoise.cc.o -c /home/pete/github/processing_cpp/PerlinNoise.cc",
+  "file": "/home/pete/github/processing_cpp/PerlinNoise.cc",
+  "output": "CMakeFiles/Processing.dir/PerlinNoise.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_math.cc.o -c /home/pete/github/processing_cpp/processing_math.cc",
+  "file": "/home/pete/github/processing_cpp/processing_math.cc",
+  "output": "CMakeFiles/Processing.dir/processing_math.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_pfont.cc.o -c /home/pete/github/processing_cpp/processing_pfont.cc",
+  "file": "/home/pete/github/processing_cpp/processing_pfont.cc",
+  "output": "CMakeFiles/Processing.dir/processing_pfont.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_pimage.cc.o -c /home/pete/github/processing_cpp/processing_pimage.cc",
+  "file": "/home/pete/github/processing_cpp/processing_pimage.cc",
+  "output": "CMakeFiles/Processing.dir/processing_pimage.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_pshape.cc.o -c /home/pete/github/processing_cpp/processing_pshape.cc",
+  "file": "/home/pete/github/processing_cpp/processing_pshape.cc",
+  "output": "CMakeFiles/Processing.dir/processing_pshape.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_color.cc.o -c /home/pete/github/processing_cpp/processing_color.cc",
+  "file": "/home/pete/github/processing_cpp/processing_color.cc",
+  "output": "CMakeFiles/Processing.dir/processing_color.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_opengl.cc.o -c /home/pete/github/processing_cpp/processing_opengl.cc",
+  "file": "/home/pete/github/processing_cpp/processing_opengl.cc",
+  "output": "CMakeFiles/Processing.dir/processing_opengl.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_pgraphics.cc.o -c /home/pete/github/processing_cpp/processing_pgraphics.cc",
+  "file": "/home/pete/github/processing_cpp/processing_pgraphics.cc",
+  "output": "CMakeFiles/Processing.dir/processing_pgraphics.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/Processing.dir/processing_pshader.cc.o -c /home/pete/github/processing_cpp/processing_pshader.cc",
+  "file": "/home/pete/github/processing_cpp/processing_pshader.cc",
+  "output": "CMakeFiles/Processing.dir/processing_pshader.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++   -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/processing.h -o CMakeFiles/Arctangent.dir/examples/Basics/Math/Arctangent/Arctangent.cc.o -c /home/pete/github/processing_cpp/examples/Basics/Math/Arctangent/Arctangent.cc",
+  "file": "/home/pete/github/processing_cpp/examples/Basics/Math/Arctangent/Arctangent.cc",
+  "output": "CMakeFiles/Arctangent.dir/examples/Basics/Math/Arctangent/Arctangent.cc.o"
+}
+]

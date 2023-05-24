@@ -1,25 +1,25 @@
 #ifndef PROCESSING_COLOR_H
 #define PROCESSING_COLOR_H
 
-#include "processing_math.h"
 #include "processing_enum.h"
+#include <cmath>
 
 // ----
 // Begin color handling.
 // ----
-float red(unsigned int pixel) {
+inline float red(unsigned int pixel) {
    return (pixel >>  0) & 0xFF;
 }
 
-float green(unsigned int pixel) {
+inline float green(unsigned int pixel) {
    return (pixel >>  8) & 0xFF;
 }
 
-float blue(unsigned int pixel) {
+inline float blue(unsigned int pixel) {
    return (pixel >> 16) & 0xFF;
 }
 
-float alpha(unsigned int pixel) {
+inline float alpha(unsigned int pixel) {
    return (pixel >> 24) & 0xFF;
 }
 
@@ -49,16 +49,8 @@ public:
    }
    color()  {
    }
-   void print() {
-      fprintf(stderr,"R%xG%xB%xA%x\n",(int)r,(int)g,(int)b,(int)a);
-   }
+   void print();
 };
-
-int color::mode = RGB;
-float color::scaleR = 255.0f;
-float color::scaleG = 255.0f;
-float color::scaleB = 255.0f;
-float color::scaleA = 255.0f;
 
 const color DEFAULT_GRAY = color(240);
 const color BLACK = color(0);
@@ -72,10 +64,10 @@ const color BLUE = color(0, 0, 255);
 const color YELLOW = color(255, 255, 0);
 const color CYAN = color(0, 255, 255);
 const color MAGENTA = color(255, 0, 255);
-color RANDOM_COLOR() {
-   return color(random(255),random(255),random(255),255);
-}
-void colorMode(int mode, float r, float g, float b, float a) {
+
+color RANDOM_COLOR();
+
+inline void colorMode(int mode, float r, float g, float b, float a) {
    color::mode = mode;
    color::scaleR = r;
    color::scaleG = g;
@@ -83,15 +75,15 @@ void colorMode(int mode, float r, float g, float b, float a) {
    color::scaleA = a;
 }
 
-void colorMode(int mode, float scale) {
+inline void colorMode(int mode, float scale) {
    colorMode(mode, scale, scale, scale, scale);
 }
 
-void colorMode(int mode, float r, float g, float b) {
+inline void colorMode(int mode, float r, float g, float b) {
    colorMode(mode, r,g,b,255);
 }
 
-color HSBtoRGB(float h, float s, float v, float a)
+inline color HSBtoRGB(float h, float s, float v, float a)
 {
    int i = floorf(h * 6);
    auto f = h * 6.0 - i;
@@ -111,18 +103,9 @@ color HSBtoRGB(float h, float s, float v, float a)
    return { r * 255, g * 255, b * 255, a };
 }
 
-color flatten_color_mode(float r, float g, float b, float a) {
-   r = map(r,0,color::scaleR,0,255);
-   g = map(g,0,color::scaleG,0,255);
-   b = map(b,0,color::scaleB,0,255);
-   a = map(a,0,color::scaleA,0,255);
-   if (color::mode == HSB) {
-      return HSBtoRGB(r/255.0,g/255.0,b/255.0,a);
-   }
-   return { r, g, b, a };
-}
+color flatten_color_mode(float r, float g, float b, float a);
 
-color lerpColor(const color& c1, const color& c2, float amt) {
+inline color lerpColor(const color& c1, const color& c2, float amt) {
    return {
       c1.r + (c2.r - c1.r) * amt,
       c1.g + (c2.g - c1.g) * amt,

@@ -3,15 +3,15 @@
 
 #include <chrono>
 
-auto start_time = std::chrono::high_resolution_clock::now();
 
-unsigned long millis() {
+inline unsigned long millis() {
+   static auto start_time = std::chrono::high_resolution_clock::now();
    auto current_time = std::chrono::high_resolution_clock::now();
    auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
    return elapsed_time;
 }
 
-int second() {
+inline int second() {
    // Get the current wall clock time
    auto now = std::chrono::system_clock::now();
 
@@ -27,7 +27,7 @@ int second() {
    return seconds;
 }
 
-int minute() {
+inline int minute() {
    // Get the current wall clock time
    auto now = std::chrono::system_clock::now();
 
@@ -43,7 +43,7 @@ int minute() {
    return minutes;
 }
 
-int hour() {
+inline int hour() {
    // Get the current wall clock time
    auto now = std::chrono::system_clock::now();
 
