@@ -65,43 +65,39 @@ target_link_libraries(Processing  PUBLIC -lSDL2 -lSDL2main -lSDL2_image -lSDL2_t
 
 
 function(ADD_EXAMPLE file_path)
-  # Get directory path
+
   get_filename_component(dir_path ${file_path} DIRECTORY)
-
-  # Get base name without extension
   get_filename_component(base_name ${file_path} NAME_WE)
-
-  # Get file extension
   get_filename_component(extension ${file_path} EXT)
 
-  # Print the results
-  # message("Directory path: ${dir_path}")
-  # message("Base name: ${base_name}")
-  # message("Extension: ${extension}")
-
-  if (TARGET ${base_name})
+  while (TARGET ${base_name})
     string(RANDOM LENGTH 4 ALPHABET "abcdefghijklmnopqrstuvwxyz0123456789" RESULT_VARIABLE random_string)
-    message("Random string: ${random_string}")
-
-    # The target already exists
-    message("The target ${base_name} already exists adding random suffix.")
+    message("The target ${base_name} already exists adding random suffix ${random_string}.")
     set(base_name "${base_name}_${random_string}")
-  endif()
+  endwhile()
 
-  add_executable(${base_name} ${file_path})
-  target_link_libraries(${base_name}  PRIVATE Processing)
-  target_compile_options(${base_name} PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/processing.h)
+  # Define the regular expression pattern to search for
+  set(regex_pattern "void.*setup.*[(].*[)]")
+  # Read the file and search using the regular expression pattern
+  file(STRINGS ${file_path} file_content REGEX ${regex_pattern})
+
+  message( "${file_content}" )
+  if(file_content)
+    message("Regular expression pattern '${regex_pattern}' found in the file.")
+    add_executable(${base_name} ${file_path})
+    target_link_libraries(${base_name}  PRIVATE Processing)
+    target_compile_options(${base_name} PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/processing.h)
+  else()
+    message("Regular expression pattern '${regex_pattern}' not found in the file.")
+    add_executable(${base_name} sketch.cc)
+    target_link_libraries(${base_name}  PRIVATE Processing)
+    target_compile_options(${base_name} PRIVATE -DFILE_TO_INCLUDE=\"${file_path}\" -include ${CMAKE_CURRENT_SOURCE_DIR}/processing.h)
+  endif()
 
 endfunction()
 
-# Find files using the file(GLOB_RECURSE) command
+# Add all the examples targets
 file(GLOB_RECURSE files_to_process CONFIGURE_DEPENDS "./examples/*.cc")
-
-# Iterate over the files
 foreach(file_path ${files_to_process})
   add_example( ${file_path} )
 endforeach()
-
-
-#add_executable(TextureQuad TextureQuad.cc)
-#target_link_libraries(TextureQuad PRIVATE Processing)

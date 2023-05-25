@@ -23,7 +23,7 @@ void drawGradient(float x, float y) {
   for (int r = radius; r > 0; --r) {
     fill(h, 90, 90);
     ellipse(x, y, r, r);
-    h = (h + 1) % 360;
+    h = fmod( (h + 1), 360);
   }
 }
 
