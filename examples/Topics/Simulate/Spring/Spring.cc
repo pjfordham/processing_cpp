@@ -8,8 +8,8 @@
 int springHeight = 32;  // Height
 int left;               // Left position
 int right;              // Right position
-int max = 200;          // Maximum Y value
-int min = 100;          // Minimum Y value
+int maxy = 200;          // Maximum Y value
+int miny = 100;          // Minimum Y value
 boolean over = false;   // If mouse over
 boolean move = false;   // If mouse down and over
 
@@ -32,12 +32,6 @@ void setup() {
   noStroke();
   left = width/2 - 100;
   right = width/2 + 100;
-}
-
-void draw() {
-  background(102);
-  updateSpring();
-  drawSpring();
 }
 
 void drawSpring() {
@@ -79,8 +73,14 @@ void updateSpring() {
   // Set and constrain the position of top bar
   if(move) {
     ps = mouseY - springHeight/2;
-    ps = constrain(ps, min, max);
+    ps = constrain(ps, miny, maxy);
   }
+}
+
+void draw() {
+  background(102);
+  updateSpring();
+  drawSpring();
 }
 
 void mousePressed() {
