@@ -14,12 +14,12 @@ float springing = .0009, damping = .98;
 
 //corner nodes
 int nodes = 5;
-float nodeStartX[] = new float[nodes];
-float nodeStartY[] = new float[nodes];
-float[]nodeX = new float[nodes];
-float[]nodeY = new float[nodes];
-float[]angle = new float[nodes];
-float[]frequency = new float[nodes];
+std::vector<float> nodeStartX(nodes);
+std::vector<float> nodeStartY(nodes);
+std::vector<float> nodeX(nodes);
+std::vector<float> nodeY(nodes);
+std::vector<float> angle(nodes);
+std::vector<float> frequency(nodes);
 
 // soft-body dynamics
 float organicConstant = 1;
@@ -35,14 +35,6 @@ void setup() {
   }
   noStroke();
   frameRate(30);
-}
-
-void draw() {
-  //fade background
-  fill(0, 100);
-  rect(0,0,width, height);
-  drawShape();
-  moveShape();
 }
 
 void drawShape() {
@@ -94,5 +86,13 @@ void moveShape() {
     nodeY[i] = nodeStartY[i]+sin(radians(angle[i]))*(accelY*2);
     angle[i]+=frequency[i];
   }
+}
+
+void draw() {
+  //fade background
+  fill(0, 100);
+  rect(0,0,width, height);
+  drawShape();
+  moveShape();
 }
 

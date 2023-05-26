@@ -6,40 +6,10 @@
  * Each circle has a slightly different behavior.
  */
 
-
 int num = 3;
-Spring[] springs = new Spring[num];
-
-void setup() {
-  size(640, 360);
-  noStroke();
-  springs[0] = new Spring(240, 260, 40, 0.98, 8.0, 0.1, springs, 0);
-  springs[1] = new Spring(320, 210, 120, 0.95, 9.0, 0.1, springs, 1);
-  springs[2] = new Spring(180, 170, 200, 0.90, 9.9, 0.1, springs, 2);
-}
-
-void draw() {
-  background(51);
-
-  for (Spring spring : springs) {
-    spring.update();
-    spring.display();
-  }
-}
-
-void mousePressed() {
-  for (Spring spring : springs) {
-    spring.pressed();
-  }
-}
-
-void mouseReleased() {
-  for (Spring spring : springs) {
-    spring.released();
-  }
-}
 
 class Spring {
+public:
   // Screen values
   float xpos, ypos;
   float tempxpos, tempypos;
@@ -61,12 +31,12 @@ class Spring {
   float accel = 0;    // Acceleration
   float force = 0;    // Force
 
-  Spring[] friends;
+  std::vector<Spring> &friends;
   int me;
 
   // Constructor
   Spring(float x, float y, int s, float d, float m,
-  float k_in, Spring[] others, int id) {
+         float k_in, std::vector<Spring>& others, int id) : friends( others ) {
     xpos = tempxpos = x;
     ypos = tempypos = y;
     rest_posx = x;
@@ -75,7 +45,6 @@ class Spring {
     damp = d;
     mass = m;
     k = k_in;
-    friends = others;
     me = id;
   }
 
@@ -148,4 +117,36 @@ class Spring {
     rest_posx = xpos;
     rest_posy = ypos;
   }
+};
+
+std::vector<Spring> springs;
+
+void mousePressed() {
+  for (Spring &spring : springs) {
+    spring.pressed();
+  }
 }
+
+void mouseReleased() {
+  for (Spring &spring : springs) {
+    spring.released();
+  }
+}
+
+void setup() {
+  size(640, 360);
+  noStroke();
+  springs.emplace_back(240, 260, 40, 0.98, 8.0, 0.1, springs, 0);
+  springs.emplace_back(320, 210, 120, 0.95, 9.0, 0.1, springs, 1);
+  springs.emplace_back(180, 170, 200, 0.90, 9.9, 0.1, springs, 2);
+}
+
+void draw() {
+  background(51);
+
+  for (Spring& spring : springs) {
+    spring.update();
+    spring.display();
+  }
+}
+

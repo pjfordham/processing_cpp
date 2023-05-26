@@ -207,7 +207,6 @@ set(skip_examples
   "examples/Topics/Simulate/SimpleParticleSystem/Particle.cc"
   "examples/Topics/Simulate/SimpleParticleSystem/ParticleSystem.cc"
   "examples/Topics/Simulate/SoftBody/SoftBody.cc"
-  "examples/Topics/Simulate/Springs/Springs.cc"
  )
 
 function(ADD_EXAMPLE file_path)
