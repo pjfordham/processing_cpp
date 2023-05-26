@@ -64,16 +64,172 @@ install(FILES
 target_link_libraries(Processing  PUBLIC -lSDL2 -lSDL2main -lSDL2_image -lSDL2_ttf -lfreetype -lGLEW -lGL -lcurl -lfmt)
 
 
+# Define the array of filenames
+set(skip_examples
+  "examples/Basics/Lights/Mixture/Mixture.cc"
+  "examples/Basics/Lights/MixtureGrid/MixtureGrid.cc"
+  "examples/Basics/Lights/Reflection/Reflection.cc"
+  "examples/Basics/Lights/Spot/Spot.cc"
+  "examples/Basics/Shape/GetChild/GetChild.cc"
+  "examples/Basics/Shape/LoadDisplaySVG/LoadDisplaySVG.cc"
+  "examples/Basics/Shape/ScaleShape/ScaleShape.cc"
+  "examples/Basics/Shape/LoadDisplayOBJ/LoadDisplayOBJ.cc"
+  "examples/Basics/Shape/ShapeVertices/ShapeVertices.cc"
+  "examples/Basics/Shape/DisableStyle/DisableStyle.cc"
+  "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"
+  "examples/Demos/Graphics/DepthSort/DepthSort.cc"
+  "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"
+  "examples/Demos/Graphics/MeshTweening/MeshTweening.cc"
+  "examples/Demos/Graphics/Particles/Particle.c"
+  "examples/Topics/Interaction/Tickle/Tickle.cc"
+  "examples/Demos/Graphics/Particles/ParticleSystem.cc"
+  "examples/Demos/Graphics/Patch/Patch.cc"
+  "examples/Demos/Graphics/Planets/Perlin.cc"
+  "examples/Demos/Graphics/Planets/Planets.cc"
+  "examples/Demos/Graphics/Ribbons/BSpline.cc"
+  "examples/Topics/Shaders/Conway/Conway.c"
+  "examples/Topics/Shaders/CustomBlend/CustomBlend.cc"
+  "examples/Topics/Shaders/Deform/Deform.cc"
+  "examples/Topics/Shaders/DomeProjection/DomeProjection.cc"
+  "examples/Topics/Shaders/EdgeDetect/EdgeDetect.cc"
+  "examples/Topics/Shaders/Landscape/Landscape.cc"
+  "examples/Topics/Shaders/ImageMask/ImageMask.cc"
+  "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"
+  "examples/Topics/Shaders/InfiniteTiles/InfiniteTiles.cc"
+  "examples/Topics/Shaders/SepBlur/SepBlur.cc"
+  "examples/Demos/Graphics/Ribbons/Geometry.cc"
+  "examples/Demos/Graphics/Ribbons/ArcBall.cc"
+  "examples/Topics/Simulate/SimpleParticleSystem/ParticleSystem.cc"
+  "examples/Topics/Simulate/SoftBody/SoftBody.cc"
+  "examples/Demos/Graphics/Ribbons/PDB.cc"
+  "examples/Topics/Simulate/Chain/Chain.cc"
+  "examples/Topics/Simulate/GravitationalAttraction3D/Sun.cc"
+  "examples/Topics/Simulate/Springs/Springs.cc"
+  "examples/Topics/Simulate/SimpleParticleSystem/Particle.cc"
+  "examples/Topics/Simulate/MultipleParticleSystems/ParticleSystem.cc"
+  "examples/Topics/Simulate/MultipleParticleSystems/Particle.cc"
+  "examples/Demos/Graphics/Particles/Particle.cc"
+  "examples/Demos/Graphics/Particles/Particles.cc"
+  "examples/Demos/Graphics/Ribbons/Ribbons.cc"
+  "examples/Demos/Graphics/RotatingArcs/RotatingArcs.cc"
+  "examples/Demos/Graphics/Trefoil/Surface.cc"
+  "examples/Demos/Graphics/Trefoil/Trefoil.cc"
+  "examples/Demos/Graphics/Wiggling/Wiggling.cc"
+  "examples/Demos/Graphics/Yellowtail/Gesture.cc"
+  "examples/Demos/Graphics/Yellowtail/Vec3f.cc"
+  "examples/Demos/Graphics/Yellowtail/Yellowtail.cc"
+  "examples/Demos/Performance/CubicGridImmediate/CubicGridImmediate.cc"
+  "examples/Demos/Performance/CubicGridRetained/CubicGridRetained.cc"
+  "examples/Demos/Performance/DynamicParticlesImmediate/DynamicParticlesImmediate.cc"
+  "examples/Demos/Performance/DynamicParticlesRetained/DynamicParticlesRetained.cc"
+  "examples/Demos/Performance/Esfera/Esfera.cc"
+  "examples/Demos/Performance/LineRendering/LineRendering.cc"
+  "examples/Demos/Performance/StaticParticlesImmediate/StaticParticlesImmediate.cc"
+  "examples/Demos/Performance/StaticParticlesRetained/StaticParticlesRetained.cc"
+  "examples/Demos/Performance/TextRendering/TextRendering.cc"
+  "examples/Demos/Tests/MultipleWindows/Arcball.cc"
+  "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"
+  "examples/Demos/Tests/OffscreenTest/OffscreenTest.cc"
+  "examples/Demos/Tests/RedrawTest/RedrawTest.cc"
+  "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
+  "examples/Demos/Tests/SpecsTest/SpecsTest.cc"
+  "examples/Pete/Fireworks.cc"
+  "examples/Pete/Snake.cc"
+  "examples/Topics/Advanced Data/ArrayListClass/ArrayListClass.cc"
+  "examples/Topics/Advanced Data/ArrayListClass/Ball.cc"
+  "examples/Topics/Advanced Data/CountingStrings/CountingStrings.cc"
+  "examples/Topics/Advanced Data/HashMapClass/HashMapClass.cc"
+  "examples/Topics/Advanced Data/HashMapClass/Word.cc"
+  "examples/Topics/Advanced Data/IntListLottery/IntListLottery.cc"
+  "examples/Topics/Advanced Data/LoadSaveJSON/Bubble.cc"
+  "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"
+  "examples/Topics/Advanced Data/LoadSaveTable/Bubble.cc"
+  "examples/Topics/Advanced Data/LoadSaveTable/LoadSaveTable.cc"
+  "examples/Topics/Advanced Data/LoadSaveXML/Bubble.cc"
+  "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"
+  "examples/Topics/Advanced Data/Regex/Regex.cc"
+  "examples/Topics/Advanced Data/Threads/Threads.cc"
+  "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"
+  "examples/Topics/Animation/AnimatedSprite/AnimatedSprite.cc"
+  "examples/Topics/Animation/AnimatedSprite/Animation.cc"
+  "examples/Topics/Cellular Automata/Spore1/Spore1.cc"
+  "examples/Topics/Cellular Automata/Spore2/Spore2.cc"
+  "examples/Topics/Create Shapes/BeginEndContour/BeginEndContour.cc"
+  "examples/Topics/Create Shapes/GroupPShape/GroupPShape.cc"
+  "examples/Topics/Create Shapes/ParticleSystemPShape/Particle.cc"
+  "examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystem.cc"
+  "examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystemPShape.cc"
+  "examples/Topics/Create Shapes/PathPShape/PathPShape.cc"
+  "examples/Topics/Create Shapes/PolygonPShapeOOP2/Polygon.cc"
+  "examples/Topics/Create Shapes/PolygonPShapeOOP2/PolygonPShapeOOP2.cc"
+  "examples/Topics/Create Shapes/PolygonPShapeOOP3/Polygon.cc"
+  "examples/Topics/Create Shapes/PolygonPShapeOOP3/PolygonPShapeOOP3.cc"
+  "examples/Topics/Create Shapes/PolygonPShapeOOP/PolygonPShapeOOP.cc"
+  "examples/Topics/Create Shapes/PolygonPShapeOOP/Star.cc"
+  "examples/Topics/Create Shapes/PolygonPShape/PolygonPShape.cc"
+  "examples/Topics/Create Shapes/PrimitivePShape/PrimitivePShape.cc"
+  "examples/Topics/Create Shapes/WigglePShape/WigglePShape.cc"
+  "examples/Topics/Create Shapes/WigglePShape/Wiggler.cc"
+  "examples/Topics/Curves/ArcLengthParametrization/ArcLengthParametrization.cc"
+  "examples/Topics/Curves/ArcLengthParametrization/BezierCurve.cc"
+  "examples/Topics/File IO/DirectoryList/DirectoryList.cc"
+  "examples/Topics/File IO/SaveFile1/SaveFile1.cc"
+  "examples/Topics/File IO/SaveFile2/SaveFile2.cc"
+  "examples/Topics/File IO/SaveOneFrame/SaveOneImage.cc"
+  "examples/Topics/File IO/TileImages/TileImages.cc"
+  "examples/Topics/Fractals and L-Systems/PenroseSnowflake/LSystem.cc"
+  "examples/Topics/Fractals and L-Systems/PenroseSnowflake/PenroseSnowflakeLSystem.cc"
+  "examples/Topics/Fractals and L-Systems/PenroseTile/LSystem.cc"
+  "examples/Topics/Fractals and L-Systems/PenroseTile/PenroseLSystem.cc"
+  "examples/Topics/Fractals and L-Systems/PenroseTile/PenroseTile.cc"
+  "examples/Topics/Fractals and L-Systems/Pentigree/LSystem.cc"
+  "examples/Topics/Fractals and L-Systems/Pentigree/Pentigree.cc"
+  "examples/Topics/Fractals and L-Systems/Pentigree/PentigreeLSystem.cc"
+  "examples/Topics/Geometry/Icosahedra/Dimension3D.cc"
+  "examples/Topics/Geometry/Icosahedra/Icosahedra.cc"
+  "examples/Topics/Geometry/Icosahedra/Icosahedron.cc"
+  "examples/Topics/Geometry/Icosahedra/Shape3D.cc"
+  "examples/Topics/Geometry/ShapeTransform/ShapeTransform.cc"
+  "examples/Topics/Geometry/SpaceJunk/Cube.cc"
+  "examples/Topics/Geometry/SpaceJunk/SpaceJunk.cc"
+  "examples/Topics/Image Processing/Blending/Blending.cc"
+  "examples/Topics/Image Processing/Convolution/Convolution.cc"
+  "examples/Topics/Image Processing/EdgeDetection/EdgeDetection.cc"
+  "examples/Topics/Image Processing/Explode/Explode.cc"
+  "examples/Topics/Image Processing/Extrusion/Extrusion.cc"
+  "examples/Topics/Image Processing/Histogram/Histogram.cc"
+  "examples/Topics/Image Processing/LinearImage/LinearImage.cc"
+  "examples/Topics/Image Processing/PixelArray/PixelArray.cc"
+  "examples/Topics/Image Processing/Zoom/Zoom.cc"
+  "examples/Topics/Shaders/BlurFilter/BlurFilter.cc"
+  "examples/Topics/Shaders/Conway/Conway.cc"
+  "examples/Topics/Shaders/DomeProjection/CubeMapUtils.cc"
+  "examples/Topics/Shaders/EdgeFilter/EdgeFilter.cc"
+  "examples/Topics/Shaders/ToonShading/ToonShading.cc"
+  "examples/Topics/Simulate/GravitationalAttraction3D/GravitationalAttraction3D.cc"
+  "examples/Topics/Simulate/GravitationalAttraction3D/Planet.cc"
+  "examples/Topics/Simulate/MultipleParticleSystems/CrazyParticle.cc"
+  "examples/Topics/Simulate/MultipleParticleSystems/MultipleParticleSystems.cc"
+  "examples/Topics/Simulate/Spring/Spring.cc" )
+
 function(ADD_EXAMPLE file_path)
+
+  # Check if the filename is present in the array
+  list(FIND skip_examples ${file_path} index)
+  if (NOT index EQUAL -1 )
+    message("Skipping '${file_path}' becuase it doesn't work yet.")
+    return()
+  endif()
 
   get_filename_component(dir_path ${file_path} DIRECTORY)
   get_filename_component(base_name ${file_path} NAME_WE)
   get_filename_component(extension ${file_path} EXT)
 
   while (TARGET ${base_name})
-    string(RANDOM LENGTH 4 ALPHABET "abcdefghijklmnopqrstuvwxyz0123456789" RESULT_VARIABLE random_string)
-    message("The target ${base_name} already exists adding random suffix ${random_string}.")
-    set(base_name "${base_name}_${random_string}")
+    string(MD5 hash ${file_path})
+    string(SUBSTRING ${hash} 0 4 suffix)
+    message("The target ${base_name} already exists adding hash suffix ${suffix}.")
+    set(base_name "${base_name}_${suffix}")
   endwhile()
 
   # Define the regular expression pattern to search for
@@ -96,5 +252,6 @@ endfunction()
 # Add all the examples targets
 file(GLOB_RECURSE files_to_process CONFIGURE_DEPENDS "./examples/*.cc")
 foreach(file_path ${files_to_process})
-  add_example( ${file_path} )
+  file(RELATIVE_PATH file_relative "${CMAKE_CURRENT_SOURCE_DIR}" "${file_path}")
+  add_example( ${file_relative} )
 endforeach()
