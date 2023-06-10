@@ -7,28 +7,8 @@
  */
 
 
-Spring2D s1, s2;
-
-float gravity = 9.0;
-float mass = 2.0;
-
-void setup() {
-  size(640, 360);
-  fill(255, 126);
-  // Inputs: x, y, mass, gravity
-  s1 = new Spring2D(0.0, width/2, mass, gravity);
-  s2 = new Spring2D(0.0, width/2, mass, gravity);
-}
-
-void draw() {
-  background(0);
-  s1.update(mouseX, mouseY);
-  s1.display(mouseX, mouseY);
-  s2.update(s1.x, s1.y);
-  s2.display(s1.x, s1.y);
-}
-
 class Spring2D {
+public:
   float vx, vy; // The x- and y-axis velocities
   float x, y; // The x- and y-coordinates
   float gravity;
@@ -37,7 +17,9 @@ class Spring2D {
   float stiffness = 0.2;
   float damping = 0.7;
 
-  Spring2D(float xpos, float ypos, float m, float g) {
+   Spring2D() {}
+
+   Spring2D(float xpos, float ypos, float m, float g) {
     x = xpos;
     y = ypos;
     mass = m;
@@ -62,4 +44,25 @@ class Spring2D {
     stroke(255);
     line(x, y, nx, ny);
   }
+};
+
+Spring2D s1, s2;
+
+float gravity = 9.0;
+float mass = 2.0;
+
+void setup() {
+  size(640, 360);
+  fill(255, 126);
+  // Inputs: x, y, mass, gravity
+  s1 = Spring2D(0.0, width/2, mass, gravity);
+  s2 = Spring2D(0.0, width/2, mass, gravity);
+}
+
+void draw() {
+  background(0);
+  s1.update(mouseX, mouseY);
+  s1.display(mouseX, mouseY);
+  s2.update(s1.x, s1.y);
+  s2.display(s1.x, s1.y);
 }

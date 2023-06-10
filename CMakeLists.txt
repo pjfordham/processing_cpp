@@ -195,7 +195,6 @@ set(skip_examples
   "examples/Topics/Shaders/Landscape/Landscape.cc"
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"
   "examples/Topics/Shaders/ToonShading/ToonShading.cc"
-  "examples/Topics/Simulate/Chain/Chain.cc"
   "examples/Topics/Simulate/GravitationalAttraction3D/GravitationalAttraction3D.cc"
   "examples/Topics/Simulate/GravitationalAttraction3D/Planet.cc"
   "examples/Topics/Simulate/GravitationalAttraction3D/Sun.cc"
