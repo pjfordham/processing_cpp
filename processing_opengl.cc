@@ -234,6 +234,33 @@ PShader gl_context::loadShader(const char *fragShader) {
    return shader;
 }
 
+PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
+   std::ifstream inputFile(fragShader);
+
+   if (!inputFile.is_open()) {
+      abort();
+   }
+
+   std::stringstream buffer;
+   buffer << inputFile.rdbuf();
+
+   inputFile.close();
+   std::ifstream inputFile2(vertShader);
+
+   if (!inputFile2.is_open()) {
+      abort();
+   }
+
+   std::stringstream buffer2;
+   buffer2 << inputFile2.rdbuf();
+
+   inputFile2.close();
+
+   auto shader = PShader( 0, buffer2.str().c_str(), buffer.str().c_str() );
+   shader.compileShaders();
+   return shader;
+}
+
 void gl_context::saveFrame(const std::string& fileName) {
 
    int wfWidth = windowFrame.getWidth();

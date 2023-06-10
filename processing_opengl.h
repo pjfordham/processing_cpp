@@ -373,11 +373,7 @@ public:
       flushes = 0;
    }
 
-   PShader loadShader(const char *fragShader, const char *vertShader) {
-      auto shader = PShader( 0, vertShader, fragShader );
-      shader.compileShaders();
-      return shader;
-   }
+   PShader loadShader(const char *fragShader, const char *vertShader);
 
    PShader loadShader(const char *fragShader);
 
