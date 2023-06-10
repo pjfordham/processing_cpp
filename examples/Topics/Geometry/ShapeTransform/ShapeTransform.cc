@@ -18,7 +18,7 @@ float radius = 99;
 float cylinderLength = 95;
 
 //vertices
-PVector vertices[][];
+std::vector<std::vector<PVector>> vertices;
 boolean isPyramid = false;
 
 float angleInc;
@@ -39,13 +39,13 @@ void draw(){
   rotateZ(frameCount * angleInc);
 
   // initialize vertex arrays
-  vertices = new PVector[2][pts+1];
+  vertices.resize(2);
 
   // fill arrays
   for (int i = 0; i < 2; i++){
+    vertices[i].resize(pts+1);
     angle = 0;
     for(int j = 0; j <= pts; j++){
-      vertices[i][j] = new PVector();
       if (isPyramid){
         if (i==1){
           vertices[i][j].x = 0;

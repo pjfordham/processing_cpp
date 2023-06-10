@@ -168,7 +168,6 @@ set(skip_examples
   "examples/Topics/Geometry/Icosahedra/Icosahedra.cc"
   "examples/Topics/Geometry/Icosahedra/Icosahedron.cc"
   "examples/Topics/Geometry/Icosahedra/Shape3D.cc"
-  "examples/Topics/Geometry/ShapeTransform/ShapeTransform.cc"
   "examples/Topics/Geometry/SpaceJunk/Cube.cc"
   "examples/Topics/Geometry/SpaceJunk/SpaceJunk.cc"
   "examples/Topics/Image Processing/Blending/Blending.cc"
