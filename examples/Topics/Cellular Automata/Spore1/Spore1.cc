@@ -9,56 +9,37 @@
  * like wanting to move to the same space) and in random order.
  */
 
+//  The World class simply provides two functions, get and set, which access the
+//  display in the same way as getPixel and setPixel.  The only difference is that
+//  the World class's get and set do screen wraparound ("toroidal coordinates").
+class World {
+public:
+
+  void setpix(int x, int y, int c) {
+    while(x < 0) x+=width;
+    while(x > width - 1) x-=width;
+    while(y < 0) y+=height;
+    while(y > height - 1) y-=height;
+    set(x, y, c);
+  }
+
+  color getpix(int x, int y) {
+    while(x < 0) x+=width;
+    while(x > width - 1) x-=width;
+    while(y < 0) y+=height;
+    while(y > height - 1) y-=height;
+    return get(x, y);
+  }
+};
+
 World w;
-int numcells = 0;
-int maxcells = 6700;
-Cell[] cells = new Cell[maxcells];
-color spore_color;
-// set lower for smoother animation, higher for faster simulation
-int runs_per_loop = 10000;
+
 color black = color(0, 0, 0);
 
-void setup() {
-  size(640, 360);
-  frameRate(24);
-  reset();
-}
-
-void reset() {
-  clearScreen();
-  w = new World();
-  spore_color = color(172, 255, 128);
-  seed();
-}
-
-void seed() {
-  // Add cells at random places
-  for (int i = 0; i < maxcells; i++)
-  {
-    int cX = (int)random(width);
-    int cY = (int)random(height);
-    if (w.getpix(cX, cY) == black) {
-      w.setpix(cX, cY, spore_color);
-      cells[numcells] = new Cell(cX, cY);
-      numcells++;
-    }
-  }
-}
-
-void draw() {
-  // Run cells in random order
-  for (int i = 0; i < runs_per_loop; i++) {
-    int selected = min((int)random(numcells), numcells - 1);
-    cells[selected].run();
-  }
-}
-
-void clearScreen() {
-  background(0);
-}
-
 class Cell {
+public:
   int x, y;
+  Cell() {}
   Cell(int xin, int yin) {
     x = xin;
     y = yin;
@@ -97,29 +78,59 @@ class Cell {
       y += dy;
     }
   }
+};
+
+
+int numcells = 0;
+int maxcells = 6700;
+std::vector<Cell> cells(maxcells);
+color spore_color;
+// set lower for smoother animation, higher for faster simulation
+int runs_per_loop = 10000;
+
+void reset();
+void clearScreen();
+void seed();
+
+void setup() {
+  size(640, 360);
+  frameRate(24);
+  reset();
 }
 
-//  The World class simply provides two functions, get and set, which access the
-//  display in the same way as getPixel and setPixel.  The only difference is that
-//  the World class's get and set do screen wraparound ("toroidal coordinates").
-class World {
+void reset() {
+  clearScreen();
+  w = World();
+  spore_color = color(172, 255, 128);
+  seed();
+}
 
-  void setpix(int x, int y, int c) {
-    while(x < 0) x+=width;
-    while(x > width - 1) x-=width;
-    while(y < 0) y+=height;
-    while(y > height - 1) y-=height;
-    set(x, y, c);
-  }
-
-  color getpix(int x, int y) {
-    while(x < 0) x+=width;
-    while(x > width - 1) x-=width;
-    while(y < 0) y+=height;
-    while(y > height - 1) y-=height;
-    return get(x, y);
+void seed() {
+  // Add cells at random places
+  for (int i = 0; i < maxcells; i++)
+  {
+    int cX = (int)random(width);
+    int cY = (int)random(height);
+    if (w.getpix(cX, cY) == black) {
+      w.setpix(cX, cY, spore_color);
+      cells[numcells] = Cell(cX, cY);
+      numcells++;
+    }
   }
 }
+
+void draw() {
+  // Run cells in random order
+  for (int i = 0; i < runs_per_loop; i++) {
+    int selected = min((int)random(numcells), numcells - 1);
+    cells[selected].run();
+  }
+}
+
+void clearScreen() {
+  background(0);
+}
+
 
 void mousePressed() {
   numcells = 0;

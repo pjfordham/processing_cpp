@@ -661,6 +661,16 @@ public:
       glc.updatePixels( pixels );
    }
 
+   color get(int x, int y) {
+      loadPixels();
+      return pixels[y*width+x];
+   }
+
+   void set(int x, int y, color c) {
+      pixels[y*width+x] = c;
+      updatePixels();
+   }
+
    // ----
    // Begin shapes managed by Pshape.
    // ----
