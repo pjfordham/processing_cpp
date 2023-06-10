@@ -20,6 +20,9 @@ void PShader::set_uniforms() {
    for (const auto& [id, value] : uniforms2fv) {
       glUniform2fv(id,1,value.data());
    }
+   for (const auto& [id, value] : uniforms3fv) {
+      glUniform3fv(id,1,value.data());
+   }
 }
 
 void PShader::set(const char *uniform, float value) {
@@ -31,6 +34,12 @@ void PShader::set(const char *uniform, float v1, float v2) {
    std::array<float,2> vec = {v1,v2};
    GLuint id = glGetUniformLocation(programID, uniform);
    uniforms2fv[id] = vec;
+}
+
+void PShader::set(const char *uniform, float v1, float v2, float v3) {
+   std::array<float,3> vec = {v1,v2,v3};
+   GLuint id = glGetUniformLocation(programID, uniform);
+   uniforms3fv[id] = vec;
 }
 
 GLuint PShader::getAttribLocation(const char *attribute) {

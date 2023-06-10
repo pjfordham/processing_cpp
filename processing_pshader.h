@@ -13,6 +13,7 @@ class PShader {
 
    std::map<GLuint, float> uniforms1f;
    std::map<GLuint, std::array<float,2>> uniforms2fv;
+   std::map<GLuint, std::array<float,3>> uniforms3fv;
 
    std::string vertexShader;
    std::string fragmentShader;
@@ -30,6 +31,7 @@ public:
    PShader& operator=(PShader&& other) noexcept {
       std::swap(uniforms1f, other.uniforms1f);
       std::swap(uniforms2fv, other.uniforms2fv);
+      std::swap(uniforms3fv, other.uniforms3fv);
       std::swap(vertexShader, other.vertexShader);
       std::swap(fragmentShader, other.fragmentShader);
       std::swap(programID, other.programID);
@@ -59,6 +61,8 @@ public:
    void set(const char *uniform, float value);
 
    void set(const char *uniform, float v1, float v2);
+
+   void set(const char *uniform, float v1, float v2, float v3);
 
    GLuint getAttribLocation(const char *attribute);
 
