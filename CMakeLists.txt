@@ -128,8 +128,6 @@ set(skip_examples
   "examples/Topics/Advanced Data/Regex/Regex.cc"
   "examples/Topics/Advanced Data/Threads/Threads.cc"
   "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"
-  "examples/Topics/Animation/AnimatedSprite/AnimatedSprite.cc"
-  "examples/Topics/Animation/AnimatedSprite/Animation.cc"
   "examples/Topics/Cellular Automata/Spore1/Spore1.cc"
   "examples/Topics/Cellular Automata/Spore2/Spore2.cc"
   "examples/Topics/Create Shapes/BeginEndContour/BeginEndContour.cc"

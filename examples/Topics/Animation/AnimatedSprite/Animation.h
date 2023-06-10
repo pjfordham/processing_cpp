@@ -1,18 +1,22 @@
 // Class for animating a sequence of GIFs
 
 class Animation {
-  PImage[] images;
+public:
+  std::vector<PImage> images;
   int imageCount;
   int frame;
 
-  Animation(String imagePrefix, int count) {
+  Animation() {}
+
+  Animation(std::string imagePrefix, int count) {
     imageCount = count;
-    images = new PImage[imageCount];
+    images.resize(imageCount);
 
     for (int i = 0; i < imageCount; i++) {
       // Use nf() to number format 'i' into four digits
-      String filename = imagePrefix + nf(i, 4) + ".gif";
-      images[i] = loadImage(filename);
+      std::string filename = imagePrefix + nf(i, 4) + ".gif";
+      fmt::print("{}\n", filename);
+      images[i] = loadImage(filename.c_str());
     }
   }
 
@@ -24,4 +28,4 @@ class Animation {
   int getWidth() {
     return images[0].width;
   }
-}
+};
