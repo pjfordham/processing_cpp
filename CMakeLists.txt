@@ -244,6 +244,18 @@ function(ADD_EXAMPLE file_path)
     target_compile_options(${base_name} PRIVATE -DFILE_TO_INCLUDE=\"${file_path}\" -include ${CMAKE_CURRENT_SOURCE_DIR}/processing.h)
   endif()
 
+  # If there's a data directory copy it to the target
+  if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data)
+    add_custom_command(TARGET ${base_name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${base_name}>/data)
+
+    add_custom_command(TARGET ${base_name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data/*
+      $<TARGET_FILE_DIR:${base_name}>/data
+      )
+  endif()
+
 endfunction()
 
 # Add all the examples targets
