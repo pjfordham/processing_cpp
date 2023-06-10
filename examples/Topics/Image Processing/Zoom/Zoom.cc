@@ -7,7 +7,7 @@
  */
 
 PImage img;
-int[][] imgPixels;
+std::vector<std::vector<int>> imgPixels;
 float sval = 1.0;
 float nmx, nmy;
 int res = 5;
@@ -17,11 +17,12 @@ void setup() {
   noFill();
   stroke(255);
   img = loadImage("ystone08.jpg");
-  imgPixels = new int[img.width][img.height];
-  for (int i = 0; i < img.height; i++) {
-    for (int j = 0; j < img.width; j++) {
-      imgPixels[j][i] = img.get(j, i);
-    }
+  imgPixels.resize( img.width );
+  for (int j = 0; j < img.width; j++) {
+     imgPixels[j].resize( img.height );
+     for (int i = 0; i < img.height; i++) {
+        imgPixels[j][i] = img.get(j, i);
+     }
   }
 }
 
@@ -31,7 +32,7 @@ void draw() {
   nmx += (mouseX-nmx)/20;
   nmy += (mouseY-nmy)/20;
 
-  if(mousePressed) {
+  if(mousePressedb) {
     sval += 0.005;
   }
   else {

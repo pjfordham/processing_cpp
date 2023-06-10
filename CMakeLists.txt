@@ -179,7 +179,6 @@ set(skip_examples
   "examples/Topics/Image Processing/Histogram/Histogram.cc"
   "examples/Topics/Image Processing/LinearImage/LinearImage.cc"
   "examples/Topics/Image Processing/PixelArray/PixelArray.cc"
-  "examples/Topics/Image Processing/Zoom/Zoom.cc"
   "examples/Topics/Interaction/Tickle/Tickle.cc"
   "examples/Topics/Shaders/BlurFilter/BlurFilter.cc"
   "examples/Topics/Shaders/Conway/Conway.c"
