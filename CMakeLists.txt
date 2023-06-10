@@ -92,7 +92,6 @@ set(skip_examples
   "examples/Demos/Graphics/Ribbons/Geometry.cc"
   "examples/Demos/Graphics/Ribbons/PDB.cc"
   "examples/Demos/Graphics/Ribbons/Ribbons.cc"
-  "examples/Demos/Graphics/RotatingArcs/RotatingArcs.cc"
   "examples/Demos/Graphics/Trefoil/Surface.cc"
   "examples/Demos/Graphics/Trefoil/Trefoil.cc"
   "examples/Demos/Graphics/Wiggling/Wiggling.cc"

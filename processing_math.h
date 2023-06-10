@@ -17,6 +17,7 @@ const float PI = M_PI;
 const float TWO_PI = M_PI * 2.0;
 const float HALF_PI = M_PI / 2.0;
 const float QUARTER_PI = M_PI / 4.0;
+const float DEG_TO_RAD = 0.01745329238474369f;
 
 inline float random(float min, float max) {
    static std::mt19937 randomNumbers( 1 );

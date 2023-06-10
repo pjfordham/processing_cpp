@@ -2,6 +2,7 @@
 #define PROCESSING_JAVA_COMPATABILITY_H
 
 #include <vector>
+#include <algorithm>
 
 // Various hacks to make C++ slightly
 // more like Java to get sketches to

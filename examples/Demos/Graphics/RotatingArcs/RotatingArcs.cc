@@ -7,33 +7,37 @@
 */
 
 // Trig lookup tables borrowed from Toxi; cryptic but effective.
-float sinLUT[];
-float cosLUT[];
+std::vector<float> sinLUT;
+std::vector<float> cosLUT;
 float SINCOS_PRECISION=1.0;
 int SINCOS_LENGTH= int((360.0/SINCOS_PRECISION));
 
 // System data
 boolean dosave=false;
 int num;
-float pt[];
-int style[];
+std::vector<float> pt;
+std::vector<int> style;
 
+int colorBlended(float fract, float r, float g, float b, float r2, float g2, float b2, float a);
+void arcLine(float x,float y,float deg,float rad,float w);
+void arcLineBars(float x,float y,float deg,float rad,float w);
+void zarc(float x,float y,float deg,float rad,float w);
 
 void setup() {
   size(1024, 768, P3D);
   background(255);
 
   // Fill the tables
-  sinLUT=new float[SINCOS_LENGTH];
-  cosLUT=new float[SINCOS_LENGTH];
+  sinLUT.resize(SINCOS_LENGTH);
+  cosLUT.resize(SINCOS_LENGTH);
   for (int i = 0; i < SINCOS_LENGTH; i++) {
-    sinLUT[i]= (float)Math.sin(i*DEG_TO_RAD*SINCOS_PRECISION);
-    cosLUT[i]= (float)Math.cos(i*DEG_TO_RAD*SINCOS_PRECISION);
+    sinLUT[i]= sinf(i*DEG_TO_RAD*SINCOS_PRECISION);
+    cosLUT[i]= cosf(i*DEG_TO_RAD*SINCOS_PRECISION);
   }
 
   num = 150;
-  pt = new float[6*num]; // rotx, roty, deg, rad, w, speed
-  style = new int[2*num]; // color, render style
+  pt.resize(6*num); // rotx, roty, deg, rad, w, speed
+  style.resize(2*num); // color, render style
 
   // Set up arc shapes
   int index=0;
@@ -86,17 +90,20 @@ void draw() {
       stroke(style[i*2]);
       noFill();
       strokeWeight(1);
-      arcLine(0,0, pt[index++],pt[index++],pt[index++]);
+      arcLine(0,0, pt[index],pt[index+1],pt[index+2]);
+      index += 3;
     }
     else if(style[i*2+1]==1) {
       fill(style[i*2]);
       noStroke();
-      arcLineBars(0,0, pt[index++],pt[index++],pt[index++]);
+      arcLineBars(0,0, pt[index],pt[index+1],pt[index+2]);
+      index += 3;
     }
     else {
       fill(style[i*2]);
       noStroke();
-      arc(0,0, pt[index++],pt[index++],pt[index++]);
+      zarc(0,0, pt[index],pt[index+1],pt[index+2]);
+      index += 3;
     }
 
     // increase rotation
@@ -122,7 +129,7 @@ float r2, float g2, float b2, float a) {
 
 // Draw arc line
 void arcLine(float x,float y,float deg,float rad,float w) {
-  int a=(int)(min (deg/SINCOS_PRECISION,SINCOS_LENGTH-1));
+  int a=(int)(min<float>(deg/SINCOS_PRECISION,SINCOS_LENGTH-1));
   int numlines=(int)(w/2);
 
   for (int j=0; j<numlines; j++) {
@@ -137,7 +144,7 @@ void arcLine(float x,float y,float deg,float rad,float w) {
 
 // Draw arc line with bars
 void arcLineBars(float x,float y,float deg,float rad,float w) {
-  int a = int((min (deg/SINCOS_PRECISION,SINCOS_LENGTH-1)));
+  int a = int((min<float>(deg/SINCOS_PRECISION,SINCOS_LENGTH-1)));
   a /= 4;
 
   beginShape(QUADS);
@@ -151,8 +158,8 @@ void arcLineBars(float x,float y,float deg,float rad,float w) {
 }
 
 // Draw solid arc
-void arc(float x,float y,float deg,float rad,float w) {
-  int a = int(min (deg/SINCOS_PRECISION,SINCOS_LENGTH-1));
+void zarc(float x,float y,float deg,float rad,float w) {
+  int a = int(min<float>(deg/SINCOS_PRECISION,SINCOS_LENGTH-1));
   beginShape(QUAD_STRIP);
   for (int i = 0; i < a; i++) {
     vertex(cosLUT[i]*(rad)+x,sinLUT[i]*(rad)+y);
