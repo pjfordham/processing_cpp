@@ -1,15 +1,15 @@
 // A subclass of Particle
+#include "Particle.h"
 
-class CrazyParticle extends Particle {
+class CrazyParticle : public Particle {
 
+public:
   // Just adding one new variable to a CrazyParticle
   // It inherits all other fields from "Particle", and we don't have to retype them!
   float theta;
 
   // The CrazyParticle constructor can call the parent class (super class) constructor
-  CrazyParticle(PVector l) {
-    // "super" means do everything from the constructor in Particle
-    super(l);
+  CrazyParticle(PVector l) : Particle(l) {
     // One more line of code to deal with the new variable, theta
     theta = 0.0;
   }
@@ -18,7 +18,7 @@ class CrazyParticle extends Particle {
 
   // This update() method overrides the parent class update() method
   void update() {
-    super.update();
+    Particle::update();
     // Increment rotation based on horizontal velocity
     float theta_vel = (velocity.x * velocity.mag()) / 10.0f;
     theta += theta_vel;
@@ -27,7 +27,7 @@ class CrazyParticle extends Particle {
   // This display() method overrides the parent class display() method
   void display() {
     // Render the ellipse just like in a regular particle
-    super.display();
+    Particle::display();
     // Then add a rotating line
     pushMatrix();
     translate(position.x, position.y);
@@ -36,4 +36,4 @@ class CrazyParticle extends Particle {
     line(0, 0, 25, 0);
     popMatrix();
   }
-}
+};

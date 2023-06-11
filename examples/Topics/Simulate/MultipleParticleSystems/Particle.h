@@ -1,15 +1,16 @@
 // A simple Particle class
 
 class Particle {
+public:
   PVector position;
   PVector velocity;
   PVector acceleration;
   float lifespan;
 
   Particle(PVector l) {
-    acceleration = new PVector(0, 0.05);
-    velocity = new PVector(random(-1, 1), random(-2, 0));
-    position = l.copy();
+    acceleration = PVector(0, 0.05);
+    velocity = PVector(random(-1, 1), random(-2, 0));
+    position = l;
     lifespan = 255.0;
   }
 
@@ -19,14 +20,14 @@ class Particle {
   }
 
   // Method to update position
-  void update() {
+  virtual void update() {
     velocity.add(acceleration);
     position.add(velocity);
     lifespan -= 2.0;
   }
 
   // Method to display
-  void display() {
+  virtual void display() {
     stroke(255, lifespan);
     fill(255, lifespan);
     ellipse(position.x, position.y, 8, 8);
@@ -36,4 +37,4 @@ class Particle {
   boolean isDead() {
     return (lifespan < 0.0);
   }
-}
+};

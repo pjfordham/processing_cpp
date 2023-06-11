@@ -188,10 +188,6 @@ set(skip_examples
   "examples/Topics/Simulate/GravitationalAttraction3D/GravitationalAttraction3D.cc"
   "examples/Topics/Simulate/GravitationalAttraction3D/Planet.cc"
   "examples/Topics/Simulate/GravitationalAttraction3D/Sun.cc"
-  "examples/Topics/Simulate/MultipleParticleSystems/CrazyParticle.cc"
-  "examples/Topics/Simulate/MultipleParticleSystems/MultipleParticleSystems.cc"
-  "examples/Topics/Simulate/MultipleParticleSystems/Particle.cc"
-  "examples/Topics/Simulate/MultipleParticleSystems/ParticleSystem.cc"
   "examples/Topics/Simulate/SoftBody/SoftBody.cc"
  )
 
