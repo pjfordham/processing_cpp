@@ -13,14 +13,16 @@ int w = 120;
 // It's possible to convolve the image with many different
 // matrices to produce different effects. This is a high-pass
 // filter; it accentuates the edges.
-float[][] matrix = { { -1, -1, -1 },
-                     { -1,  9, -1 },
-                     { -1, -1, -1 } };
+std::vector<std::vector<float>> matrix = { { -1, -1, -1 },
+                                           { -1,  9, -1 },
+                                           { -1, -1, -1 } };
 
 void setup() {
   size(640, 360);
   img = loadImage("moon-wide.jpg");
 }
+
+color convolution(int x, int y, std::vector<std::vector<float>> &matrix, int matrixsize, PImage img);
 
 void draw() {
   // We're only going to process a portion of the image
@@ -45,7 +47,7 @@ void draw() {
   updatePixels();
 }
 
-color convolution(int x, int y, float[][] matrix, int matrixsize, PImage img)
+color convolution(int x, int y, std::vector<std::vector<float>> &matrix, int matrixsize, PImage img)
 {
   float rtotal = 0.0;
   float gtotal = 0.0;
@@ -58,7 +60,7 @@ color convolution(int x, int y, float[][] matrix, int matrixsize, PImage img)
       int yloc = y+j-offset;
       int loc = xloc + img.width*yloc;
       // Make sure we haven't walked off our image, we could do better here
-      loc = constrain(loc,0,img.pixels.length-1);
+      loc = constrain(loc,0,img.width*img.height-1);
       // Calculate the convolution
       rtotal += (red(img.pixels[loc]) * matrix[i][j]);
       gtotal += (green(img.pixels[loc]) * matrix[i][j]);

@@ -164,7 +164,6 @@ set(skip_examples
   "examples/Topics/Geometry/SpaceJunk/Cube.cc"
   "examples/Topics/Geometry/SpaceJunk/SpaceJunk.cc"
   "examples/Topics/Image Processing/Blending/Blending.cc"
-  "examples/Topics/Image Processing/Convolution/Convolution.cc"
   "examples/Topics/Image Processing/EdgeDetection/EdgeDetection.cc"
   "examples/Topics/Image Processing/Explode/Explode.cc"
   "examples/Topics/Image Processing/Extrusion/Extrusion.cc"
