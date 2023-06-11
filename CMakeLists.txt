@@ -195,8 +195,6 @@ set(skip_examples
   "examples/Topics/Simulate/MultipleParticleSystems/MultipleParticleSystems.cc"
   "examples/Topics/Simulate/MultipleParticleSystems/Particle.cc"
   "examples/Topics/Simulate/MultipleParticleSystems/ParticleSystem.cc"
-  "examples/Topics/Simulate/SimpleParticleSystem/Particle.cc"
-  "examples/Topics/Simulate/SimpleParticleSystem/ParticleSystem.cc"
   "examples/Topics/Simulate/SoftBody/SoftBody.cc"
  )
 
