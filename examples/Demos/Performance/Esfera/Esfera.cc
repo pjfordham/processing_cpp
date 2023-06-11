@@ -3,50 +3,14 @@
  * by David Pena.
  *
  * Distribucion aleatoria uniforme sobre la superficie de una esfera.
- */
+ * EN: Uniform random distribution on the surface of a sphere.
+*/
 
-int cuantos = 16000;
-Pelo[] lista ;
 float radio = 200;
-float rx = 0;
-float ry =0;
-
-void setup() {
-  size(1024, 768, P3D);
-
-  radio = height/3.5;
-
-  lista = new Pelo[cuantos];
-  for (int i = 0; i < lista.length; i++) {
-    lista[i] = new Pelo();
-  }
-  noiseDetail(3);
-}
-
-void draw() {
-  background(0);
-
-  float rxp = (mouseX-(width/2)) * 0.005;
-  float ryp = (mouseY-(height/2)) * 0.005;
-  rx = rx*0.9 + rxp*0.1;
-  ry = ry*0.9 + ryp*0.1;
-
-  translate(width/2, height/2);
-  rotateY(rx);
-  rotateX(ry);
-  fill(0);
-  noStroke();
-  sphere(radio);
-
-  for (int i = 0; i < lista.length; i++) {
-    lista[i].dibujar();
-  }
-
-}
-
 
 class Pelo
 {
+public:
   float z = random(-radio, radio);
   float phi = random(TWO_PI);
   float largo = random(1.15, 1.2);
@@ -86,5 +50,41 @@ class Pelo
     vertex(xb, yb, zb);
     endShape();
   }
+};
+
+int cuantos = 16000;
+std::vector<Pelo> lista;
+float rx = 0;
+float ry =0;
+
+void setup() {
+  size(1024, 768, P3D);
+
+  radio = height/3.5;
+
+  lista.resize(cuantos);
+  noiseDetail(3);
 }
+
+void draw() {
+  background(0);
+
+  float rxp = (mouseX-(width/2)) * 0.005;
+  float ryp = (mouseY-(height/2)) * 0.005;
+  rx = rx*0.9 + rxp*0.1;
+  ry = ry*0.9 + ryp*0.1;
+
+  translate(width/2, height/2);
+  rotateY(rx);
+  rotateX(ry);
+  fill(0);
+  noStroke();
+  sphere(radio);
+
+  for (int i = 0; i < lista.size(); i++) {
+    lista[i].dibujar();
+  }
+
+}
+
 
