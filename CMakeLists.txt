@@ -113,8 +113,6 @@ set(skip_examples
   "examples/Demos/Tests/RedrawTest/RedrawTest.cc"
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"
-  "examples/Topics/Advanced Data/ArrayListClass/ArrayListClass.cc"
-  "examples/Topics/Advanced Data/ArrayListClass/Ball.cc"
   "examples/Topics/Advanced Data/CountingStrings/CountingStrings.cc"
   "examples/Topics/Advanced Data/HashMapClass/HashMapClass.cc"
   "examples/Topics/Advanced Data/HashMapClass/Word.cc"

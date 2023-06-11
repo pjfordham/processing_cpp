@@ -9,18 +9,17 @@
  * Click the mouse to add bouncing balls.
  */
 
-ArrayList<Ball> balls;
+#include "Ball.h"
+
+std::vector<Ball> balls;
 int ballWidth = 48;
 
 void setup() {
   size(640, 360);
   noStroke();
 
-  // Create an empty ArrayList (will store Ball objects)
-  balls = new ArrayList<Ball>();
-
   // Start by adding one element
-  balls.add(new Ball(width/2, 0, ballWidth));
+  balls.emplace_back(width/2, 0, ballWidth);
 }
 
 void draw() {
@@ -32,12 +31,12 @@ void draw() {
   // This is because we are deleting elements from the list
   for (int i = balls.size()-1; i >= 0; i--) {
     // An ArrayList doesn't know what it is storing so we have to cast the object coming out
-    Ball ball = balls.get(i);
+    Ball &ball = balls[i];
     ball.move();
     ball.display();
     if (ball.finished()) {
       // Items can be deleted with remove()
-      balls.remove(i);
+      balls.erase(balls.begin() + i);
     }
 
   }
@@ -46,6 +45,6 @@ void draw() {
 
 void mousePressed() {
   // A new ball object is added to the ArrayList (by default to the end)
-  balls.add(new Ball(mouseX, mouseY, ballWidth));
+  balls.emplace_back(mouseX, mouseY, ballWidth);
 }
 

@@ -1,6 +1,7 @@
 // Simple bouncing ball class
 
 class Ball {
+public:
 
   float x;
   float y;
@@ -47,4 +48,4 @@ class Ball {
     //stroke(0,life);
     ellipse(x,y,w,w);
   }
-}
+};
