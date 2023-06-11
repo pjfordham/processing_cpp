@@ -4,10 +4,20 @@
 // Direct port of sample code by Paul Bourke.
 // Original code: http://paulbourke.net/geometry/bezier/
 
+using VecMatrix = std::vector<std::vector<PVector>>;
+void resize(VecMatrix &v, int w, int h) {
+   v.resize(w);
+   for (auto &q : v ) {
+      q.resize(h);
+   }
+}
+
+
 int ni=4, nj=5, RESI=ni*10, RESJ=nj*10;
-PVector outp[][], inp[][];
-PVector normp[][];
+VecMatrix outp, inp, normp;
 boolean autoNormals = false;
+
+void build();
 
 void setup() {
   size(1024, 768, P3D);
@@ -42,19 +52,22 @@ void keyPressed() {
   saveFrame("bezPatch.png");
 }
 
+double BezierBlend(int k, double mu, int n);
+double DBezierBlend(int k, double mu, int n);
+
 void build() {
   int i, j, ki, kj;
   double mui, muj, bi, bj, dbi, dbj;
 
-  outp=new PVector[RESI][RESJ];
-  normp=new PVector[RESI][RESJ];
-  inp=new PVector[ni+1][nj+1];
-  PVector uitang = new PVector();
-  PVector ujtang = new PVector();
+  resize( outp, RESI, RESJ);
+  resize( normp, RESI, RESJ);
+  resize( inp, ni+1, nj+1);
+  PVector uitang;
+  PVector ujtang;
 
   for (i=0;i<=ni;i++) {
     for (j=0;j<=nj;j++) {
-      inp[i][j]=new PVector(i,j,random(-3,3));
+      inp[i][j] = PVector(i,j,random(-3,3));
     }
   }
 
@@ -62,7 +75,6 @@ void build() {
     mui = i / (double)(RESI-1);
     for (j=0;j<RESJ;j++) {
       muj = j / (double)(RESJ-1);
-      outp[i][j]=new PVector();
       uitang.set(0, 0, 0);
       ujtang.set(0, 0, 0);
       for (ki=0;ki<=ni;ki++) {
@@ -84,7 +96,7 @@ void build() {
           ujtang.z += (inp[ki][kj].z * bi * dbj);
         }
       }
-      outp[i][j].add(new PVector(-ni/2,-nj/2,0));
+      outp[i][j].add(PVector(-ni/2,-nj/2,0));
       outp[i][j].mult(100);
 
       uitang.normalize();
@@ -115,9 +127,9 @@ double BezierBlend(int k, double mu, int n) {
     }
   }
   if (k > 0)
-    blend *= Math.pow(mu, (double)k);
+    blend *= pow(mu, (double)k);
   if (n-k > 0)
-    blend *= Math.pow(1-mu, (double)(n-k));
+    blend *= pow(1-mu, (double)(n-k));
 
   return(blend);
 }
@@ -148,12 +160,12 @@ double DBezierBlend(int k, double mu, int n) {
   double fnk = 1;
   double dnk = 0;
   if (k > 0) {
-    fk = Math.pow(mu, (double)k);
-    dk = k*Math.pow(mu, (double)k-1);
+    fk = pow(mu, (double)k);
+    dk = k*pow(mu, (double)k-1);
   }
   if (n-k > 0) {
-    fnk = Math.pow(1-mu, (double)(n-k));
-    dnk = (k-n)*Math.pow(1-mu, (double)(n-k-1));
+    fnk = pow(1-mu, (double)(n-k));
+    dnk = (k-n)*pow(1-mu, (double)(n-k-1));
   }
   dblendf *= (dk * fnk + fk * dnk);
 

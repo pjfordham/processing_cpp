@@ -84,7 +84,6 @@ set(skip_examples
   "examples/Demos/Graphics/Particles/Particle.cc"
   "examples/Demos/Graphics/Particles/ParticleSystem.cc"
   "examples/Demos/Graphics/Particles/Particles.cc"
-  "examples/Demos/Graphics/Patch/Patch.cc"
   "examples/Demos/Graphics/Planets/Perlin.cc"
   "examples/Demos/Graphics/Planets/Planets.cc"
   "examples/Demos/Graphics/Ribbons/ArcBall.cc"
