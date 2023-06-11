@@ -4,23 +4,24 @@
 // A class for an orbiting Planet
 
 class Planet {
-
+public:
   // Basic physics model (position, velocity, acceleration, mass)
   PVector position;
   PVector velocity;
   PVector acceleration;
   float mass;
 
+  Planet() {}
   Planet(float m, float x, float y, float z) {
     mass = m;
-    position = new PVector(x, y, z);
-    velocity = new PVector(1, 0);   // Arbitrary starting velocity
-    acceleration = new PVector(0, 0);
+    position = PVector(x, y, z);
+    velocity = PVector(1, 0);   // Arbitrary starting velocity
+    acceleration = PVector(0, 0);
   }
 
   // Newton's 2nd Law (F = M*A) applied
   void applyForce(PVector force) {
-    PVector f = PVector.div(force, mass);
+    PVector f = PVector::div(force, mass);
     acceleration.add(f);
   }
 
@@ -40,4 +41,4 @@ class Planet {
     sphere(mass*8);
     popMatrix();
   }
-}
+};

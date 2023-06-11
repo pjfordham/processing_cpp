@@ -14,9 +14,10 @@
  * as well as examples in Topics/Vectors/
  *
  */
+#include "Sun.h"
 
 // A bunch of planets
-Planet[] planets = new Planet[10];
+std::vector<Planet> planets(10);
 // One sun (note sun is not attracted to planets (violation of Newton's 3rd Law)
 Sun s;
 
@@ -26,11 +27,11 @@ float angle = 0;
 void setup() {
   size(640, 360, P3D);
   // Some random planets
-  for (int i = 0; i < planets.length; i++) {
-    planets[i] = new Planet(random(0.1, 2), random(-width/2, width/2), random(-height/2, height/2), random(-100, 100));
+  for (int i = 0; i < planets.size(); i++) {
+    planets[i] = Planet(random(0.1, 2), random(-width/2, width/2), random(-height/2, height/2), random(-100, 100));
   }
   // A single sun
-  s = new Sun();
+  s = Sun();
 }
 
 void draw() {
@@ -46,7 +47,7 @@ void draw() {
   s.display();
 
   // All the Planets
-  for (Planet planet : planets) {
+  for (Planet &planet : planets) {
     // Sun attracts Planets
     PVector force = s.attract(planet);
     planet.applyForce(force);

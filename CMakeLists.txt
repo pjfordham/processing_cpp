@@ -185,9 +185,6 @@ set(skip_examples
   "examples/Topics/Shaders/InfiniteTiles/InfiniteTiles.cc"
   "examples/Topics/Shaders/Landscape/Landscape.cc"
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"
-  "examples/Topics/Simulate/GravitationalAttraction3D/GravitationalAttraction3D.cc"
-  "examples/Topics/Simulate/GravitationalAttraction3D/Planet.cc"
-  "examples/Topics/Simulate/GravitationalAttraction3D/Sun.cc"
   "examples/Topics/Simulate/SoftBody/SoftBody.cc"
  )
 

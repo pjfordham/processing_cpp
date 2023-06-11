@@ -3,20 +3,23 @@
 
 // A class for an attractive body in our world
 
+#include "Planet.h"
+
 class Sun {
+public:
   float mass;         // Mass, tied to size
   PVector position;   // position
   float G;            // Universal gravitational constant (arbitrary value)
 
   Sun() {
-    position = new PVector(0, 0);
+    position = PVector(0, 0);
     mass = 20;
     G = 0.4;
   }
 
 
   PVector attract(Planet m) {
-    PVector force = PVector.sub(position, m.position);    // Calculate direction of force
+     PVector force = PVector::sub(position, m.position);    // Calculate direction of force
     float d = force.mag();                               // Distance between objects
     d = constrain(d, 5.0, 25.0);                           // Limiting the distance to eliminate "extreme" results for very close or very far objects
     float strength = (G * mass * m.mass) / (d * d);      // Calculate gravitional force magnitude
@@ -33,4 +36,4 @@ class Sun {
     sphere(mass*2);
     popMatrix();
   }
-}
+};
