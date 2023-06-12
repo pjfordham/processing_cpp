@@ -127,7 +127,6 @@ set(skip_examples
   "examples/Demos/Tests/MultipleWindows/Arcball.cc"
   "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"
   "examples/Demos/Tests/OffscreenTest/OffscreenTest.cc"
-  "examples/Demos/Tests/RedrawTest/RedrawTest.cc"
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"
   "examples/Topics/Advanced Data/CountingStrings/CountingStrings.cc"
