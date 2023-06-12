@@ -1,5 +1,7 @@
-class PentigreeLSystem extends LSystem {
+#include "LSystem.h"
 
+class PentigreeLSystem : public LSystem {
+public:
   int steps = 0;
   float somestep = 0.1;
   float xoff = 0.01;
@@ -12,11 +14,11 @@ class PentigreeLSystem extends LSystem {
     reset();
   }
 
-  void useRule(String r_) {
+  void useRule(std::string r_) {
     rule = r_;
   }
 
-  void useAxiom(String a_) {
+  void useAxiom(std::string a_) {
     axiom = a_;
   }
 
@@ -46,7 +48,7 @@ class PentigreeLSystem extends LSystem {
     }
 
     for (int i = 0; i < steps; i++) {
-      char step = production.charAt(i);
+      char step = production[i];
       if (step == 'F') {
         noFill();
         stroke(255);
@@ -68,4 +70,4 @@ class PentigreeLSystem extends LSystem {
     }
   }
 
-}
+};

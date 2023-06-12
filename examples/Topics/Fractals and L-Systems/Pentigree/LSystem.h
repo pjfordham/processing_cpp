@@ -1,10 +1,11 @@
 class LSystem {
+public:
 
   int steps = 0;
 
-  String axiom;
-  String rule;
-  String production;
+  std::string axiom;
+  std::string rule;
+  std::string production;
 
   float startLength;
   float drawLength;
@@ -38,7 +39,7 @@ class LSystem {
       steps = production.length();
     }
     for (int i = 0; i < steps; i++) {
-      char step = production.charAt(i);
+      char step = production[i];
       if (step == 'F') {
         rect(0, 0, -drawLength, -drawLength);
         noFill();
@@ -65,12 +66,21 @@ class LSystem {
     }
   }
 
-  String iterate(String prod_, String rule_) {
+  std::string ReplaceAll(std::string str, const std::string& from, const std::string& to) {
+     size_t start_pos = 0;
+     while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+       str.replace(start_pos, from.length(), to);
+       start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+     }
+     return str;
+  }
+
+  std::string iterate(std::string prod_, std::string rule_) {
     drawLength = drawLength * 0.6;
     generations++;
-    String newProduction = prod_;
-    newProduction = newProduction.replaceAll("F", rule_);
+    std::string newProduction = prod_;
+    newProduction = ReplaceAll(newProduction,"F", rule_);
     return newProduction;
   }
-}
+};
 
