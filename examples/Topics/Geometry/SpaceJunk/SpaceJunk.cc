@@ -7,6 +7,8 @@
  * and right to zoom.
  */
 
+#include "Cube.h"
+
 // Used for oveall rotation
 float angle;
 
@@ -14,7 +16,7 @@ float angle;
 int limit = 500;
 
 // Array for all cubes
-Cube[] cubes = new Cube[limit];
+std::vector<Cube> cubes(limit);
 
 void setup() {
   size(640, 360, P3D);
@@ -22,10 +24,10 @@ void setup() {
   noStroke();
 
   // Instantiate cubes, passing in random vals for size and postion
-  for (int i = 0; i < cubes.length; i++){
-    cubes[i] = new Cube(int(random(-10, 10)), int(random(-10, 10)),
-                        int(random(-10, 10)), int(random(-140, 140)),
-                        int(random(-140, 140)), int(random(-140, 140)));
+  for (int i = 0; i < cubes.size(); i++){
+     cubes[i] = Cube(int(random(-10, 10)), int(random(-10, 10)),
+                     int(random(-10, 10)), int(random(-140, 140)),
+                     int(random(-140, 140)), int(random(-140, 140)));
   }
 }
 
@@ -50,7 +52,7 @@ void draw(){
   rotateX(radians(angle));
 
   // Draw cubes
-  for (int i = 0; i < cubes.length; i++){
+  for (int i = 0; i < cubes.size(); i++){
     cubes[i].drawCube();
   }
 

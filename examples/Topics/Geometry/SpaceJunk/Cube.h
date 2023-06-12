@@ -1,18 +1,19 @@
 
 class Cube {
-
+public:
   // Properties
   int w, h, d;
   int shiftX, shiftY, shiftZ;
 
+  Cube() {}
   // Constructor
   Cube(int w, int h, int d, int shiftX, int shiftY, int shiftZ){
-    this.w = w;
-    this.h = h;
-    this.d = d;
-    this.shiftX = shiftX;
-    this.shiftY = shiftY;
-    this.shiftZ = shiftZ;
+    this->w = w;
+    this->h = h;
+    this->d = d;
+    this->shiftX = shiftX;
+    this->shiftY = shiftY;
+    this->shiftZ = shiftZ;
   }
 
   // Main cube drawing method, which looks
@@ -64,4 +65,4 @@ class Cube {
     rotateX(radians(1));
     rotateZ(radians(1));
   }
-}
+};

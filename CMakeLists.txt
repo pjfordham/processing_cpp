@@ -154,8 +154,6 @@ set(skip_examples
   "examples/Topics/Fractals and L-Systems/PenroseTile/LSystem.cc"
   "examples/Topics/Fractals and L-Systems/PenroseTile/PenroseLSystem.cc"
   "examples/Topics/Fractals and L-Systems/PenroseTile/PenroseTile.cc"
-  "examples/Topics/Geometry/SpaceJunk/Cube.cc"
-  "examples/Topics/Geometry/SpaceJunk/SpaceJunk.cc"
   "examples/Topics/Image Processing/Blending/Blending.cc"
   "examples/Topics/Image Processing/EdgeDetection/EdgeDetection.cc"
   "examples/Topics/Image Processing/Explode/Explode.cc"
