@@ -21,6 +21,7 @@ extern PGraphics g;
 MAKE_GLOBAL(shader, g.glc);
 MAKE_GLOBAL(loadShader, g.glc);
 MAKE_GLOBAL(resetShader, g.glc);
+MAKE_GLOBAL(hint, g.glc);
 MAKE_GLOBAL(get, g);
 MAKE_GLOBAL(set, g);
 MAKE_GLOBAL(createGraphics, g);

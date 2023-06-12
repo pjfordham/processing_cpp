@@ -39,7 +39,7 @@ void draw() {
       for (float k =- width+margin; k <= width-margin; k += boxSize){
         // Base fill color on counter values, abs function
         // ensures values stay within legal range
-        boxFill = color(abs(i), abs(j), abs(k), 50);
+        boxFill = color(fabs(i), fabs(j), fabs(k), 50);
         pushMatrix();
         translate(k, j, i);
         fill(boxFill);
@@ -58,8 +58,8 @@ void draw() {
     frate = float(fcount) / fint;
     fcount = 0;
     lastm = m;
-    println("fps: " + frate);
+    fmt::print("fps: {}\n",frate);
   }
   fill(0);
-  text("fps: " + frate, 10, 20);
+  fmt::print("fps: {} {} {}\n",frate, 10, 20);
 }

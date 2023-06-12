@@ -63,6 +63,19 @@ void PFrame::bind() {
    glViewport(0, 0, width, height);
 }
 
+void gl_context::hint(int type) {
+   switch(type) {
+   case DISABLE_DEPTH_TEST:
+      glDisable(GL_DEPTH_TEST);
+      break;
+   case ENABLE_DEPTH_TEST:
+      glEnable(GL_DEPTH_TEST);
+      break;
+   default:
+      break;
+   }
+}
+
 gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFactor, height * aaFactor) {
    this->aaFactor = aaFactor;
    this->width = width * aaFactor;

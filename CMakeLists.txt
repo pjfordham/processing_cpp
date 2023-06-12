@@ -119,7 +119,6 @@ set(skip_examples
   "examples/Demos/Graphics/Yellowtail/Gesture.cc"
   "examples/Demos/Graphics/Yellowtail/Vec3f.cc"
   "examples/Demos/Graphics/Yellowtail/Yellowtail.cc"
-  "examples/Demos/Performance/CubicGridImmediate/CubicGridImmediate.cc"
   "examples/Demos/Performance/CubicGridRetained/CubicGridRetained.cc"
   "examples/Demos/Performance/DynamicParticlesImmediate/DynamicParticlesImmediate.cc"
   "examples/Demos/Performance/DynamicParticlesRetained/DynamicParticlesRetained.cc"

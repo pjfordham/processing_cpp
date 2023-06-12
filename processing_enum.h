@@ -5,6 +5,9 @@
 enum {
    CODED = -1,
 
+   DISABLE_DEPTH_TEST,
+   ENABLE_DEPTH_TEST,
+
    TOP,
    LEFT,
    RIGHT,

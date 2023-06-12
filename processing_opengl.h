@@ -199,6 +199,8 @@ public:
 
    ~gl_context();
 
+   void hint(int type);
+
    void saveFrame(const std::string& fileName);
 
    void loadPixels( std::vector<unsigned int> &pixels );
@@ -293,7 +295,7 @@ public:
                float *pointLightColor, float *pointLightPosition, float *pointLightFalloff) {
 
       flushes++;
-      if (flushes > 1000) abort();
+      // if (flushes > 1000) abort();
 
       if (vbuffer.size() != 0 ) {
 
