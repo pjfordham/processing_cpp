@@ -1,6 +1,9 @@
-class PenroseSnowflakeLSystem extends LSystem {
+#include "LSystem.h"
 
-  String ruleF;
+class PenroseSnowflakeLSystem : public LSystem {
+
+public:
+  std::string ruleF;
 
   PenroseSnowflakeLSystem() {
     axiom = "F3-F3-F3-F3-F";
@@ -10,11 +13,11 @@ class PenroseSnowflakeLSystem extends LSystem {
     reset();
   }
 
-  void useRule(String r_) {
+  void useRule(std::string r_) {
     rule = r_;
   }
 
-  void useAxiom(String a_) {
+  void useAxiom(std::string a_) {
     axiom = a_;
   }
 
@@ -32,10 +35,6 @@ class PenroseSnowflakeLSystem extends LSystem {
     generations = 0;
   }
 
-  int getAge() {
-    return generations;
-  }
-
   void render() {
     translate(width, height);
     int repeats = 1;
@@ -46,7 +45,7 @@ class PenroseSnowflakeLSystem extends LSystem {
     }
 
     for (int i = 0; i < steps; i++) {
-      char step = production.charAt(i);
+      char step = production[i];
       if (step == 'F') {
         for (int j = 0; j < repeats; j++) {
           line(0,0,0, -drawLength);
@@ -79,17 +78,15 @@ class PenroseSnowflakeLSystem extends LSystem {
   }
 
 
-  String iterate(String prod_, String rule_) {
-    String newProduction = "";
+  std::string iterate(std::string prod_, std::string rule_) {
+    std::string newProduction;
     for (int i = 0; i < prod_.length(); i++) {
-      char step = production.charAt(i);
+      char step = production[i];
       if (step == 'F') {
         newProduction = newProduction + ruleF;
       }
       else {
-        if (step != 'F') {
-          newProduction = newProduction + step;
-        }
+        newProduction = newProduction + step;
       }
     }
     drawLength = drawLength * 0.4;
@@ -97,4 +94,4 @@ class PenroseSnowflakeLSystem extends LSystem {
     return newProduction;
   }
 
-}
+};

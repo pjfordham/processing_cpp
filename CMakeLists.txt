@@ -149,8 +149,6 @@ set(skip_examples
   "examples/Topics/File IO/SaveFile2/SaveFile2.cc"
   "examples/Topics/File IO/SaveOneFrame/SaveOneImage.cc"
   "examples/Topics/File IO/TileImages/TileImages.cc"
-  "examples/Topics/Fractals and L-Systems/PenroseSnowflake/LSystem.cc"
-  "examples/Topics/Fractals and L-Systems/PenroseSnowflake/PenroseSnowflakeLSystem.cc"
   "examples/Topics/Image Processing/Blending/Blending.cc"
   "examples/Topics/Image Processing/EdgeDetection/EdgeDetection.cc"
   "examples/Topics/Image Processing/Explode/Explode.cc"
