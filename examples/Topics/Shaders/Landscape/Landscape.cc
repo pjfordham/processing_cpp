@@ -25,7 +25,7 @@ void draw() {
   shader(landscape);
   rect(0, 0, width, height);
 
-  if (frameCount % 10 == 0) {  // every 10th frame
-    println("frame: " + frameCount + " - fps: " + frameRate);
-  }
+  // if (frameCount % 10 == 0) {  // every 10th frame
+  //   println("frame: " + frameCount + " - fps: " + frameRate);
+  // }
 }
