@@ -1,11 +1,14 @@
-class PenroseLSystem extends LSystem {
+#include "LSystem.h"
+
+class PenroseLSystem : public LSystem {
+public:
 
   int steps = 0;
   float somestep = 0.1;
-  String ruleW;
-  String ruleX;
-  String ruleY;
-  String ruleZ;
+  std::string ruleW;
+  std::string ruleX;
+  std::string ruleY;
+  std::string ruleZ;
 
   PenroseLSystem() {
     axiom = "[X]++[X]++[X]++[X]++[X]";
@@ -18,11 +21,11 @@ class PenroseLSystem extends LSystem {
     reset();
   }
 
-  void useRule(String r_) {
+  void useRule(std::string r_) {
     rule = r_;
   }
 
-  void useAxiom(String a_) {
+  void useAxiom(std::string a_) {
     axiom = a_;
   }
 
@@ -54,7 +57,7 @@ class PenroseLSystem extends LSystem {
     }
 
     for (int i = 0; i < steps; i++) {
-      char step = production.charAt(i);
+      char step = production[i];
       if (step == 'F') {
         stroke(255, 60);
         for (int j = 0; j < repeats; j++) {
@@ -96,10 +99,10 @@ class PenroseLSystem extends LSystem {
     }
   }
 
-  String iterate(String prod_, String rule_) {
-    String newProduction = "";
+  std::string iterate(std::string prod_, std::string rule_) {
+    std::string newProduction = "";
     for (int i = 0; i < prod_.length(); i++) {
-      char step = production.charAt(i);
+      char step = production[i];
       if (step == 'W') {
         newProduction = newProduction + ruleW;
       }
@@ -124,5 +127,5 @@ class PenroseLSystem extends LSystem {
     return newProduction;
   }
 
-}
+};
 
