@@ -1,9 +1,9 @@
 
-public void setup() {
+void setup() {
   size(800, 600, P2D);
 }
 
-public void draw() {
+void draw() {
   background(255);
   stroke(0, 10);
   for (int i = 0; i < 50000; i++) {
@@ -20,5 +20,5 @@ public void draw() {
     // lower.
     line(x0, y0, z0, x1, y1, z1);
   }
-  if (frameCount % 10 == 0) println(frameRate);
+  // if (frameCount % 10 == 0) fmt::print("{}\n", frameRate);
 }
