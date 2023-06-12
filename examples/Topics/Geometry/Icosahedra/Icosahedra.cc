@@ -6,15 +6,17 @@
  * polyhedron composed of twenty equalateral triangles.
  */
 
+#include "Icosahedron.h"
+
 Icosahedron ico1;
 Icosahedron ico2;
 Icosahedron ico3;
 
 void setup(){
   size(640, 360, P3D);
-  ico1 = new Icosahedron(75);
-  ico2 = new Icosahedron(75);
-  ico3 = new Icosahedron(75);
+  ico1 = Icosahedron(75);
+  ico2 = Icosahedron(75);
+  ico3 = Icosahedron(75);
 }
 
 void draw(){

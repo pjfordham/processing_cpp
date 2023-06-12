@@ -1,24 +1,31 @@
-class Icosahedron extends Shape3D{
+#include "Shape3D.h"
 
+class Icosahedron : public Shape3D{
+public:
   // icosahedron
   PVector topPoint;
-  PVector[] topPent = new PVector[5];
+  std::vector<PVector> topPent;
   PVector bottomPoint;
-  PVector[] bottomPent = new PVector[5];
+  std::vector<PVector> bottomPent;
   float angle = 0, radius = 150;
   float triDist;
   float triHt;
   float a, b, c;
 
   // constructor
+  Icosahedron(){}
+
   Icosahedron(float radius){
-    this.radius = radius;
+    topPent.resize(5);
+    bottomPent.resize(5);
+    this->radius = radius;
     init();
   }
 
-  Icosahedron(PVector v, float radius){
-    super(v);
-    this.radius = radius;
+   Icosahedron(PVector v, float radius) : Shape3D(v) {
+    topPent.resize(5);
+    bottomPent.resize(5);
+    this->radius = radius;
     init();
   }
 
@@ -26,29 +33,29 @@ class Icosahedron extends Shape3D{
   void init(){
     c = dist(cos(0)*radius, sin(0)*radius, cos(radians(72))*radius,  sin(radians(72))*radius);
     b = radius;
-    a = (float)(Math.sqrt(((c*c)-(b*b))));
+    a = (float)(fsqrt(((c*c)-(b*b))));
 
-    triHt = (float)(Math.sqrt((c*c)-((c/2)*(c/2))));
+    triHt = (float)(fsqrt((c*c)-((c/2)*(c/2))));
 
-    for (int i=0; i<topPent.length; i++){
-      topPent[i] = new PVector(cos(angle)*radius, sin(angle)*radius, triHt/2.0f);
+    for (int i=0; i<topPent.size(); i++){
+      topPent[i] = PVector(cos(angle)*radius, sin(angle)*radius, triHt/2.0f);
       angle+=radians(72);
     }
-    topPoint = new PVector(0, 0, triHt/2.0f+a);
+    topPoint = PVector(0, 0, triHt/2.0f+a);
     angle = 72.0f/2.0f;
-    for (int i=0; i<topPent.length; i++){
-      bottomPent[i] = new PVector(cos(angle)*radius, sin(angle)*radius, -triHt/2.0f);
+    for (int i=0; i<topPent.size(); i++){
+      bottomPent[i] = PVector(cos(angle)*radius, sin(angle)*radius, -triHt/2.0f);
       angle+=radians(72);
     }
-    bottomPoint = new PVector(0, 0, -(triHt/2.0f+a));
+    bottomPoint = PVector(0, 0, -(triHt/2.0f+a));
   }
 
   // draws icosahedron
   void create(){
-    for (int i=0; i<topPent.length; i++){
+     for (int i=0; i<topPent.size(); i++){
       // icosahedron top
       beginShape();
-      if (i<topPent.length-1){
+      if (i<topPent.size()-1){
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);
         vertex(x+topPoint.x, y+topPoint.y, z+topPoint.z);
         vertex(x+topPent[i+1].x, y+topPent[i+1].y, z+topPent[i+1].z);
@@ -62,7 +69,7 @@ class Icosahedron extends Shape3D{
 
       // icosahedron bottom
       beginShape();
-      if (i<bottomPent.length-1){
+      if (i<bottomPent.size()-1){
         vertex(x+bottomPent[i].x, y+bottomPent[i].y, z+bottomPent[i].z);
         vertex(x+bottomPoint.x, y+bottomPoint.y, z+bottomPoint.z);
         vertex(x+bottomPent[i+1].x, y+bottomPent[i+1].y, z+bottomPent[i+1].z);
@@ -76,8 +83,8 @@ class Icosahedron extends Shape3D{
     }
 
     // icosahedron body
-    for (int i=0; i<topPent.length; i++){
-      if (i<topPent.length-2){
+    for (int i=0; i<topPent.size(); i++){
+       if (i<topPent.size()-2){
         beginShape();
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);
         vertex(x+bottomPent[i+1].x, y+bottomPent[i+1].y, z+bottomPent[i+1].z);
@@ -90,7 +97,7 @@ class Icosahedron extends Shape3D{
         vertex(x+topPent[i+1].x, y+topPent[i+1].y, z+topPent[i+1].z);
         endShape(CLOSE);
       }
-      else if (i==topPent.length-2){
+       else if (i==topPent.size()-2){
         beginShape();
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);
         vertex(x+bottomPent[i+1].x, y+bottomPent[i+1].y, z+bottomPent[i+1].z);
@@ -103,7 +110,7 @@ class Icosahedron extends Shape3D{
         vertex(x+topPent[i+1].x, y+topPent[i+1].y, z+topPent[i+1].z);
         endShape(CLOSE);
       }
-      else if (i==topPent.length-1){
+       else if (i==topPent.size()-1){
         beginShape();
         vertex(x+topPent[i].x, y+topPent[i].y, z+topPent[i].z);
         vertex(x+bottomPent[0].x, y+bottomPent[0].y, z+bottomPent[0].z);
@@ -135,7 +142,7 @@ class Icosahedron extends Shape3D{
     bottomPoint.y = ty;
 
     // top and bottom pentagons
-    for (int i=0; i<topPent.length; i++){
+    for (int i=0; i<topPent.size(); i++){
       tx = cos(theta)*topPent[i].x+sin(theta)*topPent[i].y;
       ty = sin(theta)*topPent[i].x-cos(theta)*topPent[i].y;
       topPent[i].x = tx;
@@ -155,5 +162,5 @@ class Icosahedron extends Shape3D{
   }
 
 
-}
+};
 

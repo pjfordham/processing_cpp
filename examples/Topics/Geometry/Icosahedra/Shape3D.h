@@ -1,4 +1,7 @@
-abstract class Shape3D{
+#include "Dimension3D.h"
+
+class Shape3D {
+public:
   float x, y, z;
   float w, h, d;
 
@@ -6,9 +9,9 @@ abstract class Shape3D{
   }
 
   Shape3D(float x, float y, float z){
-    this.x = x;
-    this.y = y;
-    this.z = z;
+    this->x = x;
+    this->y = y;
+    this->z = z;
   }
 
   Shape3D(PVector p){
@@ -25,18 +28,18 @@ abstract class Shape3D{
   }
 
   Shape3D(float x, float y, float z, float w, float h, float d){
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    this.w = w;
-    this.h = h;
-    this.d = d;
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->w = w;
+    this->h = h;
+    this->d = d;
   }
 
   Shape3D(float x, float y, float z, Dimension3D dim){
-    this.x = x;
-    this.y = y;
-    this.z = z;
+    this->x = x;
+    this->y = y;
+    this->z = z;
     w = dim.w;
     h = dim.h;
     d = dim.d;
@@ -58,25 +61,25 @@ abstract class Shape3D{
   }
 
   void setLoc(float x, float y, float z){
-    this.x=x;
-    this.y=y;
-    this.z=z;
+    this->x=x;
+    this->y=y;
+    this->z=z;
   }
 
 
   // override if you need these
-  void rotX(float theta){
+  virtual void rotX(float theta){
   }
 
-  void rotY(float theta){
+  virtual void rotY(float theta){
   }
 
-  void rotZ(float theta){
+  virtual void rotZ(float theta){
   }
 
 
   // must be implemented in subclasses
-  abstract void init();
-  abstract void create();
-}
+  virtual void init() = 0;
+  virtual void create() = 0;
+};
 
