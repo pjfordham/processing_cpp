@@ -7,6 +7,13 @@ project(libProcessing VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+find_package(SDL2 REQUIRED COMPONENTS main image ttf)
+find_package(Freetype REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(CURL REQUIRED)
+find_package(fmt REQUIRED)
+
 add_library(Processing
   processing.h
   processing.cc
@@ -61,8 +68,28 @@ install(FILES
   processing_enum.h
   DESTINATION include)
 
-target_link_libraries(Processing  PUBLIC -lSDL2 -lSDL2main -lSDL2_image -lSDL2_ttf -lfreetype -lGLEW -lGL -lcurl -lfmt)
+target_include_directories(Processing
+  PUBLIC
+  ${SDL2_INCLUDE_DIRS}
+  ${FREETYPE_INCLUDE_DIRS}
+  ${GLEW_INCLUDE_DIRS}
+  ${OPENGL_INCLUDE_DIRS}
+  ${CURL_INCLUDE_DIRS}
+  ${FMT_INCLUDE_DIRS}
+  )
 
+# Link the libraries
+target_link_libraries(Processing
+    PUBLIC
+    ${SDL2_LIBRARIES}
+    -lSDL2_image
+    -lSDL2_ttf
+    ${FREETYPE_LIBRARIES}
+    ${GLEW_LIBRARIES}
+    ${OPENGL_LIBRARIES}
+    ${CURL_LIBRARIES}
+    fmt::fmt
+    )
 
 # Define the array of filenames
 set(skip_examples
