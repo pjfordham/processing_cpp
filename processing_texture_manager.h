@@ -16,6 +16,10 @@ public:
    int sheet_width = 0;
    int sheet_height = 0;
 
+   static PTexture circle() {
+      return { 8, 0,0, 1,1,1,1  };
+   }
+
    int size() const {
       return width() * height();
    }

@@ -29,6 +29,16 @@ inline float random(float max) {
    return random(0,max);
 }
 
+
+inline float bezierPoint(float a, float b, float c, float d, float t) {
+   float t_ = 1 - t;
+   return
+      1 * t_ * t_ * t_ * a +
+      3 * t_ * t_ * t  * b +
+      3 * t_ * t  * t  * c +
+      1 * t  * t  * t  * d;
+}
+
 class PVector {
 public:
    float x, y,z;

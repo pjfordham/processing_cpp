@@ -12,7 +12,6 @@ void setup() {
   size(640, 360, P2D);
 
   // First create the shape
-  star = createShape();
   star.beginShape();
   // You can set fill and stroke
   star.fill(102);

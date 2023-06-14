@@ -68,4 +68,7 @@ inline std::vector<std::string> loadStrings(const std::string& fileName) {
    return lines;
 }
 
+// This macro pulls the API a subobject into current scope.
+#define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }
+
 #endif

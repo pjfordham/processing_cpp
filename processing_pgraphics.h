@@ -4,6 +4,7 @@
 #include <string>
 
 #include "processing_math.h"
+#include "processing_utils.h"
 #include "processing_color.h"
 #include "processing_pshape.h"
 #include "processing_pimage.h"
@@ -11,7 +12,7 @@
 #include "processing_enum.h"
 #include "processing_opengl.h"
 
-class PGraphics {
+class PGraphics : public TriangleDrawer {
 public:
    static void init();
 
@@ -21,12 +22,6 @@ public:
    int textureMode_ = IMAGE;
    gl_context glc;
 
-   color stroke_color = WHITE;
-   color fill_color = WHITE;
-   color tint_color = WHITE;
-
-   int stroke_weight = 1;
-   int line_end_cap = ROUND;
    int ellipse_mode = CENTER;
    int rect_mode = CORNER;
    int image_mode = CORNER;
@@ -72,12 +67,6 @@ public:
       std::swap(textureMode_, x.textureMode_);
       std::swap(glc, x.glc);
 
-      std::swap(stroke_color, x.stroke_color);
-      std::swap(fill_color, x.fill_color);
-      std::swap(tint_color, x.tint_color);
-
-      std::swap(stroke_weight, x.stroke_weight);
-      std::swap(line_end_cap, x.line_end_cap);
       std::swap(ellipse_mode, x.ellipse_mode);
       std::swap(rect_mode, x.rect_mode);
       std::swap(image_mode, x.image_mode);
@@ -133,11 +122,8 @@ public:
       noLights();
       camera();
       perspective();
-      noTexture();
 
       background(DEFAULT_GRAY);
-      stroke(BLACK);
-      fill(WHITE);
    }
 
    void saveFrame( std::string fileName = "frame-####.png" ) {
@@ -278,7 +264,7 @@ public:
          {0,    1.0,     0,    -eyeY},
          {0,      0,   1.0,    -eyeZ},
          {0.0f, 0.0f,  0.0f,    1.0f} };
-      
+
       flush();
       // Translate the camera to the origin
       view_matrix = view * translate;
@@ -384,7 +370,7 @@ public:
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
                        color color) {
-      if (lights_) {
+     if (lights_) {
          glc.reserve( vertices.size(), move_matrix,  projection_matrix.data,
                       view_matrix.data,
                       directionLightColor.data(),
@@ -397,27 +383,27 @@ public:
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
          glc.reserve( vertices.size(), move_matrix, projection_matrix.data,
-                    view_matrix.data,
-                    black.data(),
-                    directionLightVector.data(),
-                    white.data(),
-                    black.data(),
-                    pointLightPosition.data(),
-                    pointLightFalloff.data());
+                      view_matrix.data,
+                      black.data(),
+                      directionLightVector.data(),
+                      white.data(),
+                      black.data(),
+                      pointLightPosition.data(),
+                      pointLightFalloff.data());
       }
       glc.drawTriangles( vertices, normals, coords, indices, color);
    }
 
    void flush() {
-       if (lights_) {
-          glc.flush( projection_matrix.data,
-                 view_matrix.data,
-                 directionLightColor.data(),
-                 directionLightVector.data(),
-                 ambientLightColor.data(),
-                 pointLightColor.data(),
-                 pointLightPosition.data(),
-                 pointLightFalloff.data());
+      if (lights_) {
+         glc.flush( projection_matrix.data,
+                    view_matrix.data,
+                    directionLightColor.data(),
+                    directionLightVector.data(),
+                    ambientLightColor.data(),
+                    pointLightColor.data(),
+                    pointLightPosition.data(),
+                    pointLightFalloff.data());
       } else {
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
@@ -432,51 +418,8 @@ public:
       }
    }
 
-   void textureMode( int mode ) {
-      textureMode_ = mode;
-   }
-
-   void noTexture() {
-      currentTexture = {};
-   }
-
-   void texture(PImage &img) {
-      currentTexture = glc.getTexture( img.surface );
-   }
-
    void imageMode(int iMode) {
       image_mode = iMode;
-   }
-
-   void tint(float r,float g,  float b, float a) {
-      tint_color = flatten_color_mode(r,g,b,a);
-   }
-
-   void tint(float r,float g, float b) {
-      tint(r,g,b,color::scaleA);
-   }
-
-   void tint(float r,float a) {
-      if (color::mode == HSB) {
-         tint(0,0,r,a);
-      } else {
-         tint(r,r,r,a);
-      }
-   }
-   void tint(float r) {
-      if (color::mode == HSB) {
-         tint(r,0,0,color::scaleA);
-      } else {
-         tint(r,r,r,color::scaleA);
-      }
-   }
-
-   void tint(color c) {
-      tint(c.r,c.g,c.b,c.a);
-   }
-
-   void noTint() {
-      tint_color = WHITE;
    }
 
    void box(float w, float h, float d) {
@@ -485,6 +428,7 @@ public:
       d = d / 2;
 
       PShape cube;
+      cube.copyStyle( _shape );
       cube.beginShape(TRIANGLES);
       cube.texture(currentTexture);
 
@@ -557,6 +501,7 @@ public:
    void sphere(float radius) {
 
       PShape sphere;
+      sphere.copyStyle( _shape );
       sphere.beginShape(TRIANGLES);
       sphere.texture(currentTexture);
 
@@ -613,7 +558,7 @@ public:
                         {right,top},
                         {right, bottom},
                         {left, bottom},
-                        texture, tint_color);
+                        texture );
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
@@ -632,7 +577,7 @@ public:
       }
       PTexture texture = glc.getTexture( pimage.surface );
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
-                       texture, tint_color);
+                       texture );
    }
 
    void image(PImage &pimage, float x, float y) {
@@ -671,84 +616,9 @@ public:
       updatePixels();
    }
 
-   // ----
-   // Begin shapes managed by Pshape.
-   // ----
-   void fill(float r,float g,  float b, float a) {
-      fill_color = flatten_color_mode(r,g,b,a);
-   }
-
-   void fill(float r,float g, float b) {
-      fill(r,g,b,color::scaleA);
-   }
-
-   void fill(float r,float a) {
-      if (color::mode == HSB) {
-         fill(0,0,r,a);
-      } else {
-         fill(r,r,r,a);
-      }
-   }
-
-   void fill(float r) {
-      if (color::mode == HSB) {
-         fill(0,0,r,color::scaleA);
-      } else {
-         fill(r,r,r,color::scaleA);
-      }
-   }
-
-   void fill(class color color) {
-      fill(color.r,color.g,color.b,color.a);
-   }
-
-   void fill(class color color, float a) {
-      fill(color.r,color.g,color.b,a);
-   }
-
-   void stroke(float r,float g,  float b, float a) {
-      stroke_color = flatten_color_mode(r,g,b,a);
-   }
-
-   void stroke(float r,float g, float b) {
-      stroke(r,g,b,color::scaleA);
-   }
-
-   void stroke(float r,float a) {
-      if (color::mode == HSB) {
-         stroke(0,0,r,a);
-      } else {
-         stroke(r,r,r,a);
-      }
-   }
-
    void rect(int x, int y, int _width, int _height) {
       PShape pshape = createRect(x,y,_width,_height);
       shape( pshape );
-   }
-
-   void stroke(float r) {
-      if (color::mode == HSB) {
-         stroke(r,0,0,color::scaleA);
-      } else {
-         stroke(r,r,r,color::scaleA);
-      }
-   }
-
-   void stroke(color c) {
-      stroke(c.r,c.g,c.b,c.a);
-   }
-
-   void strokeWeight(int x) {
-      stroke_weight = x;
-   }
-
-   void noStroke() {
-      stroke_color = {0,0,0,0};
-   }
-
-   void noFill() {
-      fill_color = {0,0,0,0};
    }
 
    void ellipseMode(int mode) {
@@ -756,7 +626,7 @@ public:
    }
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
-                         PTexture texture, color tint) {
+                         PTexture texture ) {
       PShape quad;
       quad.texture(texture);
       quad.beginShape(TRIANGLES_NOSTROKE);
@@ -770,263 +640,12 @@ public:
       shape( quad );
    }
 
-   PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) const {
-      PLine l1{ p1, p2 };
-      PLine l2{ p2, p3 };
-      PLine low_l1 = l1.offset(-half_weight);
-      PLine high_l1 = l1.offset(half_weight);
-      PLine low_l2 = l2.offset(-half_weight);
-      PLine high_l2 = l2.offset(half_weight);
-      return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
-   }
-
-   PShape drawLinePoly(int points, const PVector *p, int weight, bool closed)  {
-      PLine start;
-      PLine end;
-
-      PShape triangle_strip;
-      triangle_strip.beginShape(TRIANGLE_STRIP);
-
-      float half_weight = weight / 2.0;
-      if (closed) {
-         start = drawLineMitred(p[points-1], p[0], p[1], half_weight );
-         end = start;
-      } else {
-         PVector normal = (p[1] - p[0]).normal();
-         normal.normalize();
-         normal.mult(half_weight);
-         start = {  p[0] + normal, p[0] - normal };
-         normal = (p[points-1] - p[points-2]).normal();
-         normal.normalize();
-         normal.mult(half_weight);
-         end = { p[points-1] + normal, p[points-1] - normal };
-      }
-
-      triangle_strip.vertex( start.start );
-      triangle_strip.vertex( start.end );
-
-      for (int i =0; i<points-2;++i) {
-         PLine next = drawLineMitred(p[i], p[i+1], p[i+2], half_weight);
-         triangle_strip.vertex( next.start );
-         triangle_strip.vertex( next.end );
-      }
-      if (closed) {
-         PLine next = drawLineMitred(p[points-2], p[points-1], p[0], half_weight);
-         triangle_strip.vertex( next.start );
-         triangle_strip.vertex( next.end );
-      }
-
-      triangle_strip.vertex( end.start );
-      triangle_strip.vertex( end.end );
-
-      triangle_strip.endShape(CLOSE);
-      return triangle_strip;
-   }
-
-   PShape drawRoundLine(PVector p1, PVector p2, int weight) const {
-
-      PShape shape;
-      shape.beginShape(CONVEX_POLYGON);
-      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-      normal.normalize();
-      normal.mult(weight/2.0);
-
-      int NUMBER_OF_VERTICES=16;
-
-      float start_angle = PVector{p2.x-p1.x,p2.y-p1.y}.heading() + HALF_PI;
-
-      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertex(p1.x + cos(i + start_angle) * weight/2, p1.y + sin(i+start_angle) * weight/2);
-      }
-
-      start_angle += PI;
-
-      for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-         shape.vertex(p2.x + cos(i+start_angle) * weight/2, p2.y + sin(i+start_angle) * weight/2);
-      }
-      shape.endShape(CLOSE);
-      return shape;
-   }
-
-   PShape drawLine(PVector p1, PVector p2, int weight) const {
-
-      PShape shape;
-      shape.beginShape(CONVEX_POLYGON);
-      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-      normal.normalize();
-      normal.mult(weight/2.0);
-
-      shape.vertex(p1 + normal);
-      shape.vertex(p1 - normal);
-      shape.vertex(p2 - normal);
-      shape.vertex(p2 + normal);
-      shape.endShape(CLOSE);
-      return shape;
-   }
-
-   PShape drawCappedLine(PVector p1, PVector p2, int weight) const {
-
-      PShape shape;
-      shape.beginShape(CONVEX_POLYGON);
-      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-      normal.normalize();
-      normal.mult(weight/2.0);
-
-      PVector end_offset = PVector{p2.x-p1.x,p2.y-p1.y};
-      end_offset.normalize();
-      end_offset.mult(weight/2.0);
-
-      shape.vertex(p1 + normal - end_offset);
-      shape.vertex(p1 - normal - end_offset);
-      shape.vertex(p2 - normal + end_offset);
-      shape.vertex(p2 + normal + end_offset);
-
-      shape.endShape(CLOSE);
-      return shape;
-   }
-
-   void _line(PShape &triangles, PVector p1, PVector p2, int weight) const {
-
-      PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-      normal.normalize();
-      normal.mult(weight/2.0);
-
-      unsigned short i = triangles.getCurrentIndex();
-      triangles.vertex( p1 + normal );
-      triangles.vertex( p1 - normal );
-      triangles.vertex( p2 - normal );
-      triangles.vertex( p2 + normal );
-
-      triangles.index( i + 0 );
-      triangles.index( i + 1 );
-      triangles.index( i + 2 );
-
-      triangles.index( i + 0 );
-      triangles.index( i + 2 );
-      triangles.index( i + 3 );
-   }
-
-   PShape drawTriangleStrip(int points, const PVector *p,int weight) {
-      PShape triangles;
-      triangles.beginShape(TRIANGLES);
-      _line(triangles, p[0], p[1], weight);
-      for (int i=2;i<points;++i) {
-         _line(triangles, p[i-1], p[i], weight);
-         _line(triangles, p[i], p[i-2], weight);
-      }
-      triangles.endShape();
-      return triangles;
-   }
-
-   void shape_stroke(PShape &pshape, color color) {
-      switch( pshape.style ) {
-      case POINTS:
-      {
-         for (auto z : pshape.vertices ) {
-            shape_fill( _createEllipse(z.x, z.y, stroke_weight, stroke_weight, CENTER),color );
-         }
-         break;
-      }
-      case TRIANGLES_NOSTROKE:
-         break;
-      case TRIANGLES:
-      case POLYGON:
-      case CONVEX_POLYGON:
-      case LINES:
-      {
-         if (pshape.vertices.size() > 2 ) {
-            if (pshape.type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-               shape_fill( drawLinePoly( pshape.vertices.size() - 1, pshape.vertices.data() + 1, stroke_weight, false),
-                           color );
-            } else {
-               shape_fill( drawLinePoly( pshape.vertices.size(), pshape.vertices.data(), stroke_weight, pshape.type == CLOSE),
-                           color );
-            }
-         } else if (pshape.vertices.size() == 2) {
-            switch(line_end_cap) {
-            case ROUND:
-               shape_fill( drawRoundLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), color );
-               break;
-            case PROJECT:
-               shape_fill( drawCappedLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), color );
-               break;
-            case SQUARE:
-               shape_fill( drawLine(pshape.vertices[0], pshape.vertices[1], stroke_weight), color );
-               break;
-            default:
-               abort();
-            }
-         } else if (pshape.vertices.size() == 1) {
-            shape_fill( _createEllipse(pshape.vertices[0].x, pshape.vertices[0].y, stroke_weight, stroke_weight, CENTER),color );
-         }
-         break;
-      }
-      case TRIANGLE_STRIP:
-      {
-         shape_fill( drawTriangleStrip( pshape.vertices.size(), pshape.vertices.data(), stroke_weight),color );
-         break;
-      }
-      default:
-         abort();
-         break;
-      }
-   }
-
-   void shape_fill(const PShape &pshape, color color) {
-      if (pshape.vertices.size() > 2 && pshape.style != POINTS) {
-         if (pshape.normals.size() == 0) {
-            std::vector<PVector> normals( pshape.vertices.size(), {0.0f,0.0f,0.0f });
-            // Iterate over all triangles
-            for (int i = 0; i < pshape.indices.size()/3; i++) {
-               // Get the vertices of the current triangle
-               PVector v1 = pshape.vertices[pshape.indices[i * 3]];
-               PVector v2 = pshape.vertices[pshape.indices[i * 3 + 1]];
-               PVector v3 = pshape.vertices[pshape.indices[i * 3 + 2]];
-
-               // Calculate the normal vector of the current triangle
-               PVector edge1 = v2 - v1;
-               PVector edge2 = v3 - v1;
-               PVector normal = (edge1.cross(edge2)).normalize();
-
-               // Add the normal to the normals list for each vertex of the triangle
-               normals[pshape.indices[i * 3]] = normals[pshape.indices[i * 3]] + normal;
-               normals[pshape.indices[i * 3 + 1]] = normals[pshape.indices[i * 3 + 1]] + normal;
-               normals[pshape.indices[i * 3 + 2]] = normals[pshape.indices[i * 3 + 2]] + normal;
-            }
-
-            // Normalize all the normals
-            for (int i = 0; i < normals.size(); i++) {
-               normals[i].normalize();
-            }
-            drawTriangles(  pshape.vertices, normals, pshape.coords, pshape.indices, color );
-         } else {
-            drawTriangles(  pshape.vertices, pshape.normals, pshape.coords, pshape.indices, color );
-         }
-      }
-   }
 
    void shape(PShape &pshape, float x, float y) {
       pushMatrix();
       translate(x,y);
       transform( pshape.shape_matrix );
-      if ( pshape.style == GROUP ) {
-         for (auto &&child : pshape.children) {
-            shape(child,0,0);
-         }
-      } else {
-         if (pshape.texture_.layer != 0 && pshape.texture_.layer != 8) {
-            if (tint_color.a != 0) {
-               shape_fill(pshape,tint_color);
-            }
-         } else {
-            if (fill_color.a != 0) {
-               shape_fill(pshape,fill_color);
-            }
-         }
-         if (stroke_color.a != 0) {
-            shape_stroke(pshape, stroke_color);
-         }
-      }
+      pshape.draw( *this );
       popMatrix();
    }
 
@@ -1044,12 +663,8 @@ public:
    }
 
    void arc(float x, float y, float width, float height, float start, float stop, int mode = DEFAULT) {
-      PShape pshape = createArc(x, y, width, height, start, stop, mode);
+      PShape pshape = createArc(x, y, width, height, start, stop, ellipse_mode,  mode);
       shape( pshape );
-   }
-
-   void strokeCap(int cap) {
-      line_end_cap = cap;
    }
 
    void line(float x1, float y1, float x2, float y2) {
@@ -1089,43 +704,27 @@ public:
       shape( pshape );
    }
 
-   void beginShape(int points = POLYGON) {
-      _shape = PShape();
-      _shape.texture( currentTexture );
-      _shape.beginShape(points);
+   MAKE_GLOBAL(beginShape, _shape);
+   MAKE_GLOBAL(tint, _shape);
+   MAKE_GLOBAL(fill, _shape);
+   MAKE_GLOBAL(noStroke, _shape);
+   MAKE_GLOBAL(stroke, _shape);
+   MAKE_GLOBAL(strokeWeight, _shape);
+   MAKE_GLOBAL(strokeCap, _shape);
+   MAKE_GLOBAL(noFill, _shape);
+   MAKE_GLOBAL(noTint, _shape);
+   MAKE_GLOBAL(bezierVertex, _shape);
+   MAKE_GLOBAL(normal, _shape);
+   MAKE_GLOBAL(noNormal, _shape);
+   MAKE_GLOBAL(vertex, _shape);
+   MAKE_GLOBAL(texture, _shape);
+   MAKE_GLOBAL(noTexture, _shape);
+   MAKE_GLOBAL(textureMode, _shape);
+
+   void texture(PImage &img) {
+      texture( glc.getTexture( img.surface ) );
    }
 
-   void vertex(float x, float y, float z, float u, float v) {
-      if (textureMode_ == NORMAL) {
-         _shape.vertex(x, y, z, u, v);
-      } else {
-         _shape.vertex(x,y,z,u/currentTexture.width(),v/currentTexture.height() );
-      }
-   }
-
-   void vertex(float x, float y, float u, float v) {
-      vertex(x,y,0.0,u,v);
-   }
-
-   void vertex(float x, float y, float z) {
-      vertex(x,y,z,0.0,0.0);
-   }
-
-   void vertex(float x, float y) {
-      vertex(x,y,0.0,0.0,0.0);
-   }
-
-   void normal(float x, float y, float z) {
-      _shape.normal(x, y, z);
-   }
-
-   void noNormal() {
-      _shape.noNormal();
-   }
-
-   void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
-      _shape.bezierVertex(x2,y2, x3,y3,x4,y4);
-   }
 
    void endShape(int type = OPEN) {
       _shape.endShape(type);
@@ -1138,6 +737,7 @@ public:
 
    PShape createBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
       PShape bezier;
+      bezier.copyStyle( _shape );
       bezier.beginShape(POLYGON);
       bezier.vertex(x1, y1);
       bezier.bezierVertex(x2, y2, x3, y3, x4, y4);
@@ -1159,6 +759,7 @@ public:
          y = y - height / 2;
       }
       PShape shape;
+      shape.copyStyle( _shape );
       shape.beginShape(CONVEX_POLYGON);
       shape.vertex(x,y);
       shape.vertex(x+width,y);
@@ -1171,6 +772,7 @@ public:
 
    PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
       PShape shape;
+      shape.copyStyle( _shape );
       shape.beginShape(POLYGON);
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
@@ -1182,6 +784,7 @@ public:
 
    PShape createLine(float x1, float y1, float z1, float x2, float y2, float z2) {
       PShape shape;
+      shape.copyStyle( _shape );
       shape.beginShape(POLYGON);
       shape.vertex(x1,y1,y2);
       shape.vertex(x2,y2,z2);
@@ -1191,6 +794,7 @@ public:
 
    PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
       PShape shape;
+      shape.copyStyle( _shape );
       shape.beginShape(TRIANGLES);
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
@@ -1200,68 +804,7 @@ public:
       return shape;
    }
 
-   float sincos[32][2] = {
-      { 1.000000, -0.000000 },
-      { 0.980785, 0.195090 },
-      { 0.923880, 0.382683 },
-      { 0.831470, 0.555570 },
-      { 0.707107, 0.707107 },
-      { 0.555570, 0.831470 },
-      { 0.382683, 0.923880 },
-      { 0.195090, 0.980785 },
-      { 0.000000, 1.000000 },
-      { -0.195090, 0.980785 },
-      { -0.382683, 0.923880 },
-      { -0.555570, 0.831470 },
-      { -0.707107, 0.707107 },
-      { -0.831470, 0.555570 },
-      { -0.923880, 0.382683 },
-      { -0.980785, 0.195090 },
-      { -1.000000, -0.000000 },
-      { -0.980785, -0.195090 },
-      { -0.923880, -0.382683 },
-      { -0.831470, -0.555570 },
-      { -0.707107, -0.707107 },
-      { -0.555570, -0.831470 },
-      { -0.382683, -0.923880 },
-      { -0.195091, -0.980785 },
-      { -0.000000, -1.000000 },
-      { 0.195090, -0.980785 },
-      { 0.382683, -0.923880 },
-      { 0.555570, -0.831470 },
-      { 0.707107, -0.707107 },
-      { 0.831469, -0.555570 },
-      { 0.923880, -0.382684 },
-      { 0.980785, -0.195090 } };
-
-   PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius) {
-      return PVector( center.x + xradius * sincos[index][0],
-                      center.y + yradius * sincos[index][1],
-                      center.z);
-   }
-
-   PVector ellipse_point(const PVector &center, int index, float start, float end, float xradius, float yradius) {
-      float angle = map( index, 0, 32, start, end);
-      return PVector( center.x + xradius * sin(-angle + HALF_PI),
-                      center.y + yradius * cos(-angle + HALF_PI),
-                      center.z);
-   }
-
-   PShape createUnitCircle(int NUMBER_OF_VERTICES = 32) {
-      PShape shape;
-      shape.beginShape(CONVEX_POLYGON);
-      for(int i = 0; i < NUMBER_OF_VERTICES; ++i) {
-         shape.vertex( ellipse_point( {0,0,0}, i, 0, TWO_PI, 1.0, 1.0 ) );
-      }
-      shape.endShape(CLOSE);
-      return shape;
-   }
-
    PShape createEllipse(float x, float y, float width, float height) {
-      return _createEllipse(x,y,width,height,ellipse_mode);
-   }
-
-   PShape _createEllipse(float x, float y, float width, float height, int ellipse_mode) {
       switch (ellipse_mode) {
       case CENTER:
          break;
@@ -1280,23 +823,15 @@ public:
       default:
          abort();
       }
-      if (stroke_color.a == 0.0 && currentTexture.layer == 0) {
+      if (_shape.stroke_color.a == 0.0 && _shape.texture_.layer == 0) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape;
-         shape.texture( { 8, 0,0, this->width, this->height, this->width, this->height } );
-         shape.beginShape(TRIANGLES);
-         x = x - width / 2.0;
-         y = y - height / 2.0;
-         shape.vertex(x,y,0,0);
-         shape.vertex(x+width,y,1.0,0);
-         shape.vertex(x+width,y+height,1.0,1.0);
-         shape.vertex(x,y+height,0,1.0);
-         shape.indices = { 0,1,2,0,2,3 };
-         shape.endShape(CLOSE);
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, WHITE );
+         shape.copyStyle( _shape );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
          PShape shape;
+         shape.copyStyle( _shape );
          shape.beginShape(TRIANGLES);
          shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
          for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
@@ -1336,7 +871,7 @@ public:
    }
 
    PShape createArc(float x, float y, float width, float height, float start,
-                    float stop, int mode) {
+                    float stop, int ellipse_mode, int mode) {
 
       if (ellipse_mode != RADIUS) {
          width /=2;
@@ -1364,11 +899,13 @@ public:
          abort();
       }
 
-      if (stroke_color.a == 0.0 && currentTexture.layer == 0) {
+      if (_shape.stroke_color.a == 0.0 && _shape.texture_.layer == 0) {
          // If there's no stroke and no texture use circle optimization here
 
          PShape shape;
-         shape.texture( { 8, 0,0, this->width, this->height, this->width, this->height } );
+         shape.copyStyle( _shape );
+         // Hack to get the circle texture
+         shape.texture( PTexture::circle() );
          if (fillMode == PIE) {
             // This isn't really a CONVEX_POLYGON but I know
             // it will fill ok with a traingle fan
@@ -1409,6 +946,7 @@ public:
          return shape;
       } else {
          PShape shape;
+         shape.copyStyle( _shape );
          shape.beginShape(CONVEX_POLYGON);
          int NUMBER_OF_VERTICES=32;
          if ( fillMode == PIE ) {
@@ -1425,6 +963,7 @@ public:
 
    PShape createPoint(float x, float y) {
       PShape shape;
+      shape.copyStyle( _shape );
       shape.beginShape(POINTS);
       shape.vertex(x,y);
       shape.endShape();

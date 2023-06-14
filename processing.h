@@ -14,10 +14,6 @@
 // This is the global PGraphcs object that forms the top level canvas.
 extern PGraphics g;
 
-// This macro and it's following uses pull the API from PGraphcs into
-// the global namespace dispatching to the PGraphics object g.
-#define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }
-
 MAKE_GLOBAL(shader, g.glc);
 MAKE_GLOBAL(loadShader, g.glc);
 MAKE_GLOBAL(resetShader, g.glc);
@@ -52,6 +48,7 @@ MAKE_GLOBAL(noTexture, g);
 MAKE_GLOBAL(box, g);
 MAKE_GLOBAL(sphere, g);
 MAKE_GLOBAL(sphereDetail, g);
+MAKE_GLOBAL(createBezier, g);
 MAKE_GLOBAL(createRect, g);
 MAKE_GLOBAL(createQuad, g);
 MAKE_GLOBAL(createLine, g);
