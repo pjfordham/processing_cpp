@@ -15,8 +15,8 @@ void draw() {
    //  float mouseX = width/4;
    // float mouseY =height/4;
    PVector p1{50.0f,height/2.0f};
-   PVector p2{mouseX,mouseY};
-   PVector p3{width-mouseX,height - mouseY};
+   PVector p2{(float)mouseX,(float)mouseY};
+   PVector p3{(float)width-mouseX,(float)height - mouseY};
    PVector p4{width-50.0f,height/2.0f};
 
    strokeWeight(10);
