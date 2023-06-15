@@ -4,6 +4,7 @@
  * Wrapping a PShape inside a custom class
  */
 
+#include "Star.h"
 
 // A Star object
 Star s1, s2;
@@ -12,8 +13,8 @@ void setup() {
   size(640, 360, P2D);
 
   // Make a new Star
-  s1 = new Star();
-  s2 = new Star();
+  s1 = Star();
+  s2 = Star();
 
 }
 

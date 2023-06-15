@@ -1,7 +1,7 @@
 // A class to describe a Star shape
 
 class Star {
-
+public:
   // The PShape object
   PShape s;
   // The location where we will draw the shape
@@ -13,7 +13,6 @@ class Star {
     y = random(100, height-100);
     speed = random(0.5, 3);
     // First create the shape
-    s = createShape();
     s.beginShape();
     // You can set fill and stroke
     s.fill(255, 204);
@@ -48,5 +47,5 @@ class Star {
     shape(s);
     popMatrix();
   }
-}
+};
 
