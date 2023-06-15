@@ -126,6 +126,11 @@ public:
       background(DEFAULT_GRAY);
    }
 
+   void save( const std::string &fileName ) {
+      flush();
+      glc.saveFrame( fileName );
+   }
+
    void saveFrame( std::string fileName = "frame-####.png" ) {
       static int counter = 0;
       int c = counter;
@@ -135,8 +140,7 @@ public:
          c /= 10;
          pos = fileName.rfind('#', pos - 1);
       }
-      flush();
-      glc.saveFrame( fileName );
+      save( fileName );
       counter++;
    }
 

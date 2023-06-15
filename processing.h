@@ -22,6 +22,7 @@ MAKE_GLOBAL(get, g);
 MAKE_GLOBAL(set, g);
 MAKE_GLOBAL(createGraphics, g);
 MAKE_GLOBAL(saveFrame, g);
+MAKE_GLOBAL(save, g);
 MAKE_GLOBAL(background, g);
 MAKE_GLOBAL(ellipse, g);
 MAKE_GLOBAL(rect, g);
