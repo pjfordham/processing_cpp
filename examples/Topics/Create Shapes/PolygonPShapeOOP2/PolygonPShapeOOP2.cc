@@ -6,15 +6,17 @@
  * using the same PShape.
  */
 
+#include "Polygon.h"
 
 // A list of objects
-ArrayList<Polygon> polygons;
+std::vector<Polygon> polygons;
+
+PShape star;
 
 void setup() {
   size(640, 360, P2D);
 
   // Make a PShape
-  PShape star = createShape();
   star.beginShape();
   star.noStroke();
   star.fill(0, 127);
@@ -30,14 +32,11 @@ void setup() {
   star.vertex(-14, -20);
   star.endShape(CLOSE);
 
-  // Make an ArrayList
-  polygons = new ArrayList<Polygon>();
-
   // Add a bunch of objects to the ArrayList
   // Pass in reference to the PShape
   // We coud make polygons with different PShapes
   for (int i = 0; i < 25; i++) {
-    polygons.add(new Polygon(star));
+    polygons.emplace_back(star);
   }
 }
 
@@ -45,7 +44,7 @@ void draw() {
   background(255);
 
   // Display and move them all
-  for (Polygon poly : polygons) {
+  for (Polygon &poly : polygons) {
     poly.display();
     poly.move();
   }

@@ -150,8 +150,6 @@ set(skip_examples
   "examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystem.cc"
   "examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystemPShape.cc"
   "examples/Topics/Create Shapes/PathPShape/PathPShape.cc"
-  "examples/Topics/Create Shapes/PolygonPShapeOOP2/Polygon.cc"
-  "examples/Topics/Create Shapes/PolygonPShapeOOP2/PolygonPShapeOOP2.cc"
   "examples/Topics/Create Shapes/PolygonPShapeOOP3/Polygon.cc"
   "examples/Topics/Create Shapes/PolygonPShapeOOP3/PolygonPShapeOOP3.cc"
   "examples/Topics/Create Shapes/PrimitivePShape/PrimitivePShape.cc"

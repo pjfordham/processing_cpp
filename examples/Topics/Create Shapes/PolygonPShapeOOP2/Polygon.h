@@ -1,18 +1,19 @@
 // A class to describe a Polygon (with a PShape)
 
 class Polygon {
+public:
   // The PShape object
-  PShape s;
+  PShape &s;
   // The location where we will draw the shape
   float x, y;
   // Variable for simple motion
   float speed;
 
-  Polygon(PShape s_) {
-    x = random(width);
-    y = random(-500, -100);
-    s = s_;
-    speed = random(2, 6);
+  Polygon(PShape &s_) :
+     x( random(width) ),
+     y( random(-500, -100) ),
+     s( s_ ),
+     speed( random(2, 6) ) {
   }
 
   // Simple motion
@@ -30,5 +31,5 @@ class Polygon {
     shape(s);
     popMatrix();
   }
-}
+};
 
