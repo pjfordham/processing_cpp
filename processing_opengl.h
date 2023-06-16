@@ -6,6 +6,7 @@
 #include "processing_pshader.h"
 #include "processing_color.h"
 #include "processing_texture_manager.h"
+#include <fmt/core.h>
 
 struct SDL_Window;
 struct SDL_Renderer;
@@ -336,20 +337,25 @@ public:
                        const std::vector<PVector> &normals,
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
-                       color color){
+                       const std::vector<color> &colors){
       if (indices.size() == 0) abort();
 
       auto starti = vbuffer.size();
+
+      if (colors.size() != vertices.size() ) abort();
 
       vbuffer.insert(vbuffer.end(), vertices.begin(), vertices.end());
       cbuffer.insert(cbuffer.end(), coords.begin(),   coords.end());
       nbuffer.insert(nbuffer.end(), normals.begin(),  normals.end());
 
+      for (auto color : colors) {
+         xbuffer.push_back(color.r / 255.0 );
+         xbuffer.push_back(color.g / 255.0 );
+         xbuffer.push_back(color.b / 255.0 );
+         xbuffer.push_back(color.a / 255.0 );
+      }
+
       for (auto vertex : vertices) {
-         xbuffer.push_back( color.r / 255.0f );
-         xbuffer.push_back( color.g / 255.0f );
-         xbuffer.push_back( color.b / 255.0f );
-         xbuffer.push_back( color.a / 255.0f );
          tbuffer.push_back( currentM );
       }
 

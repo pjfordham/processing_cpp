@@ -373,7 +373,7 @@ public:
                        const std::vector<PVector> &normals,
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
-                       color color) {
+                       const std::vector<color> &color) {
      if (lights_) {
          glc.reserve( vertices.size(), move_matrix,  projection_matrix.data,
                       view_matrix.data,
@@ -383,7 +383,7 @@ public:
                       pointLightColor.data(),
                       pointLightPosition.data(),
                       pointLightFalloff.data());
-      } else {
+    } else {
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
          glc.reserve( vertices.size(), move_matrix, projection_matrix.data,
@@ -394,8 +394,8 @@ public:
                       black.data(),
                       pointLightPosition.data(),
                       pointLightFalloff.data());
-      }
-      glc.drawTriangles( vertices, normals, coords, indices, color);
+     }
+     glc.drawTriangles( vertices, normals, coords, indices, color);
    }
 
    void flush() {

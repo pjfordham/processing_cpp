@@ -201,14 +201,15 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
 }
 
-PShape drawLinePoly(int points, const PVector *p, int weight, bool closed)  {
+PShape drawLinePoly(int points, const PVector *p, int *weights, color *colors, bool closed)  {
    PLine start;
    PLine end;
 
    PShape triangle_strip;
    triangle_strip.beginShape(TRIANGLE_STRIP);
-
-   float half_weight = weight / 2.0;
+   triangle_strip.noStroke();
+   triangle_strip.fill(colors[0]);
+   float half_weight = weights[0] / 2.0;
    if (closed) {
       start = drawLineMitred(p[points-1], p[0], p[1], half_weight );
       end = start;
@@ -244,63 +245,84 @@ PShape drawLinePoly(int points, const PVector *p, int weight, bool closed)  {
    return triangle_strip;
 }
 
-PShape drawRoundLine(PVector p1, PVector p2, int weight) {
+PShape drawRoundLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
-   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-   normal.normalize();
-   normal.mult(weight/2.0);
 
    int NUMBER_OF_VERTICES=16;
 
    float start_angle = PVector{p2.x-p1.x,p2.y-p1.y}.heading() + HALF_PI;
 
+   shape.noStroke();
+   shape.fill(color1);
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p1.x + cos(i + start_angle) * weight/2, p1.y + sin(i+start_angle) * weight/2);
+      shape.vertex(p1.x + cos(i + start_angle) * weight1/2, p1.y + sin(i+start_angle) * weight1/2);
    }
 
    start_angle += PI;
 
+   shape.fill(color2);
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p2.x + cos(i+start_angle) * weight/2, p2.y + sin(i+start_angle) * weight/2);
+      shape.vertex(p2.x + cos(i+start_angle) * weight2/2, p2.y + sin(i+start_angle) * weight2/2);
    }
    shape.endShape(CLOSE);
    return shape;
 }
 
-PShape drawLine(PVector p1, PVector p2, int weight) {
+PShape drawLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
-   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-   normal.normalize();
-   normal.mult(weight/2.0);
+   PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal1.normalize();
+   normal1.mult(weight1/2.0);
+   PVector normal2 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal2.normalize();
+   normal2.mult(weight2/2.0);
 
-   shape.vertex(p1 + normal);
-   shape.vertex(p1 - normal);
-   shape.vertex(p2 - normal);
-   shape.vertex(p2 + normal);
+   shape.noStroke();
+
+   shape.fill(color1);
+   shape.vertex(p1 + normal1);
+   shape.vertex(p1 - normal1);
+
+   shape.fill(color2);
+   shape.vertex(p2 - normal2);
+   shape.vertex(p2 + normal2);
+
    shape.endShape(CLOSE);
    return shape;
 }
 
-PShape drawCappedLine(PVector p1, PVector p2, int weight)  {
+PShape drawCappedLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
-   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-   normal.normalize();
-   normal.mult(weight/2.0);
+   PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal1.normalize();
+   normal1.mult(weight1/2.0);
 
-   PVector end_offset = PVector{p2.x-p1.x,p2.y-p1.y};
-   end_offset.normalize();
-   end_offset.mult(weight/2.0);
+   PVector normal2 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal2.normalize();
+   normal2.mult(weight2/2.0);
 
-   shape.vertex(p1 + normal - end_offset);
-   shape.vertex(p1 - normal - end_offset);
-   shape.vertex(p2 - normal + end_offset);
-   shape.vertex(p2 + normal + end_offset);
+   PVector end_offset1 = PVector{p2.x-p1.x,p2.y-p1.y};
+   end_offset1.normalize();
+   end_offset1.mult(weight1/2.0);
+   PVector end_offset2 = PVector{p2.x-p1.x,p2.y-p1.y};
+   end_offset2.normalize();
+   end_offset2.mult(weight2/2.0);
+
+   shape.noStroke();
+
+   shape.fill(color1);
+   shape.vertex(p1 + normal1 - end_offset1);
+   shape.vertex(p1 - normal1 - end_offset1);
+
+   shape.fill(color2);
+   shape.vertex(p2 - normal2 + end_offset2);
+   shape.vertex(p2 + normal2 + end_offset2);
 
    shape.endShape(CLOSE);
    return shape;
@@ -358,12 +380,15 @@ PShape drawTriangleStrip(int points, const PVector *p,int weight) {
    return triangles;
 }
 
-void PShape::draw_stroke(TriangleDrawer &glc) {
+void PShape::draw_stroke(TriangleDrawer &td) {
    switch( style ) {
    case POINTS:
    {
-      for (auto z : vertices ) {
-         drawUntexturedFilledEllipse(z.x, z.y, stroke_weight, stroke_weight, stroke_color ).draw( glc );
+      for (int i = 0; i< vertices.size() ; ++i ) {
+         drawUntexturedFilledEllipse(
+            vertices[i].x, vertices[i].y,
+            vWeight[i], vWeight[i],
+            vStroke[i]).draw( td );
       }
       break;
    }
@@ -376,32 +401,35 @@ void PShape::draw_stroke(TriangleDrawer &glc) {
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, stroke_weight, false).draw_fill( glc, stroke_color );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, vWeight.data()+1, vStroke.data()+1, false).draw_fill( td );
          } else {
-            drawLinePoly( vertices.size(), vertices.data(), stroke_weight, type == CLOSE).draw_fill( glc, stroke_color );
+            drawLinePoly( vertices.size(), vertices.data(), vWeight.data(), vStroke.data(), type == CLOSE).draw_fill( td );
          }
       } else if (vertices.size() == 2) {
          switch(line_end_cap) {
          case ROUND:
-            drawRoundLine(vertices[0], vertices[1], stroke_weight).draw_fill( glc, stroke_color );
+             drawRoundLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td );
             break;
          case PROJECT:
-            drawCappedLine(vertices[0], vertices[1], stroke_weight).draw_fill( glc, stroke_color );
+            drawCappedLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td );
             break;
          case SQUARE:
-            drawLine(vertices[0], vertices[1], stroke_weight).draw_fill( glc, stroke_color );
+            drawLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td );
             break;
          default:
             abort();
          }
       } else if (vertices.size() == 1) {
-         drawUntexturedFilledEllipse(vertices[0].x, vertices[0].y, stroke_weight, stroke_weight, stroke_color).draw( glc );
+         drawUntexturedFilledEllipse(
+            vertices[0].x, vertices[0].y,
+            vWeight[0], vWeight[0],
+            vStroke[0]).draw( td );
       }
       break;
    }
    case TRIANGLE_STRIP:
    {
-      drawTriangleStrip( vertices.size(), vertices.data(), stroke_weight).draw_fill( glc, stroke_color );
+      drawTriangleStrip( vertices.size(), vertices.data(), stroke_weight).draw_fill( td );
       break;
    }
    default:
@@ -410,7 +438,7 @@ void PShape::draw_stroke(TriangleDrawer &glc) {
    }
 }
 
-void PShape::draw_fill(TriangleDrawer &glc, color color)  {
+void PShape::draw_fill(TriangleDrawer &td)  {
    if (vertices.size() > 2 && style != POINTS) {
       if (normals.size() == 0) {
          normals.resize( vertices.size(), {0.0f,0.0f,0.0f });
@@ -437,7 +465,9 @@ void PShape::draw_fill(TriangleDrawer &glc, color color)  {
             normals[i].normalize();
          }
       }
-      // not glc, need to call pgraphics drawTriangles.
-      glc.drawTriangles(  vertices, normals, coords, indices, color );
+      if (texture_.layer != 0 && texture_.layer != 8) {
+         td.drawTriangles(  vertices, normals, coords, indices, vTint );
+      } else
+         td.drawTriangles(  vertices, normals, coords, indices, vFill );
    }
 }

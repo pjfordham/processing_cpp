@@ -13,7 +13,7 @@ public:
                                const std::vector<PVector> &normals,
                                const std::vector<PVector> &coords,
                                const std::vector<unsigned short> &indices,
-                               color color)  = 0;
+                               const std::vector<color> &colors)  = 0;
 };
 
 
@@ -28,6 +28,10 @@ public:
    std::vector<PVector> vertices;
    std::vector<PVector> normals;
    std::vector<PVector> coords;
+   std::vector<color> vStroke;
+   std::vector<color> vFill;
+   std::vector<color> vTint;
+   std::vector<int> vWeight;
 
    bool setNormals = false;
    std::vector<unsigned short> indices;
@@ -72,6 +76,10 @@ public:
       std::swap(tint_color, other.tint_color);
       std::swap(stroke_weight, other.stroke_weight);
       std::swap(line_end_cap, other.line_end_cap);
+      std::swap(vStroke, other.vStroke);
+      std::swap(vFill, other.vFill);
+      std::swap(vTint, other.vTint);
+      std::swap(vWeight, other.vWeight);
       return *this;
    }
 
@@ -94,6 +102,10 @@ public:
       indices.clear();
       coords.clear();
       children.clear();
+      vStroke.clear();
+      vFill.clear();
+      vTint.clear();
+      vWeight.clear();
    }
 
    void translate(float x, float y, float z=0) {
@@ -175,6 +187,10 @@ public:
                (float)texture_.layer});
       if ( coords.back().x > 1.0 || coords.back().y > 1.0)
          abort();
+      vStroke.push_back( stroke_color );
+      vFill.push_back( fill_color );
+      vTint.push_back( tint_color );
+      vWeight.push_back( stroke_weight );
    }
 
    void index(unsigned short i) {
@@ -325,23 +341,13 @@ public:
             child.draw(td);
          }
       } else {
-         if (texture_.layer != 0 && texture_.layer != 8) {
-            if (tint_color.a != 0) {
-               draw_fill(td,tint_color);
-            }
-         } else {
-            if (fill_color.a != 0) {
-               draw_fill(td,fill_color);
-            }
-         }
-         if (stroke_color.a != 0) {
-            draw_stroke(td);
-         }
+         draw_fill(td);
+         draw_stroke(td);
       }
    }
 
    void draw_stroke(TriangleDrawer &td);
-   void draw_fill(TriangleDrawer &td, color color);
+   void draw_fill(TriangleDrawer &td);
 
 };
 
