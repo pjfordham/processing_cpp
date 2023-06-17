@@ -11,7 +11,7 @@ PShape circle;
 void setup() {
   size(640, 360, P2D);
   // Creating the PShape as an ellipse
-  circle = createShape(ELLIPSE, 0, 0, 100, 50);
+  circle = createEllipse(0, 0, 100, 50);
 }
 
 void draw() {

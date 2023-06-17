@@ -335,6 +335,22 @@ public:
       line_end_cap = cap;
    }
 
+   void setStroke(color c) {
+      std::replace_if(vStroke.begin(), vStroke.end(), [](color c) { return true; } , c);
+   }
+
+   void setStrokeWeight(int w) {
+      std::replace_if(vWeight.begin(), vWeight.end(), [](color c) { return true; } , w);
+   }
+
+   void setFill(color c) {
+      std::replace_if(vFill.begin(), vFill.end(), [](color c) { return true; } , c);
+   }
+
+   void setTint(color c) {
+      std::replace_if(vTint.begin(), vTint.end(), [](color c) { return true; } , c);
+   }
+
    void draw(TriangleDrawer &td) {
       if ( style == GROUP ) {
          for (auto &&child : children) {

@@ -151,7 +151,6 @@ set(skip_examples
   "examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystemPShape.cc"
   "examples/Topics/Create Shapes/PolygonPShapeOOP3/Polygon.cc"
   "examples/Topics/Create Shapes/PolygonPShapeOOP3/PolygonPShapeOOP3.cc"
-  "examples/Topics/Create Shapes/PrimitivePShape/PrimitivePShape.cc"
   "examples/Topics/Create Shapes/WigglePShape/WigglePShape.cc"
   "examples/Topics/Create Shapes/WigglePShape/Wiggler.cc"
   "examples/Topics/Curves/ArcLengthParametrization/ArcLengthParametrization.cc"
