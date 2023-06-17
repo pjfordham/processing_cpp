@@ -12,10 +12,10 @@ void setup() {
   size(640, 360, P2D);
 
   // Create the shape as a group
-  group = createShape(GROUP);
+  group = createGroup();
 
   // Make a polygon PShape
-  PShape star = createShape();
+  PShape star;
   star.beginShape();
   star.noFill();
   star.stroke(255);
@@ -32,7 +32,7 @@ void setup() {
   star.endShape(CLOSE);
 
   // Make a path PShape
-  PShape path = createShape();
+  PShape path;
   path.beginShape();
   path.noFill();
   path.stroke(255);
@@ -43,7 +43,7 @@ void setup() {
   path.endShape();
 
   // Make a primitive (Rectangle) PShape
-  PShape rectangle = createShape(RECT,-10,-10,20,20);
+  PShape rectangle = createRect(-10,-10,20,20);
   rectangle.setFill(false);
   rectangle.setStroke(color(255));
 
@@ -55,7 +55,7 @@ void setup() {
 
 void draw() {
   // We can access them individually via the group PShape
-  PShape rectangle = group.getChild(2);
+  PShape &rectangle = group.getChild(2);
   // Shapes can be rotated
   rectangle.rotate(0.1);
 

@@ -13,7 +13,8 @@ public:
                                const std::vector<PVector> &normals,
                                const std::vector<PVector> &coords,
                                const std::vector<unsigned short> &indices,
-                               const std::vector<color> &colors)  = 0;
+                               const std::vector<color> &colors,
+                               const PMatrix &shape_matrix )  = 0;
 };
 
 
@@ -48,8 +49,8 @@ public:
    int stroke_weight = 1;
    int line_end_cap = ROUND;
 
-   PShape(const PShape& other) = delete;
-   PShape& operator=(const PShape& other) = delete;
+   PShape(const PShape& other) = default;
+   PShape& operator=(const PShape& other) = default;
 
    PShape() {
    }
@@ -86,6 +87,14 @@ public:
    ~PShape() {
    }
 
+   void addChild( const PShape &shape ) {
+      children.push_back( shape );
+   }
+
+   PShape &getChild( int i ) {
+      return children[i];
+   }
+
    void copyStyle( const PShape &other ) {
       texture_= other.texture_;
       n = other.n;
@@ -106,6 +115,26 @@ public:
       vFill.clear();
       vTint.clear();
       vWeight.clear();
+   }
+
+   void rotate(float angle) {
+      rotateZ(angle);
+   }
+
+   void rotateZ(float angle) {
+      rotate(angle ,PVector{0,0,1});
+   }
+
+   void rotateY(float angle) {
+      rotate(angle, PVector{0,1,0});
+   }
+
+   void rotateX(float angle) {
+      rotate(angle, PVector{1,0,0});
+   }
+
+   void rotate(float angle, PVector axis) {
+      shape_matrix = shape_matrix * RotateMatrix(angle,axis);
    }
 
    void translate(float x, float y, float z=0) {
@@ -343,6 +372,11 @@ public:
       std::replace_if(vWeight.begin(), vWeight.end(), [](color c) { return true; } , w);
    }
 
+   void setFill(bool z) {
+      if (!z )
+         std::replace_if(vFill.begin(), vFill.end(), [](color c) { return true; } , color{0.0,0.0,0.0,0.0} );
+   }
+
    void setFill(color c) {
       std::replace_if(vFill.begin(), vFill.end(), [](color c) { return true; } , c);
    }
@@ -351,19 +385,20 @@ public:
       std::replace_if(vTint.begin(), vTint.end(), [](color c) { return true; } , c);
    }
 
-   void draw(TriangleDrawer &td) {
+   void draw(TriangleDrawer &td, const PMatrix &move_matrix) {
+      auto transform = move_matrix * shape_matrix;
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.draw(td);
+            child.draw(td, transform );
          }
       } else {
-         draw_fill(td);
-         draw_stroke(td);
+         draw_fill(td, transform );
+         draw_stroke(td, transform );
       }
    }
 
-   void draw_stroke(TriangleDrawer &td);
-   void draw_fill(TriangleDrawer &td);
+   void draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix);
+   void draw_fill(TriangleDrawer &td, const PMatrix &move_matrix);
 
 };
 

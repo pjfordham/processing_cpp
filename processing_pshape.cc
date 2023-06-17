@@ -110,6 +110,8 @@ void PShape::populateIndices() {
    if (indices.size() != 0)
       return;
 
+   if (style == GROUP) return;
+
    if (vertices.size() == 0) abort();
 
    if (style == QUADS) {
@@ -380,7 +382,7 @@ PShape drawTriangleStrip(int points, const PVector *p,int weight) {
    return triangles;
 }
 
-void PShape::draw_stroke(TriangleDrawer &td) {
+void PShape::draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix) {
    switch( style ) {
    case POINTS:
    {
@@ -388,7 +390,7 @@ void PShape::draw_stroke(TriangleDrawer &td) {
          drawUntexturedFilledEllipse(
             vertices[i].x, vertices[i].y,
             vWeight[i], vWeight[i],
-            vStroke[i]).draw( td );
+            vStroke[i]).draw( td, move_matrix );
       }
       break;
    }
@@ -401,20 +403,20 @@ void PShape::draw_stroke(TriangleDrawer &td) {
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, vWeight.data()+1, vStroke.data()+1, false).draw_fill( td );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, vWeight.data()+1, vStroke.data()+1, false).draw_fill( td, move_matrix );
          } else {
-            drawLinePoly( vertices.size(), vertices.data(), vWeight.data(), vStroke.data(), type == CLOSE).draw_fill( td );
+            drawLinePoly( vertices.size(), vertices.data(), vWeight.data(), vStroke.data(), type == CLOSE).draw_fill( td, move_matrix );
          }
       } else if (vertices.size() == 2) {
          switch(line_end_cap) {
          case ROUND:
-             drawRoundLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td );
+             drawRoundLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td, move_matrix );
             break;
          case PROJECT:
-            drawCappedLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td );
+            drawCappedLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td, move_matrix );
             break;
          case SQUARE:
-            drawLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td );
+            drawLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td, move_matrix );
             break;
          default:
             abort();
@@ -423,13 +425,13 @@ void PShape::draw_stroke(TriangleDrawer &td) {
          drawUntexturedFilledEllipse(
             vertices[0].x, vertices[0].y,
             vWeight[0], vWeight[0],
-            vStroke[0]).draw( td );
+            vStroke[0]).draw( td, move_matrix );
       }
       break;
    }
    case TRIANGLE_STRIP:
    {
-      drawTriangleStrip( vertices.size(), vertices.data(), stroke_weight).draw_fill( td );
+      drawTriangleStrip( vertices.size(), vertices.data(), stroke_weight).draw_fill( td, move_matrix );
       break;
    }
    default:
@@ -438,7 +440,7 @@ void PShape::draw_stroke(TriangleDrawer &td) {
    }
 }
 
-void PShape::draw_fill(TriangleDrawer &td)  {
+void PShape::draw_fill(TriangleDrawer &td, const PMatrix &move_matrix)  {
    if (vertices.size() > 2 && style != POINTS) {
       if (normals.size() == 0) {
          normals.resize( vertices.size(), {0.0f,0.0f,0.0f });
@@ -466,8 +468,8 @@ void PShape::draw_fill(TriangleDrawer &td)  {
          }
       }
       if (texture_.layer != 0 && texture_.layer != 8) {
-         td.drawTriangles(  vertices, normals, coords, indices, vTint );
+         td.drawTriangles(  vertices, normals, coords, indices, vTint, move_matrix );
       } else
-         td.drawTriangles(  vertices, normals, coords, indices, vFill );
+         td.drawTriangles(  vertices, normals, coords, indices, vFill, move_matrix );
    }
 }

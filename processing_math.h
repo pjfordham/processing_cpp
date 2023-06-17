@@ -44,7 +44,7 @@ public:
    float x, y,z;
    PVector() : x(0), y(0),z(0) {}
    PVector(float _x, float _y, float _z=0.0) : x(_x), y(_y),z(_z) {}
-   void print();
+   void print() const;
    void sub(PVector b) {
       x = x - b.x;
       y = y - b.y;
@@ -228,7 +228,7 @@ struct PMatrix {
       }
    }
 
-   void print();
+   void print() const;
 
    static PMatrix Identity() {
       return PMatrix(

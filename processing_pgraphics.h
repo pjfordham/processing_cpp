@@ -373,9 +373,10 @@ public:
                        const std::vector<PVector> &normals,
                        const std::vector<PVector> &coords,
                        const std::vector<unsigned short> &indices,
-                       const std::vector<color> &color) {
+                       const std::vector<color> &color,
+                       const PMatrix &xxmove_matrix) {
      if (lights_) {
-         glc.reserve( vertices.size(), move_matrix,  projection_matrix.data,
+         glc.reserve( vertices.size(), xxmove_matrix,  projection_matrix.data,
                       view_matrix.data,
                       directionLightColor.data(),
                       directionLightVector.data(),
@@ -386,7 +387,7 @@ public:
     } else {
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
-         glc.reserve( vertices.size(), move_matrix, projection_matrix.data,
+         glc.reserve( vertices.size(), xxmove_matrix, projection_matrix.data,
                       view_matrix.data,
                       black.data(),
                       directionLightVector.data(),
@@ -648,8 +649,7 @@ public:
    void shape(PShape &pshape, float x, float y) {
       pushMatrix();
       translate(x,y);
-      transform( pshape.shape_matrix );
-      pshape.draw( *this );
+      pshape.draw( *this, move_matrix );
       popMatrix();
    }
 
@@ -804,6 +804,13 @@ public:
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
       shape.indices = { 0,1,2 };
+      shape.endShape(CLOSE);
+      return shape;
+   }
+
+   PShape createGroup() {
+      PShape shape;
+      shape.beginShape(GROUP);
       shape.endShape(CLOSE);
       return shape;
    }

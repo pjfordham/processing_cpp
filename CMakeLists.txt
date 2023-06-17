@@ -145,7 +145,6 @@ set(skip_examples
   "examples/Topics/Cellular Automata/Spore1/Spore1.cc"
   "examples/Topics/Cellular Automata/Spore2/Spore2.cc"
   "examples/Topics/Create Shapes/BeginEndContour/BeginEndContour.cc"
-  "examples/Topics/Create Shapes/GroupPShape/GroupPShape.cc"
   "examples/Topics/Create Shapes/ParticleSystemPShape/Particle.cc"
   "examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystem.cc"
   "examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystemPShape.cc"

@@ -21,11 +21,11 @@ float noise(float x, float y, float z) {
    return perlin_noise.octave(x,y,z,perlin_octaves,perlin_falloff);
 }
 
-void PVector::print() {
+void PVector::print() const {
    fmt::print(" {:>8.2} {:>8.2} {:>8.2}\n",x,y,z);
 }
 
-void PMatrix::print() {
+void PMatrix::print() const {
    fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat(0,0), mat(0,1), mat(0,2), mat(0,3) );
    fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat(1,0), mat(1,1), mat(1,2), mat(1,3) );
    fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat(2,0), mat(2,1), mat(2,2), mat(2,3) );
