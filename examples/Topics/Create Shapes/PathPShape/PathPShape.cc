@@ -11,7 +11,6 @@ void setup() {
   size(640, 360, P2D);
 
   // Create the shape
-  path = createShape();
   path.beginShape();
   // Set fill and stroke
   path.noFill();
