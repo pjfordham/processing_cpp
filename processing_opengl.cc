@@ -231,7 +231,9 @@ gl_context::~gl_context() {
 }
 
 PShader gl_context::loadShader(const char *fragShader) {
-   std::ifstream inputFile(fragShader);
+   using namespace std::literals;
+
+   std::ifstream inputFile("data/"s + fragShader);
 
    if (!inputFile.is_open()) {
       abort();
@@ -248,7 +250,9 @@ PShader gl_context::loadShader(const char *fragShader) {
 }
 
 PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
-   std::ifstream inputFile(fragShader);
+   using namespace std::literals;
+
+   std::ifstream inputFile("data/"s + fragShader);
 
    if (!inputFile.is_open()) {
       abort();

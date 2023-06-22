@@ -53,7 +53,7 @@ template<typename T> void printArray(const std::vector<T> &data) {
 
 inline std::vector<std::string> loadStrings(const std::string& fileName) {
    std::vector<std::string> lines;
-   std::ifstream inputFile(fileName);
+   std::ifstream inputFile("data/"s + fileName);
 
    if (!inputFile.is_open()) {
       abort();

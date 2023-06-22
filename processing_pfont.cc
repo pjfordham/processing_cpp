@@ -41,7 +41,7 @@ std::vector<std::string>  PFont::list() {
    std::filesystem::path path_to_search = "/usr/share/fonts/truetype";
    std::string suffix_to_find = ".ttf";
    search_directory(path_to_search, suffix_to_find);
-   path_to_search = ".";
+   path_to_search = "data";
    search_directory(path_to_search, suffix_to_find);
    std::vector<std::string> keys;
    for (auto const& [key, value] : fontFileMap) {

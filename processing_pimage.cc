@@ -117,7 +117,8 @@ PImage loadImage(const char *URL)
       loaded = IMG_Load_RW(rw, 1);
    } else {
       // If it didn't download check the local filesystem
-      loaded = IMG_Load(URL);
+      using namespace std::literals;
+      loaded = IMG_Load(("data/"s + URL).c_str());
    }
    if (loaded == NULL) {
       abort();
