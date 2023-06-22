@@ -633,6 +633,7 @@ public:
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
                          PTexture texture ) {
       PShape quad;
+      quad.textureMode(NORMAL);
       quad.texture(texture);
       quad.beginShape(TRIANGLES_NOSTROKE);
       quad.vertex( p0, {0.0, 0.0} );
