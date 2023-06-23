@@ -434,6 +434,9 @@ void PShape::draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix) {
       drawTriangleStrip( vertices.size(), vertices.data(), stroke_weight).draw_fill( td, move_matrix );
       break;
    }
+   case TRIANGLE_FAN:
+      abort();
+      break;
    default:
       abort();
       break;

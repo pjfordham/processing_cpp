@@ -393,7 +393,8 @@ public:
          }
       } else {
          draw_fill(td, transform );
-         draw_stroke(td, transform );
+         if ( stroke_color.a != 0 )
+            draw_stroke(td, transform );
       }
    }
 
