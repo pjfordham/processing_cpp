@@ -677,7 +677,7 @@ public:
    }
 
    void line(float x1, float y1, float z1, float x2, float y2, float z2) {
-      PShape pshape = createLine( x1, y1, 0.0f, x2, y2, 0.0f);
+      PShape pshape = createLine( x1, y1, z1, x2, y2, z1);
       shape( pshape );
    }
 
@@ -791,7 +791,7 @@ public:
       PShape shape;
       shape.copyStyle( _shape );
       shape.beginShape(POLYGON);
-      shape.vertex(x1,y1,y2);
+      shape.vertex(x1,y1,z2);
       shape.vertex(x2,y2,z2);
       shape.endShape(OPEN);
       return shape;
