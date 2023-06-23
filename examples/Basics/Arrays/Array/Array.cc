@@ -18,7 +18,7 @@ void setup() {
   coswave.resize(width);
   for (int i = 0; i < width; i++) {
     float amount = map(i, 0, width, 0, PI);
-    coswave[i] = abs(cos(amount));
+    coswave[i] = fabs(cos(amount));
   }
   background(255);
   noLoop();
