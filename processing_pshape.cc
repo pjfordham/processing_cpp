@@ -349,17 +349,23 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    return shape;
 }
 
-void _line(PShape &triangles, PVector p1, PVector p2, int weight) {
+void _line(PShape &triangles, PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
 
-   PVector normal = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
-   normal.normalize();
-   normal.mult(weight/2.0);
+   PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal1.normalize();
+   normal1.mult(weight1/2.0);
+
+   PVector normal2 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   normal2.normalize();
+   normal2.mult(weight2/2.0);
 
    unsigned short i = triangles.getCurrentIndex();
-   triangles.vertex( p1 + normal );
-   triangles.vertex( p1 - normal );
-   triangles.vertex( p2 - normal );
-   triangles.vertex( p2 + normal );
+   triangles.fill( color1 );
+   triangles.vertex( p1 + normal1 );
+   triangles.vertex( p1 - normal1 );
+   triangles.fill( color2 );
+   triangles.vertex( p2 - normal2 );
+   triangles.vertex( p2 + normal2 );
 
    triangles.index( i + 0 );
    triangles.index( i + 1 );
@@ -370,13 +376,13 @@ void _line(PShape &triangles, PVector p1, PVector p2, int weight) {
    triangles.index( i + 3 );
 }
 
-PShape drawTriangleStrip(int points, const PVector *p,int weight) {
+PShape drawTriangleStrip(int points, const PVector *p,int *weights, color *colors) {
    PShape triangles;
    triangles.beginShape(TRIANGLES);
-   _line(triangles, p[0], p[1], weight);
+   _line(triangles, p[0], p[1], weights[0], weights[1], colors[0], colors[1]);
    for (int i=2;i<points;++i) {
-      _line(triangles, p[i-1], p[i], weight);
-      _line(triangles, p[i], p[i-2], weight);
+      _line(triangles, p[i-1], p[i], weights[i-1], weights[i], colors[i-1], colors[i]);
+      _line(triangles, p[i], p[i-2], weights[i], weights[i-2], colors[i], colors[i-2]);
    }
    triangles.endShape();
    return triangles;
@@ -431,7 +437,7 @@ void PShape::draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix) {
    }
    case TRIANGLE_STRIP:
    {
-      drawTriangleStrip( vertices.size(), vertices.data(), stroke_weight).draw_fill( td, move_matrix );
+      drawTriangleStrip( vertices.size(),  vertices.data(), vWeight.data(), vStroke.data()).draw_fill( td, move_matrix );
       break;
    }
    case TRIANGLE_FAN:
