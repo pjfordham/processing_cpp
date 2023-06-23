@@ -837,8 +837,7 @@ public:
       }
       if (_shape.stroke_color.a == 0.0 && _shape.texture_.layer == 0) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, WHITE );
-         shape.copyStyle( _shape );
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
