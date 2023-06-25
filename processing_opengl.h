@@ -209,7 +209,7 @@ public:
    // Draw our pixels into a new texture and call drawTexturedQuad over whole screen
    void updatePixels( std::vector<unsigned int> &pixels ) {
       PTexture texture = getTexture(window_width, window_height, pixels.data());
-      draw_texture_over_framebuffer(texture, localFrame);
+      draw_texture_over_framebuffer(texture, localFrame, true);
    }
 
    PTexture getTexture( int width, int height, void *pixels );
@@ -395,7 +395,7 @@ public:
       shader( defaultShader );
    }
 
-   void draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb) {
+   void draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb, bool flip = false) {
 
       // Reset to default view & lighting settings to draw buffered frame.
       std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
@@ -418,11 +418,20 @@ public:
       loadProjectionMatrix( identity_matrix.data);
       loadViewMatrix( identity_matrix.data);
 
-      std::vector<PVector> vertices{
-         {-1.0f, -1.0f},
-         { 1.0f, -1.0f},
-         { 1.0f,  1.0f},
-         {-1.0f,  1.0f}};
+      std::vector<PVector> vertices;
+      if ( flip ) {
+         vertices = {
+            {-1.0f,  1.0f},
+            { 1.0f,  1.0f},
+            { 1.0f, -1.0f},
+            {-1.0f, -1.0f}};
+      } else {
+         vertices = {
+            {-1.0f, -1.0f},
+            { 1.0f, -1.0f},
+            { 1.0f,  1.0f},
+            {-1.0f,  1.0f}};
+      }
 
       float z = 1.0;
       // For drawing the main screen we need to flip the texture and remove any tint
