@@ -563,7 +563,7 @@ public:
                         {right,top},
                         {right, bottom},
                         {left, bottom},
-                        texture );
+                        texture , _shape.tint_color );
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
@@ -582,7 +582,7 @@ public:
       }
       PTexture texture = glc.getTexture( pimage.surface );
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
-                       texture );
+                       texture, _shape.tint_color  );
    }
 
    void image(PImage &pimage, float x, float y) {
@@ -631,8 +631,9 @@ public:
    }
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
-                         PTexture texture ) {
+                         PTexture texture, color tint ) {
       PShape quad;
+      quad.tint( tint );
       quad.textureMode(NORMAL);
       quad.texture(texture);
       quad.beginShape(TRIANGLES_NOSTROKE);
