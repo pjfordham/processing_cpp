@@ -15,61 +15,39 @@ find_package(CURL REQUIRED)
 find_package(fmt REQUIRED)
 
 add_library(Processing
-  processing.h
-  processing.cc
-
-  PerlinNoise.cc
-  PerlinNoise.h
-
-  processing_math.h
-  processing_math.cc
-
-  processing_pfont.h
-  processing_pfont.cc
-
-  processing_pimage.h
-  processing_pimage.cc
-
-  processing_pshape.h
-  processing_pshape.cc
-
-  processing_color.h
-  processing_color.cc
-
-  processing_opengl.h
-  processing_opengl.cc
-
-  processing_pgraphics.h
-  processing_pgraphics.cc
-
-  processing_pshader.h
-  processing_pshader.cc
-
-  processing_java_compatability.h
-  processing_texture_manager.h
-  processing_time.h
-  processing_enum.h )
+  src/processing.cc
+  src/PerlinNoise.cc
+  src/processing_math.cc
+  src/processing_pfont.cc
+  src/processing_pimage.cc
+  src/processing_pshape.cc
+  src/processing_color.cc
+  src/processing_opengl.cc
+  src/processing_pgraphics.cc
+  src/processing_pshader.cc
+ )
 
 install(TARGETS Processing DESTINATION lib)
 
 install(FILES
-  processing.h
-  processing_math.h
-  processing_pfont.h
-  processing_pimage.h
-  processing_pshape.h
-  processing_color.h
-  processing_opengl.h
-  processing_pgraphics.h
-  processing_pshader.h
-  processing_java_compatability.h
-  processing_texture_manager.h
-  processing_time.h
-  processing_enum.h
+  include/processing.h
+  include/processing_math.h
+  include/processing_pfont.h
+  include/processing_pimage.h
+  include/processing_pshape.h
+  include/processing_color.h
+  include/processing_opengl.h
+  include/processing_pgraphics.h
+  include/processing_pshader.h
+  include/processing_java_compatability.h
+  include/processing_texture_manager.h
+  include/processing_time.h
+  include/processing_enum.h
   DESTINATION include)
 
 target_include_directories(Processing
   PUBLIC
+  include
   ${SDL2_INCLUDE_DIRS}
   ${FREETYPE_INCLUDE_DIRS}
   ${GLEW_INCLUDE_DIRS}
@@ -209,11 +187,11 @@ function(ADD_EXAMPLE file_path)
   if(file_content)
     add_executable(${base_name} ${file_path})
     target_link_libraries(${base_name}  PRIVATE Processing)
-    target_compile_options(${base_name} PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/processing.h)
+    target_compile_options(${base_name} PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/include/processing.h)
   else()
     add_executable(${base_name} sketch.cc)
     target_link_libraries(${base_name}  PRIVATE Processing)
-    target_compile_options(${base_name} PRIVATE -DFILE_TO_INCLUDE=\"${file_path}\" -include ${CMAKE_CURRENT_SOURCE_DIR}/processing.h)
+    target_compile_options(${base_name} PRIVATE -DFILE_TO_INCLUDE=\"${file_path}\" -include ${CMAKE_CURRENT_SOURCE_DIR}/include/processing.h)
   endif()
 
   # If there's a data directory copy it to the target

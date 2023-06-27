@@ -1,0 +1,10 @@
+# Changelog
+
+## v0.0.9
+
+### Added or Changed
+- Added this changelog 0.1.0 will be first released version
+
+### Removed
+
+- Some packages/libraries from acknowledgements I no longer use
