@@ -16,7 +16,6 @@ find_package(fmt REQUIRED)
 
 add_library(Processing
   src/processing.cc
-  src/PerlinNoise.cc
   src/processing_math.cc
   src/processing_pfont.cc
   src/processing_pimage.cc
