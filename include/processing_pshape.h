@@ -86,6 +86,7 @@ public:
 
    void copyStyle( const PShape &other ) {
       texture_= other.texture_;
+      shape_matrix = other.shape_matrix;
       n = other.n;
       stroke_color = other.stroke_color;
       fill_color = other.fill_color;
@@ -127,6 +128,10 @@ public:
 
    void scale(float x, float y,float z = 1) {
       shape_matrix = shape_matrix * ScaleMatrix(PVector{x,y,z});
+   }
+
+   void transform(const PMatrix &transform) {
+      shape_matrix = transform;
    }
 
    void loadShape(const char *filename) {
@@ -381,25 +386,24 @@ public:
       }
    }
 
-   void draw(gl_context &glc, const PMatrix &move_matrix) {
-      auto transform = move_matrix * shape_matrix;
+   void draw(gl_context &glc) {
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.draw(glc, transform );
+            child.draw(glc);
          }
       } else {
-         draw_fill(glc, transform );
+         draw_fill(glc);
          if ( stroke_color.a != 0 )
-            draw_stroke(glc, transform );
+            draw_stroke(glc);
       }
    }
 
-   void draw_stroke(gl_context &glc, const PMatrix &move_matrix);
-   void draw_fill(gl_context &glc, const PMatrix &move_matrix);
+   void draw_stroke(gl_context &glc);
+   void draw_fill(gl_context &gl);
 
 };
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);
-PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color);
+PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform);
 
 #endif

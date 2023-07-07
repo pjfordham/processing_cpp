@@ -203,11 +203,12 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
 }
 
-PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras, bool closed)  {
+PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
    PLine start;
    PLine end;
 
    PShape triangle_strip;
+   triangle_strip.transform( transform );
    triangle_strip.beginShape(TRIANGLE_STRIP);
    triangle_strip.noStroke();
    triangle_strip.fill(extras[0].stroke);
@@ -247,10 +248,11 @@ PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfo
    return triangle_strip;
 }
 
-PShape drawRoundLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
+PShape drawRoundLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
+   shape.transform( transform );
 
    int NUMBER_OF_VERTICES=16;
 
@@ -272,10 +274,11 @@ PShape drawRoundLine(PVector p1, PVector p2, int weight1, int weight2, color col
    return shape;
 }
 
-PShape drawLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
+PShape drawLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
+   shape.transform( transform );
    PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
    normal1.normalize();
    normal1.mult(weight1/2.0);
@@ -297,10 +300,11 @@ PShape drawLine(PVector p1, PVector p2, int weight1, int weight2, color color1, 
    return shape;
 }
 
-PShape drawCappedLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
+PShape drawCappedLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
+   shape.transform( transform );
    PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
    normal1.normalize();
    normal1.mult(weight1/2.0);
@@ -331,10 +335,11 @@ PShape drawCappedLine(PVector p1, PVector p2, int weight1, int weight2, color co
 }
 
 
-PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color) {
+PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform) {
    PShape shape;
    // Hack to get the circle texture
    shape.texture( PTexture::circle() );
+   shape.transform( transform );
    shape.noStroke();
    shape.fill( color );
    shape.beginShape(TRIANGLES);
@@ -389,7 +394,7 @@ PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::
    return triangles;
 }
 
-void PShape::draw_stroke(gl_context &glc, const PMatrix &move_matrix) {
+void PShape::draw_stroke(gl_context &glc) {
    switch( style ) {
    case POINTS:
    {
@@ -397,7 +402,7 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix &move_matrix) {
          drawUntexturedFilledEllipse(
             vertices[i].position.x, vertices[i].position.y,
             extras[i].weight, extras[i].weight,
-            extras[i].stroke).draw( glc, move_matrix );
+            extras[i].stroke, shape_matrix ).draw( glc );
       }
       break;
    }
@@ -410,26 +415,26 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix &move_matrix) {
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false).draw_fill( glc, move_matrix );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( glc );
          } else {
-            drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE).draw_fill( glc, move_matrix );
+            drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc );
          }
       } else if (vertices.size() == 2) {
          switch(line_end_cap) {
          case ROUND:
             drawRoundLine( vertices[0].position, vertices[1].position,
                            extras[0].weight, extras[1].weight,
-                           extras[0].stroke, extras[1].stroke ).draw_fill( glc, move_matrix );
+                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc );
             break;
          case PROJECT:
             drawCappedLine( vertices[0].position, vertices[1].position,
                             extras[0].weight, extras[1].weight,
-                            extras[0].stroke, extras[1].stroke ).draw_fill( glc, move_matrix );
+                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc );
             break;
          case SQUARE:
             drawLine( vertices[0].position, vertices[1].position,
                       extras[0].weight, extras[1].weight,
-                      extras[0].stroke, extras[1].stroke ).draw_fill( glc, move_matrix );
+                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc );
             break;
          default:
             abort();
@@ -438,13 +443,13 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix &move_matrix) {
          drawUntexturedFilledEllipse(
             vertices[0].position.x, vertices[0].position.y,
             extras[0].weight, extras[0].weight,
-            extras[0].stroke ).draw( glc, move_matrix );
+            extras[0].stroke, shape_matrix ).draw( glc );
       }
       break;
    }
    case TRIANGLE_STRIP:
    {
-      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data()).draw_fill( glc, move_matrix );
+      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data()).draw_fill( glc );
       break;
    }
    case TRIANGLE_FAN:
@@ -456,7 +461,7 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix &move_matrix) {
    }
 }
 
-void PShape::draw_fill(gl_context &glc, const PMatrix &move_matrix)  {
+void PShape::draw_fill(gl_context &glc)  {
    if (vertices.size() > 2 && style != POINTS) {
       if (!setNormals) {
          // Iterate over all triangles
@@ -482,6 +487,6 @@ void PShape::draw_fill(gl_context &glc, const PMatrix &move_matrix)  {
             vertices[indices[i]].normal.normalize();
          }
       }
-      glc.drawTriangles(  vertices, indices, move_matrix );
+      glc.drawTriangles( vertices, indices, shape_matrix );
    }
 }

@@ -139,7 +139,7 @@ void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed s
       if (xloop || frameCount == 0) {
          g.glc.resetFlushCount();
 
-         g.move_matrix = PMatrix::Identity();
+         g._shape.shape_matrix = PMatrix::Identity();
          g.noLights();
          // Call the sketch's draw()
          draw();
@@ -155,7 +155,7 @@ void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed s
       } else {
          SDL_Delay(5);
       }
-      ticks=  SDL_GetTicks();
+      ticks = SDL_GetTicks();
    }
 }
 

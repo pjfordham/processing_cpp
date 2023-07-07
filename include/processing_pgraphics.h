@@ -41,8 +41,6 @@ public:
    PShape _shape;
    std::vector<unsigned int> pixels;
 
-   PMatrix move_matrix = PMatrix::Identity();
-
    std::vector<PMatrix> matrix_stack;
 
    PGraphics(const PGraphics &x) = delete;
@@ -76,8 +74,6 @@ public:
       std::swap(_shape, x._shape);
       std::swap(pixels, x.pixels);
 
-      std::swap(move_matrix, x.move_matrix);
-
       std::swap(matrix_stack, x.matrix_stack);
 
       return *this;
@@ -94,9 +90,8 @@ public:
       this->height = height;
       this->aaFactor = aaFactor;
 
-      move_matrix = PMatrix::Identity();
-      // view_matrix = PMatrix::Identity();
-      // projection_matrix = PMatrix::Identity();
+      glc.view_matrix = PMatrix::Identity();
+      glc.projection_matrix = PMatrix::Identity();
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -125,24 +120,24 @@ public:
    }
 
    void pushMatrix() {
-      matrix_stack.push_back(move_matrix);
+      matrix_stack.push_back(_shape.shape_matrix);
    }
 
    void popMatrix() {
-      move_matrix = matrix_stack.back();
+      _shape.shape_matrix = matrix_stack.back();
       matrix_stack.pop_back();
    }
 
    void translate(float x, float y, float z=0.0 ) {
-      move_matrix = move_matrix * TranslateMatrix(PVector{x,y,z});
+      _shape.shape_matrix = _shape.shape_matrix * TranslateMatrix(PVector{x,y,z});
    }
 
    void transform(const PMatrix &transform_matrix) {
-      move_matrix = move_matrix * transform_matrix;
+      _shape.shape_matrix = _shape.shape_matrix * transform_matrix;
    }
 
    void scale(float x, float y,float z = 1.0) {
-      move_matrix = move_matrix * ScaleMatrix(PVector{x,y,z});
+      _shape.shape_matrix = _shape.shape_matrix * ScaleMatrix(PVector{x,y,z});
    }
 
    void scale(float x) {
@@ -150,7 +145,7 @@ public:
    }
 
    void rotate(float angle, PVector axis) {
-      move_matrix = move_matrix * RotateMatrix(angle,axis);
+      _shape.shape_matrix = _shape.shape_matrix * RotateMatrix(angle,axis);
    }
 
    void rotate(float angle) {
@@ -341,13 +336,6 @@ public:
       } else {
          background(gray,gray,gray);
       }
-   }
-
-   void drawTriangles( const std::vector<gl_context::vertex> &vertices,
-                       const std::vector<unsigned short> &indices,
-                       const PMatrix &xxmove_matrix) {
-      glc.reserve( vertices.size(), xxmove_matrix);
-      glc.drawTriangles( vertices, indices );
    }
 
    void imageMode(int iMode) {
@@ -578,7 +566,7 @@ public:
    void shape(PShape &pshape, float x, float y) {
       pushMatrix();
       translate(x,y);
-      pshape.draw( glc, move_matrix );
+      pshape.draw( glc );
       popMatrix();
    }
 
@@ -765,7 +753,7 @@ public:
       }
       if (_shape.stroke_color.a == 0.0 && _shape.texture_.layer == 0) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color );
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color, _shape.shape_matrix );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;

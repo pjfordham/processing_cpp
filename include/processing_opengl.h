@@ -362,8 +362,10 @@ public:
    };
 
    void drawTriangles( const std::vector<vertex> &vertices,
-                       const std::vector<unsigned short> &indices ){
+                       const std::vector<unsigned short> &indices,
+                       const PMatrix &move_matrix ){
 
+      reserve( vertices.size(), move_matrix);
       if (indices.size() == 0) abort();
 
       auto starti = vbuffer.size();
