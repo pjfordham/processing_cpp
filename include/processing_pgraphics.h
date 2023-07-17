@@ -844,13 +844,10 @@ public:
          int NUMBER_OF_VERTICES=32;
          PShape shape;
          shape.copyStyle( _shape );
-         shape.beginShape(TRIANGLES);
+         shape.beginShape(CONVEX_POLYGON);
          shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
          for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
             shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0, height /2.0) );
-            shape.indices.push_back( 0 );
-            shape.indices.push_back( i );
-            shape.indices.push_back( i+1 );
          }
          shape.vertex( fast_ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, width / 2.0, height /2.0) );
          shape.endShape(CLOSE);
