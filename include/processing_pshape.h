@@ -53,6 +53,8 @@ public:
    PShape& operator=(const PShape& other) = default;
 
    PShape() {
+      vertices.reserve(4);
+      indices.reserve(6);
    }
 
    PShape(PShape&& other) noexcept {

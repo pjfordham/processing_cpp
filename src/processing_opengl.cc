@@ -91,7 +91,7 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
    vbuffer.reserve(CAPACITY);
    nbuffer.reserve(CAPACITY);
    cbuffer.reserve(CAPACITY);
-   xbuffer.reserve(CAPACITY);
+   xbuffer.reserve(CAPACITY * 4);
    tbuffer.reserve(CAPACITY);
    ibuffer.reserve(CAPACITY);
    currentM = 0;
