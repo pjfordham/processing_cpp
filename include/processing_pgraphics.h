@@ -376,8 +376,8 @@ public:
                        const std::vector<color> &color,
                        const PMatrix &xxmove_matrix) {
      if (lights_) {
-         glc.reserve( vertices.size(), xxmove_matrix,  projection_matrix.data,
-                      view_matrix.data,
+         glc.reserve( vertices.size(), xxmove_matrix,  projection_matrix,
+                      view_matrix,
                       directionLightColor.data(),
                       directionLightVector.data(),
                       ambientLightColor.data(),
@@ -387,8 +387,8 @@ public:
     } else {
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
-         glc.reserve( vertices.size(), xxmove_matrix, projection_matrix.data,
-                      view_matrix.data,
+         glc.reserve( vertices.size(), xxmove_matrix, projection_matrix,
+                      view_matrix,
                       black.data(),
                       directionLightVector.data(),
                       white.data(),
@@ -401,8 +401,8 @@ public:
 
    void flush() {
       if (lights_) {
-         glc.flush( projection_matrix.data,
-                    view_matrix.data,
+         glc.flush( projection_matrix,
+                    view_matrix,
                     directionLightColor.data(),
                     directionLightVector.data(),
                     ambientLightColor.data(),
@@ -412,8 +412,8 @@ public:
       } else {
          std::array<float,3> white = {1.0f,1.0f,1.0f};
          std::array<float,3> black = {0.0f,0.0f,0.0f};
-         glc.flush( projection_matrix.data,
-                    view_matrix.data,
+         glc.flush( projection_matrix,
+                    view_matrix,
                     black.data(),
                     directionLightVector.data(),
                     white.data(),

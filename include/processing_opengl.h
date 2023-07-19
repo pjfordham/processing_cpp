@@ -113,8 +113,7 @@ class gl_context {
    GLuint normal_attrib_id;
    PShader defaultShader;
    GLuint Mmatrix;
-   GLuint Pmatrix;
-   GLuint Vmatrix;
+   GLuint PVmatrix;
    GLuint uSampler;
    GLuint AmbientLight;
    GLuint DirectionLightColor;
@@ -185,8 +184,7 @@ public:
       std::swap(normal_attrib_id,x.normal_attrib_id);
       std::swap(defaultShader,x.defaultShader);
       std::swap(Mmatrix,x.Mmatrix);
-      std::swap(Pmatrix,x.Pmatrix);
-      std::swap(Vmatrix,x.Vmatrix);
+      std::swap(PVmatrix,x.PVmatrix);
       std::swap(uSampler,x.uSampler);
       std::swap(AmbientLight,x.AmbientLight);
       std::swap(DirectionLightColor,x.DirectionLightColor);
@@ -237,8 +235,7 @@ public:
       colors_attrib_id = shader.getAttribLocation("colors");
       tindex_attrib_id = shader.getAttribLocation("mindex");
       Mmatrix = shader.getUniformLocation("Mmatrix");
-      Pmatrix = shader.getUniformLocation("Pmatrix");
-      Vmatrix = shader.getUniformLocation("Vmatrix");
+      PVmatrix = shader.getUniformLocation("PVmatrix");
       AmbientLight = shader.getUniformLocation("ambientLight");
       DirectionLightColor = shader.getUniformLocation("directionLightColor");
       DirectionLightVector = shader.getUniformLocation("directionLightVector");
@@ -252,9 +249,7 @@ public:
 
    void loadMoveMatrix( float *data, int size = 1 );
 
-   void loadViewMatrix( float *data );
-
-   void loadProjectionMatrix( float *data );
+   void loadProjectionViewMatrix( float *data );
 
    void loadDirectionLightColor( float *data );
 
@@ -268,7 +263,7 @@ public:
 
    void loadPointLightFalloff( float *data );
 
-   void reserve(int n_vertices, const PMatrix &move_matrix, float *projection, float *view,
+   void reserve(int n_vertices, const PMatrix &move_matrix, const PMatrix& projection_matrix, const PMatrix &view_matrix,
                 float *directionLightColor, float *directionLightVector, float *ambientLight,
                 float *pointLightColor, float *pointLightPosition, float *pointLightFalloff) {
       if (n_vertices > CAPACITY) {
@@ -276,12 +271,12 @@ public:
       } else {
          int new_size = n_vertices + ibuffer.size();
          if (new_size >= CAPACITY) {
-            flush(projection, view, directionLightColor, directionLightVector, ambientLight,
+            flush(projection_matrix, view_matrix, directionLightColor, directionLightVector, ambientLight,
                   pointLightColor, pointLightPosition, pointLightFalloff);
          }
       }
       if ( move.size() == 16) {
-         flush(projection, view, directionLightColor, directionLightVector, ambientLight,
+         flush(projection_matrix, view_matrix, directionLightColor, directionLightVector, ambientLight,
                pointLightColor, pointLightPosition, pointLightFalloff);
       }
       if ( move.size() > 0 && move_matrix == move.back() ) {
@@ -291,7 +286,7 @@ public:
       }
    }
 
-   void flush( float *projection, float *view,
+   void flush( const PMatrix &projection_matrix, const PMatrix &view_matrix,
                float *directionLightColor, float *directionLightVector, float *ambientLight,
                float *pointLightColor, float *pointLightPosition, float *pointLightFalloff) {
 
@@ -309,8 +304,7 @@ public:
          }
 
          loadMoveMatrix( movePack.data(), move.size() );
-         loadProjectionMatrix( projection );
-         loadViewMatrix( view );
+         loadProjectionViewMatrix( (PMatrix::FlipY() * projection_matrix * view_matrix).data );
          loadDirectionLightColor( directionLightColor );
          loadDirectionLightVector( directionLightVector );
          loadAmbientLight( ambientLight );
@@ -414,9 +408,8 @@ public:
 
       PMatrix identity_matrix = PMatrix::Identity();
 
-      loadMoveMatrix( identity_matrix.data );
-      loadProjectionMatrix( identity_matrix.data);
-      loadViewMatrix( identity_matrix.data);
+      loadMoveMatrix( PMatrix::Identity().data );
+      loadProjectionViewMatrix( PMatrix::FlipY().data );
 
       std::vector<PVector> vertices;
       if ( flip ) {

@@ -118,8 +118,7 @@ const char *PShader::defaultVertexShader = R"glsl(
       in vec3 coords;
       in vec4 colors;
       in int mindex;
-      uniform mat4 Pmatrix;
-      uniform mat4 Vmatrix;
+      uniform mat4 PVmatrix;
       uniform mat4 Mmatrix[16];
       out vec3 vTexture;
       out vec4 vColor;
@@ -134,8 +133,7 @@ const char *PShader::defaultVertexShader = R"glsl(
           vTexture = coords;
           vColor = colors;
 
-          gl_Position = Pmatrix * Vmatrix * vPosition;
-          gl_Position.y = -gl_Position.y;
+          gl_Position = PVmatrix * vPosition;
        }
 )glsl";
 

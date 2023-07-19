@@ -377,12 +377,8 @@ void gl_context::loadMoveMatrix( float *data, int size ) {
    glUniformMatrix4fv(Mmatrix, size,false, data );
 }
 
-void gl_context::loadViewMatrix( float *data ) {
-   glUniformMatrix4fv(Vmatrix, 1,false, data );
-}
-
-void gl_context::loadProjectionMatrix( float *data ) {
-   glUniformMatrix4fv(Pmatrix, 1,false, data );
+void gl_context::loadProjectionViewMatrix( float *data ) {
+   glUniformMatrix4fv(PVmatrix, 1,false, data );
 }
 
 void gl_context::loadDirectionLightColor( float *data ){

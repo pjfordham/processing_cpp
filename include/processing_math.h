@@ -238,6 +238,14 @@ struct PMatrix {
          PVector4{ 0.0, 0.0, 0.0, 1.0 } );
    }
 
+   static PMatrix FlipY() {
+      return PMatrix(
+         PVector4{ 1.0,  0.0, 0.0, 0.0 },
+         PVector4{ 0.0, -1.0, 0.0, 0.0 },
+         PVector4{ 0.0,  0.0, 1.0, 0.0 } ,
+         PVector4{ 0.0,  0.0, 0.0, 1.0 } );
+   }
+
    bool operator==(const PMatrix &x) const {
       for (int i = 0 ; i< 16 ; i++ ) {
          if (data[i] != x.data[i])
