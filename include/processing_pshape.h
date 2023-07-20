@@ -243,7 +243,10 @@ public:
 
    void endShape(int type_ = OPEN) {
       // OPEN or CLOSE
-      type = type_;
+      if (style == POLYGON)
+         type = type_;
+      else
+         type = CLOSE;
       populateIndices();
    }
 
