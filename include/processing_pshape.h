@@ -32,7 +32,7 @@ public:
 
    int style = POLYGON;
    int type = OPEN;
-   int mode;
+   int mode = IMAGE;
 
    color stroke_color = BLACK;
    color fill_color = WHITE;
@@ -381,21 +381,21 @@ public:
       }
    }
 
-   void draw(TriangleDrawer &td, const PMatrix &move_matrix) {
+   void draw(gl_context &glc, const PMatrix &move_matrix) {
       auto transform = move_matrix * shape_matrix;
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.draw(td, transform );
+            child.draw(glc, transform );
          }
       } else {
-         draw_fill(td, transform );
+         draw_fill(glc, transform );
          if ( stroke_color.a != 0 )
-            draw_stroke(td, transform );
+            draw_stroke(glc, transform );
       }
    }
 
-   void draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix);
-   void draw_fill(TriangleDrawer &td, const PMatrix &move_matrix);
+   void draw_stroke(gl_context &glc, const PMatrix &move_matrix);
+   void draw_fill(gl_context &glc, const PMatrix &move_matrix);
 
 };
 

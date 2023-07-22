@@ -123,6 +123,17 @@ class gl_context {
    GLuint PointLightFalloff;
 
 public:
+   bool lights = false;;
+   std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
+   std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
+   std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
+   std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
+   std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
+   std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
+   PMatrix projection_matrix = PMatrix::Identity();
+   PMatrix view_matrix = PMatrix::Identity();
+
+public:
    gl_context() : width(0), height(0) {
       bufferID = 0;
       index_buffer_id = 0;
@@ -192,6 +203,16 @@ public:
       std::swap(PointLightPosition,x.PointLightPosition);
       std::swap(PointLightColor,x.PointLightColor);
       std::swap(PointLightFalloff,x.PointLightFalloff);
+
+      std::swap(lights,x.lights);
+      std::swap(projection_matrix,x.projection_matrix);
+      std::swap(view_matrix,x.view_matrix);
+      std::swap(directionLightColor,x.directionLightColor);
+      std::swap(directionLightVector,x.directionLightVector);
+      std::swap(ambientLight,x.ambientLight);
+      std::swap(pointLightColor,x.pointLightColor);
+      std::swap(pointLightPosition,x.pointLightPosition);
+      std::swap(pointLightFalloff,x.pointLightFalloff);
 
       return *this;
    }
@@ -263,21 +284,17 @@ public:
 
    void loadPointLightFalloff( float *data );
 
-   void reserve(int n_vertices, const PMatrix &move_matrix, const PMatrix& projection_matrix, const PMatrix &view_matrix,
-                float *directionLightColor, float *directionLightVector, float *ambientLight,
-                float *pointLightColor, float *pointLightPosition, float *pointLightFalloff) {
+   void reserve(int n_vertices, const PMatrix &move_matrix) {
       if (n_vertices > CAPACITY) {
          abort();
       } else {
          int new_size = n_vertices + ibuffer.size();
          if (new_size >= CAPACITY) {
-            flush(projection_matrix, view_matrix, directionLightColor, directionLightVector, ambientLight,
-                  pointLightColor, pointLightPosition, pointLightFalloff);
+            flush();
          }
       }
       if ( move.size() == 16) {
-         flush(projection_matrix, view_matrix, directionLightColor, directionLightVector, ambientLight,
-               pointLightColor, pointLightPosition, pointLightFalloff);
+         flush();
       }
       if ( move.size() > 0 && move_matrix == move.back() ) {
       } else {
@@ -286,9 +303,7 @@ public:
       }
    }
 
-   void flush( const PMatrix &projection_matrix, const PMatrix &view_matrix,
-               float *directionLightColor, float *directionLightVector, float *ambientLight,
-               float *pointLightColor, float *pointLightPosition, float *pointLightFalloff) {
+   void flush() {
 
       flushes++;
       // if (flushes > 1000) abort();
@@ -305,12 +320,24 @@ public:
 
          loadMoveMatrix( movePack.data(), move.size() );
          loadProjectionViewMatrix( (PMatrix::FlipY() * projection_matrix * view_matrix).data );
-         loadDirectionLightColor( directionLightColor );
-         loadDirectionLightVector( directionLightVector );
-         loadAmbientLight( ambientLight );
-         loadPointLightColor( pointLightColor );
-         loadPointLightPosition( pointLightPosition );
-         loadPointLightFalloff( pointLightFalloff );
+
+         if (lights) {
+            loadDirectionLightColor( directionLightColor.data() );
+            loadDirectionLightVector( directionLightVector.data() );
+            loadAmbientLight( ambientLight.data() );
+            loadPointLightColor( pointLightColor.data() );
+            loadPointLightPosition( pointLightPosition.data() );
+            loadPointLightFalloff( pointLightFalloff.data() );
+         } else {
+            std::array<float,3> on { 1.0, 1.0, 1.0};
+            std::array<float,3> off { 0.0, 0.0, 0.0};
+            std::array<float,3> unity { 1.0, 0.0, 0.0 };
+
+            loadPointLightFalloff( unity.data() );
+            loadDirectionLightColor( off.data() );
+            loadAmbientLight( on.data() );
+            loadPointLightColor(off.data() );
+         }
 
          drawTrianglesDirect( localFrame, vbuffer, nbuffer, cbuffer, xbuffer, tbuffer, ibuffer, ibuffer.size() );
 

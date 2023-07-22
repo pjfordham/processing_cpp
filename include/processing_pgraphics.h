@@ -12,7 +12,7 @@
 #include "processing_enum.h"
 #include "processing_opengl.h"
 
-class PGraphics : public PShape::TriangleDrawer {
+class PGraphics {
 public:
    static void init();
 
@@ -41,16 +41,6 @@ public:
    PShape _shape;
    std::vector<unsigned int> pixels;
 
-   bool lights_ = false;
-   std::array<float,3> ambientLightColor;
-   std::array<float,3> directionLightColor;
-   std::array<float,3> directionLightVector;
-   std::array<float,3> pointLightColor;
-   std::array<float,3> pointLightPosition;
-   std::array<float,3> pointLightFalloff;
-
-   PMatrix projection_matrix = PMatrix::Identity();
-   PMatrix view_matrix = PMatrix::Identity();
    PMatrix move_matrix = PMatrix::Identity();
 
    std::vector<PMatrix> matrix_stack;
@@ -86,16 +76,6 @@ public:
       std::swap(_shape, x._shape);
       std::swap(pixels, x.pixels);
 
-      std::swap(lights_, x.lights_);
-      std::swap(ambientLightColor, x.ambientLightColor);
-      std::swap(directionLightColor, x.directionLightColor);
-      std::swap(directionLightVector, x.directionLightVector);
-      std::swap(pointLightColor, x.pointLightColor);
-      std::swap(pointLightPosition, x.pointLightPosition);
-      std::swap(pointLightFalloff, x.pointLightFalloff);
-
-      std::swap(projection_matrix, x.projection_matrix);
-      std::swap(view_matrix, x.view_matrix);
       std::swap(move_matrix, x.move_matrix);
 
       std::swap(matrix_stack, x.matrix_stack);
@@ -115,8 +95,8 @@ public:
       this->aaFactor = aaFactor;
 
       move_matrix = PMatrix::Identity();
-      view_matrix = PMatrix::Identity();
-      projection_matrix = PMatrix::Identity();
+      // view_matrix = PMatrix::Identity();
+      // projection_matrix = PMatrix::Identity();
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -127,7 +107,7 @@ public:
    }
 
    void save( const std::string &fileName ) {
-      flush();
+      glc.flush();
       glc.saveFrame( fileName );
    }
 
@@ -191,12 +171,12 @@ public:
 
    float screenX(float x, float y, float z = 0.0) {
       PVector4 in = { x, y, z, 1.0 };
-      return (projection_matrix * view_matrix * in).data[0];
+      return (glc.projection_matrix * (glc.view_matrix * in)).data[0];
    }
 
    float screenY(float x, float y, float z = 0.0) {
       PVector4 in = { x, y, z, 1.0 };
-      return (projection_matrix * view_matrix * in).data[1];
+      return (glc.projection_matrix * (glc.view_matrix * in)).data[1];
    }
 
    PMatrix get_projection_matrix(float fov, float a, float near, float far) {
@@ -218,7 +198,7 @@ public:
       float ty = -(top + bottom) / (top - bottom);
       float tz = -(far + near) / (far - near);
 
-      projection_matrix = PMatrix{
+      glc.projection_matrix = PMatrix{
          { 2/(right-left),               0,              0,  tx},
          {             0,  2/(top-bottom),              0,  ty},
          {           0,               0, -2/(far - near), tz},
@@ -235,8 +215,8 @@ public:
    }
 
    void perspective(float angle, float aspect, float minZ, float maxZ) {
-      flush();
-      projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
+      glc.flush();
+      glc.projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
    }
 
    void perspective() {
@@ -269,9 +249,9 @@ public:
          {0,      0,   1.0,    -eyeZ},
          {0.0f, 0.0f,  0.0f,    1.0f} };
 
-      flush();
+      glc.flush();
       // Translate the camera to the origin
-      view_matrix = view * translate;
+      glc.view_matrix = view * translate;
    }
 
    void camera() {
@@ -280,51 +260,45 @@ public:
    }
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
-      flush();
-      lights_ = true;
-      directionLightColor = {r/255.0f, g/255.0f, b/255.0f};
-      directionLightVector = {nx, ny, nz};
+      glc.flush();
+      glc.lights = true;
+      glc.directionLightColor = {r/255.0f, g/255.0f, b/255.0f};
+      glc.directionLightVector = {nx, ny, nz};
    }
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
-      flush();
-      lights_ = true;
-      pointLightColor = { r/255.0f, g/255.0f,  b/255.0f };
-      pointLightPosition = {nx, ny, nz};
+      glc.flush();
+      glc.lights = true;
+      glc.pointLightColor = { r/255.0f, g/255.0f,  b/255.0f };
+      glc.pointLightPosition = {nx, ny, nz};
    }
 
    void lightFalloff(float r, float g, float b) {
-      flush();
-      pointLightFalloff = { r, g, b };
+      glc.flush();
+      glc.pointLightFalloff = { r, g, b };
    }
 
    void ambientLight(float r, float g, float b) {
-      flush();
-      lights_ = true;
-      ambientLightColor = { r/255.0f, g/255.0f, b/255.0f };
+      glc.flush();
+      glc.lights = true;
+      glc.ambientLight = { r/255.0f, g/255.0f, b/255.0f };
    }
 
    void lights() {
-      flush();
-      lights_ = true;
-      ambientLightColor =    { 0.5, 0.5, 0.5 };
-      directionLightColor =  { 0.5, 0.5, 0.5 };
-      directionLightVector = { 0.0, 0.0,-1.0 };
-      pointLightColor =      { 0.0, 0.0, 0.0 };
-      pointLightPosition =   { 0.0, 0.0, 0.0 };
-      pointLightFalloff =    { 1.0, 0.0, 0.0 };
+      glc.flush();
+      glc.lights = true;
+      glc.ambientLight =    { 0.5, 0.5, 0.5 };
+      glc.directionLightColor =  { 0.5, 0.5, 0.5 };
+      glc.directionLightVector = { 0.0, 0.0,-1.0 };
+      glc.pointLightColor =      { 0.0, 0.0, 0.0 };
+      glc.pointLightPosition =   { 0.0, 0.0, 0.0 };
+      glc.pointLightFalloff =    { 1.0, 0.0, 0.0 };
       //lightSpecular(0, 0, 0);
    };
 
    void noLights() {
-      flush();
-      lights_ = false;
-      ambientLightColor =    { 0.0, 0.0, 0.0};
-      directionLightColor =  { 0.0, 0.0, 0.0};
-      directionLightVector = { 0.0, 0.0,-1.0};
-      pointLightColor =      { 0.0, 0.0, 0.0};
-      pointLightPosition =   { 0.0, 0.0, 0.0};
-      pointLightFalloff =    { 1.0, 0.0, 0.0};
+      glc.flush();
+      glc.lights = false;
    }
 
    void textFont(PFont font) {
@@ -372,52 +346,8 @@ public:
    void drawTriangles( const std::vector<gl_context::vertex> &vertices,
                        const std::vector<unsigned short> &indices,
                        const PMatrix &xxmove_matrix) {
-     if (lights_) {
-         glc.reserve( vertices.size(), xxmove_matrix,  projection_matrix,
-                      view_matrix,
-                      directionLightColor.data(),
-                      directionLightVector.data(),
-                      ambientLightColor.data(),
-                      pointLightColor.data(),
-                      pointLightPosition.data(),
-                      pointLightFalloff.data());
-    } else {
-         std::array<float,3> white = {1.0f,1.0f,1.0f};
-         std::array<float,3> black = {0.0f,0.0f,0.0f};
-         glc.reserve( vertices.size(), xxmove_matrix, projection_matrix,
-                      view_matrix,
-                      black.data(),
-                      directionLightVector.data(),
-                      white.data(),
-                      black.data(),
-                      pointLightPosition.data(),
-                      pointLightFalloff.data());
-     }
-     glc.drawTriangles( vertices, indices );
-   }
-
-   void flush() {
-      if (lights_) {
-         glc.flush( projection_matrix,
-                    view_matrix,
-                    directionLightColor.data(),
-                    directionLightVector.data(),
-                    ambientLightColor.data(),
-                    pointLightColor.data(),
-                    pointLightPosition.data(),
-                    pointLightFalloff.data());
-      } else {
-         std::array<float,3> white = {1.0f,1.0f,1.0f};
-         std::array<float,3> black = {0.0f,0.0f,0.0f};
-         glc.flush( projection_matrix,
-                    view_matrix,
-                    black.data(),
-                    directionLightVector.data(),
-                    white.data(),
-                    black.data(),
-                    pointLightPosition.data(),
-                    pointLightFalloff.data());
-      }
+      glc.reserve( vertices.size(), xxmove_matrix);
+      glc.drawTriangles( vertices, indices );
    }
 
    void imageMode(int iMode) {
@@ -599,12 +529,12 @@ public:
    }
 
    void loadPixels() {
-      flush();
+      glc.flush();
       glc.loadPixels( pixels );
    }
 
    void updatePixels() {
-      flush();
+      glc.flush();
       glc.updatePixels( pixels );
    }
 
@@ -648,7 +578,7 @@ public:
    void shape(PShape &pshape, float x, float y) {
       pushMatrix();
       translate(x,y);
-      pshape.draw( *this, move_matrix );
+      pshape.draw( glc, move_matrix );
       popMatrix();
    }
 
@@ -992,14 +922,15 @@ public:
    void endDraw() {}
 
    void commit_draw() {
-      flush();
+      glc.flush();
       glc.draw_main();
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
       PGraphics pg{ width, height, mode, aaFactor };
-      pg.view_matrix = view_matrix;
-      pg.projection_matrix = projection_matrix;
+      // WONT WORK
+      pg.glc.view_matrix = glc.view_matrix;
+      pg.glc.projection_matrix = glc.projection_matrix;
       return pg;
    }
 
