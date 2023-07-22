@@ -59,28 +59,28 @@ int findEar(const std::vector<indexed_PVector>& polygon) {
    return 0;
 }
 
-bool isClockwise(const std::vector<PVector> &polygon) {
+bool isClockwise(const std::vector<gl_context::vertex> &polygon) {
    auto current = polygon[0];
    auto prev = polygon[polygon.size()-1];
-   int sum = (current.x - prev.x) * (current.y + prev.y);
+   int sum = (current.position.x - prev.position.x) * (current.position.y + prev.position.y);
    for( int i = 1 ; i < polygon.size() ; ++i) {
       auto current = polygon[i];
       auto prev = polygon[i+1];
-      sum += (current.x - prev.x) * (current.y + prev.y);
+      sum += (current.position.x - prev.position.x) * (current.position.y + prev.position.y);
    }
    return sum < 0;
 }
 
-std::vector<unsigned short> triangulatePolygon(const std::vector<PVector> &polygon_) {
+std::vector<unsigned short> triangulatePolygon(const std::vector<gl_context::vertex> &polygon_) {
    std::vector<indexed_PVector> polygon;
    int index = 0;
    if (isClockwise(polygon_)) {
       for (auto v = polygon_.rbegin(); v != polygon_.rend(); v++ ) {
-         polygon.emplace_back( *v, index++ );
+         polygon.emplace_back( v->position, index++ );
       }
    } else {
       for (auto &&vertex : polygon_) {
-         polygon.emplace_back( vertex, index++ );
+         polygon.emplace_back( vertex.position, index++ );
       }
    }
 
@@ -203,39 +203,39 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
 }
 
-PShape drawLinePoly(int points, const PVector *p, int *weights, color *colors, bool closed)  {
+PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras, bool closed)  {
    PLine start;
    PLine end;
 
    PShape triangle_strip;
    triangle_strip.beginShape(TRIANGLE_STRIP);
    triangle_strip.noStroke();
-   triangle_strip.fill(colors[0]);
-   float half_weight = weights[0] / 2.0;
+   triangle_strip.fill(extras[0].stroke);
+   float half_weight = extras[0].weight / 2.0;
    if (closed) {
-      start = drawLineMitred(p[points-1], p[0], p[1], half_weight );
+      start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
       end = start;
    } else {
-      PVector normal = (p[1] - p[0]).normal();
+      PVector normal = (p[1].position - p[0].position).normal();
       normal.normalize();
       normal.mult(half_weight);
-      start = {  p[0] + normal, p[0] - normal };
-      normal = (p[points-1] - p[points-2]).normal();
+      start = {  p[0].position + normal, p[0].position - normal };
+      normal = (p[points-1].position - p[points-2].position).normal();
       normal.normalize();
       normal.mult(half_weight);
-      end = { p[points-1] + normal, p[points-1] - normal };
+      end = { p[points-1].position + normal, p[points-1].position - normal };
    }
 
    triangle_strip.vertex( start.start );
    triangle_strip.vertex( start.end );
 
    for (int i =0; i<points-2;++i) {
-      PLine next = drawLineMitred(p[i], p[i+1], p[i+2], half_weight);
+      PLine next = drawLineMitred(p[i].position, p[i+1].position, p[i+2].position, half_weight);
       triangle_strip.vertex( next.start );
       triangle_strip.vertex( next.end );
    }
    if (closed) {
-      PLine next = drawLineMitred(p[points-2], p[points-1], p[0], half_weight);
+      PLine next = drawLineMitred(p[points-2].position, p[points-1].position, p[0].position, half_weight);
       triangle_strip.vertex( next.start );
       triangle_strip.vertex( next.end );
    }
@@ -376,13 +376,14 @@ void _line(PShape &triangles, PVector p1, PVector p2, int weight1, int weight2, 
    triangles.index( i + 3 );
 }
 
-PShape drawTriangleStrip(int points, const PVector *p,int *weights, color *colors) {
+PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras ) {
    PShape triangles;
    triangles.beginShape(TRIANGLES);
-   _line(triangles, p[0], p[1], weights[0], weights[1], colors[0], colors[1]);
+   _line(triangles, p[0].position, p[1].position,
+         extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
    for (int i=2;i<points;++i) {
-      _line(triangles, p[i-1], p[i], weights[i-1], weights[i], colors[i-1], colors[i]);
-      _line(triangles, p[i], p[i-2], weights[i], weights[i-2], colors[i], colors[i-2]);
+      _line(triangles, p[i-1].position, p[i].position, extras[i-1].weight, extras[i].weight, extras[i-1].stroke, extras[i].stroke);
+      _line(triangles, p[i].position, p[i-2].position, extras[i].weight, extras[i-2].weight, extras[i].stroke, extras[i-2].stroke);
    }
    triangles.endShape();
    return triangles;
@@ -394,9 +395,9 @@ void PShape::draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix) {
    {
       for (int i = 0; i< vertices.size() ; ++i ) {
          drawUntexturedFilledEllipse(
-            vertices[i].x, vertices[i].y,
-            vWeight[i], vWeight[i],
-            vStroke[i]).draw( td, move_matrix );
+            vertices[i].position.x, vertices[i].position.y,
+            extras[i].weight, extras[i].weight,
+            extras[i].stroke).draw( td, move_matrix );
       }
       break;
    }
@@ -409,35 +410,41 @@ void PShape::draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix) {
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, vWeight.data()+1, vStroke.data()+1, false).draw_fill( td, move_matrix );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false).draw_fill( td, move_matrix );
          } else {
-            drawLinePoly( vertices.size(), vertices.data(), vWeight.data(), vStroke.data(), type == CLOSE).draw_fill( td, move_matrix );
+            drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE).draw_fill( td, move_matrix );
          }
       } else if (vertices.size() == 2) {
          switch(line_end_cap) {
          case ROUND:
-             drawRoundLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td, move_matrix );
+            drawRoundLine( vertices[0].position, vertices[1].position,
+                           extras[0].weight, extras[1].weight,
+                           extras[0].stroke, extras[1].stroke ).draw_fill( td, move_matrix );
             break;
          case PROJECT:
-            drawCappedLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td, move_matrix );
+            drawCappedLine( vertices[0].position, vertices[1].position,
+                            extras[0].weight, extras[1].weight,
+                            extras[0].stroke, extras[1].stroke ).draw_fill( td, move_matrix );
             break;
          case SQUARE:
-            drawLine(vertices[0], vertices[1], vWeight[0], vWeight[1], vStroke[0], vStroke[1] ).draw_fill( td, move_matrix );
+            drawLine( vertices[0].position, vertices[1].position,
+                      extras[0].weight, extras[1].weight,
+                      extras[0].stroke, extras[1].stroke ).draw_fill( td, move_matrix );
             break;
          default:
             abort();
          }
       } else if (vertices.size() == 1) {
          drawUntexturedFilledEllipse(
-            vertices[0].x, vertices[0].y,
-            vWeight[0], vWeight[0],
-            vStroke[0]).draw( td, move_matrix );
+            vertices[0].position.x, vertices[0].position.y,
+            extras[0].weight, extras[0].weight,
+            extras[0].stroke ).draw( td, move_matrix );
       }
       break;
    }
    case TRIANGLE_STRIP:
    {
-      drawTriangleStrip( vertices.size(),  vertices.data(), vWeight.data(), vStroke.data()).draw_fill( td, move_matrix );
+      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data()).draw_fill( td, move_matrix );
       break;
    }
    case TRIANGLE_FAN:
@@ -451,14 +458,13 @@ void PShape::draw_stroke(TriangleDrawer &td, const PMatrix &move_matrix) {
 
 void PShape::draw_fill(TriangleDrawer &td, const PMatrix &move_matrix)  {
    if (vertices.size() > 2 && style != POINTS) {
-      if (normals.size() == 0) {
-         normals.resize( vertices.size(), {0.0f,0.0f,0.0f });
+      if (!setNormals) {
          // Iterate over all triangles
          for (int i = 0; i < indices.size()/3; i++) {
             // Get the vertices of the current triangle
-            PVector v1 = vertices[indices[i * 3]];
-            PVector v2 = vertices[indices[i * 3 + 1]];
-            PVector v3 = vertices[indices[i * 3 + 2]];
+            PVector v1 = vertices[indices[i * 3]].position;
+            PVector v2 = vertices[indices[i * 3 + 1]].position;
+            PVector v3 = vertices[indices[i * 3 + 2]].position;
 
             // Calculate the normal vector of the current triangle
             PVector edge1 = v2 - v1;
@@ -466,19 +472,16 @@ void PShape::draw_fill(TriangleDrawer &td, const PMatrix &move_matrix)  {
             PVector normal = (edge1.cross(edge2)).normalize();
 
             // Add the normal to the normals list for each vertex of the triangle
-            normals[indices[i * 3]] = normals[indices[i * 3]] + normal;
-            normals[indices[i * 3 + 1]] = normals[indices[i * 3 + 1]] + normal;
-            normals[indices[i * 3 + 2]] = normals[indices[i * 3 + 2]] + normal;
+            vertices[indices[i * 3]].normal = vertices[indices[i * 3]].normal + normal;
+            vertices[indices[i * 3 + 1]].normal = vertices[indices[i * 3 + 1]].normal + normal;
+            vertices[indices[i * 3 + 2]].normal = vertices[indices[i * 3 + 2]].normal + normal;
          }
 
          // Normalize all the normals
-         for (int i = 0; i < normals.size(); i++) {
-            normals[i].normalize();
+         for (int i = 0; i < indices.size(); i++) {
+            vertices[indices[i]].normal.normalize();
          }
       }
-      if (texture_.layer != 0 && texture_.layer != 8) {
-         td.drawTriangles(  vertices, normals, coords, indices, vTint, move_matrix );
-      } else
-         td.drawTriangles(  vertices, normals, coords, indices, vFill, move_matrix );
+      td.drawTriangles(  vertices, indices, move_matrix );
    }
 }

@@ -327,29 +327,28 @@ public:
       return;
    }
 
-   void drawTriangles( const std::vector<PVector> &vertices,
-                       const std::vector<PVector> &normals,
-                       const std::vector<PVector> &coords,
-                       const std::vector<unsigned short> &indices,
-                       const std::vector<color> &colors){
+   struct vertex {
+      PVector position;
+      PVector normal;
+      PVector coord;
+      color fill;
+   };
+
+   void drawTriangles( const std::vector<vertex> &vertices,
+                       const std::vector<unsigned short> &indices ){
+
       if (indices.size() == 0) abort();
 
       auto starti = vbuffer.size();
 
-      if (colors.size() != vertices.size() ) abort();
-
-      vbuffer.insert(vbuffer.end(), vertices.begin(), vertices.end());
-      cbuffer.insert(cbuffer.end(), coords.begin(),   coords.end());
-      nbuffer.insert(nbuffer.end(), normals.begin(),  normals.end());
-
-      for (auto color : colors) {
-         xbuffer.push_back(color.r / 255.0 );
-         xbuffer.push_back(color.g / 255.0 );
-         xbuffer.push_back(color.b / 255.0 );
-         xbuffer.push_back(color.a / 255.0 );
-      }
-
       for (auto vertex : vertices) {
+         vbuffer.push_back( vertex.position );
+         nbuffer.push_back( vertex.normal );
+         cbuffer.push_back( vertex.coord );
+         xbuffer.push_back( vertex.fill.r / 255.0 );
+         xbuffer.push_back( vertex.fill.g / 255.0 );
+         xbuffer.push_back( vertex.fill.b / 255.0 );
+         xbuffer.push_back( vertex.fill.a / 255.0 );
          tbuffer.push_back( currentM );
       }
 

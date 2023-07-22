@@ -6,17 +6,7 @@
 #include "processing_color.h"
 #include "processing_enum.h"
 #include "processing_texture_manager.h"
-
-class TriangleDrawer {
-public:
-   virtual void drawTriangles( const std::vector<PVector> &vertices,
-                               const std::vector<PVector> &normals,
-                               const std::vector<PVector> &coords,
-                               const std::vector<unsigned short> &indices,
-                               const std::vector<color> &colors,
-                               const PMatrix &shape_matrix )  = 0;
-};
-
+#include "processing_opengl.h"
 
 class PShape {
    PVector n = { 0.0, 0.0, 1.0 };
@@ -26,13 +16,14 @@ public:
    PTexture texture_;
    PMatrix shape_matrix = PMatrix::Identity();
 
-   std::vector<PVector> vertices;
-   std::vector<PVector> normals;
-   std::vector<PVector> coords;
-   std::vector<color> vStroke;
-   std::vector<color> vFill;
-   std::vector<color> vTint;
-   std::vector<int> vWeight;
+   struct vInfoExtra {
+      color stroke;
+      color tint;
+      int weight;
+   };
+
+   std::vector<gl_context::vertex> vertices;
+   std::vector<vInfoExtra> extras;
 
    bool setNormals = false;
    std::vector<unsigned short> indices;
@@ -54,6 +45,7 @@ public:
 
    PShape() {
       vertices.reserve(4);
+      extras.reserve(4);
       indices.reserve(6);
    }
 
@@ -64,10 +56,9 @@ public:
    PShape& operator=(PShape&& other) noexcept {
       std::swap(texture_, other.texture_);
       std::swap(n, other.n);
-      std::swap(normals, other.normals);
       std::swap(setNormals, other.setNormals);
-      std::swap(coords, other.coords);
       std::swap(vertices, other.vertices);
+      std::swap(extras, other.extras);
       std::swap(indices, other.indices);
       std::swap(children, other.children);
       std::swap(style, other.style);
@@ -79,10 +70,6 @@ public:
       std::swap(tint_color, other.tint_color);
       std::swap(stroke_weight, other.stroke_weight);
       std::swap(line_end_cap, other.line_end_cap);
-      std::swap(vStroke, other.vStroke);
-      std::swap(vFill, other.vFill);
-      std::swap(vTint, other.vTint);
-      std::swap(vWeight, other.vWeight);
       return *this;
    }
 
@@ -109,14 +96,9 @@ public:
 
    void clear() {
       vertices.clear();
-      normals.clear();
+      extras.clear();
       indices.clear();
-      coords.clear();
       children.clear();
-      vStroke.clear();
-      vFill.clear();
-      vTint.clear();
-      vWeight.clear();
    }
 
    void rotate(float angle) {
@@ -205,23 +187,22 @@ public:
    }
 
    void vertex(PVector p, PVector t) {
-      vertices.push_back(p);
-      if (setNormals)
-         normals.push_back(n);
+
       if (mode != NORMAL) {
          t.x /= texture_.width();
          t.y /= texture_.height();
       }
-      coords.push_back( {
-               map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
-               map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
-               (float)texture_.layer});
-      if ( coords.back().x > 1.0 || coords.back().y > 1.0)
-         abort();
-      vStroke.push_back( stroke_color );
-      vFill.push_back( fill_color );
-      vTint.push_back( tint_color );
-      vWeight.push_back( stroke_weight );
+
+      PVector tprime{
+         map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
+         map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
+         (float)texture_.layer};
+
+      // if ( tprime.x > 1.0 || tprime.y > 1.0)
+      //    abort();
+
+      vertices.push_back( { p, n, tprime, fill_color } );
+      extras.push_back( { stroke_color, tint_color, stroke_weight } );
    }
 
    void index(unsigned short i) {
@@ -233,8 +214,8 @@ public:
    }
 
    void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4) {
-      float x1 = vertices.back().x;
-      float y1 = vertices.back().y;
+      float x1 = vertices.back().position.x;
+      float y1 = vertices.back().position.y;
       for (float t = 0; t <= 1; t += 0.01) {
          // Compute the Bezier curve points
          float x = bezierPoint( x1, x2, x3, x4, t );
@@ -370,24 +351,34 @@ public:
    }
 
    void setStroke(color c) {
-      std::replace_if(vStroke.begin(), vStroke.end(), [](color c) { return true; } , c);
+      for ( auto&&v : extras ) {
+         v.stroke = c;
+      }
    }
 
    void setStrokeWeight(int w) {
-      std::replace_if(vWeight.begin(), vWeight.end(), [](color c) { return true; } , w);
+      for ( auto&&v : extras ) {
+         v.weight = w;
+      }
    }
 
    void setFill(bool z) {
       if (!z )
-         std::replace_if(vFill.begin(), vFill.end(), [](color c) { return true; } , color{0.0,0.0,0.0,0.0} );
+         for ( auto&&v : vertices ) {
+            v.fill = color{0.0,0.0,0.0,0.0};
+         }
    }
 
    void setFill(color c) {
-      std::replace_if(vFill.begin(), vFill.end(), [](color c) { return true; } , c);
+      for ( auto&&v : vertices ) {
+         v.fill = c;
+      }
    }
 
    void setTint(color c) {
-      std::replace_if(vTint.begin(), vTint.end(), [](color c) { return true; } , c);
+      for ( auto&&v : extras ) {
+         v.tint = c;
+      }
    }
 
    void draw(TriangleDrawer &td, const PMatrix &move_matrix) {

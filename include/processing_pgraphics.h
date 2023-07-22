@@ -12,7 +12,7 @@
 #include "processing_enum.h"
 #include "processing_opengl.h"
 
-class PGraphics : public TriangleDrawer {
+class PGraphics : public PShape::TriangleDrawer {
 public:
    static void init();
 
@@ -369,11 +369,8 @@ public:
       }
    }
 
-   void drawTriangles( const std::vector<PVector> &vertices,
-                       const std::vector<PVector> &normals,
-                       const std::vector<PVector> &coords,
+   void drawTriangles( const std::vector<gl_context::vertex> &vertices,
                        const std::vector<unsigned short> &indices,
-                       const std::vector<color> &color,
                        const PMatrix &xxmove_matrix) {
      if (lights_) {
          glc.reserve( vertices.size(), xxmove_matrix,  projection_matrix,
@@ -396,7 +393,7 @@ public:
                       pointLightPosition.data(),
                       pointLightFalloff.data());
      }
-     glc.drawTriangles( vertices, normals, coords, indices, color);
+     glc.drawTriangles( vertices, indices );
    }
 
    void flush() {
