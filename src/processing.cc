@@ -11,8 +11,6 @@ int height = 0;
 unsigned int *pixels;
 
 
-int frameCount = 0;
-int zframeCount = 0;
 int mouseX = 0;
 int mouseY = 0;
 int pmouseX = 0;
@@ -122,42 +120,21 @@ bool dispatchEvents() {     // Handle events
 }
 
 void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
-   static unsigned int frameRateClock = SDL_GetTicks();
-   static unsigned int ticks = SDL_GetTicks();
-   // Print the frame rate every 10 seconds
-   // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
-   if (SDL_GetTicks() - ticks >= (1000 / setFrameRate))
-   {
-      unsigned int currentTicks = SDL_GetTicks();
-      if (currentTicks - frameRateClock >= 10000) {
-         float frameRate = 1000 * (float) zframeCount / (currentTicks - frameRateClock);
-         printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.glc.getFlushCount());
-         zframeCount = 0;
-         frameRateClock = currentTicks;
-      }
+   g.glc.resetFlushCount();
 
-      if (xloop || frameCount == 0) {
-         g.glc.resetFlushCount();
+   g._shape.shape_matrix = PMatrix::Identity();
+   g.noLights();
+   // Call the sketch's draw()
+   draw();
+   g.commit_draw();
 
-         g._shape.shape_matrix = PMatrix::Identity();
-         g.noLights();
-         // Call the sketch's draw()
-         draw();
-         g.commit_draw();
+   // Only update once per frame so we don't miss positions
+   pmouseX = mouseX;
+   pmouseY = mouseY;
 
-         // Only update once per frame so we don't miss positions
-         pmouseX = mouseX;
-         pmouseY = mouseY;
-
-         // Update the screen
-         frameCount++;
-         zframeCount++;
-      } else {
-         SDL_Delay(5);
-      }
-      ticks = SDL_GetTicks();
-   }
 }
+
+int frameCount = 0;
 
 __attribute__((weak)) int main(int argc, char* argv[]) {
 
@@ -167,11 +144,38 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    setup();
 
+   int zframeCount = 0;
+
+   unsigned int targetFrameTime = 1000 / setFrameRate;
+
+   unsigned int frameRateClock = SDL_GetTicks();
+
    bool quit = false;
 
    while (!quit) {
+      unsigned int startTicks = SDL_GetTicks();
+
+      // Print the frame rate every 10 seconds
+      if (startTicks - frameRateClock >= 10000) {
+         float frameRate = 1000 * (float) zframeCount / (startTicks - frameRateClock);
+         printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.glc.getFlushCount());
+         zframeCount = 0;
+         frameRateClock = startTicks;
+      }
+
       quit = dispatchEvents();
-      drawFrame();
+      if (xloop || frameCount == 0) {
+         drawFrame();
+         frameCount++;
+         zframeCount++;
+      }
+      unsigned int endTicks = SDL_GetTicks();
+      unsigned int actualFrameTime = endTicks - startTicks;
+
+      // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
+      if ( actualFrameTime < targetFrameTime ) {
+         SDL_Delay( targetFrameTime - actualFrameTime);
+      }
    }
 
    PFont::close();

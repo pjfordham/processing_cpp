@@ -128,7 +128,6 @@ inline void loadPixels() {
 }
 
 extern int frameCount;
-extern int zframeCount;
 extern int mouseX;
 extern int mouseY;
 extern int pmouseX;
