@@ -537,8 +537,9 @@ public:
    }
 
    void rect(int x, int y, int _width, int _height) {
-      PShape pshape = createRect(x,y,_width,_height);
-      shape( pshape );
+      PShape rect = createRect(x,y,_width,_height);
+      shape( rect );
+      rect_opt = std::move( rect );
    }
 
    void ellipseMode(int mode) {
@@ -563,14 +564,14 @@ public:
    }
 
 
-   void shape(PShape &pshape, float x, float y) {
+   void shape(const PShape &pshape, float x, float y) {
       pushMatrix();
       translate(x,y);
       pshape.draw( glc );
       popMatrix();
    }
 
-   void shape(PShape &pshape) {
+   void shape(const PShape &pshape) {
       shape(pshape,0,0);
    }
 
@@ -666,6 +667,7 @@ public:
       return bezier;
    }
 
+   PShape rect_opt;
    PShape createRect(float x, float y, float width, float height) {
       if (rect_mode == CORNERS) {
          width = width - x;
@@ -679,9 +681,10 @@ public:
          x = x - width / 2;
          y = y - height / 2;
       }
-      PShape shape;
+      PShape shape( std::move(rect_opt) );
       shape.copyStyle( _shape );
       shape.beginShape(CONVEX_POLYGON);
+      shape.normal(0,0,1);
       shape.vertex(x,y);
       shape.vertex(x+width,y);
       shape.vertex(x+width,y+height);

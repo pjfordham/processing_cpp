@@ -394,7 +394,7 @@ PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::
    return triangles;
 }
 
-void PShape::draw_stroke(gl_context &glc) {
+void PShape::draw_stroke(gl_context &glc) const {
    switch( style ) {
    case POINTS:
    {
@@ -461,32 +461,8 @@ void PShape::draw_stroke(gl_context &glc) {
    }
 }
 
-void PShape::draw_fill(gl_context &glc)  {
+void PShape::draw_fill(gl_context &glc) const {
    if (vertices.size() > 2 && style != POINTS) {
-      if (!setNormals) {
-         // Iterate over all triangles
-         for (int i = 0; i < indices.size()/3; i++) {
-            // Get the vertices of the current triangle
-            PVector v1 = vertices[indices[i * 3]].position;
-            PVector v2 = vertices[indices[i * 3 + 1]].position;
-            PVector v3 = vertices[indices[i * 3 + 2]].position;
-
-            // Calculate the normal vector of the current triangle
-            PVector edge1 = v2 - v1;
-            PVector edge2 = v3 - v1;
-            PVector normal = (edge1.cross(edge2)).normalize();
-
-            // Add the normal to the normals list for each vertex of the triangle
-            vertices[indices[i * 3]].normal = vertices[indices[i * 3]].normal + normal;
-            vertices[indices[i * 3 + 1]].normal = vertices[indices[i * 3 + 1]].normal + normal;
-            vertices[indices[i * 3 + 2]].normal = vertices[indices[i * 3 + 2]].normal + normal;
-         }
-
-         // Normalize all the normals
-         for (int i = 0; i < indices.size(); i++) {
-            vertices[indices[i]].normal.normalize();
-         }
-      }
       glc.drawTriangles( vertices, indices, shape_matrix );
    }
 }

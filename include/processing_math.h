@@ -115,7 +115,7 @@ public:
       float crossY = z * v.x - x * v.z;
       float crossZ = x * v.y - y * v.x;
       return PVector{crossX, crossY, crossZ};
-    }
+   }
 
    PVector normal() {
       return PVector(-y, x);
@@ -217,25 +217,31 @@ struct PVector4 {
 };
 
 struct PMatrix {
-   float data[16];
+private:
+   float m_data[16];
+   bool identity = true;
+   constexpr static float i[] = {
+      1.0 ,0 ,0 ,0,
+      0 ,1.0 ,0 ,0,
+      0 ,0 ,1.0 ,0,
+      0 ,0 ,0 ,1.0,
+   };
+public:
    PMatrix() {}
    PMatrix( const PVector4 &a, const PVector4 &b, const PVector4 &c, const PVector4 &d) {
+      identity = false;
       for(int i = 0; i< 4; i++ ){
-         data[i*4] = a.data[i];
-         data[(i*4)+1] = b.data[i];
-         data[(i*4)+2] = c.data[i];
-         data[(i*4)+3] = d.data[i];
+         m_data[i*4] = a.data[i];
+         m_data[(i*4)+1] = b.data[i];
+         m_data[(i*4)+2] = c.data[i];
+         m_data[(i*4)+3] = d.data[i];
       }
    }
 
    void print() const;
 
    static PMatrix Identity() {
-      return PMatrix(
-         PVector4{ 1.0, 0.0, 0.0, 0.0 },
-         PVector4{ 0.0, 1.0, 0.0, 0.0 },
-         PVector4{ 0.0, 0.0, 1.0, 0.0 } ,
-         PVector4{ 0.0, 0.0, 0.0, 1.0 } );
+      return PMatrix();
    }
 
    static PMatrix FlipY() {
@@ -246,23 +252,41 @@ struct PMatrix {
          PVector4{ 0.0,  0.0, 0.0, 1.0 } );
    }
 
+   const float *data() const {
+      if (identity) return i;
+      else
+         return m_data;
+   }
+
    bool operator==(const PMatrix &x) const {
+      if (identity && x.identity) return true;
+      if (x.identity) return x == *this;
+      const float *data = identity ? i : m_data;
       for (int i = 0 ; i< 16 ; i++ ) {
-         if (data[i] != x.data[i])
+         if (data[i] != x.m_data[i])
             return false;
       }
       return true;
    }
 
+private:
    const float &mat(int row, int col) const {
-      return data[row * 4 + col];
+      if (identity)
+         abort();
+      return m_data[row * 4 + col];
    }
    float &mat(int row, int col) {
-      return data[row * 4 + col];
+      if (identity)
+         abort();
+      return m_data[row * 4 + col];
    }
+public:
 
    PMatrix operator*(const PMatrix &x) const {
       PMatrix result;
+      if (identity) return x;
+      if (x.identity) return *this;
+      result.identity = false;
       for (int col = 0; col < 4; col++) {
          for (int row = 0; row < 4; row++) {
             result.mat(col,row) = 0.0;
@@ -276,6 +300,7 @@ struct PMatrix {
 
    PVector4 operator*(const PVector4 &x) const {
       PVector4 result;
+      if (identity) return x;
       for (int col = 0; col < 4; col++) {
          result.data[col] = 0.0;
          for (int row = 0; row < 4; row++) {
@@ -306,19 +331,19 @@ struct PLine {
       float b2 = -d2.y;
       float c2 = d2.x * other.start.y - d2.y * other.start.x;
 
-   return {  (a1*c2 - a2*c1) / (a1*b2 - a2*b1), (b2*c1 - b1*c2) / (a1*b2 - a2*b1) };
+      return {  (a1*c2 - a2*c1) / (a1*b2 - a2*b1), (b2*c1 - b1*c2) / (a1*b2 - a2*b1) };
 
-}
+   }
 
 };
 
 inline PMatrix TranslateMatrix(const PVector &in) {
-  PMatrix ret {
-     {1.0,    0,     0,    in.x},
-     {0,    1.0,     0,    in.y},
-     {0,      0,   1.0,    in.z},
-     {0.0f, 0.0f,  0.0f,    1.0f} };
-  return ret;
+   PMatrix ret {
+      {1.0,    0,     0,    in.x},
+      {0,    1.0,     0,    in.y},
+      {0,      0,   1.0,    in.z},
+      {0.0f, 0.0f,  0.0f,    1.0f} };
+   return ret;
 }
 
 inline PMatrix ScaleMatrix(const PVector &in) {

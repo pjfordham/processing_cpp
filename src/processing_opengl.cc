@@ -373,35 +373,35 @@ void gl_context::clearDepthBuffer(PFrame &fb) {
    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void gl_context::loadMoveMatrix( float *data, int size ) {
+void gl_context::loadMoveMatrix( const float *data, int size ) {
    glUniformMatrix4fv(Mmatrix, size,false, data );
 }
 
-void gl_context::loadProjectionViewMatrix( float *data ) {
+void gl_context::loadProjectionViewMatrix( const float *data ) {
    glUniformMatrix4fv(PVmatrix, 1,false, data );
 }
 
-void gl_context::loadDirectionLightColor( float *data ){
+void gl_context::loadDirectionLightColor( const float *data ){
    glUniform3fv(DirectionLightColor, 1, data );
 }
 
-void gl_context::loadDirectionLightVector( float *data ){
+void gl_context::loadDirectionLightVector( const float *data ){
    glUniform3fv(DirectionLightVector, 1, data );
 }
 
-void gl_context::loadAmbientLight( float *data ){
+void gl_context::loadAmbientLight( const float *data ){
    glUniform3fv(AmbientLight, 1, data );
 }
 
-void gl_context::loadPointLightColor( float *data ){
+void gl_context::loadPointLightColor( const float *data ){
    glUniform3fv(PointLightColor, 1, data );
 }
 
-void gl_context::loadPointLightPosition( float *data ){
+void gl_context::loadPointLightPosition( const float *data ){
    glUniform3fv(PointLightPosition, 1, data );
 }
 
-void gl_context::loadPointLightFalloff( float *data ){
+void gl_context::loadPointLightFalloff( const float *data ){
    glUniform3fv(PointLightFalloff, 1, data );
 }
 
