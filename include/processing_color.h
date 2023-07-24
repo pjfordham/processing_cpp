@@ -2,6 +2,8 @@
 #define PROCESSING_COLOR_H
 
 #include "processing_enum.h"
+#include "processing_opengl.h"
+
 #include <cmath>
 
 // ----
@@ -41,15 +43,16 @@ public:
    float r,g,b,a;
    color(float _r, float _g, float _b,float _a) : r(_r), g(_g), b(_b), a(_a) {
    }
-   color(float _r, float _g, float _b) : r(_r), g(_g), b(_b), a(scaleA) {
+   color(float _r, float _g, float _b) : color( _r, _g, _b, scaleA) {
    }
-   color(float _r) : r(_r), g(_r), b(_r), a(scaleA) {
+   color(float _r)  : color( _r, _r, _r, scaleA) {
    }
    color(unsigned int c, bool) : r( red(c) ), g(green(c)), b(blue(c)), a(alpha(c))  {
    }
    color()  {
    }
    void print();
+   void printf();
 };
 
 const color DEFAULT_GRAY = color(240);
@@ -83,27 +86,7 @@ inline void colorMode(int mode, float r, float g, float b) {
    colorMode(mode, r,g,b,255);
 }
 
-inline color HSBtoRGB(float h, float s, float v, float a)
-{
-   int i = floorf(h * 6);
-   auto f = h * 6.0 - i;
-   auto p = v * (1.0 - s);
-   auto q = v * (1.0 - f * s);
-   auto t = v * (1.0 - (1.0 - f) * s);
-
-   float r,g,b;
-   switch (i % 6) {
-   case 0: r = v, g = t, b = p; break;
-   case 1: r = q, g = v, b = p; break;
-   case 2: r = p, g = v, b = t; break;
-   case 3: r = p, g = q, b = v; break;
-   case 4: r = t, g = p, b = v; break;
-   case 5: r = v, g = p, b = q; break;
-   }
-   return { r * 255, g * 255, b * 255, a };
-}
-
-color flatten_color_mode(float r, float g, float b, float a);
+gl_context::color flatten_color_mode(color c);
 
 inline color lerpColor(const color& c1, const color& c2, float amt) {
    return {

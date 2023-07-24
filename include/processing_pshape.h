@@ -176,7 +176,7 @@ public:
    }
 
    void vertex(float x, float y) {
-      vertices.push_back( { {x,y}, n, {0,0}, fill_color } );
+      vertices.push_back( { {x,y}, n, {0,0}, flatten_color_mode(fill_color) } );
       extras.push_back( { stroke_color, tint_color, stroke_weight } );
    }
 
@@ -207,8 +207,8 @@ public:
       // if ( tprime.x > 1.0 || tprime.y > 1.0)
       //    abort();
 
-      vertices.push_back( { p, n, tprime, fill_color } );
-      extras.push_back( { stroke_color, tint_color, stroke_weight } );
+      vertices.push_back( { p, n, tprime, flatten_color_mode(fill_color) } );
+      extras.push_back( {stroke_color, tint_color, stroke_weight } );
    }
 
    void index(unsigned short i) {
@@ -270,7 +270,7 @@ public:
    }
 
    void fill(float r,float g,  float b, float a) {
-      fill_color = flatten_color_mode(r,g,b,a);
+      fill_color = {r,g,b,a};
    }
 
    void fill(float r,float g, float b) {
@@ -302,7 +302,7 @@ public:
    }
 
    void stroke(float r,float g,  float b, float a) {
-      stroke_color = flatten_color_mode(r,g,b,a);
+      stroke_color = {r,g,b,a};
    }
 
    void stroke(float r,float g, float b) {
@@ -342,7 +342,7 @@ public:
    }
 
    void tint(float r,float g,  float b, float a) {
-      tint_color = flatten_color_mode(r,g,b,a);
+      tint_color = {r,g,b,a};
    }
 
    void tint(float r,float g, float b) {
@@ -391,13 +391,13 @@ public:
    void setFill(bool z) {
       if (!z )
          for ( auto&&v : vertices ) {
-            v.fill = color{0.0,0.0,0.0,0.0};
+            v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
          }
    }
 
    void setFill(color c) {
       for ( auto&&v : vertices ) {
-         v.fill = c;
+         v.fill = flatten_color_mode(c);
       }
    }
 

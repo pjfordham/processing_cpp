@@ -322,8 +322,8 @@ public:
    }
 
    void background(float r, float g, float b) {
-      auto color = flatten_color_mode(r,g,b,color::scaleA);
-      glc.clear( color.r/255.0, color.g/255.0, color.b/255.0, color.a/255.0 );
+      auto color = flatten_color_mode({r,g,b,color::scaleA});
+      glc.clear( color.r, color.g, color.b, color.a );
    }
 
    void background(color c) {

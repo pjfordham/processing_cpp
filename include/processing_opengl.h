@@ -4,8 +4,8 @@
 #include <vector>
 #include "processing_math.h"
 #include "processing_pshader.h"
-#include "processing_color.h"
 #include "processing_texture_manager.h"
+#include "processing_enum.h"
 #include <fmt/core.h>
 
 struct SDL_Window;
@@ -85,11 +85,21 @@ class gl_context {
    int window_width;
    int window_height;
    TextureManager tm;
+
+ public:
+   struct color {
+      float r,g,b,a;
+      void print() {
+         fmt::print("R{} G{} B{} A{}\n",r,g,b,a);
+      }
+   };
+private:
+   
    std::vector<PMatrix> move;
    std::vector<PVector> vbuffer;
    std::vector<PVector> nbuffer;
    std::vector<PVector> cbuffer;
-   std::vector<float> xbuffer;
+   std::vector<color> xbuffer;
    std::vector<int> tbuffer;
    std::vector<unsigned short> ibuffer;
 
@@ -374,10 +384,7 @@ public:
          vbuffer.push_back( vertex.position );
          nbuffer.push_back( vertex.normal );
          cbuffer.push_back( vertex.coord );
-         xbuffer.push_back( vertex.fill.r / 255.0 );
-         xbuffer.push_back( vertex.fill.g / 255.0 );
-         xbuffer.push_back( vertex.fill.b / 255.0 );
-         xbuffer.push_back( vertex.fill.a / 255.0 );
+         xbuffer.push_back( vertex.fill );
          tbuffer.push_back( currentM );
       }
 
@@ -390,7 +397,7 @@ public:
                              const std::vector<PVector> &vertices,
                              const std::vector<PVector> &normals,
                              const std::vector<PVector> &coords,
-                             const std::vector<float> &colors,
+                             const std::vector<color> &colors,
                              const std::vector<int> &tindex,
                              const std::vector<unsigned short> &indices,
                              int count );
@@ -467,11 +474,11 @@ public:
       std::vector<unsigned short>  indices = {
          0,1,2, 0,2,3,
       };
-      std::vector<float> colors {
-         1.0f, 1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f, 1.0f,
-         1.0f, 1.0f, 1.0f, 1.0f,
+      std::vector<color> colors {
+         {1.0f, 1.0f, 1.0f, 1.0f},
+         {1.0f, 1.0f, 1.0f, 1.0f},
+         {1.0f, 1.0f, 1.0f, 1.0f},
+         {1.0f, 1.0f, 1.0f, 1.0f},
       };
 
       std::vector<int> mindex(vertices.size(), 0);

@@ -91,7 +91,7 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
    vbuffer.reserve(CAPACITY);
    nbuffer.reserve(CAPACITY);
    cbuffer.reserve(CAPACITY);
-   xbuffer.reserve(CAPACITY * 4);
+   xbuffer.reserve(CAPACITY);
    tbuffer.reserve(CAPACITY);
    ibuffer.reserve(CAPACITY);
    currentM = 0;
@@ -409,7 +409,7 @@ void gl_context::drawTrianglesDirect( PFrame &fb,
                                       const std::vector<PVector> &vertices,
                                       const std::vector<PVector> &normals,
                                       const std::vector<PVector> &coords,
-                                      const std::vector<float> &colors,
+                                      const std::vector<color> &colors,
                                       const std::vector<int> &tindex,
                                       const std::vector<unsigned short> &indices,
                                       int count ) {
@@ -426,8 +426,8 @@ void gl_context::drawTrianglesDirect( PFrame &fb,
                     normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
    GL_FLOAT_buffer( coords_buffer_id, coords.data(),   coords.size()  * 3,
                     coords_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-   GL_FLOAT_buffer( colors_buffer_id, colors.data(),   colors.size(),
-                    colors_attrib_id, 4, 0, 0);
+   GL_FLOAT_buffer( colors_buffer_id, colors.data(),   colors.size() * 4,
+                    colors_attrib_id, 4, sizeof(color), 0);
    GL_INT_buffer( tindex_buffer_id, tindex.data(),   tindex.size(),
                   tindex_attrib_id, 1, 0, 0);
 
