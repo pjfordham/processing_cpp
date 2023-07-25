@@ -88,10 +88,6 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
    windowFrame = PFrame::constructMainFrame( window_width, window_height );
 
    bool useMainFramebuffer = false;
-   vbuffer.reserve(CAPACITY);
-   nbuffer.reserve(CAPACITY);
-   cbuffer.reserve(CAPACITY);
-   xbuffer.reserve(CAPACITY);
    tbuffer.reserve(CAPACITY);
    ibuffer.reserve(CAPACITY);
    currentM = 0;
@@ -134,10 +130,7 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
 
    glGenBuffers(1, &index_buffer_id);
    glGenBuffers(1, &vertex_buffer_id);
-   glGenBuffers(1, &coords_buffer_id);
-   glGenBuffers(1, &colors_buffer_id);
    glGenBuffers(1, &tindex_buffer_id);
-   glGenBuffers(1, &normal_buffer_id);
 
    defaultShader = loadShader();
    shader( defaultShader );
@@ -169,6 +162,8 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
 
    glDepthFunc(GL_LEQUAL);
    glEnable(GL_DEPTH_TEST);
+
+   initVAO();
 }
 
 SDL_Surface* crop_surface(SDL_Surface* surface, int max_width, int max_height) {
@@ -210,6 +205,7 @@ void gl_context::draw_main() {
 }
 
 gl_context::~gl_context() {
+   cleanupVAO();
    if (bufferID)
       glDeleteTextures(1, &bufferID);
    if (glContext)
@@ -220,14 +216,8 @@ gl_context::~gl_context() {
       glDeleteBuffers(1, &index_buffer_id);
    if (vertex_buffer_id)
       glDeleteBuffers(1, &vertex_buffer_id);
-   if (coords_buffer_id)
-      glDeleteBuffers(1, &coords_buffer_id);
-   if (colors_buffer_id)
-      glDeleteBuffers(1, &colors_buffer_id);
    if (tindex_buffer_id)
       glDeleteBuffers(1, &tindex_buffer_id);
-   if (normal_buffer_id)
-      glDeleteBuffers(1, &normal_buffer_id);
 }
 
 PShader gl_context::loadShader(const char *fragShader) {
@@ -297,37 +287,6 @@ void gl_context::saveFrame(const std::string& fileName) {
 
    // Cleanup
    SDL_FreeSurface(surface);
-}
-
-void GL_FLOAT_buffer(GLuint buffer_id, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
-   if (size > 0) {
-      glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-      glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), data, GL_STREAM_DRAW);
-      glVertexAttribPointer(
-         attribId, // attribute
-         count,    // size
-         GL_FLOAT, // type
-         GL_FALSE, // normalized
-         stride,   // stride
-         offset    // array buffer offset
-         );
-      glEnableVertexAttribArray(attribId);
-   }
-}
-
-void GL_INT_buffer(GLuint buffer_id, const void *data, int size, GLuint attribId, int count, int stride, void* offset) {
-   if (size > 0) {
-      glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-      glBufferData(GL_ARRAY_BUFFER, size * sizeof(int), data, GL_STREAM_DRAW);
-      glVertexAttribIPointer(
-         attribId, // attribute
-         count,    // size
-         GL_INT,   // type
-         stride,   // stride
-         offset    // array buffer offset
-         );
-      glEnableVertexAttribArray(attribId);
-   }
 }
 
 void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
@@ -405,39 +364,144 @@ void gl_context::loadPointLightFalloff( const float *data ){
    glUniform3fv(PointLightFalloff, 1, data );
 }
 
-void gl_context::drawTrianglesDirect( PFrame &fb,
-                                      const std::vector<PVector> &vertices,
-                                      const std::vector<PVector> &normals,
-                                      const std::vector<PVector> &coords,
-                                      const std::vector<color> &colors,
-                                      const std::vector<int> &tindex,
-                                      const std::vector<unsigned short> &indices,
-                                      int count ) {
-
-   fb.bind();
-   // Create a vertex array object (VAO)
-   GLuint VAO;
+void gl_context::initVAO() {
    glGenVertexArrays(1, &VAO);
    glBindVertexArray(VAO);
 
-   GL_FLOAT_buffer( vertex_buffer_id, vertices.data(), vertices.size() * 3,
-                    vertex_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-   GL_FLOAT_buffer( normal_buffer_id, normals.data(),  normals.size() * 3,
-                    normal_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-   GL_FLOAT_buffer( coords_buffer_id, coords.data(),   coords.size()  * 3,
-                    coords_attrib_id, 3, sizeof(PVector), (void*)offsetof(PVector,x));
-   GL_FLOAT_buffer( colors_buffer_id, colors.data(),   colors.size() * 4,
-                    colors_attrib_id, 4, sizeof(color), 0);
-   GL_INT_buffer( tindex_buffer_id, tindex.data(),   tindex.size(),
-                  tindex_attrib_id, 1, 0, 0);
+   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+   glBufferData(GL_ARRAY_BUFFER, CAPACITY * sizeof(vertex), nullptr, GL_STREAM_DRAW);
+   vbuffer = new vertex[CAPACITY];
+
+   glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,position) );
+   glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,normal) );
+   glVertexAttribPointer( coords_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,coord) );
+   glVertexAttribPointer( colors_attrib_id, 4, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,fill) );
+
+   glEnableVertexAttribArray(vertex_attrib_id);
+   glEnableVertexAttribArray(normal_attrib_id);
+   glEnableVertexAttribArray(coords_attrib_id);
+   glEnableVertexAttribArray(colors_attrib_id);
+
+   glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
+
+   glVertexAttribIPointer( tindex_attrib_id, 1, GL_INT, 0, 0 );
+
+   glEnableVertexAttribArray(tindex_attrib_id);
+   glBindVertexArray(0);
+}
+
+void gl_context::drawTriangles( const std::vector<vertex> &vertices,
+                                const std::vector<unsigned short> &indices,
+                                const PMatrix &move_matrix ){
+
+   reserve( vertices.size(), move_matrix);
+   if (indices.size() == 0) abort();
+
+   int offset = tbuffer.size();
+
+   for (int i = 0; i < vertices.size(); ++i) {
+      vbuffer[offset + i] = vertices[i];
+      tbuffer.push_back( currentM );
+   }
+
+   // glBindVertexArray(VAO);
+   // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+   // glBufferSubData(GL_ARRAY_BUFFER,
+   //                 offset * sizeof(vertex),
+   //                 vertices.size() * sizeof(vertex),
+   //                 vertices.data() );
+   // glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+   for (auto index : indices) {
+      ibuffer.push_back( offset + index  );
+   }
+}
+
+void gl_context::drawTrianglesDirect( PFrame &fb,
+                                      const std::vector<int> &tindex,
+                                      const std::vector<unsigned short> &indices ) {
+
+   glBindVertexArray(VAO);
+
+   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+   glBufferSubData(GL_ARRAY_BUFFER, 0, tindex.size() * sizeof(vertex), vbuffer );
+
+   glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
+   glBufferData(GL_ARRAY_BUFFER, tindex.size() * sizeof(int), tindex.data(), GL_STREAM_DRAW);
 
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
-   glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, 0);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STREAM_DRAW);
 
-   // Unbind the buffer objects and VAO
-   glDeleteVertexArrays(1, &VAO);
+   fb.bind();
+
+   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
+
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+   glBindVertexArray(0);
+}
+
+void gl_context::cleanupVAO() {
+   glBindVertexArray(VAO);
+   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+   delete [] vbuffer;
    glBindBuffer(GL_ARRAY_BUFFER, 0);
    glBindVertexArray(0);
+   glDeleteVertexArrays(1, &VAO);
+}
+
+void gl_context::draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb, bool flip ) {
+
+   // Reset to default view & lighting settings to draw buffered frame.
+   std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
+   std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
+   std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
+   std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
+   std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
+   std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
+
+   loadDirectionLightColor( directionLightColor.data() );
+   loadDirectionLightVector( directionLightVector.data() );
+   loadAmbientLight( ambientLight.data() );
+   loadPointLightColor( pointLightColor.data() );
+   loadPointLightPosition( pointLightPosition.data() );
+   loadPointLightFalloff( pointLightFalloff.data() );
+
+   PMatrix identity_matrix = PMatrix::Identity();
+
+   loadMoveMatrix( PMatrix::Identity().data() );
+   loadProjectionViewMatrix( PMatrix::FlipY().data() );
+
+   std::vector<vertex> vertices;
+   if ( flip ) {
+      vertices = {
+         { {-1.0f,  1.0f}, {}, { texture.nleft(),  texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
+         { { 1.0f,  1.0f}, {}, { texture.nright(), texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
+         { { 1.0f, -1.0f}, {}, { texture.nright(), texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
+         { {-1.0f, -1.0f}, {}, { texture.nleft(),  texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f} }};
+   } else {
+      vertices = {
+         { {-1.0f, -1.0f}, {}, { texture.nleft(),  texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
+         { { 1.0f, -1.0f}, {}, { texture.nright(), texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
+         { { 1.0f,  1.0f}, {}, { texture.nright(), texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
+         { {-1.0f,  1.0f}, {}, { texture.nleft(),  texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f} }};
+   }
+
+   std::vector<unsigned short>  indices = {
+      0,1,2, 0,2,3,
+   };
+
+   std::vector<int> mindex(vertices.size(), 0);
+
+   // glBindVertexArray(VAO);
+   // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+   // glBufferSubData(GL_ARRAY_BUFFER,
+   //                 0,
+   //                 vertices.size() * sizeof(vertex),
+   //                 vertices.data() );
+   // glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+   memcpy( vbuffer, vertices.data(), sizeof(vertex) * 4);
+   clear( fb, 0.0, 0.0, 0.0, 1.0);
+   drawTrianglesDirect( fb, mindex, indices );
 }

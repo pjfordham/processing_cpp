@@ -35,7 +35,7 @@ public:
    int mode = IMAGE;
 
    color stroke_color = BLACK;
-   color fill_color = WHITE;
+   gl_context::color fill_color = flatten_color_mode(WHITE);
    color tint_color = WHITE;
    int stroke_weight = 1;
    int line_end_cap = ROUND;
@@ -176,7 +176,7 @@ public:
    }
 
    void vertex(float x, float y) {
-      vertices.push_back( { {x,y}, n, {0,0}, flatten_color_mode(fill_color) } );
+      vertices.push_back( { {x,y}, n, {0,0}, fill_color } );
       extras.push_back( { stroke_color, tint_color, stroke_weight } );
    }
 
@@ -207,7 +207,7 @@ public:
       // if ( tprime.x > 1.0 || tprime.y > 1.0)
       //    abort();
 
-      vertices.push_back( { p, n, tprime, flatten_color_mode(fill_color) } );
+      vertices.push_back( { p, n, tprime, fill_color } );
       extras.push_back( {stroke_color, tint_color, stroke_weight } );
    }
 
@@ -270,8 +270,8 @@ public:
    }
 
    void fill(float r,float g,  float b, float a) {
-      fill_color = {r,g,b,a};
-   }
+      fill_color = flatten_color_mode( {r,g,b,a} );
+    }
 
    void fill(float r,float g, float b) {
       fill(r,g,b,color::scaleA);
@@ -425,6 +425,6 @@ public:
 };
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);
-PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform);
+PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, gl_context::color color, const PMatrix &transform);
 
 #endif

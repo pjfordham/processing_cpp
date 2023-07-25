@@ -93,13 +93,17 @@ class gl_context {
          fmt::print("R{} G{} B{} A{}\n",r,g,b,a);
       }
    };
+   struct vertex {
+      PVector position;
+      PVector normal;
+      PVector coord;
+      color fill;
+   };
+
 private:
-   
+
    std::vector<PMatrix> move;
-   std::vector<PVector> vbuffer;
-   std::vector<PVector> nbuffer;
-   std::vector<PVector> cbuffer;
-   std::vector<color> xbuffer;
+   vertex *vbuffer;
    std::vector<int> tbuffer;
    std::vector<unsigned short> ibuffer;
 
@@ -112,10 +116,7 @@ private:
 
    GLuint index_buffer_id;
    GLuint vertex_buffer_id;
-   GLuint coords_buffer_id;
-   GLuint colors_buffer_id;
    GLuint tindex_buffer_id;
-   GLuint normal_buffer_id;
    GLuint vertex_attrib_id;
    GLuint coords_attrib_id;
    GLuint colors_attrib_id;
@@ -131,6 +132,8 @@ private:
    GLuint PointLightColor;
    GLuint PointLightPosition;
    GLuint PointLightFalloff;
+
+   GLuint VAO;
 
 public:
    bool lights = false;;
@@ -148,10 +151,9 @@ public:
       bufferID = 0;
       index_buffer_id = 0;
       vertex_buffer_id = 0;
-      coords_buffer_id = 0;
-      colors_buffer_id = 0;
       tindex_buffer_id = 0;
-      normal_buffer_id = 0;
+      VAO = 0;
+      vbuffer = nullptr;
    }
 
    gl_context(int width, int height, float aaFactor);
@@ -179,9 +181,6 @@ public:
       std::swap(tm,x.tm);
       std::swap(move,x.move);
       std::swap(vbuffer,x.vbuffer);
-      std::swap(nbuffer,x.nbuffer);
-      std::swap(cbuffer,x.cbuffer);
-      std::swap(xbuffer,x.xbuffer);
       std::swap(tbuffer,x.tbuffer);
       std::swap(ibuffer,x.ibuffer);
 
@@ -194,10 +193,7 @@ public:
 
       std::swap(index_buffer_id,x.index_buffer_id);
       std::swap(vertex_buffer_id,x.vertex_buffer_id);
-      std::swap(coords_buffer_id,x.coords_buffer_id);
-      std::swap(colors_buffer_id,x.colors_buffer_id);
       std::swap(tindex_buffer_id,x.tindex_buffer_id);
-      std::swap(normal_buffer_id,x.normal_buffer_id);
       std::swap(vertex_attrib_id,x.vertex_attrib_id);
       std::swap(coords_attrib_id,x.coords_attrib_id);
       std::swap(colors_attrib_id,x.colors_attrib_id);
@@ -223,6 +219,8 @@ public:
       std::swap(pointLightColor,x.pointLightColor);
       std::swap(pointLightPosition,x.pointLightPosition);
       std::swap(pointLightFalloff,x.pointLightFalloff);
+
+      std::swap(VAO,x.VAO);
 
       return *this;
    }
@@ -318,7 +316,7 @@ public:
       flushes++;
       // if (flushes > 1000) abort();
 
-      if (vbuffer.size() != 0 ) {
+      if (tbuffer.size() != 0 ) {
 
          // Push back array of Ms
          std::vector<float> movePack;
@@ -349,14 +347,10 @@ public:
             loadPointLightColor(off.data() );
          }
 
-         drawTrianglesDirect( localFrame, vbuffer, nbuffer, cbuffer, xbuffer, tbuffer, ibuffer, ibuffer.size() );
+         drawTrianglesDirect( localFrame, tbuffer, ibuffer );
 
-         vbuffer.clear();
-         nbuffer.clear();
-         cbuffer.clear();
          ibuffer.clear();
          tbuffer.clear();
-         xbuffer.clear();
       }
 
       move.clear();
@@ -364,43 +358,13 @@ public:
       return;
    }
 
-   struct vertex {
-      PVector position;
-      PVector normal;
-      PVector coord;
-      color fill;
-   };
-
    void drawTriangles( const std::vector<vertex> &vertices,
                        const std::vector<unsigned short> &indices,
-                       const PMatrix &move_matrix ){
-
-      reserve( vertices.size(), move_matrix);
-      if (indices.size() == 0) abort();
-
-      auto starti = vbuffer.size();
-
-      for (auto vertex : vertices) {
-         vbuffer.push_back( vertex.position );
-         nbuffer.push_back( vertex.normal );
-         cbuffer.push_back( vertex.coord );
-         xbuffer.push_back( vertex.fill );
-         tbuffer.push_back( currentM );
-      }
-
-      for (auto index : indices) {
-         ibuffer.push_back( starti + index  );
-      }
-   }
+                       const PMatrix &move_matrix );
 
    void drawTrianglesDirect( PFrame &fb,
-                             const std::vector<PVector> &vertices,
-                             const std::vector<PVector> &normals,
-                             const std::vector<PVector> &coords,
-                             const std::vector<color> &colors,
                              const std::vector<int> &tindex,
-                             const std::vector<unsigned short> &indices,
-                             int count );
+                             const std::vector<unsigned short> &indices );
 
    int getFlushCount() const {
       return flushes;
@@ -424,72 +388,11 @@ public:
       shader( defaultShader );
    }
 
-   void draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb, bool flip = false) {
-
-      // Reset to default view & lighting settings to draw buffered frame.
-      std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
-      std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
-      std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
-      std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
-      std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
-      std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
-
-      loadDirectionLightColor( directionLightColor.data() );
-      loadDirectionLightVector( directionLightVector.data() );
-      loadAmbientLight( ambientLight.data() );
-      loadPointLightColor( pointLightColor.data() );
-      loadPointLightPosition( pointLightPosition.data() );
-      loadPointLightFalloff( pointLightFalloff.data() );
-
-      PMatrix identity_matrix = PMatrix::Identity();
-
-      loadMoveMatrix( PMatrix::Identity().data() );
-      loadProjectionViewMatrix( PMatrix::FlipY().data() );
-
-      std::vector<PVector> vertices;
-      if ( flip ) {
-         vertices = {
-            {-1.0f,  1.0f},
-            { 1.0f,  1.0f},
-            { 1.0f, -1.0f},
-            {-1.0f, -1.0f}};
-      } else {
-         vertices = {
-            {-1.0f, -1.0f},
-            { 1.0f, -1.0f},
-            { 1.0f,  1.0f},
-            {-1.0f,  1.0f}};
-      }
-
-      float z = 1.0;
-      // For drawing the main screen we need to flip the texture and remove any tint
-      std::vector<PVector> coords {
-         { texture.nleft(),  texture.nbottom(), (float)texture.layer},
-         { texture.nright(), texture.nbottom(), (float)texture.layer},
-         { texture.nright(), texture.ntop(),    (float)texture.layer},
-         { texture.nleft(),  texture.ntop(),    (float)texture.layer},
-      };
-      std::vector<PVector> normals;
-
-      std::vector<unsigned short>  indices = {
-         0,1,2, 0,2,3,
-      };
-      std::vector<color> colors {
-         {1.0f, 1.0f, 1.0f, 1.0f},
-         {1.0f, 1.0f, 1.0f, 1.0f},
-         {1.0f, 1.0f, 1.0f, 1.0f},
-         {1.0f, 1.0f, 1.0f, 1.0f},
-      };
-
-      std::vector<int> mindex(vertices.size(), 0);
-
-      clear( fb, 0.0, 0.0, 0.0, 1.0);
-      drawTrianglesDirect( fb, vertices, normals, coords, colors, mindex, indices,
-                           indices.size());
-   }
+   void draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb, bool flip = false);
 
    void draw_main();
-
+   void initVAO();
+   void cleanupVAO();
 };
 
 
