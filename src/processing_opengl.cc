@@ -151,6 +151,9 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
 
    if (!useMainFramebuffer) {
       localFrame = PFrame( this->width, this->height, bufferID, 1 );
+   } else {
+      // AA factor isn't right but somehow this works.
+      localFrame = PFrame::constructMainFrame( width, height );
    }
 
    // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
