@@ -86,7 +86,6 @@ public:
 
    void copyStyle( const PShape &other ) {
       texture_= other.texture_;
-      shape_matrix = other.shape_matrix;
       n = other.n;
       stroke_color = other.stroke_color;
       fill_color = other.fill_color;
@@ -407,20 +406,20 @@ public:
       }
    }
 
-   void draw(gl_context &glc) const {
+   void draw(gl_context &glc, const PMatrix& transform) const {
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.draw(glc);
+            child.draw(glc, transform);
          }
       } else {
-         draw_fill(glc);
+         draw_fill(glc, transform);
          if ( stroke_color.a != 0 )
-            draw_stroke(glc);
+            draw_stroke(glc, transform);
       }
    }
 
-   void draw_stroke(gl_context &glc) const;
-   void draw_fill(gl_context &gl) const;
+   void draw_stroke(gl_context &glc, const PMatrix& transform) const;
+   void draw_fill(gl_context &gl, const PMatrix& transform) const;
 
 };
 

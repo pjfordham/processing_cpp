@@ -563,16 +563,15 @@ public:
       shape( quad );
    }
 
-
    void shape(const PShape &pshape, float x, float y) {
       pushMatrix();
       translate(x,y);
-      pshape.draw( glc );
+      pshape.draw( glc, _shape.shape_matrix );
       popMatrix();
    }
 
    void shape(const PShape &pshape) {
-      shape(pshape,0,0);
+      pshape.draw( glc, _shape.shape_matrix );
    }
 
    void ellipse(float x, float y, float width, float height) {
@@ -650,7 +649,7 @@ public:
 
    void endShape(int type = OPEN) {
       _shape.endShape(type);
-      shape(_shape, 0,0);
+      _shape.draw( glc, PMatrix::Identity() );
    }
 
    void rectMode(int mode){

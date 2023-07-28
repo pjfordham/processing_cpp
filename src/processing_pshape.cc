@@ -339,7 +339,6 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    PShape shape;
    // Hack to get the circle texture
    shape.texture( PTexture::circle() );
-   shape.transform( transform );
    shape.noStroke();
    shape.fill_color = color ;
    shape.beginShape(TRIANGLES);
@@ -394,7 +393,7 @@ PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::
    return triangles;
 }
 
-void PShape::draw_stroke(gl_context &glc) const {
+void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
    switch( style ) {
    case POINTS:
    {
@@ -402,7 +401,7 @@ void PShape::draw_stroke(gl_context &glc) const {
          drawUntexturedFilledEllipse(
             vertices[i].position.x, vertices[i].position.y,
             extras[i].weight, extras[i].weight,
-            flatten_color_mode(extras[i].stroke), shape_matrix ).draw( glc );
+            flatten_color_mode(extras[i].stroke), shape_matrix ).draw( glc, transform );
       }
       break;
    }
@@ -415,26 +414,26 @@ void PShape::draw_stroke(gl_context &glc) const {
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( glc );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( glc, transform );
          } else {
-            drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc );
+            drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc, transform );
          }
       } else if (vertices.size() == 2) {
          switch(line_end_cap) {
          case ROUND:
             drawRoundLine( vertices[0].position, vertices[1].position,
                            extras[0].weight, extras[1].weight,
-                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc );
+                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc, transform );
             break;
          case PROJECT:
             drawCappedLine( vertices[0].position, vertices[1].position,
                             extras[0].weight, extras[1].weight,
-                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc );
+                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc, transform );
             break;
          case SQUARE:
             drawLine( vertices[0].position, vertices[1].position,
                       extras[0].weight, extras[1].weight,
-                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc );
+                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc, transform );
             break;
          default:
             abort();
@@ -443,13 +442,13 @@ void PShape::draw_stroke(gl_context &glc) const {
          drawUntexturedFilledEllipse(
             vertices[0].position.x, vertices[0].position.y,
             extras[0].weight, extras[0].weight,
-            flatten_color_mode(extras[0].stroke), shape_matrix ).draw( glc );
+            flatten_color_mode(extras[0].stroke), shape_matrix ).draw( glc, transform );
       }
       break;
    }
    case TRIANGLE_STRIP:
    {
-      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data()).draw_fill( glc );
+      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data()).draw_fill( glc, transform );
       break;
    }
    case TRIANGLE_FAN:
@@ -461,8 +460,8 @@ void PShape::draw_stroke(gl_context &glc) const {
    }
 }
 
-void PShape::draw_fill(gl_context &glc) const {
+void PShape::draw_fill(gl_context &glc, const PMatrix& transform) const {
    if (vertices.size() > 2 && style != POINTS) {
-      glc.drawTriangles( vertices, indices, shape_matrix );
+      glc.drawTriangles( vertices, indices, transform * shape_matrix );
    }
 }
