@@ -67,6 +67,8 @@ public:
    ~PFrame();
 
    void bind();
+
+   void blit(PFrame &dest);
 };
 
 class gl_context {

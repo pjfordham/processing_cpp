@@ -32,6 +32,12 @@ PFrame::PFrame(int width_, int height_)  : width(width_), height(height_) {
    }
 }
 
+void PFrame::blit(PFrame &dest) {
+   glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.id);
+   glBlitFramebuffer(0,0,width,height,0,0,dest.width,dest.height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
+}
+
 PFrame::PFrame( int width_, int height_, GLuint colorBufferID, int layer ) : width(width_), height(height_) {
    glGenFramebuffers(1, &id);
    bind();
@@ -201,8 +207,7 @@ PTexture gl_context::getTexture( SDL_Surface *surface ) {
 void gl_context::draw_main() {
    // Already drawn directly to framebuffer so we don't need to do anything
    if (!localFrame.isMainFrame()) {
-      draw_texture_over_framebuffer(PTexture{1,0,0,width, height, width, height}, windowFrame);
-      clearDepthBuffer(windowFrame);
+      localFrame.blit( windowFrame );
    }
    SDL_GL_SwapWindow(window);
 }
