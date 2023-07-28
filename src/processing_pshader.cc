@@ -144,7 +144,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
       in vec4 vColor;
       in vec4 vPosition;
       out vec4 fragColor;
-      uniform sampler2DArray myTextures;
+      uniform sampler2D myTextures;
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
       uniform vec3 directionLightVector;
@@ -171,7 +171,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
                else
                    texelColor = vec4(1.0,1.0,1.0,1.0);
           } else {
-              texelColor = texture(myTextures, vTexture);
+              texelColor = texture(myTextures, vTexture.xy);
           }
           fragColor = vec4(vLighting,1.0) * vColor * texelColor;
       }

@@ -66,7 +66,7 @@ void gl_context::hint(int type) {
    }
 }
 
-gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFactor, height * aaFactor) {
+gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFactor * 3, height * aaFactor * 3) {
    this->aaFactor = aaFactor;
    this->width = width * aaFactor;
    this->height = height * aaFactor;
@@ -130,14 +130,14 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
    glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
    // create the texture array
    glGenTextures(1, &bufferID);
-   glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
-   glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, this->width, this->height, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+   glBindTexture(GL_TEXTURE_2D, bufferID);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width * 3, this->height * 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
    // set texture parameters
-   glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
    if (!useMainFramebuffer) {
       localFrame = PFrame( this->width, this->height );
@@ -296,20 +296,20 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
 
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
    PTexture texture = tm.getFreeBlock(width, height);
-   glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0,
-                   texture.left, texture.top, texture.layer,
-                   width, height, 1,
+   glTexSubImage2D(GL_TEXTURE_2D, 0,
+                   texture.left, texture.top,
+                   width, height,
                    GL_RGBA, GL_UNSIGNED_BYTE, pixels);
    return texture;
 }
 
 PTexture gl_context::getTexture( gl_context &source ) {
    PTexture texture = tm.getFreeBlock(source.width, source.height);
-   glBindTexture(GL_TEXTURE_2D_ARRAY, source.bufferID);
-   glCopyImageSubData(source.bufferID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1,
-                      bufferID, GL_TEXTURE_2D_ARRAY, 0, texture.left, texture.top, texture.layer,
+   glBindTexture(GL_TEXTURE_2D, source.bufferID);
+   glCopyImageSubData(source.bufferID, GL_TEXTURE_2D, 0, 0, 0, 1,
+                      bufferID, GL_TEXTURE, 0, texture.left, texture.top, texture.layer,
                       source.width, source.height, 1);
-   glBindTexture(GL_TEXTURE_2D_ARRAY, bufferID);
+   glBindTexture(GL_TEXTURE_2D, bufferID);
    return texture;
 }
 
