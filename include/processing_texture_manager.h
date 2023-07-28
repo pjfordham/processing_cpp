@@ -86,6 +86,9 @@ public:
 
    void clear() {
       free.clear();
+      // Leave 0,0,0 as a white pixel for untextured surfaces.
+      free.push_back( {0, 0, 1, width, height, width, height} );
+      free.push_back( {1, 0, 0, width, height, width, height} );
       free.push_back( {2, 0, 0, width, height, width, height} );
       free.push_back( {3, 0, 0, width, height, width, height} );
       free.push_back( {4, 0, 0, width, height, width, height} );

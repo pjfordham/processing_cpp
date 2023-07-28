@@ -38,22 +38,6 @@ void PFrame::blit(PFrame &dest) {
    glBlitFramebuffer(0,0,width,height,0,0,dest.width,dest.height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
 }
 
-PFrame::PFrame( int width_, int height_, GLuint colorBufferID, int layer ) : width(width_), height(height_) {
-   glGenFramebuffers(1, &id);
-   bind();
-
-   glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorBufferID, 0, layer);
-   glGenRenderbuffers(1, &depthBufferID);
-   glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, this->width, this->height);
-   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
-
-   auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-   if (err != GL_FRAMEBUFFER_COMPLETE) {
-      fprintf(stderr,"%d\n",err);
-   }
-}
-
 PFrame::~PFrame() {
    if (id)
       glDeleteFramebuffers(1, &id);
@@ -156,7 +140,7 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
    if (!useMainFramebuffer) {
-      localFrame = PFrame( this->width, this->height, bufferID, 1 );
+      localFrame = PFrame( this->width, this->height );
    } else {
       // AA factor isn't right but somehow this works.
       localFrame = PFrame::constructMainFrame( width, height );

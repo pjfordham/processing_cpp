@@ -45,8 +45,6 @@ public:
 
    PFrame(int width_, int height_);
 
-   PFrame( int width_, int height_, GLuint colorBufferID, int layer );
-
    PFrame(const PFrame &x) = delete;
 
    PFrame(PFrame &&x) noexcept {
