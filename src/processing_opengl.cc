@@ -12,7 +12,7 @@
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_image.h>
 
-PFrame::PFrame(int width_, int height_)  : width(width_), height(height_) {
+gl_framebuffer::gl_framebuffer(int width_, int height_)  : width(width_), height(height_) {
    glGenFramebuffers(1, &id);
    bind();
 
@@ -32,13 +32,13 @@ PFrame::PFrame(int width_, int height_)  : width(width_), height(height_) {
    }
 }
 
-void PFrame::blit(PFrame &dest) {
+void gl_framebuffer::blit(gl_framebuffer &dest) {
    glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.id);
    glBlitFramebuffer(0,0,width,height,0,0,dest.width,dest.height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
 }
 
-PFrame::~PFrame() {
+gl_framebuffer::~gl_framebuffer() {
    if (id)
       glDeleteFramebuffers(1, &id);
    if (depthBufferID)
@@ -47,7 +47,7 @@ PFrame::~PFrame() {
       glDeleteRenderbuffers(1, &colorBufferID);
 }
 
-void PFrame::bind() {
+void gl_framebuffer::bind() {
    // Bind the framebuffer and get its dimensions
    glBindFramebuffer(GL_FRAMEBUFFER, id);
    glViewport(0, 0, width, height);
@@ -75,7 +75,7 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
 
    bufferID = 0;
 
-   windowFrame = PFrame::constructMainFrame( window_width, window_height );
+   windowFrame = gl_framebuffer::constructMainFrame( window_width, window_height );
 
    bool useMainFramebuffer = false;
    tbuffer.reserve(CAPACITY);
@@ -140,10 +140,10 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
    if (!useMainFramebuffer) {
-      localFrame = PFrame( this->width, this->height );
+      localFrame = gl_framebuffer( this->width, this->height );
    } else {
       // AA factor isn't right but somehow this works.
-      localFrame = PFrame::constructMainFrame( width, height );
+      localFrame = gl_framebuffer::constructMainFrame( width, height );
    }
 
    // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
@@ -265,7 +265,7 @@ void gl_context::saveFrame(const std::string& fileName) {
    int wfWidth = windowFrame.getWidth();
    int wfHeight = windowFrame.getHeight();
 
-   PFrame frame(wfWidth, wfHeight);
+   gl_framebuffer frame(wfWidth, wfHeight);
 
    draw_texture_over_framebuffer(PTexture {1,0,0,width, height, width, height}, frame);
 
@@ -286,7 +286,7 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
    int wfWidth = windowFrame.getWidth();
    int wfHeight = windowFrame.getHeight();
 
-   PFrame frame(wfWidth, wfHeight);
+   gl_framebuffer frame(wfWidth, wfHeight);
 
    draw_texture_over_framebuffer(PTexture {1,0,0,width, height, width, height}, frame);
 
@@ -313,13 +313,13 @@ PTexture gl_context::getTexture( gl_context &source ) {
    return texture;
 }
 
-void gl_context::clear(PFrame &fb, float r, float g, float b, float a) {
+void gl_context::clear(gl_framebuffer &fb, float r, float g, float b, float a) {
    fb.bind();
    glClearColor(r, g, b, a);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void gl_context::clearDepthBuffer(PFrame &fb) {
+void gl_context::clearDepthBuffer(gl_framebuffer &fb) {
    fb.bind();
    glClear(GL_DEPTH_BUFFER_BIT);
 }
@@ -409,7 +409,7 @@ void gl_context::drawTriangles( const std::vector<vertex> &vertices,
    }
 }
 
-void gl_context::drawTrianglesDirect( PFrame &fb,
+void gl_context::drawTrianglesDirect( gl_framebuffer &fb,
                                       const std::vector<int> &tindex,
                                       const std::vector<unsigned short> &indices ) {
 
@@ -442,7 +442,7 @@ void gl_context::cleanupVAO() {
    glDeleteVertexArrays(1, &VAO);
 }
 
-void gl_context::draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb, bool flip ) {
+void gl_context::draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb, bool flip ) {
 
    // Reset to default view & lighting settings to draw buffered frame.
    std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };

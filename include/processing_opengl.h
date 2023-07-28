@@ -12,7 +12,7 @@ struct SDL_Window;
 struct SDL_Renderer;
 struct SDL_Surface;
 
-class PFrame {
+class gl_framebuffer {
    GLuint id = 0;
    int width = 0;
    int height = 0;
@@ -32,28 +32,28 @@ public:
       return id == 0;
    }
 
-   static PFrame constructMainFrame(int width, int height) {
-      PFrame frame;
+   static gl_framebuffer constructMainFrame(int width, int height) {
+      gl_framebuffer frame;
       frame.id = 0;
       frame.width = width;
       frame.height = height;
       return frame;
    }
 
-   PFrame() {
+   gl_framebuffer() {
    }
 
-   PFrame(int width_, int height_);
+   gl_framebuffer(int width_, int height_);
 
-   PFrame(const PFrame &x) = delete;
+   gl_framebuffer(const gl_framebuffer &x) = delete;
 
-   PFrame(PFrame &&x) noexcept {
+   gl_framebuffer(gl_framebuffer &&x) noexcept {
       *this = std::move(x);
    }
 
-   PFrame& operator=(const PFrame&) = delete;
+   gl_framebuffer& operator=(const gl_framebuffer&) = delete;
 
-   PFrame& operator=(PFrame&&x) noexcept {
+   gl_framebuffer& operator=(gl_framebuffer&&x) noexcept {
       std::swap(id,x.id);
       std::swap(depthBufferID,x.depthBufferID);
       std::swap(colorBufferID,x.colorBufferID);
@@ -62,11 +62,11 @@ public:
       return *this;
    }
 
-   ~PFrame();
+   ~gl_framebuffer();
 
    void bind();
 
-   void blit(PFrame &dest);
+   void blit(gl_framebuffer &dest);
 };
 
 class gl_context {
@@ -109,8 +109,8 @@ private:
 
    GLuint bufferID;
 
-   PFrame localFrame;
-   PFrame windowFrame;
+   gl_framebuffer localFrame;
+   gl_framebuffer windowFrame;
 
    float aaFactor;
 
@@ -245,13 +245,13 @@ public:
 
    PTexture getTexture( gl_context &source );
 
-   void clear(PFrame &fb, float r, float g, float b, float a);
+   void clear(gl_framebuffer &fb, float r, float g, float b, float a);
 
    void clear( float r, float g, float b, float a) {
       clear( localFrame, r, g, b, a);
    }
 
-   void clearDepthBuffer(PFrame &fb);
+   void clearDepthBuffer(gl_framebuffer &fb);
 
    void clearDepthBuffer() {
       clearDepthBuffer( localFrame );
@@ -362,7 +362,7 @@ public:
                        const std::vector<unsigned short> &indices,
                        const PMatrix &move_matrix );
 
-   void drawTrianglesDirect( PFrame &fb,
+   void drawTrianglesDirect( gl_framebuffer &fb,
                              const std::vector<int> &tindex,
                              const std::vector<unsigned short> &indices );
 
@@ -388,7 +388,7 @@ public:
       shader( defaultShader );
    }
 
-   void draw_texture_over_framebuffer( const PTexture &texture, PFrame &fb, bool flip = false);
+   void draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb, bool flip = false);
 
    void draw_main();
    void initVAO();
