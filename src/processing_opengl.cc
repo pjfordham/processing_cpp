@@ -342,9 +342,15 @@ void gl_context::cleanupVAO() {
    glDeleteVertexArrays(1, &VAO);
 }
 
-void gl_context::draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb ) {
+void gl_context::draw_texture_over_framebuffer(  std::vector<unsigned int> &pixels, gl_framebuffer &fb ) {
 
    batch wholefb(width, height, 16, this);
+   PTexture texture = wholefb.tm.getFreeBlock(window_width, window_height);
+
+   glTexSubImage2D(GL_TEXTURE_2D, 0,
+                   texture.left, texture.top,
+                   window_width, window_height,
+                   GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
    // Reset to default view & lighting settings to draw buffered frame.
    wholefb.lights = false;
@@ -353,10 +359,10 @@ void gl_context::draw_texture_over_framebuffer( const PTexture &texture, gl_fram
    wholefb.projection_matrix = PMatrix::Identity();
    wholefb.view_matrix = PMatrix::Identity();
 
-   wholefb.vbuffer[0] = { {-1.0f, -1.0f}, {}, { texture.nleft(),  texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.vbuffer[1] = { { 1.0f, -1.0f}, {}, { texture.nright(), texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.vbuffer[2] = { { 1.0f,  1.0f}, {}, { texture.nright(), texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.vbuffer[3] = { {-1.0f,  1.0f}, {}, { texture.nleft(),  texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.vbuffer[0] = { {-1.0, -1.0}, {0,0,-1}, { texture.nleft(),  texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.vbuffer[1] = { {-1.0,  1.0}, {0,0,-1}, { texture.nleft(),  texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.vbuffer[2] = { { 1.0,  1.0}, {0,0,-1}, { texture.nright(), texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.vbuffer[3] = { { 1.0, -1.0}, {0,0,-1}, { texture.nright(), texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
 
    wholefb.ibuffer = {
       0,1,2, 0,2,3,

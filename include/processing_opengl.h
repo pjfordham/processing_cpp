@@ -171,6 +171,8 @@ public:
 
             glBindVertexArray(VAO);
 
+            glBindTexture(GL_TEXTURE_2D, bufferID);
+
             glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
             glBufferSubData(GL_ARRAY_BUFFER, 0, tbuffer.size() * sizeof(vertex), vbuffer );
 
@@ -383,10 +385,8 @@ public:
    void loadPixels( std::vector<unsigned int> &pixels );
 
    // Draw our pixels into a new texture and call drawTexturedQuad over whole screen
-   auto updatePixels( std::vector<unsigned int> &pixels ) {
-      PTexture texture = getTexture(window_width, window_height, pixels.data());
-      //draw_texture_over_framebuffer(texture, localFrame);
-      return texture;
+   void updatePixels( std::vector<unsigned int> &pixels ) {
+      draw_texture_over_framebuffer(pixels, localFrame);
    }
 
    PTexture getTexture( int width, int height, void *pixels );
@@ -479,7 +479,7 @@ public:
       shader( defaultShader );
    }
 
-   void draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb);
+   void draw_texture_over_framebuffer( std::vector<unsigned int> &pixels, gl_framebuffer &fb );
 
    void draw_main();
    void initVAO();
