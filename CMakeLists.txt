@@ -23,6 +23,7 @@ add_library(Processing
   src/processing_pshape.cc
   src/processing_color.cc
   src/processing_opengl.cc
+  src/processing_opengl_framebuffer.cc
   src/processing_pgraphics.cc
   src/processing_pshader.cc
  )
@@ -37,6 +38,7 @@ install(FILES
   include/processing_pshape.h
   include/processing_color.h
   include/processing_opengl.h
+  include/processing_opengl_framebuffer.h
   include/processing_pgraphics.h
   include/processing_pshader.h
   include/processing_java_compatability.h
