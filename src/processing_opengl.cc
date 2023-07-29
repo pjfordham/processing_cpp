@@ -66,21 +66,16 @@ void gl_context::hint(int type) {
    }
 }
 
-gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFactor * 3, height * aaFactor * 3) {
+gl_context::gl_context(int width, int height, float aaFactor) {
    this->aaFactor = aaFactor;
    this->width = width * aaFactor;
    this->height = height * aaFactor;
    this->window_width = width;
    this->window_height = height;
 
-   bufferID = 0;
-
    windowFrame = gl_framebuffer::constructMainFrame( window_width, window_height );
 
    bool useMainFramebuffer = false;
-   tbuffer.reserve(CAPACITY);
-   ibuffer.reserve(CAPACITY);
-   currentM = 0;
 
    window = SDL_CreateWindow("Proce++ing",
                              SDL_WINDOWPOS_UNDEFINED,
@@ -118,6 +113,9 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
       abort();
    }
 
+   batches.emplace_back( this->width, this->height, CAPACITY, this );
+   localFrame = gl_framebuffer( this->width, this->height );
+
    glGenBuffers(1, &index_buffer_id);
    glGenBuffers(1, &vertex_buffer_id);
    glGenBuffers(1, &tindex_buffer_id);
@@ -128,27 +126,6 @@ gl_context::gl_context(int width, int height, float aaFactor) : tm(width * aaFac
    int textureUnitIndex = 0;
    glUniform1i(uSampler,textureUnitIndex);
    glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
-   // create the texture array
-   glGenTextures(1, &bufferID);
-   glBindTexture(GL_TEXTURE_2D, bufferID);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width * 3, this->height * 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-   // set texture parameters
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-   if (!useMainFramebuffer) {
-      localFrame = gl_framebuffer( this->width, this->height );
-   } else {
-      // AA factor isn't right but somehow this works.
-      localFrame = gl_framebuffer::constructMainFrame( width, height );
-   }
-
-   // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
-   GLubyte white[4] = { 255, 255, 255, 255 };
-   glClearTexImage(bufferID, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
 
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -198,8 +175,6 @@ void gl_context::draw_main() {
 
 gl_context::~gl_context() {
    cleanupVAO();
-   if (bufferID)
-      glDeleteTextures(1, &bufferID);
    if (glContext)
       SDL_GL_DeleteContext(glContext);
    if (window)
@@ -294,8 +269,9 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
    glReadPixels(0, 0, wfWidth, wfHeight, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 }
 
+// We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
-   PTexture texture = tm.getFreeBlock(width, height);
+   PTexture texture = batches.back().tm.getFreeBlock(width, height);
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    texture.left, texture.top,
                    width, height,
@@ -304,12 +280,12 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 }
 
 PTexture gl_context::getTexture( gl_context &source ) {
-   PTexture texture = tm.getFreeBlock(source.width, source.height);
-   glBindTexture(GL_TEXTURE_2D, source.bufferID);
-   glCopyImageSubData(source.bufferID, GL_TEXTURE_2D, 0, 0, 0, 1,
-                      bufferID, GL_TEXTURE, 0, texture.left, texture.top, texture.layer,
+   PTexture texture = batches.back().tm.getFreeBlock(source.width, source.height);
+   glBindTexture(GL_TEXTURE_2D, source.batches.back().bufferID);
+   glCopyImageSubData(source.batches.back().bufferID, GL_TEXTURE_2D, 0, 0, 0, 1,
+                      batches.back().bufferID, GL_TEXTURE, 0, texture.left, texture.top, texture.layer,
                       source.width, source.height, 1);
-   glBindTexture(GL_TEXTURE_2D, bufferID);
+   glBindTexture(GL_TEXTURE_2D, batches.back().bufferID);
    return texture;
 }
 
@@ -362,7 +338,6 @@ void gl_context::initVAO() {
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, CAPACITY * sizeof(vertex), nullptr, GL_STREAM_DRAW);
-   vbuffer = new vertex[CAPACITY];
 
    glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,position) );
    glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,normal) );
@@ -386,57 +361,20 @@ void gl_context::drawTriangles( const std::vector<vertex> &vertices,
                                 const std::vector<unsigned short> &indices,
                                 const PMatrix &move_matrix ){
 
-   reserve( vertices.size(), move_matrix);
    if (indices.size() == 0) abort();
 
-   int offset = tbuffer.size();
-
-   for (int i = 0; i < vertices.size(); ++i) {
-      vbuffer[offset + i] = vertices[i];
-      tbuffer.push_back( currentM );
-   }
-
-   // glBindVertexArray(VAO);
-   // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   // glBufferSubData(GL_ARRAY_BUFFER,
-   //                 offset * sizeof(vertex),
-   //                 vertices.size() * sizeof(vertex),
-   //                 vertices.data() );
-   // glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-   for (auto index : indices) {
-      ibuffer.push_back( offset + index  );
-   }
+   if(batches.size() > 0)
+      while (!batches.back().enqueue( vertices, indices, move_matrix ) )
+         batches.back().draw(localFrame, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id );
 }
 
-void gl_context::drawTrianglesDirect( gl_framebuffer &fb,
-                                      const std::vector<int> &tindex,
-                                      const std::vector<unsigned short> &indices ) {
-
-   glBindVertexArray(VAO);
-
-   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   glBufferSubData(GL_ARRAY_BUFFER, 0, tindex.size() * sizeof(vertex), vbuffer );
-
-   glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
-   glBufferData(GL_ARRAY_BUFFER, tindex.size() * sizeof(int), tindex.data(), GL_STREAM_DRAW);
-
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STREAM_DRAW);
-
-   fb.bind();
-
-   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
-
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-   glBindVertexArray(0);
+void gl_context::drawTrianglesDirect( gl_framebuffer &fb ) {
+   if(batches.size() > 0)
+      batches.back().draw(fb, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id );
 }
 
 void gl_context::cleanupVAO() {
    glBindVertexArray(VAO);
-   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   delete [] vbuffer;
    glBindBuffer(GL_ARRAY_BUFFER, 0);
    glBindVertexArray(0);
    glDeleteVertexArrays(1, &VAO);
@@ -444,25 +382,19 @@ void gl_context::cleanupVAO() {
 
 void gl_context::draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb, bool flip ) {
 
+   batch wholefb(width, height, 16, this);
+
    // Reset to default view & lighting settings to draw buffered frame.
-   std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
-   std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
-   std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
-   std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
-   std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
-   std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
+   wholefb.directionLightColor =  { 0.0, 0.0, 0.0 };
+   wholefb.directionLightVector = { 0.0, 0.0, 0.0 };
+   wholefb.ambientLight =         { 1.0, 1.0, 1.0 };
+   wholefb.pointLightColor =      { 0.0, 0.0, 0.0 };
+   wholefb.pointLightPosition =   { 0.0, 0.0, 0.0 };
+   wholefb.pointLightFalloff =    { 1.0, 0.0, 0.0 };
 
-   loadDirectionLightColor( directionLightColor.data() );
-   loadDirectionLightVector( directionLightVector.data() );
-   loadAmbientLight( ambientLight.data() );
-   loadPointLightColor( pointLightColor.data() );
-   loadPointLightPosition( pointLightPosition.data() );
-   loadPointLightFalloff( pointLightFalloff.data() );
-
-   PMatrix identity_matrix = PMatrix::Identity();
-
-   loadMoveMatrix( PMatrix::Identity().data() );
-   loadProjectionViewMatrix( PMatrix::FlipY().data() );
+   wholefb.move = { PMatrix::Identity() };
+   wholefb.projection_matrix = PMatrix::Identity();
+   wholefb.view_matrix = PMatrix::Identity();
 
    std::vector<vertex> vertices;
    if ( flip ) {
@@ -479,21 +411,15 @@ void gl_context::draw_texture_over_framebuffer( const PTexture &texture, gl_fram
          { {-1.0f,  1.0f}, {}, { texture.nleft(),  texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f} }};
    }
 
-   std::vector<unsigned short>  indices = {
+   wholefb.ibuffer = {
       0,1,2, 0,2,3,
    };
 
-   std::vector<int> mindex(vertices.size(), 0);
+   wholefb.tbuffer = {
+      0,0,0, 0,0,0,
+   };
 
-   // glBindVertexArray(VAO);
-   // glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   // glBufferSubData(GL_ARRAY_BUFFER,
-   //                 0,
-   //                 vertices.size() * sizeof(vertex),
-   //                 vertices.data() );
-   // glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-   memcpy( vbuffer, vertices.data(), sizeof(vertex) * 4);
+   memcpy( wholefb.vbuffer, vertices.data(), sizeof(vertex) * 4);
    clear( fb, 0.0, 0.0, 0.0, 1.0);
-   drawTrianglesDirect( fb, mindex, indices );
+   wholefb.draw( fb, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id);
 }

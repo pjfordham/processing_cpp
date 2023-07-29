@@ -90,8 +90,8 @@ public:
       this->height = height;
       this->aaFactor = aaFactor;
 
-      glc.view_matrix = PMatrix::Identity();
-      glc.projection_matrix = PMatrix::Identity();
+      glc.setProjectionMatrix( PMatrix::Identity() );
+      glc.setViewMatrix( PMatrix::Identity() );
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -164,15 +164,15 @@ public:
       rotate(angle, PVector{1,0,0});
    }
 
-   float screenX(float x, float y, float z = 0.0) {
-      PVector4 in = { x, y, z, 1.0 };
-      return (glc.projection_matrix * (glc.view_matrix * in)).data[0];
-   }
+   // float screenX(float x, float y, float z = 0.0) {
+   //    PVector4 in = { x, y, z, 1.0 };
+   //    return (glc.projection_matrix * (glc.view_matrix * in)).data[0];
+   // }
 
-   float screenY(float x, float y, float z = 0.0) {
-      PVector4 in = { x, y, z, 1.0 };
-      return (glc.projection_matrix * (glc.view_matrix * in)).data[1];
-   }
+   // float screenY(float x, float y, float z = 0.0) {
+   //    PVector4 in = { x, y, z, 1.0 };
+   //    return (glc.projection_matrix * (glc.view_matrix * in)).data[1];
+   // }
 
    PMatrix get_projection_matrix(float fov, float a, float near, float far) {
       float f = 1 / tan(0.5 * fov);
@@ -193,12 +193,12 @@ public:
       float ty = -(top + bottom) / (top - bottom);
       float tz = -(far + near) / (far - near);
 
-      glc.projection_matrix = PMatrix{
-         { 2/(right-left),               0,              0,  tx},
-         {             0,  2/(top-bottom),              0,  ty},
-         {           0,               0, -2/(far - near), tz},
-         {0,               0,              0,   1}
-      };
+      glc.flush();
+      glc.setProjectionMatrix( {
+            { 2/(right-left),               0,              0,  tx},
+            {             0,  2/(top-bottom),              0,  ty},
+            {           0,               0, -2/(far - near), tz},
+            {0,               0,              0,   1}} );
    }
 
    void ortho(float left, float right, float bottom, float top) {
@@ -211,7 +211,7 @@ public:
 
    void perspective(float angle, float aspect, float minZ, float maxZ) {
       glc.flush();
-      glc.projection_matrix = get_projection_matrix(angle, aspect, minZ, maxZ);
+      glc.setProjectionMatrix( get_projection_matrix(angle, aspect, minZ, maxZ));
    }
 
    void perspective() {
@@ -246,7 +246,7 @@ public:
 
       glc.flush();
       // Translate the camera to the origin
-      glc.view_matrix = view * translate;
+      glc.setViewMatrix( view * translate );
    }
 
    void camera() {
@@ -256,44 +256,44 @@ public:
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
       glc.flush();
-      glc.lights = true;
-      glc.directionLightColor = {r/255.0f, g/255.0f, b/255.0f};
-      glc.directionLightVector = {nx, ny, nz};
+      glc.setLights( true );
+      glc.setDirectionLightColor( {r/255.0f, g/255.0f, b/255.0f} );
+      glc.setDirectionLightVector( {nx, ny, nz} );
    }
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
       glc.flush();
-      glc.lights = true;
-      glc.pointLightColor = { r/255.0f, g/255.0f,  b/255.0f };
-      glc.pointLightPosition = {nx, ny, nz};
+      glc.setLights( true );
+      glc.setPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
+      glc.setPointLightPosition( {nx, ny, nz} );
    }
 
    void lightFalloff(float r, float g, float b) {
       glc.flush();
-      glc.pointLightFalloff = { r, g, b };
+      glc.setPointLightFalloff( { r, g, b } );
    }
 
    void ambientLight(float r, float g, float b) {
       glc.flush();
-      glc.lights = true;
-      glc.ambientLight = { r/255.0f, g/255.0f, b/255.0f };
+      glc.setLights( true );
+      glc.setAmbientLight( { r/255.0f, g/255.0f, b/255.0f } );
    }
 
    void lights() {
       glc.flush();
-      glc.lights = true;
-      glc.ambientLight =    { 0.5, 0.5, 0.5 };
-      glc.directionLightColor =  { 0.5, 0.5, 0.5 };
-      glc.directionLightVector = { 0.0, 0.0,-1.0 };
-      glc.pointLightColor =      { 0.0, 0.0, 0.0 };
-      glc.pointLightPosition =   { 0.0, 0.0, 0.0 };
-      glc.pointLightFalloff =    { 1.0, 0.0, 0.0 };
+      glc.setLights( true );
+      glc.setAmbientLight(    { 0.5, 0.5, 0.5 } );
+      glc.setDirectionLightColor(  { 0.5, 0.5, 0.5 } );
+      glc.setDirectionLightVector( { 0.0, 0.0,-1.0 });
+      glc.setPointLightColor(      { 0.0, 0.0, 0.0 });
+      glc.setPointLightPosition(   { 0.0, 0.0, 0.0 });
+      glc.setPointLightFalloff(    { 1.0, 0.0, 0.0 });
       //lightSpecular(0, 0, 0);
    };
 
    void noLights() {
       glc.flush();
-      glc.lights = false;
+      glc.setLights( false );
    }
 
    void textFont(PFont font) {
@@ -919,8 +919,8 @@ public:
    PGraphics createGraphics(int width, int height, int mode = P2D) {
       PGraphics pg{ width, height, mode, aaFactor };
       // WONT WORK
-      pg.glc.view_matrix = glc.view_matrix;
-      pg.glc.projection_matrix = glc.projection_matrix;
+      // pg.glc.setViewMatrix( glc.view_matrix );
+      // pg.glc.setProjectionMatrix( glc.projection_matrix );
       return pg;
    }
 
