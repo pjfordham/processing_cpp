@@ -50,15 +50,18 @@ public:
       color fill;
    };
    struct batch {
-      GLuint bufferID;
-
-      gl_context *glc;
+   private:
       int width, height;
-      TextureManager tm;
-      std::vector<PMatrix> move;
+      int currentM;
+      int CAPACITY;
+   public:
       vertex *vbuffer;
       std::vector<int> tbuffer;
       std::vector<unsigned short> ibuffer;
+      std::vector<PMatrix> move;
+      GLuint bufferID;
+      TextureManager tm;
+      gl_context *glc;
       bool lights = false;;
       std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
       std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
@@ -68,8 +71,6 @@ public:
       std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
       PMatrix projection_matrix = PMatrix::Identity();
       PMatrix view_matrix = PMatrix::Identity();
-      int currentM;
-      int CAPACITY;
 
       batch(int width, int height, int CAPACITY, gl_context *glc) : tm(width * 3, height * 3) {
          this->width = width;
@@ -382,9 +383,10 @@ public:
    void loadPixels( std::vector<unsigned int> &pixels );
 
    // Draw our pixels into a new texture and call drawTexturedQuad over whole screen
-   void updatePixels( std::vector<unsigned int> &pixels ) {
+   auto updatePixels( std::vector<unsigned int> &pixels ) {
       PTexture texture = getTexture(window_width, window_height, pixels.data());
-      draw_texture_over_framebuffer(texture, localFrame, true);
+      //draw_texture_over_framebuffer(texture, localFrame);
+      return texture;
    }
 
    PTexture getTexture( int width, int height, void *pixels );
@@ -477,7 +479,7 @@ public:
       shader( defaultShader );
    }
 
-   void draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb, bool flip = false);
+   void draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb);
 
    void draw_main();
    void initVAO();

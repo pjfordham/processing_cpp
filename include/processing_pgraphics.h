@@ -523,7 +523,16 @@ public:
 
    void updatePixels() {
       glc.flush();
-      glc.updatePixels( pixels );
+      PTexture tex = glc.updatePixels( pixels );
+      PShape _shape;
+      _shape.texture( tex );
+      _shape.beginShape( POLYGON );
+      _shape.vertex(0,0,     0,0);
+      _shape.vertex(0,height, 0,height);
+      _shape.vertex(width,height,width,height);
+      _shape.vertex(width,0,width,0);
+      _shape.endShape();
+      shape( _shape );
    }
 
    color get(int x, int y) {

@@ -202,11 +202,12 @@ void gl_context::saveFrame(const std::string& fileName) {
 
    gl_framebuffer frame(wfWidth, wfHeight);
 
-   draw_texture_over_framebuffer(PTexture {1,0,0,width, height, width, height}, frame);
+   localFrame.blit( frame );
 
    // Create SDL surface from framebuffer data
    SDL_Surface* surface = SDL_CreateRGBSurface(0, wfWidth, wfHeight,
                                                24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
+   frame.bind();
    glReadPixels(0, 0, wfWidth, wfHeight, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
 
    // Save the image as PNG
@@ -223,9 +224,10 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
 
    gl_framebuffer frame(wfWidth, wfHeight);
 
-   draw_texture_over_framebuffer(PTexture {1,0,0,width, height, width, height}, frame);
+   localFrame.blit( frame );
 
    pixels.resize(width*height);
+   frame.bind();
    glReadPixels(0, 0, wfWidth, wfHeight, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 }
 
@@ -243,7 +245,7 @@ PTexture gl_context::getTexture( gl_context &source ) {
    PTexture texture = batches.back().tm.getFreeBlock(source.width, source.height);
    glBindTexture(GL_TEXTURE_2D, source.batches.back().bufferID);
    glCopyImageSubData(source.batches.back().bufferID, GL_TEXTURE_2D, 0, 0, 0, 1,
-                      batches.back().bufferID, GL_TEXTURE, 0, texture.left, texture.top, texture.layer,
+                      batches.back().bufferID, GL_TEXTURE, 0, texture.left, texture.top, 0,
                       source.width, source.height, 1);
    glBindTexture(GL_TEXTURE_2D, batches.back().bufferID);
    return texture;
@@ -340,46 +342,30 @@ void gl_context::cleanupVAO() {
    glDeleteVertexArrays(1, &VAO);
 }
 
-void gl_context::draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb, bool flip ) {
+void gl_context::draw_texture_over_framebuffer( const PTexture &texture, gl_framebuffer &fb ) {
 
    batch wholefb(width, height, 16, this);
 
    // Reset to default view & lighting settings to draw buffered frame.
-   wholefb.directionLightColor =  { 0.0, 0.0, 0.0 };
-   wholefb.directionLightVector = { 0.0, 0.0, 0.0 };
-   wholefb.ambientLight =         { 1.0, 1.0, 1.0 };
-   wholefb.pointLightColor =      { 0.0, 0.0, 0.0 };
-   wholefb.pointLightPosition =   { 0.0, 0.0, 0.0 };
-   wholefb.pointLightFalloff =    { 1.0, 0.0, 0.0 };
+   wholefb.lights = false;
 
    wholefb.move = { PMatrix::Identity() };
    wholefb.projection_matrix = PMatrix::Identity();
    wholefb.view_matrix = PMatrix::Identity();
 
-   std::vector<vertex> vertices;
-   if ( flip ) {
-      vertices = {
-         { {-1.0f,  1.0f}, {}, { texture.nleft(),  texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
-         { { 1.0f,  1.0f}, {}, { texture.nright(), texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
-         { { 1.0f, -1.0f}, {}, { texture.nright(), texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
-         { {-1.0f, -1.0f}, {}, { texture.nleft(),  texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f} }};
-   } else {
-      vertices = {
-         { {-1.0f, -1.0f}, {}, { texture.nleft(),  texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
-         { { 1.0f, -1.0f}, {}, { texture.nright(), texture.nbottom(), (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
-         { { 1.0f,  1.0f}, {}, { texture.nright(), texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f}},
-         { {-1.0f,  1.0f}, {}, { texture.nleft(),  texture.ntop(),    (float)texture.layer},  {1.0f, 1.0f, 1.0f, 1.0f} }};
-   }
+   wholefb.vbuffer[0] = { {-1.0f, -1.0f}, {}, { texture.nleft(),  texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.vbuffer[1] = { { 1.0f, -1.0f}, {}, { texture.nright(), texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.vbuffer[2] = { { 1.0f,  1.0f}, {}, { texture.nright(), texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.vbuffer[3] = { {-1.0f,  1.0f}, {}, { texture.nleft(),  texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
 
    wholefb.ibuffer = {
       0,1,2, 0,2,3,
    };
 
    wholefb.tbuffer = {
-      0,0,0, 0,0,0,
+      0,0,0,0,
    };
 
-   memcpy( wholefb.vbuffer, vertices.data(), sizeof(vertex) * 4);
    clear( fb, 0.0, 0.0, 0.0, 1.0);
    wholefb.draw( fb, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id);
 }

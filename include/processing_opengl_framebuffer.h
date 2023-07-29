@@ -1,6 +1,8 @@
 #ifndef PROCESSING_OPENGL_FRAMEBUFFER_H
 #define PROCESSING_OPENGL_FRAMEBUFFER_H
 
+#include <utility>
+
 typedef unsigned int GLuint;
 
 class gl_framebuffer {
