@@ -270,30 +270,6 @@ void gl_context::loadProjectionViewMatrix( const float *data ) {
    glUniformMatrix4fv(PVmatrix, 1,false, data );
 }
 
-void gl_context::loadDirectionLightColor( const float *data ){
-   glUniform3fv(DirectionLightColor, 1, data );
-}
-
-void gl_context::loadDirectionLightVector( const float *data ){
-   glUniform3fv(DirectionLightVector, 1, data );
-}
-
-void gl_context::loadAmbientLight( const float *data ){
-   glUniform3fv(AmbientLight, 1, data );
-}
-
-void gl_context::loadPointLightColor( const float *data ){
-   glUniform3fv(PointLightColor, 1, data );
-}
-
-void gl_context::loadPointLightPosition( const float *data ){
-   glUniform3fv(PointLightPosition, 1, data );
-}
-
-void gl_context::loadPointLightFalloff( const float *data ){
-   glUniform3fv(PointLightFalloff, 1, data );
-}
-
 void gl_context::initVAO() {
    glGenVertexArrays(1, &VAO);
    glBindVertexArray(VAO);
@@ -352,26 +328,24 @@ void gl_context::draw_texture_over_framebuffer(  std::vector<unsigned int> &pixe
                    window_width, window_height,
                    GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
-   // Reset to default view & lighting settings to draw buffered frame.
-   wholefb.lights = false;
+   // Default view, projection & lighting settings are good.
 
-   wholefb.move = { PMatrix::Identity() };
-   wholefb.projection_matrix = PMatrix::Identity();
-   wholefb.view_matrix = PMatrix::Identity();
-
+   // Add a quad over the whole screen
    wholefb.vbuffer[0] = { {-1.0, -1.0}, {0,0,-1}, { texture.nleft(),  texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
    wholefb.vbuffer[1] = { {-1.0,  1.0}, {0,0,-1}, { texture.nleft(),  texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
    wholefb.vbuffer[2] = { { 1.0,  1.0}, {0,0,-1}, { texture.nright(), texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
    wholefb.vbuffer[3] = { { 1.0, -1.0}, {0,0,-1}, { texture.nright(), texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
 
-   wholefb.ibuffer = {
-      0,1,2, 0,2,3,
-   };
-
+   // Add an identitiy transform and poulate all vertecies with it
+   wholefb.move = { PMatrix::Identity() };
    wholefb.tbuffer = {
       0,0,0,0,
    };
 
-   clear( fb, 0.0, 0.0, 0.0, 1.0);
-   wholefb.draw( fb, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id);
+   // Add indices for quad
+   wholefb.ibuffer = {
+      0,1,2, 0,2,3,
+   };
+
+   wholefb.draw( fb, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id );
 }

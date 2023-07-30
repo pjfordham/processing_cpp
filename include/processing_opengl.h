@@ -49,6 +49,16 @@ public:
       PVector coord;
       color fill;
    };
+   struct lighting {
+      bool lights = false;;
+      std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
+      std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
+      std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
+      std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
+      std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
+      std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
+   };
+
    struct batch {
    private:
       int width, height;
@@ -62,13 +72,7 @@ public:
       GLuint bufferID;
       TextureManager tm;
       gl_context *glc;
-      bool lights = false;;
-      std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
-      std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
-      std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
-      std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
-      std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
-      std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
+      lighting l;
       PMatrix projection_matrix = PMatrix::Identity();
       PMatrix view_matrix = PMatrix::Identity();
 
@@ -151,23 +155,7 @@ public:
             glc->loadMoveMatrix( movePack.data(), move.size() );
             glc->loadProjectionViewMatrix( (projection_matrix * view_matrix).data() );
 
-            if (lights) {
-               glc->loadDirectionLightColor( directionLightColor.data() );
-               glc->loadDirectionLightVector( directionLightVector.data() );
-               glc->loadAmbientLight( ambientLight.data() );
-               glc->loadPointLightColor( pointLightColor.data() );
-               glc->loadPointLightPosition( pointLightPosition.data() );
-               glc->loadPointLightFalloff( pointLightFalloff.data() );
-            } else {
-               std::array<float,3> on { 1.0, 1.0, 1.0};
-               std::array<float,3> off { 0.0, 0.0, 0.0};
-               std::array<float,3> unity { 1.0, 0.0, 0.0 };
-
-               glc->loadPointLightFalloff( unity.data() );
-               glc->loadDirectionLightColor( off.data() );
-               glc->loadAmbientLight( on.data() );
-               glc->loadPointLightColor(off.data() );
-            }
+            glc->setLights( l );
 
             glBindVertexArray(VAO);
 
@@ -213,15 +201,9 @@ public:
 
          std::swap(bufferID,x.bufferID);
 
-         std::swap(lights,x.lights);
          std::swap(projection_matrix,x.projection_matrix);
          std::swap(view_matrix,x.view_matrix);
-         std::swap(directionLightColor,x.directionLightColor);
-         std::swap(directionLightVector,x.directionLightVector);
-         std::swap(ambientLight,x.ambientLight);
-         std::swap(pointLightColor,x.pointLightColor);
-         std::swap(pointLightPosition,x.pointLightPosition);
-         std::swap(pointLightFalloff,x.pointLightFalloff);
+         std::swap(l,x.l);
 
          std::swap(currentM,x.currentM);
 
@@ -331,6 +313,26 @@ public:
       return *this;
    }
 
+   void setLights( const lighting &l ) {
+      if (l.lights) {
+         glUniform3fv(DirectionLightColor,  1, l.directionLightColor.data() );
+         glUniform3fv(DirectionLightVector, 1, l.directionLightVector.data() );
+         glUniform3fv(AmbientLight,         1, l.ambientLight.data());
+         glUniform3fv(PointLightColor,      1, l.pointLightColor.data() );
+         glUniform3fv(PointLightPosition,   1, l.pointLightPosition.data()  );
+         glUniform3fv(PointLightFalloff,    1, l.pointLightFalloff.data() );
+      } else {
+         std::array<float,3> on { 1.0, 1.0, 1.0};
+         std::array<float,3> off { 0.0, 0.0, 0.0};
+         std::array<float,3> unity { 1.0, 0.0, 0.0 };
+
+         glUniform3fv(DirectionLightColor,  1, off.data() );
+         glUniform3fv(AmbientLight,         1, on.data());
+         glUniform3fv(PointLightColor,      1, off.data());
+         glUniform3fv(PointLightFalloff,    1, unity.data() );
+      }
+   }
+
    void setProjectionMatrix( const PMatrix &PV ) {
       if(batches.size() > 0)
          batches.back().projection_matrix = PV;
@@ -343,37 +345,37 @@ public:
 
    void setDirectionLightColor(const std::array<float,3>  &color ){
       if(batches.size() > 0)
-         batches.back().directionLightColor = color;
+         batches.back().l.directionLightColor = color;
    }
 
    void setDirectionLightVector(const std::array<float,3>  &dir  ){
       if(batches.size() > 0)
-         batches.back().directionLightVector = dir;
+         batches.back().l.directionLightVector = dir;
    }
 
    void setAmbientLight(const std::array<float,3>  &color ){
       if(batches.size() > 0)
-         batches.back().ambientLight = color;
+         batches.back().l.ambientLight = color;
    }
 
    void setPointLightColor(const std::array<float,3>  &color){
       if(batches.size() > 0)
-         batches.back().pointLightColor = color;
+         batches.back().l.pointLightColor = color;
    }
 
    void setPointLightPosition( const std::array<float,3>  &pos ){
       if(batches.size() > 0)
-         batches.back().pointLightPosition = pos;
+         batches.back().l.pointLightPosition = pos;
    }
 
    void setPointLightFalloff( const std::array<float,3>  &data){
       if(batches.size() > 0)
-         batches.back().pointLightFalloff = data;
+         batches.back().l.pointLightFalloff = data;
    }
 
    void setLights( bool data ) {
       if(batches.size() > 0)
-         batches.back().lights = data;
+         batches.back().l.lights = data;
    }
 
    ~gl_context();
@@ -430,21 +432,7 @@ public:
 
    void loadProjectionViewMatrix( const float *data );
 
-   void loadDirectionLightColor( const float *data );
-
-   void loadDirectionLightVector( const float *data );
-
-   void loadAmbientLight( const float *data );
-
-   void loadPointLightColor( const float *data );
-
-   void loadPointLightPosition( const float *data );
-
-   void loadPointLightFalloff( const float *data );
-
-
    void flush() {
-
       flushes++;
       if(batches.size() > 0)
          batches.back().draw( localFrame, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id);
