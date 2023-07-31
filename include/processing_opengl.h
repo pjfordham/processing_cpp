@@ -77,6 +77,7 @@ public:
       GLuint bufferID;
       TextureManager tm;
       gl_context *glc;
+
       scene_t scene;
       geometry_t geometry;
 
@@ -150,19 +151,8 @@ public:
       void draw( gl_framebuffer &fb ) {
 
          if (geometry.vCount != 0 ) {
-            // Push back array of Ms
-            std::vector<float> movePack;
-            // TODO don't need to do all of them
-            for (const auto& mat : geometry.move) {
-               for (int i = 0; i < 16; i++) {
-                  movePack.push_back(mat.data()[i]);
-               }
-            }
-
-            glc->loadMoveMatrix( movePack.data(), geometry.mCount );
-
+            glc->loadMoveMatrix( geometry.move, geometry.mCount );
             glc->setScene( scene );
-
             glc->drawGeometry( geometry, fb, bufferID );
          }
          geometry.vCount = 0;
@@ -447,7 +437,7 @@ public:
       shader.set_uniforms();
    }
 
-   void loadMoveMatrix( const float *data, int size = 1 );
+   void loadMoveMatrix(  const std::array<PMatrix,16> &transforms, int mCount );
 
    void loadProjectionViewMatrix( const float *data );
 

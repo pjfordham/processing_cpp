@@ -262,8 +262,14 @@ void gl_context::clearDepthBuffer(gl_framebuffer &fb) {
    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void gl_context::loadMoveMatrix( const float *data, int size ) {
-   glUniformMatrix4fv(Mmatrix, size,false, data );
+void gl_context::loadMoveMatrix( const std::array<PMatrix,16> &transforms, int mCount ) {
+   std::vector<float> movePack;
+   for (int j = 0 ; j < mCount; j++ ) {
+      for (int i = 0; i < 16; i++) {
+         movePack.push_back(transforms[j].data()[i]);
+      }
+   }
+   glUniformMatrix4fv(Mmatrix, mCount, false, movePack.data() );
 }
 
 void gl_context::loadProjectionViewMatrix( const float *data ) {
