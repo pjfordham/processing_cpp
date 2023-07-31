@@ -2,6 +2,7 @@
 #define PROCESSING_OPENGL_FRAMEBUFFER_H
 
 #include <utility>
+#include <vector>
 
 typedef unsigned int GLuint;
 
@@ -54,6 +55,8 @@ public:
       std::swap(height,x.height);
       return *this;
    }
+
+   void updatePixels( std::vector<unsigned int> &pixels, int window_width, int window_height );
 
    ~gl_framebuffer();
 

@@ -396,8 +396,8 @@ public:
    void loadPixels( std::vector<unsigned int> &pixels );
 
    // Draw our pixels into a new texture and call drawTexturedQuad over whole screen
-   void updatePixels( std::vector<unsigned int> &pixels ) {
-      draw_texture_over_framebuffer(pixels, localFrame);
+   void updatePixels( std::vector<unsigned int> &pixels) {
+      localFrame.updatePixels(pixels, window_width, window_height);
    }
 
    PTexture getTexture( int width, int height, void *pixels );
@@ -475,8 +475,6 @@ public:
    void resetShader(int kind = TRIANGLES) {
       shader( defaultShader );
    }
-
-   void draw_texture_over_framebuffer( std::vector<unsigned int> &pixels, gl_framebuffer &fb );
 
    void draw_main();
    void initVAO();

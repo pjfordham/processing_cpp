@@ -323,39 +323,3 @@ void gl_context::cleanupVAO() {
    glBindVertexArray(0);
    glDeleteVertexArrays(1, &VAO);
 }
-
-void gl_context::draw_texture_over_framebuffer(  std::vector<unsigned int> &pixels, gl_framebuffer &fb ) {
-
-   batch wholefb(width, height, this);
-   PTexture texture = wholefb.tm.getFreeBlock(window_width, window_height);
-
-   glTexSubImage2D(GL_TEXTURE_2D, 0,
-                   texture.left, texture.top,
-                   window_width, window_height,
-                   GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-
-   // Default view, projection & lighting settings are good.
-
-   // Add a quad over the whole screen
-   wholefb.geometry.vbuffer[0] = { {-1.0, -1.0}, {0,0,-1}, { texture.nleft(),  texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.geometry.vbuffer[1] = { {-1.0,  1.0}, {0,0,-1}, { texture.nleft(),  texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.geometry.vbuffer[2] = { { 1.0,  1.0}, {0,0,-1}, { texture.nright(), texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.geometry.vbuffer[3] = { { 1.0, -1.0}, {0,0,-1}, { texture.nright(), texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-
-   // Add an identitiy transform and poulate all vertecies with it
-   wholefb.geometry.move = { PMatrix::Identity() };
-   wholefb.geometry.mCount = 1;
-   
-   wholefb.geometry.tbuffer = {
-      0,0,0,0,
-   };
-   wholefb.geometry.vCount = 4;
-
-   // Add indices for quad
-   wholefb.geometry.ibuffer = {
-      0,1,2, 0,2,3,
-   };
-   wholefb.geometry.iCount = 6;
-
-   wholefb.draw( fb );
-}
