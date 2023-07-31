@@ -136,7 +136,55 @@ void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed s
 
 int frameCount = 0;
 
+SDL_Window *window = NULL;
+SDL_Renderer *renderer =NULL;
+void *glContext = NULL;
+
+void size(int _width, int _height, int mode) {
+   window = SDL_CreateWindow("Proce++ing",
+                             SDL_WINDOWPOS_UNDEFINED,
+                             SDL_WINDOWPOS_UNDEFINED,
+                             _width,
+                             _height,
+                             SDL_WINDOW_OPENGL);
+
+   if (window == nullptr) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+      abort();
+   }
+
+   // Set OpenGL attributes
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+   // Create OpenGL context
+   glContext = SDL_GL_CreateContext(window);
+   if (glContext == nullptr) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+      abort();
+   }
+
+   // Initialize GLEW
+   glewExperimental = true; // Needed for core profile
+   if (glewInit() != GLEW_OK) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
+      abort();
+   }
+
+   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
+      abort();
+   }
+
+   // Create a window
+   width = _width;
+   height = _height;
+   g = PGraphics(width, height, mode, 2.0);
+}
+
 __attribute__((weak)) int main(int argc, char* argv[]) {
+
 
    PGraphics::init();
    PFont::init();
@@ -166,6 +214,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       quit = dispatchEvents();
       if (xloop || frameCount == 0) {
          drawFrame();
+         SDL_GL_SwapWindow(window);
          frameCount++;
          zframeCount++;
       }
@@ -181,6 +230,11 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    PFont::close();
    PImage::close();
    PGraphics::close();
+
+   if (glContext)
+      SDL_GL_DeleteContext(glContext);
+   if (window)
+      SDL_DestroyWindow(window);
 
    return 0;
 }

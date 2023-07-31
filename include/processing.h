@@ -112,13 +112,7 @@ inline void loop() {
 extern int width;
 extern int height;
 
-inline void size(int _width, int _height, int mode = P2D) {
-   // Create a window
-   width = _width;
-   height = _height;
-   g = PGraphics(width, height, mode, 2.0);
-}
-
+void size(int _width, int _height, int mode = P2D);
 
 extern unsigned int *pixels; // pointer to the texture's pixel data in the desired format
 

@@ -15,16 +15,9 @@
 
 #include <fmt/core.h>
 
-struct SDL_Window;
-struct SDL_Renderer;
 struct SDL_Surface;
 
-
 class gl_context {
-
-   SDL_Window *window = NULL;
-   SDL_Renderer *renderer =NULL;
-   void *glContext = NULL;
 
    int flushes = 0;
 
@@ -241,10 +234,6 @@ public:
    gl_context& operator=(const gl_context&) = delete;
 
    gl_context& operator=(gl_context&&x) noexcept {
-      std::swap(window, x.window);
-      std::swap(renderer, x.renderer);
-      std::swap(glContext, x.glContext);
-
       std::swap(batches,x.batches);
       if (batches.size() > 0)
          batches.back().glc = this;
