@@ -22,8 +22,6 @@ struct SDL_Surface;
 
 class gl_context {
 
-   const int CAPACITY = 65536;
-
    SDL_Window *window = NULL;
    SDL_Renderer *renderer =NULL;
    void *glContext = NULL;
@@ -49,7 +47,7 @@ public:
       PVector coord;
       color fill;
    };
-   struct lighting {
+   struct scene_t {
       bool lights = false;;
       std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
       std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
@@ -57,32 +55,36 @@ public:
       std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
       std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
       std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
+      PMatrix projection_matrix = PMatrix::Identity();
+      PMatrix view_matrix = PMatrix::Identity();
+   };
+   struct geometry_t {
+      static const int CAPACITY = 65536;
+      std::array<vertex, CAPACITY> vbuffer;
+      std::array<int, CAPACITY> tbuffer;
+      unsigned int vCount = 0;
+      std::array<unsigned short, CAPACITY> ibuffer;
+      unsigned int iCount = 0;
+      std::array<PMatrix,16> move;
+      unsigned int mCount = 0;
    };
 
    struct batch {
    private:
       int width, height;
       int currentM;
-      int CAPACITY;
    public:
-      vertex *vbuffer;
-      std::vector<int> tbuffer;
-      std::vector<unsigned short> ibuffer;
-      std::vector<PMatrix> move;
       GLuint bufferID;
       TextureManager tm;
       gl_context *glc;
-      lighting l;
-      PMatrix projection_matrix = PMatrix::Identity();
-      PMatrix view_matrix = PMatrix::Identity();
+      scene_t scene;
+      geometry_t geometry;
 
-      batch(int width, int height, int CAPACITY, gl_context *glc) : tm(width * 3, height * 3) {
+      batch(int width, int height, gl_context *glc) : tm(width * 3, height * 3) {
          this->width = width;
          this->height = height;
-         this->CAPACITY = CAPACITY;
          this->glc = glc;
          bufferID = 0;
-         vbuffer = nullptr;
 
          // create the texture array
          glGenTextures(1, &bufferID);
@@ -98,13 +100,11 @@ public:
          // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
          GLubyte white[4] = { 255, 255, 255, 255 };
          glClearTexImage(bufferID, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
-
-         vbuffer = new vertex[CAPACITY];
       }
 
       batch(const batch &x) = delete;
 
-      batch(batch &&x) noexcept : batch(x.width,x.height, x.CAPACITY, x.glc) {
+      batch(batch &&x) noexcept : batch(x.width,x.height, x.glc) {
 
          *this = std::move(x);
       }
@@ -112,75 +112,63 @@ public:
       bool enqueue( const std::vector<vertex> &vertices,
                     const std::vector<unsigned short> &indices,
                     const PMatrix &move_matrix ) {
-         if (vertices.size() > CAPACITY) {
+         if (vertices.size() > geometry.CAPACITY) {
             abort();
          } else {
-            int new_size = vertices.size() + ibuffer.size();
-            if (new_size >= CAPACITY) {
+            int new_size = vertices.size() + geometry.vCount;
+            if (new_size >= geometry.CAPACITY) {
                return false;
             }
          }
-         if ( move.size() == 16) {
+         if ( geometry.mCount == geometry.move.size()) {
             return false;
          }
-         if ( move.size() > 0 && move_matrix == move.back() ) {
+         if ( geometry.mCount > 0 && move_matrix == geometry.move.back() ) {
          } else {
-            move.push_back( move_matrix );
-            currentM = move.size() - 1;
+            geometry.move[geometry.mCount] = move_matrix;
+            currentM = geometry.mCount;
+            geometry.mCount++;;
          }
 
-         int offset = tbuffer.size();
+         int offset = geometry.vCount;
 
          for (int i = 0; i < vertices.size(); ++i) {
-            vbuffer[offset + i] = vertices[i];
-            tbuffer.push_back( currentM );
+            geometry.vbuffer[offset + i] = vertices[i];
+            geometry.tbuffer[offset + i] = currentM;
          }
+         geometry.vCount += vertices.size();
+
+         int i_offset = geometry.iCount;
          for (auto index : indices) {
-            ibuffer.push_back( offset + index  );
+            geometry.ibuffer[i_offset++] = offset + index;
          }
+         geometry.iCount += indices.size();
+
          return true;
       }
 
-      void draw( gl_framebuffer &fb,GLuint VAO, GLuint vertex_buffer_id, GLuint tindex_buffer_id, GLuint index_buffer_id) {
+      void draw( gl_framebuffer &fb ) {
 
-         if (tbuffer.size() != 0 ) {
+         if (geometry.vCount != 0 ) {
             // Push back array of Ms
             std::vector<float> movePack;
-            for (const auto& mat : move) {
+            // TODO don't need to do all of them
+            for (const auto& mat : geometry.move) {
                for (int i = 0; i < 16; i++) {
                   movePack.push_back(mat.data()[i]);
                }
             }
 
-            glc->loadMoveMatrix( movePack.data(), move.size() );
-            glc->loadProjectionViewMatrix( (projection_matrix * view_matrix).data() );
+            glc->loadMoveMatrix( movePack.data(), geometry.mCount );
 
-            glc->setLights( l );
+            glc->setScene( scene );
 
-            glBindVertexArray(VAO);
-
-            glBindTexture(GL_TEXTURE_2D, bufferID);
-
-            glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, tbuffer.size() * sizeof(vertex), vbuffer );
-
-            glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
-            glBufferData(GL_ARRAY_BUFFER, tbuffer.size() * sizeof(int), tbuffer.data(), GL_STREAM_DRAW);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, ibuffer.size() * sizeof(unsigned short), ibuffer.data(), GL_STREAM_DRAW);
-
-            fb.bind();
-
-            glDrawElements(GL_TRIANGLES, ibuffer.size(), GL_UNSIGNED_SHORT, 0);
-
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-            glBindVertexArray(0);
+            glc->drawGeometry( geometry, fb, bufferID );
          }
-         ibuffer.clear();
-         tbuffer.clear();
-         move.clear();
+         geometry.vCount = 0;
+         geometry.mCount = 0;
+         geometry.iCount = 0;
+
          tm.clear();
          currentM = 0;
       }
@@ -193,17 +181,12 @@ public:
 
          std::swap(width,x.width);
          std::swap(height,x.height);
-         std::swap(move,x.move);
-         std::swap(vbuffer,x.vbuffer);
-         std::swap(tbuffer,x.tbuffer);
-         std::swap(ibuffer,x.ibuffer);
          std::swap(tm,x.tm);
 
          std::swap(bufferID,x.bufferID);
 
-         std::swap(projection_matrix,x.projection_matrix);
-         std::swap(view_matrix,x.view_matrix);
-         std::swap(l,x.l);
+         std::swap(scene,x.scene);
+         std::swap(geometry,x.geometry);
 
          std::swap(currentM,x.currentM);
 
@@ -211,7 +194,6 @@ public:
       }
 
       ~batch(){
-         delete [] vbuffer;
          if (bufferID)
             glDeleteTextures(1, &bufferID);
       }
@@ -313,14 +295,51 @@ public:
       return *this;
    }
 
-   void setLights( const lighting &l ) {
-      if (l.lights) {
-         glUniform3fv(DirectionLightColor,  1, l.directionLightColor.data() );
-         glUniform3fv(DirectionLightVector, 1, l.directionLightVector.data() );
-         glUniform3fv(AmbientLight,         1, l.ambientLight.data());
-         glUniform3fv(PointLightColor,      1, l.pointLightColor.data() );
-         glUniform3fv(PointLightPosition,   1, l.pointLightPosition.data()  );
-         glUniform3fv(PointLightFalloff,    1, l.pointLightFalloff.data() );
+
+   void drawGeometry( const geometry_t &geometry, gl_framebuffer &fb, GLuint bufferID ) {
+      glBindVertexArray(VAO);
+
+      glBindTexture(GL_TEXTURE_2D, bufferID);
+      glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+      glBufferSubData(GL_ARRAY_BUFFER, 0, geometry.vCount * sizeof(vertex), geometry.vbuffer.data() );
+
+      glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
+      glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
+
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.iCount * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
+
+      fb.bind();
+
+      #if 0
+      fmt::print("### GEOMETRY DUMP START ###\n");
+      for ( int i = 0; i < geometry.vCount; ++i ) {
+         fmt::print("{}: ", i);
+         geometry.vbuffer[i].position.print();
+      }
+      for ( int i = 0; i < geometry.iCount; ++i ) {
+         fmt::print("{}",  geometry.ibuffer[i]);
+      }
+      fmt::print("\n### GEOMETRY DUMP END   ###\n");
+      #endif
+
+      glDrawElements(GL_TRIANGLES, geometry.iCount, GL_UNSIGNED_SHORT, 0);
+
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+      glBindVertexArray(0);
+   }
+
+   void setScene( const scene_t &scene ) {
+      loadProjectionViewMatrix( (scene.projection_matrix * scene.view_matrix).data() );
+
+      if (scene.lights) {
+         glUniform3fv(DirectionLightColor,  1, scene.directionLightColor.data() );
+         glUniform3fv(DirectionLightVector, 1, scene.directionLightVector.data() );
+         glUniform3fv(AmbientLight,         1, scene.ambientLight.data());
+         glUniform3fv(PointLightColor,      1, scene.pointLightColor.data() );
+         glUniform3fv(PointLightPosition,   1, scene.pointLightPosition.data()  );
+         glUniform3fv(PointLightFalloff,    1, scene.pointLightFalloff.data() );
       } else {
          std::array<float,3> on { 1.0, 1.0, 1.0};
          std::array<float,3> off { 0.0, 0.0, 0.0};
@@ -335,47 +354,47 @@ public:
 
    void setProjectionMatrix( const PMatrix &PV ) {
       if(batches.size() > 0)
-         batches.back().projection_matrix = PV;
+         batches.back().scene.projection_matrix = PV;
    }
 
    void setViewMatrix( const PMatrix &PV ) {
       if(batches.size() > 0)
-         batches.back().view_matrix = PMatrix::FlipY() * PV ;
+         batches.back().scene.view_matrix = PMatrix::FlipY() * PV ;
    }
 
    void setDirectionLightColor(const std::array<float,3>  &color ){
       if(batches.size() > 0)
-         batches.back().l.directionLightColor = color;
+         batches.back().scene.directionLightColor = color;
    }
 
    void setDirectionLightVector(const std::array<float,3>  &dir  ){
       if(batches.size() > 0)
-         batches.back().l.directionLightVector = dir;
+         batches.back().scene.directionLightVector = dir;
    }
 
    void setAmbientLight(const std::array<float,3>  &color ){
       if(batches.size() > 0)
-         batches.back().l.ambientLight = color;
+         batches.back().scene.ambientLight = color;
    }
 
    void setPointLightColor(const std::array<float,3>  &color){
       if(batches.size() > 0)
-         batches.back().l.pointLightColor = color;
+         batches.back().scene.pointLightColor = color;
    }
 
    void setPointLightPosition( const std::array<float,3>  &pos ){
       if(batches.size() > 0)
-         batches.back().l.pointLightPosition = pos;
+         batches.back().scene.pointLightPosition = pos;
    }
 
    void setPointLightFalloff( const std::array<float,3>  &data){
       if(batches.size() > 0)
-         batches.back().l.pointLightFalloff = data;
+         batches.back().scene.pointLightFalloff = data;
    }
 
    void setLights( bool data ) {
       if(batches.size() > 0)
-         batches.back().l.lights = data;
+         batches.back().scene.lights = data;
    }
 
    ~gl_context();
@@ -435,7 +454,7 @@ public:
    void flush() {
       flushes++;
       if(batches.size() > 0)
-         batches.back().draw( localFrame, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id);
+         batches.back().draw( localFrame );
       return;
    }
 

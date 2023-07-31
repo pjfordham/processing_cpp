@@ -73,7 +73,7 @@ gl_context::gl_context(int width, int height, float aaFactor) {
       abort();
    }
 
-   batches.emplace_back( this->width, this->height, CAPACITY, this );
+   batches.emplace_back( this->width, this->height, this );
    localFrame = gl_framebuffer( this->width, this->height );
 
    glGenBuffers(1, &index_buffer_id);
@@ -275,7 +275,7 @@ void gl_context::initVAO() {
    glBindVertexArray(VAO);
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   glBufferData(GL_ARRAY_BUFFER, CAPACITY * sizeof(vertex), nullptr, GL_STREAM_DRAW);
+   glBufferData(GL_ARRAY_BUFFER, geometry_t::CAPACITY * sizeof(vertex), nullptr, GL_STREAM_DRAW);
 
    glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,position) );
    glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,normal) );
@@ -303,12 +303,12 @@ void gl_context::drawTriangles( const std::vector<vertex> &vertices,
 
    if(batches.size() > 0)
       while (!batches.back().enqueue( vertices, indices, move_matrix ) )
-         batches.back().draw(localFrame, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id );
+         batches.back().draw( localFrame );
 }
 
 void gl_context::drawTrianglesDirect( gl_framebuffer &fb ) {
    if(batches.size() > 0)
-      batches.back().draw(fb, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id );
+      batches.back().draw(fb );
 }
 
 void gl_context::cleanupVAO() {
@@ -320,7 +320,7 @@ void gl_context::cleanupVAO() {
 
 void gl_context::draw_texture_over_framebuffer(  std::vector<unsigned int> &pixels, gl_framebuffer &fb ) {
 
-   batch wholefb(width, height, 16, this);
+   batch wholefb(width, height, this);
    PTexture texture = wholefb.tm.getFreeBlock(window_width, window_height);
 
    glTexSubImage2D(GL_TEXTURE_2D, 0,
@@ -331,21 +331,25 @@ void gl_context::draw_texture_over_framebuffer(  std::vector<unsigned int> &pixe
    // Default view, projection & lighting settings are good.
 
    // Add a quad over the whole screen
-   wholefb.vbuffer[0] = { {-1.0, -1.0}, {0,0,-1}, { texture.nleft(),  texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.vbuffer[1] = { {-1.0,  1.0}, {0,0,-1}, { texture.nleft(),  texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.vbuffer[2] = { { 1.0,  1.0}, {0,0,-1}, { texture.nright(), texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
-   wholefb.vbuffer[3] = { { 1.0, -1.0}, {0,0,-1}, { texture.nright(), texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.geometry.vbuffer[0] = { {-1.0, -1.0}, {0,0,-1}, { texture.nleft(),  texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.geometry.vbuffer[1] = { {-1.0,  1.0}, {0,0,-1}, { texture.nleft(),  texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.geometry.vbuffer[2] = { { 1.0,  1.0}, {0,0,-1}, { texture.nright(), texture.nbottom(), 0},  {1.0f, 1.0f, 1.0f, 1.0f}};
+   wholefb.geometry.vbuffer[3] = { { 1.0, -1.0}, {0,0,-1}, { texture.nright(), texture.ntop(),    0},  {1.0f, 1.0f, 1.0f, 1.0f}};
 
    // Add an identitiy transform and poulate all vertecies with it
-   wholefb.move = { PMatrix::Identity() };
-   wholefb.tbuffer = {
+   wholefb.geometry.move = { PMatrix::Identity() };
+   wholefb.geometry.mCount = 1;
+   
+   wholefb.geometry.tbuffer = {
       0,0,0,0,
    };
+   wholefb.geometry.vCount = 4;
 
    // Add indices for quad
-   wholefb.ibuffer = {
+   wholefb.geometry.ibuffer = {
       0,1,2, 0,2,3,
    };
+   wholefb.geometry.iCount = 6;
 
-   wholefb.draw( fb, VAO, vertex_buffer_id, tindex_buffer_id, index_buffer_id );
+   wholefb.draw( fb );
 }
