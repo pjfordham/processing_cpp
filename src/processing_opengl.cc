@@ -37,7 +37,7 @@ gl_context::gl_context(int width, int height, float aaFactor) {
 
    bool useMainFramebuffer = false;
 
-   batches.emplace_back( this->width, this->height, this );
+   batches.emplace_back( this->width, this->height );
    localFrame = gl_framebuffer( this->width, this->height );
 
    glGenBuffers(1, &index_buffer_id);
@@ -268,12 +268,7 @@ void gl_context::drawTriangles( const std::vector<vertex> &vertices,
 
    if(batches.size() > 0)
       while (!batches.back().enqueue( vertices, indices, move_matrix ) )
-         batches.back().draw( localFrame );
-}
-
-void gl_context::drawTrianglesDirect( gl_framebuffer &fb ) {
-   if(batches.size() > 0)
-      batches.back().draw(fb );
+         batches.back().draw( this );
 }
 
 void gl_context::cleanupVAO() {

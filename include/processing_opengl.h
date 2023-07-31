@@ -69,15 +69,13 @@ public:
    public:
       GLuint bufferID;
       TextureManager tm;
-      gl_context *glc;
 
       scene_t scene;
       geometry_t geometry;
 
-      batch(int width, int height, gl_context *glc) : tm(width * 3, height * 3) {
+      batch(int width, int height) : tm(width * 3, height * 3) {
          this->width = width;
          this->height = height;
-         this->glc = glc;
          bufferID = 0;
 
          // create the texture array
@@ -98,7 +96,7 @@ public:
 
       batch(const batch &x) = delete;
 
-      batch(batch &&x) noexcept : batch(x.width,x.height, x.glc) {
+      batch(batch &&x) noexcept : batch(x.width,x.height) {
 
          *this = std::move(x);
       }
@@ -141,12 +139,12 @@ public:
          return true;
       }
 
-      void draw( gl_framebuffer &fb ) {
+      void draw( gl_context *glc ) {
 
          if (geometry.vCount != 0 ) {
             glc->loadMoveMatrix( geometry.move, geometry.mCount );
             glc->setScene( scene );
-            glc->drawGeometry( geometry, fb, bufferID );
+            glc->drawGeometry( geometry, bufferID );
          }
          geometry.vCount = 0;
          geometry.mCount = 0;
@@ -161,17 +159,12 @@ public:
       batch& operator=(batch&&x) noexcept {
 
          std::swap(currentM,x.currentM);
-
          std::swap(width,x.width);
          std::swap(height,x.height);
          std::swap(tm,x.tm);
-
          std::swap(bufferID,x.bufferID);
-
          std::swap(scene,x.scene);
          std::swap(geometry,x.geometry);
-
-         std::swap(currentM,x.currentM);
 
          return *this;
       }
@@ -235,8 +228,6 @@ public:
 
    gl_context& operator=(gl_context&&x) noexcept {
       std::swap(batches,x.batches);
-      if (batches.size() > 0)
-         batches.back().glc = this;
 
       std::swap(flushes,x.flushes);
       std::swap(localFrame,x.localFrame);
@@ -275,7 +266,7 @@ public:
    }
 
 
-   void drawGeometry( const geometry_t &geometry, gl_framebuffer &fb, GLuint bufferID ) {
+   void drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
       glBindVertexArray(VAO);
 
       glBindTexture(GL_TEXTURE_2D, bufferID);
@@ -288,7 +279,7 @@ public:
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.iCount * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
 
-      fb.bind();
+      localFrame.bind();
 
       #if 0
       fmt::print("### GEOMETRY DUMP START ###\n");
@@ -433,7 +424,7 @@ public:
    void flush() {
       flushes++;
       if(batches.size() > 0)
-         batches.back().draw( localFrame );
+         batches.back().draw( this );
       return;
    }
 
@@ -441,9 +432,7 @@ public:
                        const std::vector<unsigned short> &indices,
                        const PMatrix &move_matrix );
 
-   void drawTrianglesDirect( gl_framebuffer &fb );
-
-   int getFlushCount() const {
+    int getFlushCount() const {
       return flushes;
    }
 
