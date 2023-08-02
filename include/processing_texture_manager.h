@@ -1,14 +1,10 @@
 #ifndef PROCESSING_TEXTURE_MANAGER_H
 #define PROCESSING_TEXTURE_MANAGER_H
 
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
-
 #include <vector>
-#include <stdio.h>
 #include <algorithm>
+#include <fmt/core.h>
+
 #include "processing_math.h"
 
 class PTexture {
@@ -38,7 +34,7 @@ public:
    }
 
    void print() const {
-      fprintf(stderr,"%d %d %d %d %d (%d %d)\n", layer, left, top, right, bottom, sheet_width, sheet_height);
+      fmt::print(stderr,"{} {} {} {} {} ({} {})\n", layer, left, top, right, bottom, sheet_width, sheet_height);
    }
 
    float ntop() const {
@@ -65,36 +61,22 @@ public:
 class TextureManager {
    int width, height;
    std::vector<PTexture> free;
+   GLuint textureID = 0;
 
 public:
-   GLuint textureID = 0;
    TextureManager() : width(0), height(0) {
    }
 
-   TextureManager( int w, int h ) : width(w), height(h) {
-      if (width == 0 || height == 0)
-         return;
-      // create the texture array
-      glGenTextures(1, &textureID);
-      glBindTexture(GL_TEXTURE_2D, textureID);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-      // set texture parameters
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-      // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
-      GLubyte white[4] = { 255, 255, 255, 255 };
-      glClearTexImage(textureID, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
-      clear();
-   };
+   TextureManager( int w, int h );
 
    TextureManager(const TextureManager &x) = delete;
 
    TextureManager(TextureManager &&x) noexcept : TextureManager()  {
       *this = std::move( x );
+   }
+
+   auto getTextureID() const {
+      return textureID;
    }
 
    TextureManager& operator=(const TextureManager&) = delete;
@@ -107,10 +89,7 @@ public:
       return *this;
    }
 
-   ~TextureManager() {
-      if (textureID)
-         glDeleteTextures(1, &textureID);
-   }
+   ~TextureManager();
 
    void clear() {
       free.clear();

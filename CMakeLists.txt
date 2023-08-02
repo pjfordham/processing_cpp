@@ -24,6 +24,7 @@ add_library(Processing
   src/processing_color.cc
   src/processing_opengl.cc
   src/processing_opengl_framebuffer.cc
+  src/processing_texture_manager.cc
   src/processing_pgraphics.cc
   src/processing_pshader.cc
  )

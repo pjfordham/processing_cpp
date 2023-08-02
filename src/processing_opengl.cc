@@ -1,9 +1,9 @@
-#include "processing_opengl.h"
-
 #include <GL/glew.h>     // GLEW library header
 #include <GL/gl.h>       // OpenGL header
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
+
+#include "processing_opengl.h"
 
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
@@ -12,6 +12,61 @@
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_image.h>
 
+void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
+   glBindVertexArray(VAO);
+
+   glBindTexture(GL_TEXTURE_2D, bufferID);
+   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
+   glBufferSubData(GL_ARRAY_BUFFER, 0, geometry.vCount * sizeof(vertex), geometry.vbuffer.data() );
+
+   glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
+   glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
+
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.iCount * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
+
+   localFrame.bind();
+
+#if 0
+   fmt::print("### GEOMETRY DUMP START ###\n");
+   for ( int i = 0; i < geometry->vCount; ++i ) {
+      fmt::print("{}: ", i);
+      geometry->vbuffer[i].position.print();
+   }
+   for ( int i = 0; i < geometry->iCount; ++i ) {
+      fmt::print("{}",  geometry->ibuffer[i]);
+   }
+   fmt::print("\n### GEOMETRY DUMP END   ###\n");
+#endif
+
+   glDrawElements(GL_TRIANGLES, geometry.iCount, GL_UNSIGNED_SHORT, 0);
+
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+   glBindVertexArray(0);
+}
+
+void gl_context::setScene( const scene_t &scene ) {
+   loadProjectionViewMatrix( (scene.projection_matrix * scene.view_matrix).data() );
+
+   if (scene.lights) {
+      glUniform3fv(DirectionLightColor,  1, scene.directionLightColor.data() );
+      glUniform3fv(DirectionLightVector, 1, scene.directionLightVector.data() );
+      glUniform3fv(AmbientLight,         1, scene.ambientLight.data());
+      glUniform3fv(PointLightColor,      1, scene.pointLightColor.data() );
+      glUniform3fv(PointLightPosition,   1, scene.pointLightPosition.data()  );
+      glUniform3fv(PointLightFalloff,    1, scene.pointLightFalloff.data() );
+   } else {
+      std::array<float,3> on { 1.0, 1.0, 1.0};
+      std::array<float,3> off { 0.0, 0.0, 0.0};
+      std::array<float,3> unity { 1.0, 0.0, 0.0 };
+
+      glUniform3fv(DirectionLightColor,  1, off.data() );
+      glUniform3fv(AmbientLight,         1, on.data());
+      glUniform3fv(PointLightColor,      1, off.data());
+      glUniform3fv(PointLightFalloff,    1, unity.data() );
+   }
+}
 
 void gl_context::hint(int type) {
    switch(type) {
@@ -191,7 +246,7 @@ PTexture gl_context::getTexture( SDL_Surface *surface ) {
 
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
-   glBindTexture(GL_TEXTURE_2D, batch.tm.textureID );
+   glBindTexture(GL_TEXTURE_2D, batch.tm.getTextureID() );
    PTexture texture = batch.tm.getFreeBlock(width, height);
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    texture.left, texture.top,
@@ -203,7 +258,7 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 PTexture gl_context::getTexture( gl_context &source ) {
    PTexture texture = batch.tm.getFreeBlock(source.width, source.height);
    GLuint source_texture = source.localFrame.getColorBufferID();
-   GLuint target_texture = batch.tm.textureID;
+   GLuint target_texture = batch.tm.getTextureID();
    glCopyImageSubData(source_texture, GL_TEXTURE_2D, 0, 0, 0, 0,
                       target_texture, GL_TEXTURE_2D, 0, texture.left, texture.top, 0,
                       source.width, source.height, 1);

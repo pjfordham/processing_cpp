@@ -1,3 +1,8 @@
+#include <GL/glew.h>     // GLEW library header
+#include <GL/gl.h>       // OpenGL header
+#include <GL/glu.h>      // GLU header
+#include <GL/glut.h>
+
 #include "processing.h"
 
 #include <SDL2/SDL.h>

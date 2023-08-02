@@ -1,11 +1,6 @@
 #ifndef PROCESSING_OPENGL_H
 #define PROCESSING_OPENGL_H
 
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
-
 #include <memory>
 #include <vector>
 #include "processing_math.h"
@@ -134,7 +129,7 @@ public:
          if (geometry->vCount != 0 ) {
             glc->loadMoveMatrix( geometry->move, geometry->mCount );
             glc->setScene( scene );
-            glc->drawGeometry( *geometry, tm.textureID );
+            glc->drawGeometry( *geometry, tm.getTextureID() );
          }
          geometry->vCount = 0;
          geometry->mCount = 0;
@@ -255,61 +250,9 @@ public:
       return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).data[1];
    }
 
-   void drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
-      glBindVertexArray(VAO);
+   void drawGeometry( const geometry_t &geometry, GLuint bufferID );
 
-      glBindTexture(GL_TEXTURE_2D, bufferID);
-      glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-      glBufferSubData(GL_ARRAY_BUFFER, 0, geometry.vCount * sizeof(vertex), geometry.vbuffer.data() );
-
-      glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
-      glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
-
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.iCount * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
-
-      localFrame.bind();
-
-#if 0
-      fmt::print("### GEOMETRY DUMP START ###\n");
-      for ( int i = 0; i < geometry->vCount; ++i ) {
-         fmt::print("{}: ", i);
-         geometry->vbuffer[i].position.print();
-      }
-      for ( int i = 0; i < geometry->iCount; ++i ) {
-         fmt::print("{}",  geometry->ibuffer[i]);
-      }
-      fmt::print("\n### GEOMETRY DUMP END   ###\n");
-#endif
-
-      glDrawElements(GL_TRIANGLES, geometry.iCount, GL_UNSIGNED_SHORT, 0);
-
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-      glBindVertexArray(0);
-   }
-
-   void setScene( const scene_t &scene ) {
-      loadProjectionViewMatrix( (scene.projection_matrix * scene.view_matrix).data() );
-
-      if (scene.lights) {
-         glUniform3fv(DirectionLightColor,  1, scene.directionLightColor.data() );
-         glUniform3fv(DirectionLightVector, 1, scene.directionLightVector.data() );
-         glUniform3fv(AmbientLight,         1, scene.ambientLight.data());
-         glUniform3fv(PointLightColor,      1, scene.pointLightColor.data() );
-         glUniform3fv(PointLightPosition,   1, scene.pointLightPosition.data()  );
-         glUniform3fv(PointLightFalloff,    1, scene.pointLightFalloff.data() );
-      } else {
-         std::array<float,3> on { 1.0, 1.0, 1.0};
-         std::array<float,3> off { 0.0, 0.0, 0.0};
-         std::array<float,3> unity { 1.0, 0.0, 0.0 };
-
-         glUniform3fv(DirectionLightColor,  1, off.data() );
-         glUniform3fv(AmbientLight,         1, on.data());
-         glUniform3fv(PointLightColor,      1, off.data());
-         glUniform3fv(PointLightFalloff,    1, unity.data() );
-      }
-   }
+   void setScene( const scene_t &scene );
 
    void setProjectionMatrix( const PMatrix &PV ) {
       batch.scene.projection_matrix = PV;
