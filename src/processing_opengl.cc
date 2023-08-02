@@ -26,7 +26,7 @@ void gl_context::hint(int type) {
    }
 }
 
-gl_context::gl_context(int width, int height, float aaFactor) {
+gl_context::gl_context(int width, int height, float aaFactor) : batch( width * aaFactor, height * aaFactor ) {
    this->aaFactor = aaFactor;
    this->width = width * aaFactor;
    this->height = height * aaFactor;
@@ -37,7 +37,6 @@ gl_context::gl_context(int width, int height, float aaFactor) {
 
    bool useMainFramebuffer = false;
 
-   batches.emplace_back( this->width, this->height );
    localFrame = gl_framebuffer( this->width, this->height );
 
    glGenBuffers(1, &index_buffer_id);
@@ -192,8 +191,8 @@ PTexture gl_context::getTexture( SDL_Surface *surface ) {
 
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
-   glBindTexture(GL_TEXTURE_2D, batches.back().tm.textureID );
-   PTexture texture = batches.back().tm.getFreeBlock(width, height);
+   glBindTexture(GL_TEXTURE_2D, batch.tm.textureID );
+   PTexture texture = batch.tm.getFreeBlock(width, height);
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    texture.left, texture.top,
                    width, height,
@@ -202,9 +201,9 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 }
 
 PTexture gl_context::getTexture( gl_context &source ) {
-   PTexture texture = batches.back().tm.getFreeBlock(source.width, source.height);
+   PTexture texture = batch.tm.getFreeBlock(source.width, source.height);
    GLuint source_texture = source.localFrame.getColorBufferID();
-   GLuint target_texture = batches.back().tm.textureID;
+   GLuint target_texture = batch.tm.textureID;
    glCopyImageSubData(source_texture, GL_TEXTURE_2D, 0, 0, 0, 0,
                       target_texture, GL_TEXTURE_2D, 0, texture.left, texture.top, 0,
                       source.width, source.height, 1);
@@ -267,9 +266,8 @@ void gl_context::drawTriangles( const std::vector<vertex> &vertices,
 
    if (indices.size() == 0) abort();
 
-   if(batches.size() > 0)
-      while (!batches.back().enqueue( vertices, indices, move_matrix ) )
-         batches.back().draw( this );
+   while (!batch.enqueue( vertices, indices, move_matrix ) )
+      batch.draw( this );
 }
 
 void gl_context::cleanupVAO() {

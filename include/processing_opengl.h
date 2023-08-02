@@ -6,6 +6,7 @@
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
 
+#include <memory>
 #include <vector>
 #include "processing_math.h"
 #include "processing_pshader.h"
@@ -62,7 +63,7 @@ public:
       unsigned int mCount = 0;
    };
 
-   struct batch {
+   struct batch_t {
    private:
       int width, height;
       int currentM;
@@ -70,81 +71,82 @@ public:
       TextureManager tm;
 
       scene_t scene;
-      geometry_t geometry;
+      std::unique_ptr<geometry_t> geometry;
 
-      batch(int width, int height) : tm(3 * width, 3 * height) {
+      batch_t(int width, int height) :
+         tm(3 * width, 3 * height),
+         geometry( std::make_unique<geometry_t>() ) {
+
          this->width = width;
          this->height = height;
       }
 
-      batch(const batch &x) = delete;
+      batch_t(const batch_t &x) = delete;
 
-      batch(batch &&x) noexcept : batch(x.width,x.height) {
-
+      batch_t(batch_t &&x) noexcept : batch_t(x.width,x.height) {
          *this = std::move(x);
       }
 
       bool enqueue( const std::vector<vertex> &vertices,
                     const std::vector<unsigned short> &indices,
                     const PMatrix &move_matrix ) {
-         if (vertices.size() > geometry.CAPACITY) {
+         if (vertices.size() > geometry->CAPACITY) {
             abort();
          } else {
-            int new_size = vertices.size() + geometry.vCount;
-            if (new_size >= geometry.CAPACITY) {
+            int new_size = vertices.size() + geometry->vCount;
+            if (new_size >= geometry->CAPACITY) {
                return false;
             }
-            new_size = indices.size() + geometry.iCount;
-            if (new_size >= geometry.CAPACITY) {
+            new_size = indices.size() + geometry->iCount;
+            if (new_size >= geometry->CAPACITY) {
                return false;
             }
          }
-         if ( geometry.mCount == geometry.move.size()) {
+         if ( geometry->mCount == geometry->move.size()) {
             return false;
          }
-         if ( geometry.mCount > 0 && move_matrix == geometry.move.back() ) {
+         if ( geometry->mCount > 0 && move_matrix == geometry->move.back() ) {
          } else {
-            geometry.move[geometry.mCount] = move_matrix;
-            currentM = geometry.mCount;
-            geometry.mCount++;;
+            geometry->move[geometry->mCount] = move_matrix;
+            currentM = geometry->mCount;
+            geometry->mCount++;;
          }
 
-         int offset = geometry.vCount;
+         int offset = geometry->vCount;
 
          for (int i = 0; i < vertices.size(); ++i) {
-            geometry.vbuffer[offset + i] = vertices[i];
-            geometry.tbuffer[offset + i] = currentM;
+            geometry->vbuffer[offset + i] = vertices[i];
+            geometry->tbuffer[offset + i] = currentM;
          }
-         geometry.vCount += vertices.size();
+         geometry->vCount += vertices.size();
 
-         int i_offset = geometry.iCount;
+         int i_offset = geometry->iCount;
          for (auto index : indices) {
-            geometry.ibuffer[i_offset++] = offset + index;
+            geometry->ibuffer[i_offset++] = offset + index;
          }
-         geometry.iCount += indices.size();
+         geometry->iCount += indices.size();
 
          return true;
       }
 
       void draw( gl_context *glc ) {
 
-         if (geometry.vCount != 0 ) {
-            glc->loadMoveMatrix( geometry.move, geometry.mCount );
+         if (geometry->vCount != 0 ) {
+            glc->loadMoveMatrix( geometry->move, geometry->mCount );
             glc->setScene( scene );
-            glc->drawGeometry( geometry, tm.textureID );
+            glc->drawGeometry( *geometry, tm.textureID );
          }
-         geometry.vCount = 0;
-         geometry.mCount = 0;
-         geometry.iCount = 0;
+         geometry->vCount = 0;
+         geometry->mCount = 0;
+         geometry->iCount = 0;
 
          tm.clear();
          currentM = 0;
       }
 
-      batch& operator=(const batch&) = delete;
+      batch_t& operator=(const batch_t&) = delete;
 
-      batch& operator=(batch&&x) noexcept {
-
+      batch_t& operator=(batch_t&&x) noexcept {
          std::swap(currentM,x.currentM);
          std::swap(width,x.width);
          std::swap(height,x.height);
@@ -155,13 +157,13 @@ public:
          return *this;
       }
 
-      ~batch(){
+      ~batch_t(){
       }
 
    };
 
 private:
-   std::vector<batch> batches;
+   batch_t batch;
    gl_framebuffer windowFrame;
 
    float aaFactor;
@@ -188,7 +190,7 @@ private:
    GLuint VAO;
 
 public:
-   gl_context() : width(0), height(0) {
+   gl_context() : width(0), height(0), batch(0,0) {
       index_buffer_id = 0;
       vertex_buffer_id = 0;
       tindex_buffer_id = 0;
@@ -206,7 +208,7 @@ public:
    gl_context& operator=(const gl_context&) = delete;
 
    gl_context& operator=(gl_context&&x) noexcept {
-      std::swap(batches,x.batches);
+      std::swap(batch,x.batch);
 
       std::swap(flushes,x.flushes);
       std::swap(localFrame,x.localFrame);
@@ -262,12 +264,12 @@ public:
 
 #if 0
       fmt::print("### GEOMETRY DUMP START ###\n");
-      for ( int i = 0; i < geometry.vCount; ++i ) {
+      for ( int i = 0; i < geometry->vCount; ++i ) {
          fmt::print("{}: ", i);
-         geometry.vbuffer[i].position.print();
+         geometry->vbuffer[i].position.print();
       }
-      for ( int i = 0; i < geometry.iCount; ++i ) {
-         fmt::print("{}",  geometry.ibuffer[i]);
+      for ( int i = 0; i < geometry->iCount; ++i ) {
+         fmt::print("{}",  geometry->ibuffer[i]);
       }
       fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
@@ -302,48 +304,39 @@ public:
    }
 
    void setProjectionMatrix( const PMatrix &PV ) {
-      if(batches.size() > 0)
-         batches.back().scene.projection_matrix = PV;
+      batch.scene.projection_matrix = PV;
    }
 
    void setViewMatrix( const PMatrix &PV ) {
-      if(batches.size() > 0)
-         batches.back().scene.view_matrix = PMatrix::FlipY() * PV ;
+      batch.scene.view_matrix = PMatrix::FlipY() * PV ;
    }
 
    void setDirectionLightColor(const std::array<float,3>  &color ){
-      if(batches.size() > 0)
-         batches.back().scene.directionLightColor = color;
+      batch.scene.directionLightColor = color;
    }
 
    void setDirectionLightVector(const std::array<float,3>  &dir  ){
-      if(batches.size() > 0)
-         batches.back().scene.directionLightVector = dir;
+      batch.scene.directionLightVector = dir;
    }
 
    void setAmbientLight(const std::array<float,3>  &color ){
-      if(batches.size() > 0)
-         batches.back().scene.ambientLight = color;
+      batch.scene.ambientLight = color;
    }
 
    void setPointLightColor(const std::array<float,3>  &color){
-      if(batches.size() > 0)
-         batches.back().scene.pointLightColor = color;
+      batch.scene.pointLightColor = color;
    }
 
    void setPointLightPosition( const std::array<float,3>  &pos ){
-      if(batches.size() > 0)
-         batches.back().scene.pointLightPosition = pos;
+      batch.scene.pointLightPosition = pos;
    }
 
    void setPointLightFalloff( const std::array<float,3>  &data){
-      if(batches.size() > 0)
-         batches.back().scene.pointLightFalloff = data;
+      batch.scene.pointLightFalloff = data;
    }
 
    void setLights( bool data ) {
-      if(batches.size() > 0)
-         batches.back().scene.lights = data;
+      batch.scene.lights = data;
    }
 
    ~gl_context();
@@ -402,8 +395,7 @@ public:
 
    void flush() {
       flushes++;
-      if(batches.size() > 0)
-         batches.back().draw( this );
+      batch.draw( this );
       return;
    }
 

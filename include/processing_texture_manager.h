@@ -72,6 +72,8 @@ public:
    }
 
    TextureManager( int w, int h ) : width(w), height(h) {
+      if (width == 0 || height == 0)
+         return;
       // create the texture array
       glGenTextures(1, &textureID);
       glBindTexture(GL_TEXTURE_2D, textureID);
