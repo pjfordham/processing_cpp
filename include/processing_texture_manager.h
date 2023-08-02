@@ -1,6 +1,11 @@
 #ifndef PROCESSING_TEXTURE_MANAGER_H
 #define PROCESSING_TEXTURE_MANAGER_H
 
+#include <GL/glew.h>     // GLEW library header
+#include <GL/gl.h>       // OpenGL header
+#include <GL/glu.h>      // GLU header
+#include <GL/glut.h>
+
 #include <vector>
 #include <stdio.h>
 #include <algorithm>
@@ -62,10 +67,25 @@ class TextureManager {
    std::vector<PTexture> free;
 
 public:
+   GLuint textureID = 0;
    TextureManager() : width(0), height(0) {
    }
 
    TextureManager( int w, int h ) : width(w), height(h) {
+      // create the texture array
+      glGenTextures(1, &textureID);
+      glBindTexture(GL_TEXTURE_2D, textureID);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+      // set texture parameters
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+      // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
+      GLubyte white[4] = { 255, 255, 255, 255 };
+      glClearTexImage(textureID, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
       clear();
    };
 
@@ -81,7 +101,13 @@ public:
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(free, x.free);
+      std::swap(textureID, x.textureID);
       return *this;
+   }
+
+   ~TextureManager() {
+      if (textureID)
+         glDeleteTextures(1, &textureID);
    }
 
    void clear() {

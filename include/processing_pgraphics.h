@@ -474,10 +474,10 @@ public:
       float top = y;
       float bottom = y + gfx.height;
       PTexture texture = glc.getTexture( gfx.glc );
-      drawTexturedQuad( {left, top},
-                        {right,top},
-                        {right, bottom},
-                        {left, bottom},
+      drawTexturedQuad( {left, bottom},
+                        {right,bottom},
+                        {right, top},
+                        {left, top},
                         texture , _shape.tint_color );
    }
 
@@ -909,19 +909,17 @@ public:
    }
 
    void beginDraw() {}
-   void endDraw() {}
+   void endDraw() {
+      glc.flush();
+   }
 
    void commit_draw() {
-      glc.flush();
+      endDraw();
       glc.draw_main();
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
-      PGraphics pg{ width, height, mode, aaFactor };
-      // WONT WORK
-      // pg.glc.setViewMatrix( glc.view_matrix );
-      // pg.glc.setProjectionMatrix( glc.projection_matrix );
-      return pg;
+      return { width, height, mode, aaFactor };
    }
 
 };

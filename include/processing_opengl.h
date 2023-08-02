@@ -67,31 +67,14 @@ public:
       int width, height;
       int currentM;
    public:
-      GLuint bufferID;
       TextureManager tm;
 
       scene_t scene;
       geometry_t geometry;
 
-      batch(int width, int height) : tm(width * 3, height * 3) {
+      batch(int width, int height) : tm(3 * width, 3 * height) {
          this->width = width;
          this->height = height;
-         bufferID = 0;
-
-         // create the texture array
-         glGenTextures(1, &bufferID);
-         glBindTexture(GL_TEXTURE_2D, bufferID);
-         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width * 3, this->height * 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-         // set texture parameters
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-         // Create a white OpenGL texture, this will be the default texture if we don't specify any coords
-         GLubyte white[4] = { 255, 255, 255, 255 };
-         glClearTexImage(bufferID, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
       }
 
       batch(const batch &x) = delete;
@@ -144,7 +127,7 @@ public:
          if (geometry.vCount != 0 ) {
             glc->loadMoveMatrix( geometry.move, geometry.mCount );
             glc->setScene( scene );
-            glc->drawGeometry( geometry, bufferID );
+            glc->drawGeometry( geometry, tm.textureID );
          }
          geometry.vCount = 0;
          geometry.mCount = 0;
@@ -162,7 +145,6 @@ public:
          std::swap(width,x.width);
          std::swap(height,x.height);
          std::swap(tm,x.tm);
-         std::swap(bufferID,x.bufferID);
          std::swap(scene,x.scene);
          std::swap(geometry,x.geometry);
 
@@ -170,17 +152,12 @@ public:
       }
 
       ~batch(){
-         if (bufferID)
-            glDeleteTextures(1, &bufferID);
       }
 
    };
 
 private:
-
-
    std::vector<batch> batches;
-
    gl_framebuffer windowFrame;
 
    float aaFactor;
@@ -205,8 +182,6 @@ private:
    GLuint PointLightFalloff;
 
    GLuint VAO;
-
-public:
 
 public:
    gl_context() : width(0), height(0) {
@@ -281,7 +256,7 @@ public:
 
       localFrame.bind();
 
-      #if 0
+#if 0
       fmt::print("### GEOMETRY DUMP START ###\n");
       for ( int i = 0; i < geometry.vCount; ++i ) {
          fmt::print("{}: ", i);
@@ -291,7 +266,7 @@ public:
          fmt::print("{}",  geometry.ibuffer[i]);
       }
       fmt::print("\n### GEOMETRY DUMP END   ###\n");
-      #endif
+#endif
 
       glDrawElements(GL_TRIANGLES, geometry.iCount, GL_UNSIGNED_SHORT, 0);
 
@@ -432,7 +407,7 @@ public:
                        const std::vector<unsigned short> &indices,
                        const PMatrix &move_matrix );
 
-    int getFlushCount() const {
+   int getFlushCount() const {
       return flushes;
    }
 

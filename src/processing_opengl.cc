@@ -76,19 +76,6 @@ SDL_Surface* crop_surface(SDL_Surface* surface, int max_width, int max_height) {
    return cropped_surface;
 }
 
-PTexture gl_context::getTexture( SDL_Surface *surface ) {
-   if ( surface->w > width || surface->h > height ) {
-      int new_width = std::min(surface->w, width);
-      int new_height = std::min(surface->h, height );
-      SDL_Surface *new_surface = crop_surface( surface, new_width, new_height);
-      PTexture tex = getTexture( new_surface );
-      SDL_FreeSurface( new_surface );
-      return tex;
-   } else {
-      return getTexture( surface->w, surface->h, surface->pixels );
-   }
-}
-
 void gl_context::draw_main() {
    // Already drawn directly to framebuffer so we don't need to do anything
    if (!localFrame.isMainFrame()) {
@@ -190,8 +177,22 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
    glReadPixels(0, 0, wfWidth, wfHeight, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 }
 
+PTexture gl_context::getTexture( SDL_Surface *surface ) {
+   if ( surface->w > width || surface->h > height ) {
+      int new_width = std::min(surface->w, width);
+      int new_height = std::min(surface->h, height );
+      SDL_Surface *new_surface = crop_surface( surface, new_width, new_height);
+      PTexture tex = getTexture( new_surface );
+      SDL_FreeSurface( new_surface );
+      return tex;
+   } else {
+      return getTexture( surface->w, surface->h, surface->pixels );
+   }
+}
+
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
+   glBindTexture(GL_TEXTURE_2D, batches.back().tm.textureID );
    PTexture texture = batches.back().tm.getFreeBlock(width, height);
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    texture.left, texture.top,
@@ -202,11 +203,11 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 
 PTexture gl_context::getTexture( gl_context &source ) {
    PTexture texture = batches.back().tm.getFreeBlock(source.width, source.height);
-   glBindTexture(GL_TEXTURE_2D, source.batches.back().bufferID);
-   glCopyImageSubData(source.batches.back().bufferID, GL_TEXTURE_2D, 0, 0, 0, 1,
-                      batches.back().bufferID, GL_TEXTURE, 0, texture.left, texture.top, 0,
+   GLuint source_texture = source.localFrame.getColorBufferID();
+   GLuint target_texture = batches.back().tm.textureID;
+   glCopyImageSubData(source_texture, GL_TEXTURE_2D, 0, 0, 0, 0,
+                      target_texture, GL_TEXTURE_2D, 0, texture.left, texture.top, 0,
                       source.width, source.height, 1);
-   glBindTexture(GL_TEXTURE_2D, batches.back().bufferID);
    return texture;
 }
 

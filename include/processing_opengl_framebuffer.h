@@ -12,7 +12,11 @@ class gl_framebuffer {
    int height = 0;
    GLuint depthBufferID = 0;
    GLuint colorBufferID = 0;
+
 public:
+   auto getColorBufferID() const {
+      return colorBufferID;
+   }
 
    auto getWidth() const {
       return width;
