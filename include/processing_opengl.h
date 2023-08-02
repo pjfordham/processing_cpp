@@ -15,14 +15,6 @@ struct SDL_Surface;
 
 class gl_context {
 
-   int flushes = 0;
-
-   int width;
-   int height;
-   int window_width;
-   int window_height;
-   gl_framebuffer localFrame;
-
 public:
    struct color {
       float r,g,b,a;
@@ -158,8 +150,15 @@ public:
    };
 
 private:
+   int flushes = 0;
+
+   int width;
+   int height;
+   int window_width;
+   int window_height;
+   gl_framebuffer localFrame;
+
    batch_t batch;
-   gl_framebuffer windowFrame;
 
    float aaFactor;
 
@@ -212,8 +211,6 @@ public:
       std::swap(height,x.height);
       std::swap(window_width,x.window_width);
       std::swap(window_height,x.window_height);
-
-      std::swap(windowFrame,x.windowFrame);
 
       std::swap(aaFactor,x.aaFactor);
 
@@ -294,14 +291,18 @@ public:
 
    void hint(int type);
 
-   void saveFrame(const std::string& fileName);
+   void blit( gl_framebuffer &target ) {
+      localFrame.blit( target );
+   }
 
    void loadPixels( std::vector<unsigned int> &pixels );
 
    // Draw our pixels into a new texture and call drawTexturedQuad over whole screen
    void updatePixels( std::vector<unsigned int> &pixels) {
-      localFrame.updatePixels(pixels, window_width, window_height);
-   }
+      gl_framebuffer temp(window_width, window_height, 1, SSAA);
+      temp.updatePixels( pixels );
+      temp.blit( localFrame );
+  }
 
    PTexture getTexture( int width, int height, void *pixels );
 
@@ -376,7 +377,6 @@ public:
       shader( defaultShader );
    }
 
-   void draw_main();
    void initVAO();
    void cleanupVAO();
 };

@@ -18,6 +18,7 @@ public:
 
    static void close();
 
+   gl_framebuffer windowFrame;
    PTexture currentTexture;
    int textureMode_ = IMAGE;
    gl_context glc;
@@ -55,6 +56,7 @@ public:
       std::swap(textureMode_, x.textureMode_);
       std::swap(glc, x.glc);
 
+      std::swap(windowFrame, x.windowFrame);
       std::swap(ellipse_mode, x.ellipse_mode);
       std::swap(rect_mode, x.rect_mode);
       std::swap(image_mode, x.image_mode);
@@ -90,6 +92,8 @@ public:
       this->height = height;
       this->aaFactor = aaFactor;
 
+      windowFrame = gl_framebuffer::constructMainFrame( width, height );
+
       glc.setProjectionMatrix( PMatrix::Identity() );
       glc.setViewMatrix( PMatrix::Identity() );
 
@@ -103,7 +107,9 @@ public:
 
    void save( const std::string &fileName ) {
       glc.flush();
-      glc.saveFrame( fileName );
+      gl_framebuffer frame(width, height, 1, SSAA);
+      glc.blit( frame );
+      frame.saveFrame( fileName );
    }
 
    void saveFrame( std::string fileName = "frame-####.png" ) {
@@ -913,7 +919,7 @@ public:
 
    void commit_draw() {
       endDraw();
-      glc.draw_main();
+      glc.blit( windowFrame );
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {

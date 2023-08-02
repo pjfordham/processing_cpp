@@ -59,7 +59,9 @@ enum {
    DEFAULT,
    DIAMETER,
    NORMAL,
-   IMAGE
+   IMAGE,
+   SSAA,
+   MSAA,
 };
 
 

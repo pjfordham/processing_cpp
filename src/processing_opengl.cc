@@ -81,18 +81,16 @@ void gl_context::hint(int type) {
    }
 }
 
-gl_context::gl_context(int width, int height, float aaFactor) : batch( width * aaFactor, height * aaFactor ) {
+gl_context::gl_context(int width, int height, float aaFactor) : batch( width, height ) {
    this->aaFactor = aaFactor;
-   this->width = width * aaFactor;
-   this->height = height * aaFactor;
+   this->width = width;
+   this->height = height;
    this->window_width = width;
    this->window_height = height;
 
-   windowFrame = gl_framebuffer::constructMainFrame( window_width, window_height );
-
    bool useMainFramebuffer = false;
 
-   localFrame = gl_framebuffer( this->width, this->height );
+   localFrame = gl_framebuffer( this->width, this->height, 2, MSAA );
 
    glGenBuffers(1, &index_buffer_id);
    glGenBuffers(1, &vertex_buffer_id);
@@ -128,13 +126,6 @@ SDL_Surface* crop_surface(SDL_Surface* surface, int max_width, int max_height) {
    SDL_BlitSurface(surface, &src_rect, cropped_surface, &dst_rect);
 
    return cropped_surface;
-}
-
-void gl_context::draw_main() {
-   // Already drawn directly to framebuffer so we don't need to do anything
-   if (!localFrame.isMainFrame()) {
-      localFrame.blit( windowFrame );
-   }
 }
 
 gl_context::~gl_context() {
@@ -195,40 +186,14 @@ PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
    return shader;
 }
 
-void gl_context::saveFrame(const std::string& fileName) {
-
-   int wfWidth = windowFrame.getWidth();
-   int wfHeight = windowFrame.getHeight();
-
-   gl_framebuffer frame(wfWidth, wfHeight);
-
-   localFrame.blit( frame );
-
-   // Create SDL surface from framebuffer data
-   SDL_Surface* surface = SDL_CreateRGBSurface(0, wfWidth, wfHeight,
-                                               24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
-   frame.bind();
-   glReadPixels(0, 0, wfWidth, wfHeight, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
-
-   // Save the image as PNG
-   IMG_SavePNG(surface, fileName.c_str());
-
-   // Cleanup
-   SDL_FreeSurface(surface);
-}
 
 void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
 
-   int wfWidth = windowFrame.getWidth();
-   int wfHeight = windowFrame.getHeight();
-
-   gl_framebuffer frame(wfWidth, wfHeight);
+   gl_framebuffer frame(window_width, window_height, 1, SSAA);
 
    localFrame.blit( frame );
 
-   pixels.resize(width*height);
-   frame.bind();
-   glReadPixels(0, 0, wfWidth, wfHeight, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+   frame.loadPixels( pixels );
 }
 
 PTexture gl_context::getTexture( SDL_Surface *surface ) {

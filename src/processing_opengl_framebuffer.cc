@@ -3,58 +3,122 @@
 #include <GL/glu.h>      // GLU header
 #include <GL/glut.h>
 
+#include <fstream>     // For std::ifstream
+#include <sstream>     // For std::stringstream
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_image.h>
+
 #include <fmt/core.h>
 
+#include "processing_enum.h"
 #include "processing_opengl_framebuffer.h"
 
-gl_framebuffer::gl_framebuffer(int width_, int height_)  : width(width_), height(height_) {
+gl_framebuffer::gl_framebuffer(int width_, int height_, int aaFactor_, int aaMode_)  {
+   aaFactor = aaFactor_;
+   aaMode = aaMode_;
+
+   if (aaMode == SSAA) {
+      width = aaFactor * width_;
+      height = aaFactor * height_;
+   } else {
+      width = width_;
+      height = height_;
+   }
+
    glGenFramebuffers(1, &id);
    bind();
 
+   if (aaMode == MSAA && !GLEW_EXT_framebuffer_multisample) {
+      // Multisample extension is not supported
+      abort();
+   }
+
    glGenRenderbuffers(1, &depthBufferID);
    glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
-   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, this->width, this->height);
+   if (aaMode == MSAA) {
+      glRenderbufferStorageMultisample(GL_RENDERBUFFER, aaFactor, GL_DEPTH_COMPONENT, width, height);
+   } else {
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+   }
 
    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
 
    glGenTextures(1, &colorBufferID);
-   glBindTexture(GL_TEXTURE_2D, colorBufferID);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBufferID, 0);
+   if (aaMode == MSAA) {
+      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorBufferID);
+      glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, aaFactor, GL_RGBA, width, height, GL_TRUE);
+      glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colorBufferID, 0);
+   } else {
+      glBindTexture(GL_TEXTURE_2D, colorBufferID);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBufferID, 0);
+   }
 
    auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
    if (err != GL_FRAMEBUFFER_COMPLETE) {
-      fmt::print(stderr,"OepnGL Error: %d\n",err);
+      fmt::print(stderr,"Framebuffer not complete, OpenGL Error: {}\n",err);
    }
 }
 
-void gl_framebuffer::blit(gl_framebuffer &dest) {
+GLuint gl_framebuffer::getColorBufferID() const {
+   if (aaMode == MSAA) {
+      if (textureBufferID)
+         glDeleteTextures(1, &textureBufferID);
+      gl_framebuffer frame(width, height, 1, SSAA);
+      blit( frame );
+      GLuint textureBufferID = frame.colorBufferID;
+      frame.colorBufferID = 0;
+      return textureBufferID;
+   } else {
+      return colorBufferID;
+   }
+}
+
+gl_framebuffer::~gl_framebuffer() {
+   if (depthBufferID)
+      glDeleteRenderbuffers(1, &depthBufferID);
+   if (colorBufferID)
+      glDeleteTextures(1, &colorBufferID);
+   if (textureBufferID)
+      glDeleteTextures(1, &textureBufferID);
+   if (id)
+      glDeleteFramebuffers(1, &id);
+}
+
+void gl_framebuffer::blit(gl_framebuffer &dest) const {
    glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.id);
    glBlitFramebuffer(0,0,width,height,0,0,dest.width,dest.height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
 }
 
-void gl_framebuffer::updatePixels( std::vector<unsigned int> &pixels, int window_width, int window_height ) {
-   gl_framebuffer temp(window_width, window_height);
-   temp.bind();
-   glBindTexture(GL_TEXTURE_2D, temp.colorBufferID);
+void gl_framebuffer::updatePixels( std::vector<unsigned int> &pixels ) {
+   glBindTexture(GL_TEXTURE_2D, colorBufferID);
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    0, 0,
-                   window_width, window_height,
+                   width, height,
                    GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-   temp.blit( *this );
 }
 
-gl_framebuffer::~gl_framebuffer() {
-   if (id)
-      glDeleteFramebuffers(1, &id);
-   if (depthBufferID)
-      glDeleteRenderbuffers(1, &depthBufferID);
-   if (colorBufferID)
-      glDeleteTextures(1, &colorBufferID);
+void gl_framebuffer::loadPixels( std::vector<unsigned int> &pixels ) {
+   pixels.resize(width*height);
+   bind();
+   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+}
+
+void gl_framebuffer::saveFrame(const std::string& fileName) {
+   SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height,
+                                               24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
+   bind();
+   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
+   IMG_SavePNG(surface, fileName.c_str());
+   SDL_FreeSurface(surface);
 }
 
 void gl_framebuffer::bind() {
