@@ -94,6 +94,10 @@ public:
             if (new_size >= geometry.CAPACITY) {
                return false;
             }
+            new_size = indices.size() + geometry.iCount;
+            if (new_size >= geometry.CAPACITY) {
+               return false;
+            }
          }
          if ( geometry.mCount == geometry.move.size()) {
             return false;
