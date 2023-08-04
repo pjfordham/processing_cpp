@@ -65,7 +65,7 @@ bool isClockwise(const std::vector<gl_context::vertex> &polygon) {
    int sum = (current.position.x - prev.position.x) * (current.position.y + prev.position.y);
    for( int i = 1 ; i < polygon.size() ; ++i) {
       auto current = polygon[i];
-      auto prev = polygon[i+1];
+      auto prev = polygon[i-1];
       sum += (current.position.x - prev.position.x) * (current.position.y + prev.position.y);
    }
    return sum < 0;
@@ -73,14 +73,15 @@ bool isClockwise(const std::vector<gl_context::vertex> &polygon) {
 
 std::vector<unsigned short> triangulatePolygon(const std::vector<gl_context::vertex> &polygon_) {
    std::vector<indexed_PVector> polygon;
-   int index = 0;
    if (isClockwise(polygon_)) {
-      for (auto v = polygon_.rbegin(); v != polygon_.rend(); v++ ) {
-         polygon.emplace_back( v->position, index++ );
-      }
-   } else {
+      int index = 0;
       for (auto &&vertex : polygon_) {
          polygon.emplace_back( vertex.position, index++ );
+      }
+   } else {
+      int index = polygon_.size() - 1;
+      for (auto v = polygon_.rbegin(); v != polygon_.rend(); v++ ) {
+         polygon.emplace_back( v->position, index-- );
       }
    }
 
