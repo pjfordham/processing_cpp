@@ -42,7 +42,7 @@ public:
    struct geometry_t {
       static const int CAPACITY = 65536;
       std::array<vertex, CAPACITY> vbuffer;
-      std::array<int, CAPACITY> tbuffer;
+      std::array<int, CAPACITY> tbuffer; 
       unsigned int vCount = 0;
       std::array<unsigned short, CAPACITY> ibuffer;
       unsigned int iCount = 0;
@@ -77,30 +77,29 @@ public:
       bool enqueue( const std::vector<vertex> &vertices,
                     const std::vector<unsigned short> &indices,
                     const PMatrix &move_matrix ) {
+
          if (vertices.size() > geometry->CAPACITY) {
             abort();
-         } else {
-            int new_size = vertices.size() + geometry->vCount;
-            if (new_size >= geometry->CAPACITY) {
-               return false;
-            }
-            new_size = indices.size() + geometry->iCount;
-            if (new_size >= geometry->CAPACITY) {
-               return false;
-            }
          }
-         if ( geometry->mCount == geometry->move.size()) {
+
+         if ((vertices.size() + geometry->vCount) > geometry->CAPACITY) {
             return false;
          }
-         if ( geometry->mCount > 0 && move_matrix == geometry->move.back() ) {
-         } else {
+
+         if ((indices.size() + geometry->iCount) > geometry->CAPACITY) {
+            return false;
+         }
+
+         if ( geometry->mCount == 0 || !(move_matrix == geometry->move[geometry->mCount - 1]) ) {
+            if (geometry->mCount == geometry->move.size()) {
+               return false;
+            }
             geometry->move[geometry->mCount] = move_matrix;
             currentM = geometry->mCount;
-            geometry->mCount++;;
+            geometry->mCount++;
          }
 
          int offset = geometry->vCount;
-
          for (int i = 0; i < vertices.size(); ++i) {
             geometry->vbuffer[offset + i] = vertices[i];
             geometry->tbuffer[offset + i] = currentM;
@@ -116,19 +115,21 @@ public:
          return true;
       }
 
-      void draw( gl_context *glc ) {
+      void reset() {
+         geometry->vCount = 0;
+         geometry->mCount = 0;
+         geometry->iCount = 0;
+         tm.clear();
+         currentM = 0;
+      }
 
+      void draw( gl_context *glc ) {
          if (geometry->vCount != 0 ) {
             glc->loadMoveMatrix( geometry->move, geometry->mCount );
             glc->setScene( scene );
             glc->drawGeometry( *geometry, tm.getTextureID() );
          }
-         geometry->vCount = 0;
-         geometry->mCount = 0;
-         geometry->iCount = 0;
-
-         tm.clear();
-         currentM = 0;
+         reset();
       }
 
       batch_t& operator=(const batch_t&) = delete;
