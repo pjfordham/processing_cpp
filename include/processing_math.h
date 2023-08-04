@@ -253,20 +253,24 @@ public:
    }
 
    const float *data() const {
-      if (identity) return i;
+      if (identity)
+         return i;
       else
          return m_data;
    }
 
    bool operator==(const PMatrix &x) const {
       if (identity && x.identity) return true;
-      if (x.identity) return x == *this;
-      const float *data = identity ? i : m_data;
       for (int i = 0 ; i< 16 ; i++ ) {
-         if (data[i] != x.m_data[i])
+         if (data()[i] != x.data()[i]) {
             return false;
+         }
       }
       return true;
+   }
+
+   bool operator!=(const PMatrix &x) const {
+      return !(*this == x);
    }
 
 private:
