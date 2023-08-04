@@ -16,8 +16,9 @@ void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
    glBindVertexArray(VAO);
 
    glBindTexture(GL_TEXTURE_2D, bufferID);
+
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   glBufferSubData(GL_ARRAY_BUFFER, 0, geometry.vCount * sizeof(vertex), geometry.vbuffer.data() );
+   glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(vertex), geometry.vbuffer.data(), GL_STREAM_DRAW );
 
    glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
@@ -243,6 +244,7 @@ void gl_context::clearDepthBuffer(gl_framebuffer &fb) {
 
 void gl_context::loadMoveMatrix( const std::array<PMatrix,16> &transforms, int mCount ) {
    std::vector<float> movePack;
+   movePack.reserve( 16 * mCount );
    for (int j = 0 ; j < mCount; j++ ) {
       for (int i = 0; i < 16; i++) {
          movePack.push_back(transforms[j].data()[i]);
@@ -262,10 +264,10 @@ void gl_context::initVAO() {
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, geometry_t::CAPACITY * sizeof(vertex), nullptr, GL_STREAM_DRAW);
 
-   glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,position) );
-   glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,normal) );
-   glVertexAttribPointer( coords_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,coord) );
-   glVertexAttribPointer( colors_attrib_id, 4, GL_FLOAT, GL_FALSE, sizeof(vertex),  (void*)offsetof(vertex,fill) );
+   glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,position) );
+   glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,normal) );
+   glVertexAttribPointer( coords_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,coord) );
+   glVertexAttribPointer( colors_attrib_id, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,fill) );
 
    glEnableVertexAttribArray(vertex_attrib_id);
    glEnableVertexAttribArray(normal_attrib_id);
