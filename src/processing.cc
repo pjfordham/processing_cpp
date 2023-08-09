@@ -4,6 +4,7 @@
 #include <GL/glut.h>
 
 #include "processing.h"
+#include "processing_profile.h"
 
 #include <SDL2/SDL.h>
 
@@ -190,12 +191,16 @@ void size(int _width, int _height, int mode) {
 
 __attribute__((weak)) int main(int argc, char* argv[]) {
 
+   Profile::Instrumentor::Get().BeginSession("main");
 
    PGraphics::init();
    PFont::init();
    PImage::init();
 
-   setup();
+   {
+      PROFILE_SCOPE("setup");
+      setup();
+   }
 
    int zframeCount = 0;
 
@@ -206,6 +211,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    bool quit = false;
 
    while (!quit) {
+      PROFILE_SCOPE("eventLoop");
       unsigned int startTicks = SDL_GetTicks();
 
       // Print the frame rate every 10 seconds
@@ -216,10 +222,19 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          frameRateClock = startTicks;
       }
 
-      quit = dispatchEvents();
+      {
+         PROFILE_SCOPE("dispatchEvents");
+         quit = dispatchEvents();
+      }
       if (xloop || frameCount == 0) {
-         drawFrame();
-         SDL_GL_SwapWindow(window);
+         {
+            PROFILE_SCOPE("drawFrame");
+            drawFrame();
+         }
+         {
+            PROFILE_SCOPE("glSwapWindow");
+            SDL_GL_SwapWindow(window);
+         }
          frameCount++;
          zframeCount++;
       }
@@ -228,6 +243,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
       // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
       if ( actualFrameTime < targetFrameTime ) {
+         PROFILE_SCOPE("vSync");
          SDL_Delay( targetFrameTime - actualFrameTime);
       }
    }
@@ -240,6 +256,8 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       SDL_GL_DeleteContext(glContext);
    if (window)
       SDL_DestroyWindow(window);
+
+   Profile::Instrumentor::Get().EndSession();
 
    return 0;
 }

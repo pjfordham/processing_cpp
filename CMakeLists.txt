@@ -41,6 +41,7 @@ install(FILES
   include/processing_opengl.h
   include/processing_opengl_framebuffer.h
   include/processing_pgraphics.h
+  include/processing_profile.h
   include/processing_pshader.h
   include/processing_java_compatability.h
   include/processing_texture_manager.h
