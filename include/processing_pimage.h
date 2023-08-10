@@ -44,7 +44,9 @@ public:
    }
 
    void mask(const PImage &mask) {
-      for(int i = 0; i< width * height; ++i) {
+      if ( width != mask.width || height != mask.height )
+         abort();
+      for(int i = 0; i < (width * height); ++i) {
          unsigned int p = pixels[i];
          unsigned int q = mask.pixels[i];
          pixels[i] = (p & 0x00FFFFFF) | ( (0xFF - ( q & 0xFF)) << 24 );
