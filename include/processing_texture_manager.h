@@ -7,6 +7,8 @@
 
 #include "processing_math.h"
 
+typedef unsigned int GLuint;
+
 class PTexture {
 public:
    int layer = 0;
@@ -35,22 +37,6 @@ public:
 
    void print() const {
       fmt::print(stderr,"{} {} {} {} {} ({} {})\n", layer, left, top, right, bottom, sheet_width, sheet_height);
-   }
-
-   float ntop() const {
-      return map(top,0,sheet_height, 0, 1.0);
-   }
-
-   float nbottom() const {
-      return map(bottom,0,sheet_height, 0, 1.0);
-   }
-
-   float nleft() const {
-      return map(left,0,sheet_width, 0, 1.0);
-   }
-
-   float nright() const {
-      return map(right,0,sheet_width, 0, 1.0);
    }
 
    bool operator<( const PTexture &other ) const {
