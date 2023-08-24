@@ -257,19 +257,19 @@ PShape drawRoundLine(PVector p1, PVector p2, int weight1, int weight2, color col
 
    int NUMBER_OF_VERTICES=16;
 
-   float start_angle = PVector{p2.x-p1.x,p2.y-p1.y}.heading() + HALF_PI;
+   float start_angle = (p2 - p1).heading() + HALF_PI;
 
    shape.noStroke();
    shape.fill(color1);
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p1.x + cos(i + start_angle) * weight1/2, p1.y + sin(i+start_angle) * weight1/2);
+      shape.vertex(p1.x + cos(i + start_angle) * weight1/2, p1.y + sin(i+start_angle) * weight1/2, p1.z);
    }
 
    start_angle += PI;
 
    shape.fill(color2);
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p2.x + cos(i+start_angle) * weight2/2, p2.y + sin(i+start_angle) * weight2/2);
+      shape.vertex(p2.x + cos(i+start_angle) * weight2/2, p2.y + sin(i+start_angle) * weight2/2, p2.z);
    }
    shape.endShape(CLOSE);
    return shape;
@@ -280,10 +280,10 @@ PShape drawLine(PVector p1, PVector p2, int weight1, int weight2, color color1, 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
    shape.transform( transform );
-   PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
    normal1.mult(weight1/2.0);
-   PVector normal2 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   PVector normal2 = (p2 - p1).normal();
    normal2.normalize();
    normal2.mult(weight2/2.0);
 
@@ -306,18 +306,18 @@ PShape drawCappedLine(PVector p1, PVector p2, int weight1, int weight2, color co
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
    shape.transform( transform );
-   PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
    normal1.mult(weight1/2.0);
 
-   PVector normal2 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   PVector normal2 = (p2 - p1).normal();
    normal2.normalize();
    normal2.mult(weight2/2.0);
 
-   PVector end_offset1 = PVector{p2.x-p1.x,p2.y-p1.y};
+   PVector end_offset1 = (p2 - p1);
    end_offset1.normalize();
    end_offset1.mult(weight1/2.0);
-   PVector end_offset2 = PVector{p2.x-p1.x,p2.y-p1.y};
+   PVector end_offset2 = (p2 - p1);
    end_offset2.normalize();
    end_offset2.mult(weight2/2.0);
 
