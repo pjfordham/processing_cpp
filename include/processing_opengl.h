@@ -32,7 +32,7 @@ public:
       bool lights = false;;
       std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
       std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
-      std::array<float,3> ambientLight =         { 1.0, 1.0, 1.0 };
+      std::array<float,3> ambientLight =         { 0.0, 0.0, 0.0 };
       std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
       std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
       std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
@@ -42,7 +42,7 @@ public:
    struct geometry_t {
       static const int CAPACITY = 65536;
       std::array<vertex, CAPACITY> vbuffer;
-      std::array<int, CAPACITY> tbuffer; 
+      std::array<int, CAPACITY> tbuffer;
       unsigned int vCount = 0;
       std::array<unsigned short, CAPACITY> ibuffer;
       unsigned int iCount = 0;
