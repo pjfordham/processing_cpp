@@ -15,7 +15,7 @@ public:
   // constructor
   Icosahedron(){}
 
-  Icosahedron(float radius){
+  Icosahedron(float radius) : Shape3D( PVector{0,0,0} ) {
     topPent.resize(5);
     bottomPent.resize(5);
     this->radius = radius;

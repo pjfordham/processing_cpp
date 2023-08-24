@@ -335,7 +335,8 @@ struct PLine {
       float b2 = -d2.y;
       float c2 = d2.x * other.start.y - d2.y * other.start.x;
 
-      return {  (a1*c2 - a2*c1) / (a1*b2 - a2*b1), (b2*c1 - b1*c2) / (a1*b2 - a2*b1) };
+      // Z Calculation is totally wrong here
+      return {  (a1*c2 - a2*c1) / (a1*b2 - a2*b1), (b2*c1 - b1*c2) / (a1*b2 - a2*b1), other.start.z };
 
    }
 

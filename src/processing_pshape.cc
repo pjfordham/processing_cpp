@@ -60,6 +60,9 @@ int findEar(const std::vector<indexed_PVector>& polygon) {
 }
 
 bool isClockwise(const std::vector<gl_context::vertex> &polygon) {
+   if (polygon.size() < 3)
+      abort();
+
    auto current = polygon[0];
    auto prev = polygon[polygon.size()-1];
    int sum = (current.position.x - prev.position.x) * (current.position.y + prev.position.y);
@@ -356,11 +359,11 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
 
 void _line(PShape &triangles, PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
 
-   PVector normal1 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
    normal1.mult(weight1/2.0);
 
-   PVector normal2 = PVector{p2.x-p1.x,p2.y-p1.y}.normal();
+   PVector normal2 = (p2 - p1).normal();
    normal2.normalize();
    normal2.mult(weight2/2.0);
 
