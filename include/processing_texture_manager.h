@@ -19,6 +19,10 @@ public:
    int sheet_width = 0;
    int sheet_height = 0;
 
+   bool isValid() {
+      return sheet_width != 0;
+   }
+
    static PTexture circle() {
       return { 8, 0,0, 1,1,1,1  };
    }
@@ -94,8 +98,7 @@ public:
             return p;
          }
       }
-      abort();
-      return {};
+      return {}; // An invalid texture
    }
 
 };

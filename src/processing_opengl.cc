@@ -214,6 +214,10 @@ PTexture gl_context::getTexture( SDL_Surface *surface ) {
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
    glBindTexture(GL_TEXTURE_2D, batch.tm.getTextureID() );
    PTexture texture = batch.tm.getFreeBlock(width, height);
+   while( !texture.isValid() ) {
+      flush();
+      texture = batch.tm.getFreeBlock(width, height);
+   }
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    texture.left, texture.top,
                    width, height,
@@ -223,6 +227,10 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 
 PTexture gl_context::getTexture( gl_context &source ) {
    PTexture texture = batch.tm.getFreeBlock(source.width, source.height);
+   while( !texture.isValid() ) {
+      flush();
+      texture = batch.tm.getFreeBlock(source.width, source.height);
+   }
    GLuint source_texture = source.localFrame.getColorBufferID();
    GLuint target_texture = batch.tm.getTextureID();
    glCopyImageSubData(source_texture, GL_TEXTURE_2D, 0, 0, 0, 0,

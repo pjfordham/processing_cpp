@@ -61,7 +61,7 @@ int findEar(const std::vector<indexed_PVector>& polygon) {
 
 bool isClockwise(const std::vector<gl_context::vertex> &polygon) {
    if (polygon.size() < 3)
-      abort();
+      return true;
 
    auto current = polygon[0];
    auto prev = polygon[polygon.size()-1];
