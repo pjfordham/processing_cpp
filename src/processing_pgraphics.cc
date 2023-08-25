@@ -15,15 +15,19 @@ void PGraphics::close() {
    SDL_Quit();
 }
 
-void PGraphics::text(std::string text, float x, float y, float twidth, float theight) {
-   SDL_Surface *surface = currentFont.render_text(text);
+void PGraphics::text(const std::string &text, float x, float y, float twidth, float theight) {
+   PTexture texture;
+   auto existing = words.find( text );
+   if ( existing != words.end() ) {
+      texture = existing->second;
+   } else {
+      SDL_Surface *surface = currentFont.render_text(text);
+      texture = words[text] = glc.getTexture( surface );
+      SDL_FreeSurface(surface);
+   }
 
-   twidth = surface->w;
-   theight = surface->h;
-
-   PTexture texture = glc.getTexture( surface );
-
-   SDL_FreeSurface(surface);
+   twidth = texture.width();
+   theight = texture.height();
 
    // this works well enough for the Letters.cc example but it's not really general
    if ( xTextAlign == CENTER ) {

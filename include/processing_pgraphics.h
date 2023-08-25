@@ -2,6 +2,7 @@
 #define PROCESSING_PGRAPHICS_H
 
 #include <string>
+#include <unordered_map>
 
 #include "processing_math.h"
 #include "processing_utils.h"
@@ -44,6 +45,8 @@ public:
 
    std::vector<PMatrix> matrix_stack;
 
+   std::unordered_map<std::string, PTexture> words;
+
    PGraphics(const PGraphics &x) = delete;
 
    PGraphics(PGraphics &&x) noexcept {
@@ -77,6 +80,7 @@ public:
       std::swap(pixels, x.pixels);
 
       std::swap(matrix_stack, x.matrix_stack);
+      std::swap(words, x.words);
 
       return *this;
    }
@@ -301,6 +305,7 @@ public:
    }
 
    void textFont(PFont font) {
+      words.clear();
       currentFont = font;
    }
 
@@ -314,11 +319,12 @@ public:
    }
 
    void textSize(int size) {
+      words.clear();
       currentFont = createFont(currentFont.name, size);
    }
 
 
-   void text(std::string text, float x, float y, float twidth = -1, float theight = -1);
+   void text(const std::string &text, float x, float y, float twidth = -1, float theight = -1);
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
       std::string s(&c,1);
@@ -920,6 +926,7 @@ public:
    void commit_draw() {
       endDraw();
       glc.blit( windowFrame );
+      words.clear();
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
