@@ -43,10 +43,10 @@ color RANDOM_COLOR() {
    return color(random(255),random(255),random(255),255);
 }
 
-void color::print() {
+void color::print() const {
    fmt::print("R{0:#x} G{0:#x} B{0:#x} A{0:#x}\n",(int)r,(int)g,(int)b,(int)a);
 }
 
-void color::printf() {
+void color::printf() const {
    fmt::print("R{} G{} B{} A{}\n",r,g,b,a);
 }

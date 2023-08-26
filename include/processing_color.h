@@ -51,8 +51,8 @@ public:
    }
    color()  {
    }
-   void print();
-   void printf();
+   void print() const;
+   void printf() const;
 };
 
 const color DEFAULT_GRAY = color(240);
