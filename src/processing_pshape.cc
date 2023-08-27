@@ -2,7 +2,6 @@
 #include "processing_math.h"
 #include <vector>
 
-
 struct indexed_PVector : public PVector {
    unsigned short int i;
    indexed_PVector(PVector v,unsigned short i_) : PVector(v), i(i_) {}

@@ -573,11 +573,16 @@ public:
       shape( quad );
    }
 
-   void shape(const PShape &pshape, float x, float y) {
+   void shape(const PShape &pshape, float x, float y, float width, float height) {
       pushMatrix();
       translate(x,y);
+      scale(width / pshape.width, height / pshape.height);
       pshape.draw( glc, _shape.shape_matrix );
       popMatrix();
+   }
+
+   void shape(const PShape &pshape, float x, float y) {
+      shape( pshape, x, y, pshape.width, pshape.height );
    }
 
    void shape(const PShape &pshape) {

@@ -13,13 +13,14 @@ find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(CURL REQUIRED)
 find_package(fmt REQUIRED)
-
+find_package(LibXml2 REQUIRED)
 
 add_library(Processing
   src/processing.cc
   src/processing_math.cc
   src/processing_pfont.cc
   src/processing_pimage.cc
+  src/processing_pshape_svg.cc
   src/processing_pshape.cc
   src/processing_color.cc
   src/processing_opengl.cc
@@ -37,6 +38,7 @@ install(FILES
   include/processing_pfont.h
   include/processing_pimage.h
   include/processing_pshape.h
+  include/processing_pshape_svg.h
   include/processing_color.h
   include/processing_opengl.h
   include/processing_opengl_framebuffer.h
@@ -58,6 +60,7 @@ target_include_directories(Processing
   ${OPENGL_INCLUDE_DIRS}
   ${CURL_INCLUDE_DIRS}
   ${FMT_INCLUDE_DIRS}
+  ${LIBXML2_INCLUDE_DIR}
   )
 
 # Link the libraries
@@ -70,6 +73,7 @@ target_link_libraries(Processing
     ${GLEW_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${CURL_LIBRARIES}
+    LibXml2::LibXml2
     fmt::fmt
     )
 
@@ -82,9 +86,6 @@ set(skip_examples
   "examples/Basics/Shape/DisableStyle/DisableStyle.cc"
   "examples/Basics/Shape/GetChild/GetChild.cc"
   "examples/Basics/Shape/LoadDisplayOBJ/LoadDisplayOBJ.cc"
-  "examples/Basics/Shape/LoadDisplaySVG/LoadDisplaySVG.cc"
-  "examples/Basics/Shape/ScaleShape/ScaleShape.cc"
-  "examples/Basics/Shape/ShapeVertices/ShapeVertices.cc"
   "examples/Demos/Graphics/DepthSort/DepthSort.cc"
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"
   "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"

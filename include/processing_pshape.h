@@ -1,7 +1,6 @@
 #ifndef PROCESSING_PSHAPE_H
 #define PROCESSING_PSHAPE_H
 
-#include <fmt/core.h>
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_enum.h"
@@ -33,6 +32,8 @@ public:
    int style = POLYGON;
    int type = OPEN;
    int mode = IMAGE;
+   float width = 1.0;
+   float height = 1.0;
 
    color stroke_color = BLACK;
    gl_context::color fill_color = flatten_color_mode(WHITE);
@@ -70,6 +71,8 @@ public:
       std::swap(tint_color, other.tint_color);
       std::swap(stroke_weight, other.stroke_weight);
       std::swap(line_end_cap, other.line_end_cap);
+      std::swap(width, other.width);
+      std::swap(height, other.height);
       return *this;
    }
 
@@ -421,6 +424,17 @@ public:
    void draw_stroke(gl_context &glc, const PMatrix& transform) const;
    void draw_fill(gl_context &gl, const PMatrix& transform) const;
 
+   int getChildCount() const {
+      return children.size();
+   }
+
+   int getVertexCount() const {
+      return vertices.size();
+   }
+
+   PVector getVertex(int i) const {
+      return vertices[i].position;
+   }
 };
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);

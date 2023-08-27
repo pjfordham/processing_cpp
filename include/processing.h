@@ -7,6 +7,7 @@
 #include "processing_java_compatability.h"
 #include "processing_pimage.h"
 #include "processing_pshape.h"
+#include "processing_pshape_svg.h"
 #include "processing_pgraphics.h"
 #include "processing_pfont.h"
 #include "processing_time.h"
