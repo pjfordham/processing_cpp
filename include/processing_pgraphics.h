@@ -164,15 +164,13 @@ public:
       rotate(angle, PVector{1,0,0});
    }
 
-   // float screenX(float x, float y, float z = 0.0) {
-   //    PVector4 in = { x, y, z, 1.0 };
-   //    return (glc.projection_matrix * (glc.view_matrix * in)).data[0];
-   // }
+   float screenX(float x, float y, float z = 0.0) {
+      return glc.screenX(x,y,z);
+   }
 
-   // float screenY(float x, float y, float z = 0.0) {
-   //    PVector4 in = { x, y, z, 1.0 };
-   //    return (glc.projection_matrix * (glc.view_matrix * in)).data[1];
-   // }
+   float screenY(float x, float y, float z = 0.0) {
+      return glc.screenY(x,y,z);
+   }
 
    PMatrix get_projection_matrix(float fov, float a, float near, float far) {
       float f = 1 / tan(0.5 * fov);

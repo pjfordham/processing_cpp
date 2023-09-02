@@ -246,6 +246,14 @@ public:
       return *this;
    }
 
+   float screenX(float x, float y, float z) {
+      PVector4 in = { x, y, z, 1.0 };
+      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).data[0];
+   }
+   float screenY(float x, float y, float z) {
+      PVector4 in = { x, y, z, 1.0 };
+      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).data[1];
+   }
 
    void drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
       glBindVertexArray(VAO);
