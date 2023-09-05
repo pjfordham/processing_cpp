@@ -39,6 +39,10 @@ inline float bezierPoint(float a, float b, float c, float d, float t) {
       1 * t  * t  * t  * d;
 }
 
+inline float lerp(float start, float stop, float amt) {
+   return start + (stop - start) * amt;
+}
+
 class PVector {
 public:
    float x, y,z;
@@ -180,11 +184,11 @@ public:
       float dz = a.z + b.z;
       return {dx,dy,dz};
    }
-   // Method to calculate a point on a straight line between two vectors
+
    void lerp(PVector v, float amt) {
-      x = x + (v.x - x) * amt;
-      y = y + (v.y - y) * amt;
-      z = z + (v.z - z) * amt;
+      x = ::lerp(x, v.x, amt);
+      y = ::lerp(y, v.y, amt);
+      z = ::lerp(z, v.z, amt);
    }
 
    PVector operator+(const PVector &other) const {
@@ -211,6 +215,14 @@ public:
       return x == other.x && y == other.y && z == other.z;
    }
 };
+
+inline PVector lerp(PVector start, PVector end, float i) {
+   return {
+      lerp(start.x, end.x, i),
+      lerp(start.y, end.y, i),
+      lerp(start.z, end.z, i),
+   };
+}
 
 struct PVector4 {
    float data[4];
@@ -384,10 +396,6 @@ inline PMatrix RotateMatrix(const float angle, const PVector& in) {
 inline float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
    float result = (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
    return result;
-}
-
-inline float lerp(float start, float stop, float amt) {
-   return start + (stop - start) * amt;
 }
 
 inline float dist(float x1, float y1, float x2, float y2) {
