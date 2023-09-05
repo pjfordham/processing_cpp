@@ -234,7 +234,7 @@ public:
 
    void endShape(int type_ = OPEN) {
       // OPEN or CLOSE
-      if (style == POLYGON)
+      if (style == POLYGON || style == LINES)
          type = type_;
       else
          type = CLOSE;

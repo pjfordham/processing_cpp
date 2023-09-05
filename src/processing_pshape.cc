@@ -464,7 +464,7 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
 }
 
 void PShape::draw_fill(gl_context &glc, const PMatrix& transform) const {
-   if (vertices.size() > 2 && style != POINTS) {
+   if (vertices.size() > 2 && style != POINTS && style != LINES) {
       glc.drawTriangles( vertices, indices, transform * shape_matrix );
    }
 }

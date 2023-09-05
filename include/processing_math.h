@@ -318,9 +318,14 @@ public:
 struct PLine {
    PVector start, end;
 
-   PLine offset(float value) {
+   PVector normal() {
       PVector l1_norm = (end - start).normal();
       l1_norm.normalize();
+      return l1_norm;
+   }
+
+   PLine offset(float value) {
+      PVector l1_norm = normal();
       return { start + l1_norm * value , end + l1_norm * value };
    }
 
