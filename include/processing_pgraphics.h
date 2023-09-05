@@ -138,8 +138,12 @@ public:
       matrix_stack.pop_back();
    }
 
+   void translate(PVector t) {
+      _shape.shape_matrix = _shape.shape_matrix * TranslateMatrix(t);
+   }
+
    void translate(float x, float y, float z=0.0 ) {
-      _shape.shape_matrix = _shape.shape_matrix * TranslateMatrix(PVector{x,y,z});
+      translate(PVector{x,y,z});
    }
 
    void transform(const PMatrix &transform_matrix) {
