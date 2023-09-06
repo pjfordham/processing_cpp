@@ -18,7 +18,7 @@ public:
    struct vInfoExtra {
       color stroke;
       color tint;
-      int weight;
+      float weight;
    };
 
    std::vector<gl_context::vertex> vertices;
@@ -38,7 +38,7 @@ public:
    color stroke_color = BLACK;
    gl_context::color fill_color = flatten_color_mode(WHITE);
    color tint_color = WHITE;
-   int stroke_weight = 1;
+   float stroke_weight = 1.0f;
    int line_end_cap = ROUND;
 
    PShape(const PShape& other) = default;
@@ -331,7 +331,7 @@ public:
       stroke(c.r,c.g,c.b,c.a);
    }
 
-   void strokeWeight(int x) {
+   void strokeWeight(float x) {
       stroke_weight = x;
    }
 
@@ -384,7 +384,7 @@ public:
       }
    }
 
-   void setStrokeWeight(int w) {
+   void setStrokeWeight(float w) {
       for ( auto&&v : extras ) {
          v.weight = w;
       }

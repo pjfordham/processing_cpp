@@ -274,7 +274,7 @@ PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfo
    return triangle_strip;
 }
 
-PShape drawRoundLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2, const PMatrix &transform ) {
+PShape drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
@@ -300,7 +300,7 @@ PShape drawRoundLine(PVector p1, PVector p2, int weight1, int weight2, color col
    return shape;
 }
 
-PShape drawLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2, const PMatrix &transform ) {
+PShape drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
@@ -326,7 +326,7 @@ PShape drawLine(PVector p1, PVector p2, int weight1, int weight2, color color1, 
    return shape;
 }
 
-PShape drawCappedLine(PVector p1, PVector p2, int weight1, int weight2, color color1, color color2, const PMatrix &transform ) {
+PShape drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShape shape;
    shape.beginShape(CONVEX_POLYGON);
@@ -379,7 +379,7 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    return shape;
 }
 
-void _line(PShape &triangles, PVector p1, PVector p2, int weight1, int weight2, color color1, color color2 ) {
+void _line(PShape &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
 
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
