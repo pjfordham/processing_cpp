@@ -224,7 +224,7 @@ public:
    void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4) {
       float x1 = vertices.back().position.x;
       float y1 = vertices.back().position.y;
-      for (float t = 0; t <= 1; t += 0.01) {
+      for (float t = 0.01; t <= 1; t += 0.01) {
          // Compute the Bezier curve points
          float x = bezierPoint( x1, x2, x3, x4, t );
          float y = bezierPoint( y1, y2, y3, y4, t );
