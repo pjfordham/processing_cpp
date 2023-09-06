@@ -330,6 +330,10 @@ public:
 struct PLine {
    PVector start, end;
 
+   float heading() const {
+      return (end - start).heading();
+   }
+
    PVector normal() {
       PVector l1_norm = (end - start).normal();
       l1_norm.normalize();

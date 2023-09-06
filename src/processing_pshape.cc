@@ -196,14 +196,37 @@ PVector fast_ellipse_point(const PVector &center, int index, float xradius, floa
                    center.z);
 }
 
+float angularDifference(float angle1, float angle2) {
+   // Normalize angles to the range [0, 2π)
+    angle1 = fmod(angle1, 2 * M_PI);
+    angle2 = fmod(angle2, 2 * M_PI);
+
+    // Calculate the absolute angular difference, taking wrapping into account
+    float angularDifference = fabs(angle1 - angle2);
+
+    // Ensure that the angular difference is within the specified tolerance
+    if (angularDifference > M_PI) {
+        // If the difference is greater than π, consider the smaller wrapped angle
+        angularDifference = 2 * M_PI - angularDifference;
+    }
+    return angularDifference;
+}
+
+bool anglesWithinTolerance(float angle1, float angle2, float tolerance) {
+    return angularDifference(angle1, angle2)  <= tolerance;
+}
+
 PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    PLine l1{ p1, p2 };
    PLine l2{ p2, p3 };
-   PLine low_l1 = l1.offset(-half_weight);
-   PLine high_l1 = l1.offset(half_weight);
-   PLine low_l2 = l2.offset(-half_weight);
-   PLine high_l2 = l2.offset(half_weight);
-   return { high_l1.intersect(high_l2), low_l1.intersect(low_l2) };
+
+   float a = angularDifference( l1.heading(), l2.heading() );
+
+   // The distance the mitred corners are from the actual line corner position
+   float w = std::max(half_weight, 2 * ( (half_weight / sinf( PI - a )) * sinf ( a / 2)));
+
+   auto bisect = (l1.normal() + l2.normal()).normalize();
+   return { p2 + bisect * w, p2 - bisect * w };
 }
 
 PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
