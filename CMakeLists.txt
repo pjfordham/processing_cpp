@@ -7,7 +7,7 @@ project(libProcessing VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(SDL2 REQUIRED COMPONENTS main image ttf)
+find_package(SDL2 REQUIRED COMPONENTS main image)
 find_package(Freetype REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -68,7 +68,6 @@ target_link_libraries(Processing
     PUBLIC
     ${SDL2_LIBRARIES}
     -lSDL2_image
-    -lSDL2_ttf
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARIES}
     ${OPENGL_LIBRARIES}

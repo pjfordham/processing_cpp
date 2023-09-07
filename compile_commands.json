@@ -733,6 +733,12 @@
 },
 {
   "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/usr/include/SDL2 -I/usr/include/freetype2 -isystem /usr/include/libxml2 -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/Atoms.dir/examples/Pete/Atoms.cc.o -c /home/pete/github/processing_cpp/examples/Pete/Atoms.cc",
+  "file": "/home/pete/github/processing_cpp/examples/Pete/Atoms.cc",
+  "output": "CMakeFiles/Atoms.dir/examples/Pete/Atoms.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
   "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/usr/include/SDL2 -I/usr/include/freetype2 -isystem /usr/include/libxml2 -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/BezierVertex.dir/examples/Pete/BezierVertex.cc.o -c /home/pete/github/processing_cpp/examples/Pete/BezierVertex.cc",
   "file": "/home/pete/github/processing_cpp/examples/Pete/BezierVertex.cc",
   "output": "CMakeFiles/BezierVertex.dir/examples/Pete/BezierVertex.cc.o"
@@ -766,6 +772,12 @@
   "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/usr/include/SDL2 -I/usr/include/freetype2 -isystem /usr/include/libxml2 -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/Fireworks.dir/examples/Pete/Fireworks.cc.o -c /home/pete/github/processing_cpp/examples/Pete/Fireworks.cc",
   "file": "/home/pete/github/processing_cpp/examples/Pete/Fireworks.cc",
   "output": "CMakeFiles/Fireworks.dir/examples/Pete/Fireworks.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/usr/include/SDL2 -I/usr/include/freetype2 -isystem /usr/include/libxml2 -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/Font.dir/examples/Pete/Font.cc.o -c /home/pete/github/processing_cpp/examples/Pete/Font.cc",
+  "file": "/home/pete/github/processing_cpp/examples/Pete/Font.cc",
+  "output": "CMakeFiles/Font.dir/examples/Pete/Font.cc.o"
 },
 {
   "directory": "/home/pete/github/processing_cpp/release",

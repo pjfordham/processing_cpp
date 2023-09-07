@@ -21,9 +21,8 @@ void PGraphics::text(const std::string &text, float x, float y, float twidth, fl
    if ( existing != words.end() ) {
       texture = existing->second;
    } else {
-      SDL_Surface *surface = currentFont.render_text(text);
-      texture = words[text] = glc.getTexture( surface );
-      SDL_FreeSurface(surface);
+      PImage image = currentFont.render_as_pimage(text);
+      texture = words[text] = glc.getTexture( image.width, image.height, image.pixels );
    }
 
    twidth = texture.width();

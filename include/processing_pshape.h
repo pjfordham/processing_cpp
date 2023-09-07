@@ -132,6 +132,10 @@ public:
       shape_matrix = shape_matrix * ScaleMatrix(PVector{x,y,z});
    }
 
+   void scale(float x) {
+      scale(x,x,x);
+   }
+
    void transform(const PMatrix &transform) {
       shape_matrix = transform;
    }
