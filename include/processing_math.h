@@ -30,13 +30,21 @@ inline float random(float max) {
 }
 
 
-inline float bezierPoint(float a, float b, float c, float d, float t) {
+inline float bezierPointCubic(float a, float b, float c, float d, float t) {
    float t_ = 1 - t;
    return
       1 * t_ * t_ * t_ * a +
       3 * t_ * t_ * t  * b +
       3 * t_ * t  * t  * c +
       1 * t  * t  * t  * d;
+}
+
+inline float bezierPointQuadratic(float a, float b, float c, float t) {
+   float t_ = 1 - t;
+   return
+      t_ * t_ * a +
+      2 * t_ * t * b +
+      t * t * c;
 }
 
 inline float lerp(float start, float stop, float amt) {

@@ -230,8 +230,19 @@ public:
       float y1 = vertices.back().position.y;
       for (float t = 0.01; t <= 1; t += 0.01) {
          // Compute the Bezier curve points
-         float x = bezierPoint( x1, x2, x3, x4, t );
-         float y = bezierPoint( y1, y2, y3, y4, t );
+         float x = bezierPointCubic( x1, x2, x3, x4, t );
+         float y = bezierPointCubic( y1, y2, y3, y4, t );
+         vertex(x, y);
+      }
+   }
+
+   void bezierVertexQuadratic(PVector control, PVector anchor2) {
+      float anchor1_x = vertices.back().position.x;
+      float anchor1_y = vertices.back().position.y;
+      for (float t = 0.01; t <= 1; t += 0.01) {
+         // Compute the Bezier curve points
+         float x = bezierPointQuadratic( anchor1_x, control.x, anchor2.x, t );
+         float y = bezierPointQuadratic( anchor1_y, control.y, anchor2.y, t );
          vertex(x, y);
       }
    }
@@ -418,7 +429,7 @@ public:
    void draw(gl_context &glc, const PMatrix& transform) const {
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.draw(glc, transform);
+            child.draw(glc, transform * shape_matrix);
          }
       } else {
          draw_fill(glc, transform);
