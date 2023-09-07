@@ -73,6 +73,12 @@ bool isClockwise(const std::vector<gl_context::vertex> &polygon) {
    return sum < 0;
 }
 
+bool PShape::isClockwise() const {
+   if ( style != POLYGON )
+      return false;
+   return ::isClockwise( vertices );
+}
+
 std::vector<unsigned short> triangulatePolygon(const std::vector<gl_context::vertex> &polygon_) {
    std::vector<indexed_PVector> polygon;
    if (isClockwise(polygon_)) {

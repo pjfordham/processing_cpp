@@ -221,6 +221,10 @@ public:
       bezierVertex( x2, y2, 0, x3, y3, 0, x4, y4, 0);
    }
 
+   void bezierVertex(PVector v2, PVector v3, PVector v4) {
+      bezierVertex( v2.x, v2.y, v2.z, v3.x, v3.y, v3.z, v4.x, v4.y, v4.z);
+   }
+
    void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4) {
       float x1 = vertices.back().position.x;
       float y1 = vertices.back().position.y;
@@ -231,6 +235,8 @@ public:
          vertex(x, y);
       }
    }
+
+   bool isClockwise() const;
 
    void endShape(int type_ = OPEN) {
       // OPEN or CLOSE
