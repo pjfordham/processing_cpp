@@ -1,16 +1,9 @@
 #include "processing_pimage.h"
-
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-
+#include <sail-c++/sail-c++.h>
 #include <curl/curl.h>
 
 void PImage::init() {
-   // initialize SDL_image
-   if (IMG_Init(IMG_INIT_JPG) != IMG_INIT_JPG) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Init JPG failed: %s\n", SDL_GetError());
-      abort();
-   }
+   sail::log::set_barrier( SAIL_LOG_LEVEL_WARNING );
    // Initialize libcurl
    curl_global_init(CURL_GLOBAL_ALL);
 }
@@ -20,47 +13,32 @@ void PImage::close() {
 }
 
 PImage::~PImage() {
-   if (surface) {
-      SDL_FreeSurface(surface);
+   if (pixels) {
+      delete [] pixels;
    }
 }
 
 PImage::PImage(const PImage &x){
    width = x.width;
    height = x.height;
-   surface = SDL_ConvertSurfaceFormat(x.surface, SDL_PIXELFORMAT_ABGR8888, 0);
-   pixels = (Uint32 *)surface->pixels;
-}
-PImage::PImage(int w, int h, int mode) : width(w), height(h){
-   surface = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_ABGR8888);
-   if (surface == NULL) {
-      abort();
-   }
-   // Clear the surface to black
-   SDL_FillRect(surface, NULL, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
-   pixels = (Uint32*)surface->pixels;
+   pixels = new uint32_t[width*height];
+   std::copy(x.pixels, x.pixels+width*height, pixels);
 }
 
-PImage::PImage(SDL_Surface *surface_) {
-   surface = SDL_ConvertSurfaceFormat(surface_, SDL_PIXELFORMAT_ABGR8888, 0);
-   if (surface == NULL) {
-      abort();
-   }
-   width = surface->w;
-   height = surface->h;
-   pixels = (Uint32*)surface->pixels;
+PImage::PImage(int w, int h, int mode) : width(w), height(h){
+   pixels = new uint32_t[width*height];
+   std::fill(pixels, pixels+width*height, color(BLACK));
 }
 
 void PImage::loadPixels() {
-   pixels = (unsigned int*)surface->pixels;
 }
 
-void PImage::convolve (const std::vector<std::vector<float>> &kernel) {
-   // Create a new surface of the same size as the original surface
-   SDL_Surface* blurred_surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h, surface->format->BitsPerPixel, surface->format->format);
+void PImage::convolve(const std::vector<std::vector<float>> &kernel) {
+   // Create a new image of the same size as the original surface
+   auto blurred = new uint32_t[width*height];
 
-   for (int y = 0; y < surface->h; y++) {
-      for (int x = 0; x < surface->w; x++) {
+   for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
          float r = 0, g = 0, b = 0, a = 0;
          float weight_sum = 0;
 
@@ -68,15 +46,14 @@ void PImage::convolve (const std::vector<std::vector<float>> &kernel) {
             for (int i = 0; i < kernel[0].size(); i++) {
                int neighbor_x = x + i - ( (kernel.size() - 1 ) / 2 );
                int neighbor_y = y + j - ( (kernel[i].size() - 1 ) / 2 );;
-               if (neighbor_x >= 0 && neighbor_x < surface->w && neighbor_y >= 0 && neighbor_y < surface->h) {
-                  Uint32 neighbor_pixel = ((Uint32*)surface->pixels)[neighbor_y * width + neighbor_x];
-                  Uint8 neighbor_r, neighbor_g, neighbor_b, neighbor_a;
-                  SDL_GetRGBA(neighbor_pixel, surface->format, &neighbor_r, &neighbor_g, &neighbor_b, &neighbor_a);
+               if (neighbor_x >= 0 && neighbor_x < width && neighbor_y >= 0 && neighbor_y < height) {
+                  uint32_t neighbor_pixel = pixels[neighbor_y * width + neighbor_x];
+                  color color(neighbor_pixel);
                   float weight = kernel[i][j];
-                  r += weight * neighbor_r;
-                  g += weight * neighbor_g;
-                  b += weight * neighbor_b;
-                  a += weight * neighbor_a;
+                  r += weight * color.r;
+                  g += weight * color.g;
+                  b += weight * color.b;
+                  a += weight * color.a;
                   weight_sum += weight;
                }
             }
@@ -87,14 +64,21 @@ void PImage::convolve (const std::vector<std::vector<float>> &kernel) {
          g /= weight_sum;
          b /= weight_sum;
          a /= weight_sum;
-         Uint32 blurred_pixel = SDL_MapRGBA(blurred_surface->format, r, g, b, a);
-         ((Uint32*)blurred_surface->pixels)[y * width + x] = blurred_pixel;
+         blurred[y * width + x] = color(r, g, b, a);
       }
    }
 
    // Replace the original surface with the blurred surface
-   SDL_FreeSurface(surface);
-   surface = blurred_surface;
+   delete [] pixels;
+   pixels = blurred;
+}
+
+static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+    size_t realsize = size * nmemb;
+    auto* response = static_cast<std::vector<unsigned char>*>(userdata);
+    response->insert(response->end(), ptr, ptr + realsize);
+    return realsize;
 }
 
 PImage loadImage(const char *URL)
@@ -109,22 +93,34 @@ PImage loadImage(const char *URL)
    // Perform the request
    CURLcode res = curl_easy_perform(curl);
 
-   SDL_Surface *loaded;
+   sail::image image = [&] {
+      if (res == CURLE_OK) {
+         // Load the image from the response data
+         sail::image_input image_input(response_body.data(), response_body.size());
+         curl_easy_cleanup(curl);
+         return image_input.next_frame();
+      } else {
+         // If it didn't download check the local filesystem
+         using namespace std::literals;
+         return sail::image(("data/"s + URL).c_str());
+      } } ();
 
-   if (res == CURLE_OK) {
-      // Load the image from the response data
-      SDL_RWops* rw = SDL_RWFromConstMem(response_body.data(), response_body.size());
-      loaded = IMG_Load_RW(rw, 1);
-   } else {
-      // If it didn't download check the local filesystem
-      using namespace std::literals;
-      loaded = IMG_Load(("data/"s + URL).c_str());
-   }
-   if (loaded == NULL) {
+   if (!image.is_valid()) {
       abort();
    }
-   curl_easy_cleanup(curl);
-   PImage image( loaded );
-   SDL_FreeSurface(loaded);
-   return image;
+   image.convert(SAIL_PIXEL_FORMAT_BPP32_RGBA);
+
+   PImage pimage = createImage(image.width(), image.height(),0);
+   std::memcpy(pimage.pixels, image.pixels(), image.width() * image.height()*4);
+
+   return pimage;
+}
+
+void PImage::save_as( const std::string &filename ) {
+   sail::image_output output(filename);
+   sail::image image = sail::image( (void*)pixels, SAIL_PIXEL_FORMAT_BPP32_RGBA, width, height );
+   if (!image.is_valid())
+      abort();
+   output.next_frame( image );
+   output.finish();
 }

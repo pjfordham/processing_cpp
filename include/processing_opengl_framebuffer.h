@@ -74,7 +74,7 @@ public:
 
    void blit(gl_framebuffer &dest) const ;
 
-   void saveFrame(const std::string& fileName);
+   void saveFrame(void *surface);
 
 };
 #endif

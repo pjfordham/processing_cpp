@@ -10,7 +10,6 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_image.h>
 
 void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
    glBindVertexArray(VAO);

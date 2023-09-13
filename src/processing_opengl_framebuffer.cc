@@ -8,7 +8,6 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_image.h>
 
 #include <fmt/core.h>
 
@@ -112,13 +111,9 @@ void gl_framebuffer::loadPixels( std::vector<unsigned int> &pixels ) {
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 }
 
-void gl_framebuffer::saveFrame(const std::string& fileName) {
-   SDL_Surface* surface = SDL_CreateRGBSurface(0, width, height,
-                                               24, 0x000000FF, 0x0000FF00, 0x00FF0000, 0);
+void gl_framebuffer::saveFrame(void *surface) {
    bind();
-   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, surface->pixels);
-   IMG_SavePNG(surface, fileName.c_str());
-   SDL_FreeSurface(surface);
+   glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
 }
 
 void gl_framebuffer::bind() {

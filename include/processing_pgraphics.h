@@ -113,7 +113,9 @@ public:
       glc.flush();
       gl_framebuffer frame(width, height, 1, SSAA);
       glc.blit( frame );
-      frame.saveFrame( fileName );
+      PImage image(width, height, 0);
+      frame.saveFrame( image.pixels );
+      image.save_as( fileName );
    }
 
    void saveFrame( std::string fileName = "frame-####.png" ) {
@@ -509,7 +511,7 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      PTexture texture = glc.getTexture( pimage.surface );
+      PTexture texture = glc.getTexture( pimage.width, pimage.height, pimage.pixels );
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
                        texture, _shape.tint_color  );
    }
@@ -662,7 +664,7 @@ public:
    MAKE_GLOBAL(textureMode, _shape);
 
    void texture(PImage &img) {
-      texture( glc.getTexture( img.surface ) );
+      texture( glc.getTexture( img.width, img.height, img.pixels ) );
    }
 
 

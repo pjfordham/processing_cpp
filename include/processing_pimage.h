@@ -7,24 +7,21 @@
 #include <vector>
 #include <string>
 
-struct SDL_Surface;
-
 class PImage {
 public:
    int width;
    int height;
    unsigned int *pixels;
-   SDL_Surface *surface;
 
    operator bool() const {
-      return surface;
+      return pixels;
    }
 
    static void init();
 
    static void close();
 
-   PImage() : width(0), height(0), pixels{NULL}, surface{NULL} {}
+   PImage() : width(0), height(0), pixels{NULL} {}
 
    ~PImage();
 
@@ -36,7 +33,6 @@ public:
 
    PImage& operator=(const PImage&) = delete;
    PImage& operator=(PImage&&x) noexcept {
-      std::swap(surface, x.surface);
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(pixels, x.pixels);
@@ -66,8 +62,6 @@ public:
    }
 
    PImage(int w, int h, int mode);
-
-   PImage(SDL_Surface *surface_);
 
    void loadPixels();
 
@@ -120,19 +114,11 @@ public:
          abort();
       }
    }
-
+   void save_as( const std::string &filename );
 };
 
 inline PImage createImage(int width, int height, int mode) {
    return {width,height,mode};
-}
-
-inline size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
-{
-    size_t realsize = size * nmemb;
-    auto* response = static_cast<std::vector<unsigned char>*>(userdata);
-    response->insert(response->end(), ptr, ptr + realsize);
-    return realsize;
 }
 
 PImage loadImage(const char *URL);

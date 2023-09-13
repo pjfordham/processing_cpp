@@ -7,13 +7,14 @@ project(libProcessing VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(SDL2 REQUIRED COMPONENTS main image)
+find_package(SDL2 REQUIRED COMPONENTS main)
 find_package(Freetype REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(CURL REQUIRED)
 find_package(fmt REQUIRED)
 find_package(LibXml2 REQUIRED)
+find_package(PkgConfig REQUIRED)
 
 add_library(Processing
   src/processing.cc
@@ -54,6 +55,7 @@ install(FILES
 target_include_directories(Processing
   PUBLIC
   include
+  PkgConfig::SAIL_CXX
   ${SDL2_INCLUDE_DIRS}
   ${FREETYPE_INCLUDE_DIRS}
   ${GLEW_INCLUDE_DIRS}
@@ -63,11 +65,12 @@ target_include_directories(Processing
   ${LIBXML2_INCLUDE_DIR}
   )
 
+pkg_check_modules(SAIL_CXX IMPORTED_TARGET REQUIRED libsail-c++)
 # Link the libraries
 target_link_libraries(Processing
     PUBLIC
+    PkgConfig::SAIL_CXX
     ${SDL2_LIBRARIES}
-    -lSDL2_image
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARIES}
     ${OPENGL_LIBRARIES}
