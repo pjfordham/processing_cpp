@@ -1,18 +1,9 @@
 #include "processing_pgraphics.h"
 
-#include <SDL2/SDL.h>
-
 void PGraphics::init() {
-   // Initialize SDL
-   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-      abort();
-   }
 }
 
 void PGraphics::close() {
-   // Clean up
-   SDL_Quit();
 }
 
 void PGraphics::text(const std::string &text, float x, float y, float twidth, float theight) {

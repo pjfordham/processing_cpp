@@ -8,9 +8,6 @@
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
-
 void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
    glBindVertexArray(VAO);
 
@@ -112,22 +109,6 @@ gl_context::gl_context(int width, int height, float aaFactor) : batch( width, he
    initVAO();
 }
 
-SDL_Surface* crop_surface(SDL_Surface* surface, int max_width, int max_height) {
-   // Determine the width and height of the cropped surface
-   int crop_width = SDL_min(max_width, surface->w);
-   int crop_height = SDL_min(max_height, surface->h);
-
-   // Create a new surface with the desired dimensions
-   SDL_Surface* cropped_surface = SDL_CreateRGBSurfaceWithFormat(0, crop_width, crop_height, surface->format->BitsPerPixel, surface->format->format);
-
-   // Copy the portion of the original surface that fits within the new surface
-   SDL_Rect src_rect = { 0, 0, crop_width, crop_height };
-   SDL_Rect dst_rect = { 0, 0, crop_width, crop_height };
-   SDL_BlitSurface(surface, &src_rect, cropped_surface, &dst_rect);
-
-   return cropped_surface;
-}
-
 gl_context::~gl_context() {
    cleanupVAO();
    if (index_buffer_id)
@@ -196,18 +177,6 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
    frame.loadPixels( pixels );
 }
 
-PTexture gl_context::getTexture( SDL_Surface *surface ) {
-   if ( surface->w > width || surface->h > height ) {
-      int new_width = std::min(surface->w, width);
-      int new_height = std::min(surface->h, height );
-      SDL_Surface *new_surface = crop_surface( surface, new_width, new_height);
-      PTexture tex = getTexture( new_surface );
-      SDL_FreeSurface( new_surface );
-      return tex;
-   } else {
-      return getTexture( surface->w, surface->h, surface->pixels );
-   }
-}
 
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {

@@ -193,6 +193,12 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    Profile::Instrumentor::Get().BeginSession("main");
 
+   // Initialize SDL
+   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+      abort();
+   }
+
    PGraphics::init();
    PFont::init();
    PImage::init();
@@ -256,6 +262,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       SDL_GL_DeleteContext(glContext);
    if (window)
       SDL_DestroyWindow(window);
+
+   // Clean up
+   SDL_Quit();
 
    Profile::Instrumentor::Get().EndSession();
 

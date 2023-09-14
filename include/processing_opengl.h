@@ -11,8 +11,6 @@
 
 #include <fmt/core.h>
 
-struct SDL_Surface;
-
 class gl_context {
 
 public:
@@ -306,8 +304,6 @@ public:
   }
 
    PTexture getTexture( int width, int height, void *pixels );
-
-   PTexture getTexture( SDL_Surface *surface );
 
    PTexture getTexture( gl_context &source );
 

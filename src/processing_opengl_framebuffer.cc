@@ -6,9 +6,6 @@
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
-
 #include <fmt/core.h>
 
 #include "processing_enum.h"
