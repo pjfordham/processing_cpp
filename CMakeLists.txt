@@ -7,7 +7,7 @@ project(libProcessing VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(SDL2 REQUIRED COMPONENTS main)
+find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -29,6 +29,7 @@ add_library(Processing
   src/processing_texture_manager.cc
   src/processing_pgraphics.cc
   src/processing_pshader.cc
+  glad/src/glad.c
  )
 
 install(TARGETS Processing DESTINATION lib)
@@ -55,8 +56,8 @@ install(FILES
 target_include_directories(Processing
   PUBLIC
   include
+  glad/include
   PkgConfig::SAIL_CXX
-  ${SDL2_INCLUDE_DIRS}
   ${FREETYPE_INCLUDE_DIRS}
   ${GLEW_INCLUDE_DIRS}
   ${OPENGL_INCLUDE_DIRS}
@@ -70,7 +71,7 @@ pkg_check_modules(SAIL_CXX IMPORTED_TARGET REQUIRED libsail-c++)
 target_link_libraries(Processing
     PUBLIC
     PkgConfig::SAIL_CXX
-    ${SDL2_LIBRARIES}
+    glfw
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARIES}
     ${OPENGL_LIBRARIES}

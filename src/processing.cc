@@ -1,12 +1,12 @@
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
+#include "glad/glad.h"
+#include <GLFW/glfw3.h>
+
+#include <thread>
+#include <chrono>
+#include <fmt/core.h>
 
 #include "processing.h"
 #include "processing_profile.h"
-
-#include <SDL2/SDL.h>
 
 PGraphics g;
 int setFrameRate = 60;
@@ -28,101 +28,75 @@ int keyCode = 0;
 
 bool mousePressedb = false;
 
-bool dispatchEvents() {     // Handle events
-   bool quit = false;
-   SDL_Event event;
-   while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT) {
-         quit = true;
-      } else if (event.type == SDL_MOUSEMOTION ) {
-         mouseX = event.motion.x;
-         mouseY = event.motion.y;
-         if (mousePressedb) {
-            mouseDragged();
-         } else {
-            mouseMoved();
-         }
-      } else if (event.type == SDL_MOUSEBUTTONDOWN) {
-         if (event.button.button == SDL_BUTTON_LEFT) {
-            mousePressed();
-            mousePressedb = true;
-         } else if (event.button.button == SDL_BUTTON_RIGHT) {
-         }
-      } else if (event.type == SDL_MOUSEBUTTONUP) {
-         if (event.button.button == SDL_BUTTON_LEFT) {
-            mouseReleased();
-            mousePressedb = false;
-         } else if (event.button.button == SDL_BUTTON_RIGHT) {
-         }
-      } else if (event.type == SDL_MOUSEWHEEL) {
-      } else if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
-         switch (event.key.keysym.sym) {
-         case SDLK_ESCAPE:
-            quit = true;
-            break;
-         case SDLK_UP:
-            key = CODED;
-            keyCode = UP;
-            break;
-         case SDLK_RETURN:
-         case SDLK_KP_ENTER:
-            key = CODED;
-            keyCode = ENTER;
-            break;
-         case SDLK_DOWN:
-            key = CODED;
-            keyCode = DOWN;
-            break;
-         case SDLK_RIGHT:
-            key = CODED;
-            keyCode = RIGHT;
-            break;
-         case SDLK_LEFT:
-            key = CODED;
-            keyCode = LEFT;
-            break;
-         default:
-         {
-            // Get the key code from the event
-            SDL_Keycode sdl_keycode = event.key.keysym.sym;
+void character_callback(GLFWwindow* window, unsigned int codepoint) {
+   // Handle the Unicode character codepoint here
+   // You can convert it to a character if needed
+   char character = static_cast<char>(codepoint);
+   key = character;
+   keyCode = character;
+   keyTyped();
+}
 
-            // Check if any of the modifier keys are pressed
-            SDL_Keymod mod_state = SDL_GetModState();
-            bool shift_pressed = mod_state & KMOD_SHIFT;
-
-            // Convert the key code to a string
-            const char* keyname = SDL_GetKeyName(sdl_keycode);
-
-            key = 1;
-            keyCode = 0;
-            // Get the first character of the string and convert to lowercase if shift is not pressed
-            if ( keyname[1] == 0) {
-               char zkey = keyname[0];
-               if (shift_pressed) {
-                  // Leave the key uppercase if shift is pressed
-               } else if (zkey >= 'A' && zkey <= 'Z') {
-                  // Convert to lowercase if the key is a letter
-                  zkey += 'a' - 'A';
-               }
-               key = zkey;
-               keyCode = key;
-               if (event.type == SDL_KEYDOWN)
-                  keyTyped();
-            } else if (keyname[0] == 'S' && keyname[1] == 'p') {
-               key = ' ';
-               keyCode = key;
-               if (event.type == SDL_KEYDOWN)
-                  keyTyped();
-            }
-         }
-         }
-         if (event.type == SDL_KEYDOWN)
-            keyPressed();
-         else
-            keyReleased();
+void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mods) {
+   if (action == GLFW_PRESS || action == GLFW_REPEAT || action == GLFW_RELEASE) {
+      switch(key_) {
+      case GLFW_KEY_ESCAPE:
+         glfwSetWindowShouldClose(window, GLFW_TRUE);
+         break;
+      case GLFW_KEY_UP:
+         key = CODED;
+         keyCode = UP;
+         break;
+      case GLFW_KEY_DOWN:
+         key = CODED;
+         keyCode = DOWN;
+         break;
+      case GLFW_KEY_LEFT:
+         key = CODED;
+         keyCode = LEFT;
+         break;
+      case GLFW_KEY_RIGHT:
+         key = CODED;
+         keyCode = RIGHT;
+         break;
+      case GLFW_KEY_ENTER:
+         key = CODED;
+         keyCode = ENTER;
+         break;
+      case GLFW_KEY_P:
+         keyCode = 0;
+         key = (mods & GLFW_MOD_SHIFT) ? 'P' : 'p';
+         break;
+      default:
+         keyCode = CODED;
+         key = 0;
       }
    }
-   return quit;
+   if (action == GLFW_PRESS)
+      keyPressed();
+   else
+      keyReleased();
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+      mousePressed();
+      mousePressedb = true;
+   }
+   else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+      mouseReleased();
+      mousePressedb = false;
+   }
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+   mouseX = xpos;
+   mouseY = ypos;
+   if (mousePressedb) {
+      mouseDragged();
+   } else {
+      mouseMoved();
+   }
 }
 
 void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
@@ -142,44 +116,35 @@ void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed s
 
 int frameCount = 0;
 
-SDL_Window *window = NULL;
-SDL_Renderer *renderer =NULL;
-void *glContext = NULL;
+GLFWwindow *window = NULL;
 
 void size(int _width, int _height, int mode) {
-   window = SDL_CreateWindow("Proce++ing",
-                             SDL_WINDOWPOS_UNDEFINED,
-                             SDL_WINDOWPOS_UNDEFINED,
-                             _width,
-                             _height,
-                             SDL_WINDOW_OPENGL);
 
-   if (window == nullptr) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+   // Create a GLFW window and OpenGL context
+   glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+   window = glfwCreateWindow(_width, _height, "Proce++ing", nullptr, nullptr);
+   if (!window) {
+      fmt::print("Failed to create GLFW window\n");
+      glfwTerminate();
       abort();
    }
 
-   // Set OpenGL attributes
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+   // Set input callback functions
+   glfwSetKeyCallback(window, key_callback);
+   glfwSetCharCallback(window, character_callback);
+   glfwSetCursorPosCallback(window, mouse_callback);
+   glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-   // Create OpenGL context
-   glContext = SDL_GL_CreateContext(window);
-   if (glContext == nullptr) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
-      abort();
-   }
+   glfwMakeContextCurrent(window);
 
-   // Initialize GLEW
-   glewExperimental = true; // Needed for core profile
-   if (glewInit() != GLEW_OK) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "glew init error\n");
-      abort();
-   }
-
-   if (!glewIsSupported("GL_EXT_framebuffer_object")) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "framebuffer object is not supported, you cannot use it\n");
+   // Initialize GLAD for OpenGL function loading
+   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+      fmt::print("Failed to initialize GLAD\n");
       abort();
    }
 
@@ -193,9 +158,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    Profile::Instrumentor::Get().BeginSession("main");
 
-   // Initialize SDL
-   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+   // Initialize GLFW
+   if (!glfwInit()) {
+      fmt::print("Failed to initialize GLFW\n");
       abort();
    }
 
@@ -212,26 +177,27 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    unsigned int targetFrameTime = 1000 / setFrameRate;
 
-   unsigned int frameRateClock = SDL_GetTicks();
+   auto frameRateClock = std::chrono::high_resolution_clock::now();
 
-   bool quit = false;
+   // Main rendering loop
+   while (!glfwWindowShouldClose(window)) {
 
-   while (!quit) {
       PROFILE_SCOPE("eventLoop");
-      unsigned int startTicks = SDL_GetTicks();
+
+      // Poll for and process events
+      glfwPollEvents();
+
+      auto startTicks = std::chrono::high_resolution_clock::now();
 
       // Print the frame rate every 10 seconds
-      if (startTicks - frameRateClock >= 10000) {
-         float frameRate = 1000 * (float) zframeCount / (startTicks - frameRateClock);
+      unsigned int millis = std::chrono::duration_cast<std::chrono::milliseconds>(startTicks - frameRateClock).count();
+      if (millis >= 10000) {
+         float frameRate = 1000 * (float) zframeCount / millis;
          printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.glc.getFlushCount());
          zframeCount = 0;
          frameRateClock = startTicks;
       }
 
-      {
-         PROFILE_SCOPE("dispatchEvents");
-         quit = dispatchEvents();
-      }
       if (xloop || frameCount == 0) {
          {
             PROFILE_SCOPE("drawFrame");
@@ -239,18 +205,18 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          }
          {
             PROFILE_SCOPE("glSwapWindow");
-            SDL_GL_SwapWindow(window);
+            glfwSwapBuffers(window);
          }
          frameCount++;
          zframeCount++;
       }
-      unsigned int endTicks = SDL_GetTicks();
-      unsigned int actualFrameTime = endTicks - startTicks;
+      auto endTicks = std::chrono::high_resolution_clock::now();
+      unsigned int actualFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTicks - startTicks).count();
 
       // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
       if ( actualFrameTime < targetFrameTime ) {
          PROFILE_SCOPE("vSync");
-         SDL_Delay( targetFrameTime - actualFrameTime);
+         std::this_thread::sleep_for(std::chrono::milliseconds(targetFrameTime - actualFrameTime));
       }
    }
 
@@ -258,13 +224,8 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    PImage::close();
    PGraphics::close();
 
-   if (glContext)
-      SDL_GL_DeleteContext(glContext);
-   if (window)
-      SDL_DestroyWindow(window);
-
-   // Clean up
-   SDL_Quit();
+   // Clean up resources
+   glfwTerminate();
 
    Profile::Instrumentor::Get().EndSession();
 

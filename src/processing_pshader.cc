@@ -2,10 +2,7 @@
 #include <vector>
 #include <fmt/core.h>
 
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
+#include "glad/glad.h"
 
 PShader::~PShader() {
    if (programID) {

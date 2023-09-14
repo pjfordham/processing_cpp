@@ -1,7 +1,4 @@
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
+#include "glad/glad.h"
 
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
@@ -26,7 +23,7 @@ gl_framebuffer::gl_framebuffer(int width_, int height_, int aaFactor_, int aaMod
    glGenFramebuffers(1, &id);
    bind();
 
-   if (aaMode == MSAA && !GLEW_EXT_framebuffer_multisample) {
+   if (aaMode == MSAA && !GL_EXT_framebuffer_multisample) {
       // Multisample extension is not supported
       abort();
    }

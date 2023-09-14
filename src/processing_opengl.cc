@@ -1,7 +1,4 @@
-#include <GL/glew.h>     // GLEW library header
-#include <GL/gl.h>       // OpenGL header
-#include <GL/glu.h>      // GLU header
-#include <GL/glut.h>
+#include "glad/glad.h"
 
 #include "processing_opengl.h"
 
