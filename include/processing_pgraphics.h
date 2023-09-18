@@ -49,7 +49,7 @@ public:
 
    PGraphics(const PGraphics &x) = delete;
 
-   PGraphics(PGraphics &&x) noexcept {
+   PGraphics(PGraphics &&x) noexcept : PGraphics() {
       *this = std::move(x);
    }
 

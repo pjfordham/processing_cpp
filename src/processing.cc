@@ -224,7 +224,8 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    PImage::close();
    PGraphics::close();
 
-   // Clean up resources
+   // Clean up resources, force g to be destructed before we close down GLFW
+   g = {};
    glfwTerminate();
 
    Profile::Instrumentor::Get().EndSession();

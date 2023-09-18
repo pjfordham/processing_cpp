@@ -266,8 +266,10 @@ void gl_context::drawTriangles( const std::vector<vertex> &vertices,
 }
 
 void gl_context::cleanupVAO() {
-   glBindVertexArray(VAO);
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
-   glBindVertexArray(0);
-   glDeleteVertexArrays(1, &VAO);
+   if (VAO) {
+      glBindVertexArray(VAO);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+      glBindVertexArray(0);
+      glDeleteVertexArrays(1, &VAO);
+   }
 }
