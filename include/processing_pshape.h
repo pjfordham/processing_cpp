@@ -320,6 +320,10 @@ public:
       fill(color.r,color.g,color.b,color.a);
    }
 
+   void fill(class gl_context::color color) {
+      fill_color = color;
+   }
+
    void fill(class color color, float a) {
       fill(color.r,color.g,color.b,a);
    }
@@ -379,6 +383,7 @@ public:
          tint(r,r,r,a);
       }
    }
+
    void tint(float r) {
       if (color::mode == HSB) {
          tint(r,0,0,color::scaleA);

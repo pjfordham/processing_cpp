@@ -34,5 +34,5 @@ void PGraphics::text(const std::string &text, float x, float y, float twidth, fl
    }
 
    drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
-                    texture, WHITE);
+                    texture, _shape.fill_color);
 }
