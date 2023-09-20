@@ -5,7 +5,7 @@
  * Sometimes, it can be tickled off the screen.
  */
 
-String message = "tickle";
+std::string message = "tickle";
 float x, y; // X and Y coordinates of text
 float hr, vr;  // horizontal and vertical radius of the text
 
@@ -30,8 +30,8 @@ void draw() {
   rect(0, 0, width, height);
 
   // If the cursor is over the text, change the position
-  if (abs(mouseX - x) < hr &&
-      abs(mouseY - y) < vr) {
+  if (fabs(mouseX - x) < hr &&
+      fabs(mouseY - y) < vr) {
     x += random(-5, 5);
     y += random(-5, 5);
   }

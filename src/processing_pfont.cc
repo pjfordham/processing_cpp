@@ -217,6 +217,22 @@ PShape PFont::render_as_pshape(std::string_view text) const {
    return group;
 }
 
+float PFont::textAscent() const {
+   auto font = fontMap[*this];
+   auto face = font.face;
+   return face->size->metrics.ascender / 64.0;
+}
+
+float PFont::textDescent() const {
+   auto font = fontMap[*this];
+   auto face = font.face;
+   return face->size->metrics.descender / 64.0;
+}
+
+float PFont::textWidth(std::string_view text) const {
+  auto image = render_as_pimage(text);
+  return image.width;
+}
 
 PImage PFont::render_as_pimage(std::string_view text) const {
    auto font = fontMap[*this];

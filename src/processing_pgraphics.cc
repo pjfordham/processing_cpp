@@ -19,6 +19,7 @@ void PGraphics::text(const std::string &text, float x, float y, float twidth, fl
    twidth = texture.width();
    theight = texture.height();
 
+   y = y - textAscent();
    // this works well enough for the Letters.cc example but it's not really general
    if ( xTextAlign == CENTER ) {
       x = x - twidth / 2;

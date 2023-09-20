@@ -27,6 +27,9 @@ public:
    PShape render_as_pshape(std::string_view text) const;
    PImage render_as_pimage(std::string_view text) const;
 
+   float textAscent() const;
+   float textDescent() const;
+   float textWidth(std::string_view text) const;
 };
 
 

@@ -330,6 +330,10 @@ public:
    }
 
 
+   MAKE_GLOBAL(textAscent, currentFont);
+   MAKE_GLOBAL(textDescent, currentFont);
+   MAKE_GLOBAL(textWidth, currentFont);
+
    void text(const std::string &text, float x, float y, float twidth = -1, float theight = -1);
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
