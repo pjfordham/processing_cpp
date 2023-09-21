@@ -65,13 +65,13 @@ public:
 
    PImage(int w, int h, int mode);
 
-   void loadPixels();
+   void loadPixels() const;
 
    int pixels_length() const {
       return width * height;
    }
 
-   void updatePixels() {
+   void updatePixels() const {
    }
 
    void convolve (const std::vector<std::vector<float>> &kernel);
@@ -116,7 +116,7 @@ public:
          abort();
       }
    }
-   void save_as( const std::string &filename );
+   void save_as( const std::string &filename ) const;;
 };
 
 inline PImage createImage(int width, int height, int mode) {

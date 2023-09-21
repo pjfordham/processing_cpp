@@ -18,11 +18,7 @@ PImage::~PImage() {
    }
 }
 
-PImage::PImage(const PImage &x) : width(x.width), height(x.height){
-   width = x.width;
-   height = x.height;
-   pixels = new uint32_t[width*height];
-   std::copy(x.pixels, x.pixels+width*height, pixels);
+PImage::PImage(const PImage &x) : PImage(x.width, x.height, x.pixels) {
 }
 
 PImage::PImage(int w, int h, int mode) : width(w), height(h){
@@ -35,7 +31,7 @@ PImage::PImage(int w, int h, uint32_t *pixels_) : width(w), height(h){
    std::copy(pixels_, pixels_+width*height, pixels);
 }
 
-void PImage::loadPixels() {
+void PImage::loadPixels() const {
 }
 
 void PImage::convolve(const std::vector<std::vector<float>> &kernel) {
@@ -118,7 +114,7 @@ PImage loadImage(const char *URL)
    return PImage( image.width(), image.height(), (uint32_t*)image.pixels() );
 }
 
-void PImage::save_as( const std::string &filename ) {
+void PImage::save_as( const std::string &filename ) const {
    sail::image_output output(filename);
    sail::image image = sail::image( (void*)pixels, SAIL_PIXEL_FORMAT_BPP32_RGBA, width, height );
    if (!image.is_valid())
