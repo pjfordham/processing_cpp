@@ -9,6 +9,8 @@ int scaleValue = 3;  // Multiplication factor
 int xoffset = 0;     // x-axis offset
 int yoffset = 0;     // y-axis offset
 
+void setOffset();
+
 void setup() {
   size(600, 600);
   stroke(0, 100);
@@ -20,7 +22,7 @@ void draw() {
   translate(xoffset * (-width / scaleValue), yoffset * (-height / scaleValue));
   line(10, 150, 500, 50);
   line(0, 600, 600, 0);
-  save("lines-" + yoffset + "-" + xoffset + ".png");
+  save(fmt::format("lines-{}-{}.png", yoffset, xoffset));
   setOffset();
 }
 
@@ -30,7 +32,7 @@ void setOffset() {
     xoffset = 0;
     yoffset++;
     if (yoffset == scaleValue) {
-      println("Tiles saved.");
+      fmt::print("Tiles saved.\n");
       exit();
     }
   }

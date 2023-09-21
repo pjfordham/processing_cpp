@@ -113,6 +113,8 @@ inline void loop() {
    xloop = true;
 }
 
+void exit();
+
 extern int width;
 extern int height;
 

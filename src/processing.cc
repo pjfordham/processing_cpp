@@ -41,7 +41,7 @@ void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mo
    if (action == GLFW_PRESS || action == GLFW_REPEAT || action == GLFW_RELEASE) {
       switch(key_) {
       case GLFW_KEY_ESCAPE:
-         glfwSetWindowShouldClose(window, GLFW_TRUE);
+         exit();
          break;
       case GLFW_KEY_UP:
          key = CODED;
@@ -152,6 +152,10 @@ void size(int _width, int _height, int mode) {
    width = _width;
    height = _height;
    g = PGraphics(width, height, mode, 2.0);
+}
+
+void exit() {
+   glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 __attribute__((weak)) int main(int argc, char* argv[]) {
