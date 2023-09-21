@@ -1,13 +1,13 @@
 #include "processing_utils.h"
 #include <fstream>
 
-void link(const char *link) {
+void link(std::string_view link) {
    (void)!system(fmt::format("xdg-open {} >nul 2>nul",link).c_str());
 }
 
-std::vector<std::string> loadStrings(const std::string& fileName) {
+std::vector<std::string> loadStrings(std::string_view fileName) {
    std::vector<std::string> lines;
-   std::ifstream inputFile("data/"s + fileName);
+   std::ifstream inputFile("data/"s.append(fileName));
 
    if (!inputFile.is_open()) {
       abort();
@@ -22,7 +22,7 @@ std::vector<std::string> loadStrings(const std::string& fileName) {
    return lines;
 }
 
-std::vector<std::string> split(const std::string& str, char delimiter) {
+std::vector<std::string> split(std::string_view str, char delimiter) {
    std::vector<std::string> result;
    std::string token;
 

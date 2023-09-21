@@ -2,6 +2,7 @@
 #define PROCESSING_UTILS_H
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <fmt/core.h>
 
@@ -12,9 +13,9 @@ using namespace std::literals;
 
 const char TAB = '\t';
 
-void link(const char *link);
-std::vector<std::string> split(const std::string& str, char delimiter);
-std::vector<std::string> loadStrings(const std::string& fileName);
+void link(std::string_view link);
+std::vector<std::string> split(std::string_view str, char delimiter);
+std::vector<std::string> loadStrings(std::string_view fileName);
 
 template <typename T>
 std::string nf(T num, int digits) {
