@@ -209,7 +209,7 @@ public:
 
    void vertex(PVector p, PVector t) {
 
-      if (mode != NORMAL) {
+      if (mode == IMAGE) {
          t.x /= texture_.width();
          t.y /= texture_.height();
       }

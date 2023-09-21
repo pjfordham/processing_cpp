@@ -74,7 +74,7 @@ bool isClockwise(const std::vector<gl_context::vertex> &polygon) {
 }
 
 bool PShape::isClockwise() const {
-   if ( style != POLYGON )
+   if ( style != POLYGON && style != QUADS )
       return false;
    return ::isClockwise( vertices );
 }
