@@ -31,6 +31,8 @@ public:
       *this = std::move(x);
    }
 
+   PImage(int w, int h, uint32_t *pixels_);
+
    PImage& operator=(const PImage&) = delete;
    PImage& operator=(PImage&&x) noexcept {
       std::swap(width, x.width);

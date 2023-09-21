@@ -18,7 +18,7 @@ PImage::~PImage() {
    }
 }
 
-PImage::PImage(const PImage &x){
+PImage::PImage(const PImage &x) : width(x.width), height(x.height){
    width = x.width;
    height = x.height;
    pixels = new uint32_t[width*height];
@@ -28,6 +28,11 @@ PImage::PImage(const PImage &x){
 PImage::PImage(int w, int h, int mode) : width(w), height(h){
    pixels = new uint32_t[width*height];
    std::fill(pixels, pixels+width*height, color(BLACK));
+}
+
+PImage::PImage(int w, int h, uint32_t *pixels_) : width(w), height(h){
+   pixels = new uint32_t[width*height];
+   std::copy(pixels_, pixels_+width*height, pixels);
 }
 
 void PImage::loadPixels() {
@@ -110,10 +115,7 @@ PImage loadImage(const char *URL)
    }
    image.convert(SAIL_PIXEL_FORMAT_BPP32_RGBA);
 
-   PImage pimage = createImage(image.width(), image.height(),0);
-   std::memcpy(pimage.pixels, image.pixels(), image.width() * image.height()*4);
-
-   return pimage;
+   return PImage( image.width(), image.height(), (uint32_t*)image.pixels() );
 }
 
 void PImage::save_as( const std::string &filename ) {
