@@ -19,6 +19,7 @@ find_package(PkgConfig REQUIRED)
 add_library(Processing
   src/processing.cc
   src/processing_math.cc
+  src/processing_utils.cc
   src/processing_pfont.cc
   src/processing_pimage.cc
   src/processing_pshape_svg.cc
