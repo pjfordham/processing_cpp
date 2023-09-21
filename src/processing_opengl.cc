@@ -70,6 +70,12 @@ void gl_context::hint(int type) {
    case ENABLE_DEPTH_TEST:
       glEnable(GL_DEPTH_TEST);
       break;
+   case DISABLE_DEPTH_MASK:
+      glDepthMask (GL_FALSE);
+      break;
+   case ENABLE_DEPTH_MASK:
+      glDepthMask (GL_TRUE);
+      break;
    default:
       break;
    }

@@ -1,7 +1,7 @@
 // An individual Particle
 
 class Particle {
-
+public:
   // Velocity
   PVector center;
   PVector velocity;
@@ -14,24 +14,20 @@ class Particle {
   float partSize;
 
   // A single force
-  PVector gravity = new PVector(0, 0.1);
+  PVector gravity{0, 0.1};
 
-  Particle() {
+  Particle(PImage &sprite) {
     partSize = random(10, 60);
     // The particle is a textured quad
-    part = createShape();
-    part.beginShape(QUAD);
+    part.beginShape(POLYGON);
     part.noStroke();
-    part.texture(sprite);
+    part.texture(g.glc,sprite);
     part.normal(0, 0, 1);
     part.vertex(-partSize/2, -partSize/2, 0, 0);
     part.vertex(+partSize/2, -partSize/2, sprite.width, 0);
     part.vertex(+partSize/2, +partSize/2, sprite.width, sprite.height);
     part.vertex(-partSize/2, +partSize/2, 0, sprite.height);
     part.endShape();
-
-    // Initialize center vector
-    center = new PVector();
 
     // Set the particle starting location
     rebirth(width/2, height/2);
@@ -45,7 +41,7 @@ class Particle {
     float a = random(TWO_PI);
     float speed = random(0.5, 4);
     // A velocity with random angle and magnitude
-    velocity = PVector.fromAngle(a);
+    velocity = PVector::fromAngle(a);
     velocity.mult(speed);
     // Set lifespan
     lifespan = 255;
@@ -79,4 +75,4 @@ class Particle {
     // and also update the center
     center.add(velocity);
   }
-}
+};

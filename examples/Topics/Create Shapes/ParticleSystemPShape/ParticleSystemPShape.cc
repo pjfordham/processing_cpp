@@ -3,6 +3,7 @@
  *
  * A particle system optimized for drawing using PShape
  */
+#include "ParticleSystem.h"
 
 // Particle System object
 ParticleSystem ps;
@@ -14,7 +15,7 @@ void setup() {
   // Load the image
   sprite = loadImage("sprite.png");
   // A new particle system with 10,000 particles
-  ps = new ParticleSystem(10000);
+  ps = ParticleSystem(10000,sprite);
 
   // Writing to the depth buffer is disabled to avoid rendering
   // artifacts due to the fact that the particles are semi-transparent
@@ -32,10 +33,10 @@ void draw () {
   // Set the particle system's emitter location to the mouse
   ps.setEmitter(mouseX,mouseY);
 
-  // Display frame rate
-  fill(255);
-  textSize(16);
-  text("Frame rate: " + int(frameRate),10,20);
+  // // Display frame rate
+  // fill(255);
+  // textSize(16);
+  // text("Frame rate: " + int(frameRate),10,20);
 
 }
 

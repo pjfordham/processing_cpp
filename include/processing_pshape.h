@@ -6,6 +6,7 @@
 #include "processing_enum.h"
 #include "processing_texture_manager.h"
 #include "processing_opengl.h"
+#include "processing_pimage.h"
 
 class PShape {
    PVector n = { 0.0, 0.0, 1.0 };
@@ -140,6 +141,10 @@ public:
       shape_matrix = transform;
    }
 
+   void resetMatrix() {
+      shape_matrix = PMatrix::Identity();
+   }
+
    void loadShape(const char *filename) {
    }
 
@@ -155,6 +160,10 @@ public:
 
    void texture(PTexture texure) {
       texture_ = texure;
+   }
+
+   void texture(gl_context &glc, PImage &img) {
+      texture( glc.getTexture( img.width, img.height, img.pixels ) );
    }
 
    void noTexture() {

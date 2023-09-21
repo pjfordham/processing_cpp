@@ -1,34 +1,37 @@
 // The Particle System
+#include "Particle.h"
 
 class ParticleSystem {
+public:
   // It's just an ArrayList of particle objects
-  ArrayList<Particle> particles;
+  std::vector<Particle> particles;
 
   // The PShape to group all the particle PShapes
   PShape particleShape;
 
-  ParticleSystem(int n) {
-    particles = new ArrayList<Particle>();
+  ParticleSystem() {}
+
+  ParticleSystem(int n, PImage &sprite) {
     // The PShape is a group
-    particleShape = createShape(GROUP);
+    particleShape = createGroup();
 
     // Make all the Particles
     for (int i = 0; i < n; i++) {
-      Particle p = new Particle();
-      particles.add(p);
+       Particle p(sprite);
+       particles.push_back(p);
       // Each particle's PShape gets added to the System PShape
       particleShape.addChild(p.getShape());
     }
   }
 
   void update() {
-    for (Particle p : particles) {
+    for (Particle &p : particles) {
       p.update();
     }
   }
 
   void setEmitter(float x, float y) {
-    for (Particle p : particles) {
+    for (Particle &p : particles) {
       // Each particle gets reborn at the emitter location
       if (p.isDead()) {
         p.rebirth(x, y);
@@ -37,7 +40,9 @@ class ParticleSystem {
   }
 
   void display() {
-    shape(particleShape);
-  }
-}
+    for (Particle &p : particles) {
+       shape(p.getShape());
+    }
+    }
+};
 

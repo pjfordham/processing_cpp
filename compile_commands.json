@@ -871,6 +871,12 @@
 },
 {
   "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/home/pete/github/processing_cpp/glad/include -I/home/pete/github/processing_cpp/PkgConfig::SAIL_CXX -I/usr/include/freetype2 -isystem /usr/include/libxml2 -isystem /usr/local/include/sail -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/ParticleSystemPShape.dir/examples/Topics/Create_Shapes/ParticleSystemPShape/ParticleSystemPShape.cc.o -c \"/home/pete/github/processing_cpp/examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystemPShape.cc\"",
+  "file": "/home/pete/github/processing_cpp/examples/Topics/Create Shapes/ParticleSystemPShape/ParticleSystemPShape.cc",
+  "output": "CMakeFiles/ParticleSystemPShape.dir/examples/Topics/Create_Shapes/ParticleSystemPShape/ParticleSystemPShape.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
   "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/home/pete/github/processing_cpp/glad/include -I/home/pete/github/processing_cpp/PkgConfig::SAIL_CXX -I/usr/include/freetype2 -isystem /usr/include/libxml2 -isystem /usr/local/include/sail -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/PathPShape.dir/examples/Topics/Create_Shapes/PathPShape/PathPShape.cc.o -c \"/home/pete/github/processing_cpp/examples/Topics/Create Shapes/PathPShape/PathPShape.cc\"",
   "file": "/home/pete/github/processing_cpp/examples/Topics/Create Shapes/PathPShape/PathPShape.cc",
   "output": "CMakeFiles/PathPShape.dir/examples/Topics/Create_Shapes/PathPShape/PathPShape.cc.o"
@@ -1102,6 +1108,12 @@
   "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/home/pete/github/processing_cpp/glad/include -I/home/pete/github/processing_cpp/PkgConfig::SAIL_CXX -I/usr/include/freetype2 -isystem /usr/include/libxml2 -isystem /usr/local/include/sail -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/Reach3.dir/examples/Topics/Interaction/Reach3/Reach3.cc.o -c /home/pete/github/processing_cpp/examples/Topics/Interaction/Reach3/Reach3.cc",
   "file": "/home/pete/github/processing_cpp/examples/Topics/Interaction/Reach3/Reach3.cc",
   "output": "CMakeFiles/Reach3.dir/examples/Topics/Interaction/Reach3/Reach3.cc.o"
+},
+{
+  "directory": "/home/pete/github/processing_cpp/release",
+  "command": "/usr/bin/c++ -DFMT_LOCALE -DFMT_SHARED -I/home/pete/github/processing_cpp/include -I/home/pete/github/processing_cpp/glad/include -I/home/pete/github/processing_cpp/PkgConfig::SAIL_CXX -I/usr/include/freetype2 -isystem /usr/include/libxml2 -isystem /usr/local/include/sail -O3 -DNDEBUG -std=gnu++17 -include /home/pete/github/processing_cpp/include/processing.h -o CMakeFiles/Tickle.dir/examples/Topics/Interaction/Tickle/Tickle.cc.o -c /home/pete/github/processing_cpp/examples/Topics/Interaction/Tickle/Tickle.cc",
+  "file": "/home/pete/github/processing_cpp/examples/Topics/Interaction/Tickle/Tickle.cc",
+  "output": "CMakeFiles/Tickle.dir/examples/Topics/Interaction/Tickle/Tickle.cc.o"
 },
 {
   "directory": "/home/pete/github/processing_cpp/release",
