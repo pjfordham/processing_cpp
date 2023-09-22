@@ -41,6 +41,7 @@ public:
    color tint_color = WHITE;
    float stroke_weight = 1.0f;
    int line_end_cap = ROUND;
+   float tightness = 0.0f;
 
    PShape(const PShape& other) = default;
    PShape& operator=(const PShape& other) = default;
@@ -74,6 +75,7 @@ public:
       std::swap(line_end_cap, other.line_end_cap);
       std::swap(width, other.width);
       std::swap(height, other.height);
+      std::swap(tightness, other.tightness);
       return *this;
    }
 
@@ -260,10 +262,91 @@ public:
       }
    }
 
+   void curveTightness(float alpha) {
+      tightness = alpha;
+   }
+
+   std::vector<PVector> curve_vertices;
+
+   void curveVertex(PVector c) {
+      curve_vertices.push_back(c);
+   }
+
+   void drawCurve() {
+      constexpr int segments = 50;
+      constexpr float dt = (1.0 / segments);
+      constexpr float hdt = 0.5f * dt;
+      constexpr float hdt2x2 = 0.5f * 2.0f * dt * dt;
+      constexpr float hdt3x6 = 0.5f * 6.0f * dt * dt * dt;
+
+      size_t size = curve_vertices.size();
+      float s = tightness;
+
+      for (int i = 0; i < size; i++) {
+         auto p0 = curve_vertices[i];
+         auto p1 = curve_vertices[(i+1)%size];
+         auto p2 = curve_vertices[(i+2)%size];
+         auto p3 = curve_vertices[(i+3)%size];
+
+         float xt3 = ( p0.x * (s-1)   + p1.x * (s+3)  + p2.x * (-3-s)  + p3.x * (1-s));
+         float xt2 = ( p0.x * (1-s)*2 + p1.x * (-5-s) + p2.x * (s+2)*2 + p3.x * (s-1));
+         float xt1 = ( p0.x * (s-1) /*+ p1.x * 0*/    + p2.x * (1-s) /*+ p3.x * 0*/);
+         float xt0 = ( p0.x * 0       + p1.x * 2      + p2.x * 0       + p3.x * 0);
+
+         float yt3 = ( p0.y * (s-1)   + p1.y * (s+3)  + p2.y * (-3-s)  + p3.y * (1-s));
+         float yt2 = ( p0.y * (1-s)*2 + p1.y * (-5-s) + p2.y * (s+2)*2 + p3.y * (s-1));
+         float yt1 = ( p0.y * (s-1) + /*p1.y * 0*/    + p2.y * (1-s) /*+ p3.y * 0*/);
+         float yt0 = ( p0.y * 0       + p1.y * 2      + p2.y * 0       + p3.y * 0);
+
+         float zt3 = ( p0.z * (s-1)   + p1.z * (s+3)  + p2.z * (-3-s)  + p3.z * (1-s));
+         float zt2 = ( p0.z * (1-s)*2 + p1.z * (-5-s) + p2.z * (s+2)*2 + p3.z * (s-1));
+         float zt1 = ( p0.z * (s-1) /*+ p1.z * 0 */   + p2.z * (1-s) /*+ p3.z * 0*/);
+         float zt0 = ( p0.z * 0       + p1.z * 2      + p2.z * 0       + p3.z * 0);
+
+         PVector pos = p1; // {xt0, yt0, zt0};
+         PVector vel = PVector{xt1, yt1, zt1} * hdt;
+         PVector acc = PVector{xt2, yt2, zt2} * hdt2x2;
+         PVector jer = PVector{xt3, yt3, zt3} * hdt3x6;
+
+         // Just draw the control points
+         // vertex(p1);
+
+         for (int i = 0; i < segments - 1; ++i) {
+            // Use the full quadtraic queation
+            float t1 = i * dt;
+            float t2 = t1 * t1;
+            float t3 = t2 * t1;
+            vertex( 0.5f * PVector{
+                  xt3 * t3 + xt2 * t2 + xt1 * t1 + xt0,
+                  yt3 * t3 + yt2 * t2 + yt1 * t1 + yt0,
+                  zt3 * t3 + zt2 * t2 + zt1 * t1 + zt0
+               });
+            // Use add differential in discrete steps
+            // vertex(pos);
+            // pos += vel;
+            // vel += acc;
+            // acc += jer;
+         }
+      }
+   }
+
+   void curveVertex(float x, float y, float z) {
+      curveVertex({x,y,z});
+   }
+
+   void curveVertex(float x, float y) {
+      curveVertex(x,y,0);
+   }
+
    bool isClockwise() const;
 
    void endShape(int type_ = OPEN) {
       // OPEN or CLOSE
+      if (curve_vertices.size() > 0) {
+         drawCurve();
+         curve_vertices.clear();
+      }
+
       if (style == POLYGON || style == LINES)
          type = type_;
       else

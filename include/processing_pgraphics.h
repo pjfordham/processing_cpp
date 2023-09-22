@@ -677,6 +677,8 @@ public:
    MAKE_GLOBAL(noFill, _shape);
    MAKE_GLOBAL(noTint, _shape);
    MAKE_GLOBAL(bezierVertex, _shape);
+   MAKE_GLOBAL(curveVertex, _shape);
+   MAKE_GLOBAL(curveTightness, _shape);
    MAKE_GLOBAL(normal, _shape);
    MAKE_GLOBAL(noNormal, _shape);
    MAKE_GLOBAL(vertex, _shape);

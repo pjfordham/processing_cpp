@@ -52,9 +52,9 @@ void drawShape() {
   for (int i=0; i<nodes; i++){
     curveVertex(nodeX[i], nodeY[i]);
   }
-  for (int i=0; i<nodes-1; i++){
-    curveVertex(nodeX[i], nodeY[i]);
-  }
+  // for (int i=0; i<nodes-1; i++){
+  //   curveVertex(nodeX[i], nodeY[i]);
+  // }
   endShape(CLOSE);
 }
 

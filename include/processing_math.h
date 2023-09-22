@@ -206,6 +206,11 @@ public:
          z + other.z};
    }
 
+   PVector &operator+=(const PVector &other) {
+      *this = *this + other;
+      return *this;
+   }
+
    PVector operator-(const PVector &other) const {
       return PVector{
          x - other.x,
@@ -232,6 +237,10 @@ public:
    }
 };
 
+inline PVector operator*(float s, PVector a) {
+   return a * s;
+}
+
 inline PVector lerp(PVector start, PVector end, float i) {
    return {
       lerp(start.x, end.x, i),
@@ -239,6 +248,7 @@ inline PVector lerp(PVector start, PVector end, float i) {
       lerp(start.z, end.z, i),
    };
 }
+
 
 struct PVector4 {
    float data[4];
@@ -342,6 +352,8 @@ public:
       return result;
    }
 };
+
+
 
 struct PLine {
    PVector start, end;

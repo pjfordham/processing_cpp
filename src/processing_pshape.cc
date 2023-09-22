@@ -10,11 +10,11 @@ struct indexed_PVector : public PVector {
 bool isPointInTriangle(const indexed_PVector &point, const indexed_PVector &v0,
                        const indexed_PVector &v1, const indexed_PVector &v2) {
    // Calculate barycentric coordinates of the point with respect to the triangle
-   double alpha = ((v1.y - v2.y) * (point.x - v2.x) + (v2.x - v1.x) * (point.y - v2.y)) /
+   float alpha = ((v1.y - v2.y) * (point.x - v2.x) + (v2.x - v1.x) * (point.y - v2.y)) /
       ((v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y));
-   double beta = ((v2.y - v0.y) * (point.x - v2.x) + (v0.x - v2.x) * (point.y - v2.y)) /
+   float beta = ((v2.y - v0.y) * (point.x - v2.x) + (v0.x - v2.x) * (point.y - v2.y)) /
       ((v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y));
-   double gamma = 1.0 - alpha - beta;
+   float gamma = 1.0 - alpha - beta;
    // Check if the barycentric coordinates are all positive
    return alpha >= 0 && beta >= 0 && gamma >= 0;
 }
