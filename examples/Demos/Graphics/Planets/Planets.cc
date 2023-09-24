@@ -3,6 +3,8 @@
 // Sun and mercury textures from http://planetpixelemporium.com
 // Star field picture from http://www.galacticimages.com/
 
+#include "Perlin.h"
+
 PImage starfield;
 
 PShape sun;
@@ -62,14 +64,14 @@ void setup() {
   fill(255);
   sphereDetail(40);
 
-  sun = createShape(SPHERE, 150);
-  sun.setTexture(suntex);
+  sun = createSphere(150);
+  sun.setTexture(g.glc, suntex);
 
-  planet1 = createShape(SPHERE, 150);
-  planet1.setTexture(surftex1);
+  planet1 = createSphere(150);
+  planet1.setTexture(g.glc, surftex1);
 
-  planet2 = createShape(SPHERE, 50);
-  planet2.setTexture(surftex2);
+  planet2 = createSphere(50);
+  planet2.setTexture(g.glc, surftex2);
 }
 
 void draw() {
@@ -93,7 +95,8 @@ void draw() {
   shape(sun);
   popMatrix();
 
-  pointLight(255,  255,  255,  0,  0,  0);
+  lights();
+  //pointLight(255,  255,  255,  0,  0,  0);
   rotateY(PI * frameCount / 300);
   translate(0, 0, 300);
 
@@ -101,8 +104,7 @@ void draw() {
 
   popMatrix();
 
-  noLights();
-  pointLight(255,  255,  255,  0,  0,  -150);
+  //pointLight(255,  255,  255,  0,  0,  -150);
 
   translate(0.75 * width,  0.6 * height,  50);
   shape(planet1);

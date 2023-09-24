@@ -2,24 +2,25 @@
 // C code by Paul Bourke:
 // http://local.wasp.uwa.edu.au/~pbourke/texture_colour/perlin/
 class Perlin {
+public:
   int B = 0x100;
   int BM = 0xff;
   int N = 0x1000;
   int NP = 12;
   int NM = 0xfff;
 
-  int p[];
-  float g3[][];
-  float g2[][];
-  float g1[];
+  std::vector<int> p;
+  std::vector<std::array<float,3>> g3;
+  std::vector<std::array<float,2>> g2;
+  std::vector<float> g1;
 
-  void normalize2(float v[]) {
+  void normalize2(std::array<float,2> &v) {
     float s = sqrt(v[0] * v[0] + v[1] * v[1]);
     v[0] = v[0] / s;
     v[1] = v[1] / s;
   }
 
-  void normalize3(float v[]) {
+  void normalize3(std::array<float,3> &v) {
     float s = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     v[0] = v[0] / s;
     v[1] = v[1] / s;
@@ -30,19 +31,19 @@ class Perlin {
     return t * t * (3.0 - 2.0 * t);
   }
 
-  float at2(float q[], float rx, float ry) {
+  float at2(std::array<float,2> &q, float rx, float ry) {
     return rx * q[0] + ry * q[1];
   }
 
-  float at3(float q[], float rx, float ry, float rz) {
+  float at3(std::array<float,3> &q, float rx, float ry, float rz) {
     return rx * q[0] + ry * q[1] + rz * q[2];
   }
 
   Perlin() {
-    p = new int[B + B + 2];
-    g3 = new float[B + B + 2][3];
-    g2 = new float[B + B + 2][2];
-    g1 = new float[B + B + 2];
+    p.resize(B + B + 2);
+    g3.resize(B + B + 2);
+    g2.resize(B + B + 2);
+    g1.resize(B + B + 2);
 
     init();
   }
@@ -79,11 +80,11 @@ class Perlin {
     }
   }
 
-  float noise1(float[] vec) {
+  float noise1(float vec) {
     int bx0, bx1;
     float rx0, rx1, sx, t, u, v;
 
-    t = vec[0] + N;
+    t = vec + N;
     bx0 = int(t) & BM;
     bx1 = (bx0 + 1) & BM;
     rx0 = t - int(t);
@@ -96,10 +97,10 @@ class Perlin {
     return lerp(u, v, sx);
   }
 
-  float noise2(float[] vec) {
+  float noise2(const std::array<float,2> &vec) {
     int bx0, bx1, by0, by1, b00, b10, b01, b11;
     float rx0, rx1, ry0, ry1, sx, sy, a, b, t, u, v;
-    float[] q;
+    std::array<float,2> q;
     int i, j;
 
     t = vec[0] + N;
@@ -140,10 +141,10 @@ class Perlin {
     return lerp(a, b, sy);
   }
 
-  float noise3(float[] vec) {
+  float noise3(const std::array<float,3> &vec) {
     int bx0, bx1, by0, by1, bz0, bz1, b00, b10, b01, b11;
     float rx0, rx1, ry0, ry1, rz0, rz1, sy, sz, a, b, c, d, t, u, v;
-    float[] q;
+    std::array<float,3> q;
     int i, j;
 
     t = vec[0] + N;
@@ -215,21 +216,21 @@ class Perlin {
 
   float noise1D(float x, float nalpha, float nbeta, int n) {
     float val, sum = 0;
-    float v[] = {x};
+    float v = x;
     float nscale = 1;
 
     for (int i = 0; i < n; i++) {
       val = noise1(v);
       sum += val / nscale;
       nscale *= nalpha;
-      v[0] *= nbeta;
+      v *= nbeta;
     }
     return sum;
   }
 
   float noise2D(float x, float y, float nalpha, float nbeta, int n) {
    float val,sum = 0;
-   float v[] = {x, y};
+   std::array<float,2> v = {x, y};
    float nscale = 1;
 
    for (int i = 0; i < n; i++) {
@@ -244,7 +245,7 @@ class Perlin {
 
   float noise3D(float x, float y, float z, float nalpha, float nbeta, int n) {
     float val, sum = 0;
-    float v[] = {x, y, z};
+    std::array<float,3> v = {x, y, z};
     float nscale = 1;
 
     for (int i = 0 ; i < n; i++) {
@@ -257,5 +258,5 @@ class Perlin {
     }
     return sum;
   }
-}
+};
 
