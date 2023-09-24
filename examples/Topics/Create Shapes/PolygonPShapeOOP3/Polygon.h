@@ -1,7 +1,8 @@
 // A class to describe a Polygon (with a PShape)
 
 class Polygon {
-  // The PShape object
+public:
+   // The PShape object
   PShape s;
   // The location where we will draw the shape
   float x, y;
@@ -30,5 +31,5 @@ class Polygon {
     shape(s);
     popMatrix();
   }
-}
+};
 

@@ -6,23 +6,24 @@
  * using the same PShape.
  */
 
+#include "Polygon.h"
 
 // A list of objects
-ArrayList<Polygon> polygons;
+std::vector<Polygon> polygons;
 
 // Three possible shapes
-PShape[] shapes = new PShape[3];
+std::vector<PShape> shapes(3);
 
 void setup() {
   size(640, 360, P2D);
 
-  shapes[0] = createShape(ELLIPSE,0,0,100,100);
+  shapes[0] = createEllipse(0,0,100,100);
   shapes[0].setFill(color(255, 127));
   shapes[0].setStroke(false);
-  shapes[1] = createShape(RECT,0,0,100,100);
+  shapes[1] = createRect(0,0,100,100);
   shapes[1].setFill(color(255, 127));
   shapes[1].setStroke(false);
-  shapes[2] = createShape();
+
   shapes[2].beginShape();
   shapes[2].fill(0, 127);
   shapes[2].noStroke();
@@ -38,13 +39,10 @@ void setup() {
   shapes[2].vertex(-14, -20);
   shapes[2].endShape(CLOSE);
 
-  // Make an ArrayList
-  polygons = new ArrayList<Polygon>();
-
   for (int i = 0; i < 25; i++) {
-    int selection = int(random(shapes.length));        // Pick a random index
-    Polygon p = new Polygon(shapes[selection]);        // Use corresponding PShape to create Polygon
-    polygons.add(p);
+    int selection = int(random(shapes.size()));        // Pick a random index
+    Polygon p(shapes[selection]);        // Use corresponding PShape to create Polygon
+    polygons.push_back(p);
   }
 }
 
@@ -52,7 +50,7 @@ void draw() {
   background(102);
 
   // Display and move them all
-  for (Polygon poly : polygons) {
+  for (Polygon &poly : polygons) {
     poly.display();
     poly.move();
   }
