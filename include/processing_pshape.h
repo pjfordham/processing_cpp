@@ -20,6 +20,7 @@ public:
       color stroke;
       color tint;
       float weight;
+      bool contour;
    };
 
    std::vector<gl_context::vertex> vertices;
@@ -42,6 +43,7 @@ public:
    float stroke_weight = 1.0f;
    int line_end_cap = ROUND;
    float tightness = 0.0f;
+   bool contour = false;
 
    PShape(const PShape& other) = default;
    PShape& operator=(const PShape& other) = default;
@@ -156,6 +158,14 @@ public:
       clear();
    }
 
+   void beginContour() {
+      contour = true;
+   }
+
+   void endContour() {
+      contour = false;
+   }
+
    void textureMode( int mode_ ) {
       mode = mode_;
    }
@@ -193,8 +203,7 @@ public:
    }
 
    void vertex(float x, float y) {
-      vertices.push_back( { {x,y}, n, {0,0}, fill_color } );
-      extras.push_back( { stroke_color, tint_color, stroke_weight } );
+      vertex({x, y, 0}, {0.0f,0.0f});
    }
 
    void vertex(PVector p) {
@@ -225,7 +234,7 @@ public:
       //    abort();
 
       vertices.push_back( { p, n, tprime, fill_color } );
-      extras.push_back( {stroke_color, tint_color, stroke_weight } );
+      extras.push_back( {stroke_color, tint_color, stroke_weight, contour } );
    }
 
    void index(unsigned short i) {
@@ -552,6 +561,18 @@ public:
 
    PVector getVertex(int i) const {
       return vertices[i].position;
+   }
+
+   void setVertex(int i, PVector v) {
+      vertices[i].position = v;
+   }
+
+   void setVertex(int i, float x, float y , float z = 0) {
+      vertices[i].position = {x,y,z};
+   }
+
+   PVector getVertex(int i, PVector &x) const {
+      return x = getVertex(i);
    }
 };
 

@@ -102,7 +102,6 @@ set(skip_examples
   "examples/Demos/Graphics/Ribbons/Ribbons.cc"
   "examples/Demos/Graphics/Trefoil/Surface.cc"
   "examples/Demos/Graphics/Trefoil/Trefoil.cc"
-  "examples/Demos/Graphics/Wiggling/Wiggling.cc"
   "examples/Demos/Graphics/Yellowtail/Gesture.cc"
   "examples/Demos/Graphics/Yellowtail/Vec3f.cc"
   "examples/Demos/Graphics/Yellowtail/Yellowtail.cc"

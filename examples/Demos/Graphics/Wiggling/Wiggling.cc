@@ -9,6 +9,11 @@ float noiseMag = 1;
 
 boolean wiggling = false;
 
+void createCube();
+void restoreCube();
+void createFaceWithHole(PShape &face);
+void restoreFaceWithHole(PShape &face);
+
 void setup() {
   size(1024, 768, P3D);
 
@@ -25,9 +30,9 @@ void draw() {
   shape(cube);
 
   if (wiggling) {
-    PVector pos = null;
+    PVector pos;
     for (int i = 0; i < cube.getChildCount(); i++) {
-      PShape face = cube.getChild(i);
+      PShape &face = cube.getChild(i);
       for (int j = 0; j < face.getVertexCount(); j++) {
         pos = face.getVertex(j, pos);
         pos.x += random(-noiseMag/2, +noiseMag/2);
@@ -38,11 +43,12 @@ void draw() {
     }
   }
 
-  if (frameCount % 60 == 0) println(frameRate);
+  // if (frameCount % 60 == 0) println(frameRate);
 }
 
-public void keyPressed() {
-  if (key == 'w') {
+void keyPressed() {
+   fmt::print("{}\n",key);
+   if (key == 'w') {
     wiggling = !wiggling;
   } else if (key == ' ') {
     restoreCube();
@@ -56,13 +62,11 @@ public void keyPressed() {
 }
 
 void createCube() {
-  cube = createShape(GROUP);
-
-  PShape face;
+  cube = createGroup();
 
   // Create all faces at front position
   for (int i = 0; i < 6; i++) {
-    face = createShape();
+    PShape face = createGroup();
     createFaceWithHole(face);
     cube.addChild(face);
   }
@@ -70,30 +74,24 @@ void createCube() {
   // Rotate all the faces to their positions
 
   // Front face - already correct
-  face = cube.getChild(0);
 
   // Back face
-  face = cube.getChild(1);
-  face.rotateY(radians(180));
+  cube.getChild(1).rotateY(radians(180));
 
   // Right face
-  face = cube.getChild(2);
-  face.rotateY(radians(90));
+  cube.getChild(2).rotateY(radians(90));
 
   // Left face
-  face = cube.getChild(3);
-  face.rotateY(radians(-90));
+  cube.getChild(3).rotateY(radians(-90));
 
   // Top face
-  face = cube.getChild(4);
-  face.rotateX(radians(90));
+  cube.getChild(4).rotateX(radians(90));
 
   // Bottom face
-  face = cube.getChild(5);
-  face.rotateX(radians(-90));
+  cube.getChild(5).rotateX(radians(-90));
 }
 
-void createFaceWithHole(PShape face) {
+void createFaceWithHole(PShape &face) {
   face.beginShape(POLYGON);
   face.stroke(255, 0, 0);
   face.fill(255);
@@ -123,12 +121,12 @@ void restoreCube() {
   // the same way as the "front" face and they will stay
   // rotated correctly
   for (int i = 0; i < 6; i++) {
-    PShape face = cube.getChild(i);
+    PShape &face = cube.getChild(i);
     restoreFaceWithHole(face);
   }
 }
 
-void restoreFaceWithHole(PShape face) {
+void restoreFaceWithHole(PShape &face) {
   face.setVertex(0, -cubeSize/2, -cubeSize/2, +cubeSize/2);
   face.setVertex(1, +cubeSize/2, -cubeSize/2, +cubeSize/2);
   face.setVertex(2, +cubeSize/2, +cubeSize/2, +cubeSize/2);
