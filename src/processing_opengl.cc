@@ -63,6 +63,7 @@ void gl_context::setScene( const scene_t &scene ) {
 }
 
 void gl_context::hint(int type) {
+   flush();
    switch(type) {
    case DISABLE_DEPTH_TEST:
       glDisable(GL_DEPTH_TEST);
@@ -81,7 +82,9 @@ void gl_context::hint(int type) {
    }
 }
 
-gl_context::gl_context(int width, int height, float aaFactor) : batch( width, height ) {
+gl_context::gl_context(int width, int height, float aaFactor) :
+   tm(3 * width, 3 * height),
+   batch( width, height ) {
    this->aaFactor = aaFactor;
    this->width = width;
    this->height = height;
@@ -183,11 +186,12 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
 
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
-   glBindTexture(GL_TEXTURE_2D, batch.tm.getTextureID() );
-   PTexture texture = batch.tm.getFreeBlock(width, height);
+   glBindTexture(GL_TEXTURE_2D, tm.getTextureID() );
+   PTexture texture = tm.getFreeBlock(width, height, pixels);
    while( !texture.isValid() ) {
       flush();
-      texture = batch.tm.getFreeBlock(width, height);
+      tm.clear();
+      texture = tm.getFreeBlock(width, height,pixels);
    }
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    texture.left, texture.top,
@@ -197,13 +201,14 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 }
 
 PTexture gl_context::getTexture( gl_context &source ) {
-   PTexture texture = batch.tm.getFreeBlock(source.width, source.height);
+   PTexture texture = tm.getFreeBlock(source.width, source.height, nullptr );
    while( !texture.isValid() ) {
       flush();
-      texture = batch.tm.getFreeBlock(source.width, source.height);
+      tm.clear();
+      texture = tm.getFreeBlock(source.width, source.height, nullptr);
    }
    GLuint source_texture = source.localFrame.getColorBufferID();
-   GLuint target_texture = batch.tm.getTextureID();
+   GLuint target_texture = tm.getTextureID();
    glCopyImageSubData(source_texture, GL_TEXTURE_2D, 0, 0, 0, 0,
                       target_texture, GL_TEXTURE_2D, 0, texture.left, texture.top, 0,
                       source.width, source.height, 1);

@@ -53,13 +53,10 @@ public:
       int width, height;
       int currentM;
    public:
-      TextureManager tm;
-
       scene_t scene;
       std::unique_ptr<geometry_t> geometry;
 
       batch_t(int width, int height) :
-         tm(3 * width, 3 * height),
          geometry( std::make_unique<geometry_t>() ) {
 
          this->width = width;
@@ -117,7 +114,6 @@ public:
          geometry->vCount = 0;
          geometry->mCount = 0;
          geometry->iCount = 0;
-         tm.clear();
          currentM = 0;
       }
 
@@ -125,7 +121,7 @@ public:
          if (geometry->vCount != 0 ) {
             glc->loadMoveMatrix( geometry->move, geometry->mCount );
             glc->setScene( scene );
-            glc->drawGeometry( *geometry, tm.getTextureID() );
+            glc->drawGeometry( *geometry, glc->tm.getTextureID() );
          }
          reset();
       }
@@ -136,7 +132,6 @@ public:
          std::swap(currentM,x.currentM);
          std::swap(width,x.width);
          std::swap(height,x.height);
-         std::swap(tm,x.tm);
          std::swap(scene,x.scene);
          std::swap(geometry,x.geometry);
 
@@ -198,9 +193,12 @@ public:
       *this = std::move(x);
    }
 
+   TextureManager tm;
+
    gl_context& operator=(const gl_context&) = delete;
 
    gl_context& operator=(gl_context&&x) noexcept {
+      std::swap(tm,x.tm);
       std::swap(batch,x.batch);
 
       std::swap(flushes,x.flushes);
