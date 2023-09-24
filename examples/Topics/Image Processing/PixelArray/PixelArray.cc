@@ -24,7 +24,7 @@ void draw() {
     direction = direction * -1;
   }
 
-  if (mousePressed) {
+  if (mousePressedb) {
     int mx = constrain(mouseX, 0, img.width-1);
     int my = constrain(mouseY, 0, img.height-1);
     signal = my*img.width + mx;
@@ -35,7 +35,7 @@ void draw() {
   int sx = int(signal) % img.width;
   int sy = int(signal) / img.width;
 
-  if (keyPressed) {
+  if (keyPressedb) {
     set(0, 0, img);  // fast way to draw an image
     point(sx, sy);
     rect(sx - 5, sy - 5, 10, 10);

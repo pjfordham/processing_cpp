@@ -27,6 +27,7 @@ char key = 0;
 int keyCode = 0;
 
 bool mousePressedb = false;
+bool keyPressedb = false;
 
 void character_callback(GLFWwindow* window, unsigned int codepoint) {
    // Handle the Unicode character codepoint here
@@ -72,10 +73,13 @@ void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mo
          key = 0;
       }
    }
-   if (action == GLFW_PRESS)
+   if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+      keyPressedb = true;
       keyPressed();
-   else
+   } else {
+      keyPressedb = false;
       keyReleased();
+   }
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {

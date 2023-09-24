@@ -556,6 +556,10 @@ public:
       updatePixels();
    }
 
+   void set(int x, int y, PImage &i) {
+      image(i,x,y);
+   }
+
    void rect(int x, int y, int _width, int _height) {
       PShape rect = createRect(x,y,_width,_height);
       shape( rect );

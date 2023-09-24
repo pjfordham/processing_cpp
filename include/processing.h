@@ -143,6 +143,7 @@ extern char key;
 extern int keyCode;
 
 extern bool mousePressedb;
+extern bool keyPressedb;
 
 bool dispatchEvents();
 void drawFrame();
