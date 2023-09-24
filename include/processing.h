@@ -59,6 +59,7 @@ MAKE_GLOBAL(createLine, g);
 MAKE_GLOBAL(createTriangle, g);
 MAKE_GLOBAL(createArc, g);
 MAKE_GLOBAL(createEllipse, g);
+MAKE_GLOBAL(createSphere,g);
 MAKE_GLOBAL(createPoint, g);
 MAKE_GLOBAL(createGroup, g);
 MAKE_GLOBAL(fill, g);

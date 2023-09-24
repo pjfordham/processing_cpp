@@ -438,8 +438,7 @@ public:
       sphereDetail(res, res);
    }
 
-   void sphere(float radius) {
-
+   PShape createSphere( float radius ) {
       PShape sphere;
       sphere.copyStyle( _shape );
       sphere.beginShape(TRIANGLES);
@@ -484,8 +483,13 @@ public:
          }
       }
       sphere.endShape();
+      return sphere;
+   }
 
+   void sphere(float radius) {
+      PShape sphere = createSphere(radius);
       shape( sphere );
+      return;
    }
 
    void image(PGraphics &gfx, int x, int y) {
