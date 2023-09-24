@@ -179,7 +179,7 @@ public:
    }
 
    void noTexture() {
-      texture_ = { 0,0,0,0,0 };
+      texture_ = {};
    }
 
    void noNormal() {
@@ -225,11 +225,15 @@ public:
          t.y /= texture_.height();
       }
 
-      PVector tprime{
-         map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
-         map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
-         (float)texture_.layer};
-
+      PVector tprime;
+      if ( texture_ == PTexture{} ) {
+         tprime = t;
+      } else {
+         tprime = {
+            map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
+            map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
+            (float)texture_.layer };
+      }
       // if ( tprime.x > 1.0 || tprime.y > 1.0)
       //    abort();
 
@@ -515,6 +519,19 @@ public:
       for ( auto&&v : extras ) {
          v.weight = w;
       }
+   }
+
+   void setTexture( gl_context &glc, PImage &img ) {
+     // need to recalc texture coordintaes.
+     texture( glc, img );
+     for ( auto&&v : vertices ) {
+        auto t = v.coord;
+        PVector tprime = {
+           map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
+           map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
+           (float)texture_.layer };
+        v.coord = tprime;
+     }
    }
 
    void setFill(bool z) {
