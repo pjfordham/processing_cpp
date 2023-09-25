@@ -805,7 +805,7 @@ public:
       default:
          abort();
       }
-      if (_shape.stroke_color.a == 0.0 && _shape.texture_.layer == 0) {
+      if (_shape.stroke_color.a == 0.0 && !_shape.texture_.isValid()) {
          // If there's no stroke and no texture use circle optimization here
          PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color, _shape.shape_matrix );
          return shape;
@@ -877,7 +877,7 @@ public:
          abort();
       }
 
-      if (_shape.stroke_color.a == 0.0 && _shape.texture_.layer == 0) {
+      if (_shape.stroke_color.a == 0.0 && !_shape.texture_.isValid()) {
          // If there's no stroke and no texture use circle optimization here
 
          PShape shape;

@@ -11,14 +11,24 @@
 typedef unsigned int GLuint;
 
 class PTexture {
+   int layer;
+   int left;
+   int top;
+   int right;
+   int bottom;
+   int sheet_width;
+   int sheet_height;
+   friend class TextureManager;
+   friend class gl_context;
+
 public:
-   int layer = 0;
-   int left = 0;
-   int top = 0;
-   int right  = 1;
-   int bottom = 1;
-   int sheet_width = 0;
-   int sheet_height = 0;
+   PTexture() :
+      layer(0), left(0), top(0), right(1), bottom(1),
+      sheet_width(0), sheet_height(0) {}
+
+   PTexture(int layer_, int left_, int top_, int right_, int bottom_, int sheet_width_, int sheet_height_) :
+      layer( layer_), left( left_ ), top( top_ ), right( right_ ), bottom( bottom_),
+      sheet_width( sheet_width_ ), sheet_height( sheet_height_) {}
 
    bool operator==(const PTexture &x) const {
       return
@@ -31,8 +41,20 @@ public:
          sheet_height == x.sheet_height;
    }
 
-   bool isValid() {
+   bool isValid() const {
       return sheet_width != 0;
+   }
+
+   PVector normalize(PVector t) const {
+      // could check return values are within 0-1
+      if (isValid()) {
+            return {
+               map(t.x,0,1.0,(1.0*left)/sheet_width,(1.0*(right-1))/sheet_width),
+               map(t.y,0,1.0,(1.0*top)/sheet_height,(1.0*(bottom-1))/sheet_height),
+               (float)layer };
+      } else {
+         return t;
+      }
    }
 
    static PTexture circle() {

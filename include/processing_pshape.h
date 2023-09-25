@@ -225,19 +225,7 @@ public:
          t.y /= texture_.height();
       }
 
-      PVector tprime;
-      if ( texture_ == PTexture{} ) {
-         tprime = t;
-      } else {
-         tprime = {
-            map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
-            map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
-            (float)texture_.layer };
-      }
-      // if ( tprime.x > 1.0 || tprime.y > 1.0)
-      //    abort();
-
-      vertices.push_back( { p, n, tprime, fill_color } );
+      vertices.push_back( { p, n, texture_.normalize( t ), fill_color } );
       extras.push_back( {stroke_color, tint_color, stroke_weight, contour } );
    }
 
@@ -525,12 +513,7 @@ public:
      // need to recalc texture coordintaes.
      texture( glc, img );
      for ( auto&&v : vertices ) {
-        auto t = v.coord;
-        PVector tprime = {
-           map(t.x,0,1.0,(1.0*texture_.left)/texture_.sheet_width,(1.0*texture_.right)/texture_.sheet_width),
-           map(t.y,0,1.0,(1.0*texture_.top)/texture_.sheet_height,(1.0*texture_.bottom)/texture_.sheet_height),
-           (float)texture_.layer };
-        v.coord = tprime;
+        v.coord = texture_.normalize( v.coord );
      }
    }
 
