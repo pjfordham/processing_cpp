@@ -3,15 +3,18 @@
 
 #include "processing_color.h"
 #include "processing_enum.h"
+#include "processing_texture_manager.h"
 
 #include <vector>
 #include <string>
+
 
 class PImage {
 public:
    int width;
    int height;
    unsigned int *pixels;
+   PTexture texture;
 
    operator bool() const {
       return pixels;
@@ -38,7 +41,15 @@ public:
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(pixels, x.pixels);
+      std::swap(texture, x.texture);
       return *this;
+   }
+
+   PTexture getTexture(gl_context &glc) {
+      if (!texture.isValid()) {
+          texture = glc.getTexture( width, height, pixels );
+      }
+      return texture;
    }
 
    void mask(const PImage &mask) {
@@ -49,6 +60,7 @@ public:
          unsigned int q = mask.pixels[i];
          pixels[i] = (p & 0x00FFFFFF) | ( (0xFF - ( q & 0xFF)) << 24 );
       }
+      texture = {};
    }
 
    color get(int x, int y) const {
@@ -61,6 +73,7 @@ public:
    void set(int x, int y, color c) {
       if ( 0 <= x && x < width && 0 <= y && y < height)
          pixels[y * width + x] = c;
+      texture = {};
    }
 
    PImage(int w, int h, int mode);
@@ -115,8 +128,10 @@ public:
       default:
          abort();
       }
+      texture = {};
    }
-   void save_as( const std::string &filename ) const;;
+
+   void save_as( const std::string &filename ) const;
 };
 
 inline PImage createImage(int width, int height, int mode) {

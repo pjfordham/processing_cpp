@@ -86,16 +86,12 @@ class TextureManager {
    int width, height;
    std::vector<PTexture> free;
    GLuint textureID = 0;
-   struct key {
-      int width, height;
-      void *p;
-      bool operator<( const key &other ) const {
-         if ( width != other.width) return width < other.width;
-         if ( height != other.height) return height < other.height;
-         return p < other.p;
-      }
-   };
-   std::map<key, PTexture> tmap;
+
+   void clear() {
+      free.clear();
+      // Leave 0,0,0 as a white pixel for untextured surfaces.
+      free.push_back( {0, 0, 1, width, height, width, height} );
+   }
 
 public:
    TextureManager() : width(0), height(0) {
@@ -125,18 +121,7 @@ public:
 
    ~TextureManager();
 
-   void clear() {
-      free.clear();
-      tmap.clear();
-      // Leave 0,0,0 as a white pixel for untextured surfaces.
-      free.push_back( {0, 0, 1, width, height, width, height} );
-   }
-
-   PTexture getFreeBlock(int w, int h, void *z) {
-      if (tmap.count({w,h,z}) == 1) {
-         return tmap[{w,h,z}];
-      }
-
+   PTexture getFreeBlock(int w, int h) {
       std::sort( free.begin(), free.end() );
       free.reserve( free.size() + 2 );
       for( auto &block : free ) {
@@ -144,7 +129,6 @@ public:
             PTexture p{ block.layer, block.left, block.top,  block.left + w, block.top + h, width, height };
             free.push_back( {block.layer, block.left + w, block.top, block.right,  block.top + h, width, height } );
             block = {block.layer, block.left, block.top + h, block.right,  block.bottom, width, height };
-            tmap[{w,h,z}] = p;
             return p;
          }
       }

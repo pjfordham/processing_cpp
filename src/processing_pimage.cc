@@ -72,6 +72,7 @@ void PImage::convolve(const std::vector<std::vector<float>> &kernel) {
    // Replace the original surface with the blurred surface
    delete [] pixels;
    pixels = blurred;
+   texture = {};
 }
 
 static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)

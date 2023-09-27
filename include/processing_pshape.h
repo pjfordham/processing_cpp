@@ -175,7 +175,7 @@ public:
    }
 
    void texture(gl_context &glc, PImage &img) {
-      texture( glc.getTexture( img.width, img.height, img.pixels ) );
+      texture( img.getTexture( glc ) );
    }
 
    void noTexture() {

@@ -45,7 +45,7 @@ public:
 
    std::vector<PMatrix> matrix_stack;
 
-   std::unordered_map<std::string, PTexture> words;
+   std::unordered_map<std::string, PImage> words;
 
    PGraphics(const PGraphics &x) = delete;
 
@@ -334,7 +334,38 @@ public:
    MAKE_GLOBAL(textDescent, currentFont);
    MAKE_GLOBAL(textWidth, currentFont);
 
-   void text(const std::string &text, float x, float y, float twidth = -1, float theight = -1);
+   void text(const std::string &text, float x, float y, float twidth = -1, float theight = -1) {
+      auto existing = words.find( text );
+      if ( existing == words.end() ) {
+         words[text] = currentFont.render_as_pimage(text);
+      }
+
+      // Maybe use a different texturemanager for text processing
+      // which can be flushed if needed
+      PImage &text_image = words[text];
+
+      twidth = text_image.width;
+      theight = textAscent();
+
+      // this works well enough for the Letters.cc example but it's not really general
+      if ( xTextAlign == CENTER ) {
+         x = x - twidth / 2;
+      }
+      if ( yTextAlign == CENTER ) {
+         y = y - theight / 2;
+      } else {
+         y = y - theight;
+      }
+      if ( xTextAlign == RIGHT ) {
+         x = x - twidth;
+      }
+      if ( yTextAlign == RIGHT ) {
+         y = y - theight;
+      }
+
+      drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
+                       text_image.getTexture( glc ), _shape.fill_color);
+   }
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
       std::string s(&c,1);
@@ -519,7 +550,7 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      PTexture texture = glc.getTexture( pimage.width, pimage.height, pimage.pixels );
+      PTexture texture = pimage.getTexture( glc );
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
                        texture, _shape.tint_color  );
    }
@@ -695,9 +726,8 @@ public:
    MAKE_GLOBAL(textureMode, _shape);
 
    void texture(PImage &img) {
-      texture( glc.getTexture( img.width, img.height, img.pixels ) );
+      texture( img.getTexture( glc ) );
    }
-
 
    void endShape(int type = OPEN) {
       _shape.endShape(type);
@@ -968,7 +998,6 @@ public:
    void commit_draw() {
       endDraw();
       glc.blit( windowFrame );
-      words.clear();
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {

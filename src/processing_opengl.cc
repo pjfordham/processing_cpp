@@ -187,11 +187,10 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
    glBindTexture(GL_TEXTURE_2D, tm.getTextureID() );
-   PTexture texture = tm.getFreeBlock(width, height, pixels);
-   while( !texture.isValid() ) {
-      flush();
-      tm.clear();
-      texture = tm.getFreeBlock(width, height,pixels);
+   PTexture texture = tm.getFreeBlock(width, height);
+   if( !texture.isValid() ) {
+      fmt::print(stderr,"Texture atlas is full.\n");
+      abort();
    }
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    texture.left, texture.top,
@@ -201,11 +200,11 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 }
 
 PTexture gl_context::getTexture( gl_context &source ) {
-   PTexture texture = tm.getFreeBlock(source.width, source.height, nullptr );
+   // Hack to always use the same PTexture
+   static PTexture texture = tm.getFreeBlock(source.width, source.height);
    while( !texture.isValid() ) {
-      flush();
-      tm.clear();
-      texture = tm.getFreeBlock(source.width, source.height, nullptr);
+      fmt::print(stderr,"Texture atlas is full. Should just use framebuffers texture directly since it already exists\n");
+      abort();
    }
    GLuint source_texture = source.localFrame.getColorBufferID();
    GLuint target_texture = tm.getTextureID();
