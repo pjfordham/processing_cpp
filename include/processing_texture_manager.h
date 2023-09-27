@@ -12,7 +12,7 @@ typedef unsigned int GLuint;
 
 class PTexture {
 public:
-  int layer;
+   int layer;
    int left;
    int top;
    int right;
@@ -48,7 +48,7 @@ public:
 
    PVector2 normalize(PVector2 t) const {
       // could check return values are within 0-1
-      if (isValid()) {
+      if (isValid() && !(*this == circle())) {
             return {
                map(t.x,0,1.0,(1.0*left)/sheet_width,(1.0*(right-1))/sheet_width),
                map(t.y,0,1.0,(1.0*top)/sheet_height,(1.0*(bottom-1))/sheet_height) };
@@ -84,20 +84,21 @@ public:
 
 class TextureManager {
    int width, height;
+   int unit;
    std::vector<PTexture> free;
    GLuint textureID = 0;
 
    void clear() {
       free.clear();
       // Leave 0,0,0 as a white pixel for untextured surfaces.
-      free.push_back( {0, 0, 1, width, height, width, height} );
+      free.push_back( {unit, 0, 1, width, height, width, height} );
    }
 
 public:
-   TextureManager() : width(0), height(0) {
+   TextureManager() : width(0), height(0), unit(0) {
    }
 
-   TextureManager( int w, int h );
+   TextureManager( int w, int h, int u );
 
    TextureManager(const TextureManager &x) = delete;
 
@@ -114,6 +115,7 @@ public:
    TextureManager& operator=(TextureManager&&x) noexcept {
       std::swap(width, x.width);
       std::swap(height, x.height);
+      std::swap(unit, x.unit);
       std::swap(free, x.free);
       std::swap(textureID, x.textureID);
       return *this;

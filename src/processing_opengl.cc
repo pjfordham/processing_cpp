@@ -5,9 +5,12 @@
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
 
+static const int ATLAS_TEXTURE_UNIT = 0;
+
 void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
    glBindVertexArray(VAO);
 
+   glActiveTexture(GL_TEXTURE0 + ATLAS_TEXTURE_UNIT);
    glBindTexture(GL_TEXTURE_2D, bufferID);
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
@@ -23,12 +26,15 @@ void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
 
 #if 0
    fmt::print("### GEOMETRY DUMP START ###\n");
-   for ( int i = 0; i < geometry->vCount; ++i ) {
-      fmt::print("{}: ", i);
-      geometry->vbuffer[i].position.print();
+   for ( int i = 0; i < geometry.vCount; ++i ) {
+      fmt::print("{}: {},{},{} ", i,
+                 geometry.vbuffer[i].coord.x,
+                 geometry.vbuffer[i].coord.y,
+                 geometry.vbuffer[i].tunit);
+      geometry.vbuffer[i].position.print();
    }
-   for ( int i = 0; i < geometry->iCount; ++i ) {
-      fmt::print("{}",  geometry->ibuffer[i]);
+   for ( int i = 0; i < geometry.iCount; ++i ) {
+      fmt::print("{}",  geometry.ibuffer[i]);
    }
    fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
@@ -83,7 +89,7 @@ void gl_context::hint(int type) {
 }
 
 gl_context::gl_context(int width, int height, float aaFactor) :
-   tm(3 * width, 3 * height),
+   tm(3 * width, 3 * height, ATLAS_TEXTURE_UNIT),
    batch( width, height ) {
    this->aaFactor = aaFactor;
    this->width = width;
@@ -102,9 +108,8 @@ gl_context::gl_context(int width, int height, float aaFactor) :
    defaultShader = loadShader();
    shader( defaultShader );
 
-   int textureUnitIndex = 0;
-   glUniform1i(uSampler,textureUnitIndex);
-   glActiveTexture(GL_TEXTURE0 + textureUnitIndex);
+   std::array<int, 2> textures = {ATLAS_TEXTURE_UNIT,1};
+   glUniform1iv(uSampler,2,textures.data());
 
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -186,6 +191,7 @@ void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
 
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
+   glActiveTexture(GL_TEXTURE0 + ATLAS_TEXTURE_UNIT);
    glBindTexture(GL_TEXTURE_2D, tm.getTextureID() );
    PTexture texture = tm.getFreeBlock(width, height);
    if( !texture.isValid() ) {
@@ -200,18 +206,10 @@ PTexture gl_context::getTexture( int width, int height, void *pixels ) {
 }
 
 PTexture gl_context::getTexture( gl_context &source ) {
-   // Hack to always use the same PTexture
-   static PTexture texture = tm.getFreeBlock(source.width, source.height);
-   while( !texture.isValid() ) {
-      fmt::print(stderr,"Texture atlas is full. Should just use framebuffers texture directly since it already exists\n");
-      abort();
-   }
-   GLuint source_texture = source.localFrame.getColorBufferID();
-   GLuint target_texture = tm.getTextureID();
-   glCopyImageSubData(source_texture, GL_TEXTURE_2D, 0, 0, 0, 0,
-                      target_texture, GL_TEXTURE_2D, 0, texture.left, texture.top, 0,
-                      source.width, source.height, 1);
-   return texture;
+   glActiveTexture(GL_TEXTURE0 + 1);
+   glBindTexture(GL_TEXTURE_2D,source.localFrame.getColorBufferID());
+   glActiveTexture(GL_TEXTURE0 + ATLAS_TEXTURE_UNIT);
+   return { 1,0,0, source.width,source.height,source.width, source.height };
 }
 
 void gl_context::clear(gl_framebuffer &fb, float r, float g, float b, float a) {
@@ -249,13 +247,15 @@ void gl_context::initVAO() {
 
    glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,position) );
    glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,normal) );
-   glVertexAttribPointer( coords_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,coord) );
+   glVertexAttribPointer( coords_attrib_id, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,coord) );
+   glVertexAttribIPointer( tunit_attrib_id, 1, GL_INT,             sizeof(vertex), (void*)offsetof(vertex,tunit) );
    glVertexAttribPointer( colors_attrib_id, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,fill) );
 
    glEnableVertexAttribArray(vertex_attrib_id);
    glEnableVertexAttribArray(normal_attrib_id);
    glEnableVertexAttribArray(coords_attrib_id);
    glEnableVertexAttribArray(colors_attrib_id);
+   glEnableVertexAttribArray(tunit_attrib_id);
 
    glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
 

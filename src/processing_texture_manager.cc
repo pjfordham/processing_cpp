@@ -2,11 +2,13 @@
 
 #include "processing_texture_manager.h"
 
-TextureManager::TextureManager( int w, int h ) : width(w), height(h) {
+TextureManager::TextureManager( int w, int h, int u ) : width(w), height(h), unit(u) {
    if (width == 0 || height == 0)
       return;
+
    // create the texture array
    glGenTextures(1, &textureID);
+   glActiveTexture(GL_TEXTURE0 + u);
    glBindTexture(GL_TEXTURE_2D, textureID);
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width, this->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
