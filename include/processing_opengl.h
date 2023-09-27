@@ -23,7 +23,8 @@ public:
    struct vertex {
       PVector position;
       PVector normal;
-      PVector coord;
+      PVector2 coord;
+      int tunit;
       color fill;
    };
    struct scene_t {
@@ -159,11 +160,14 @@ private:
    GLuint index_buffer_id;
    GLuint vertex_buffer_id;
    GLuint tindex_buffer_id;
+
    GLuint vertex_attrib_id;
    GLuint coords_attrib_id;
    GLuint colors_attrib_id;
    GLuint tindex_attrib_id;
+   GLuint tunit_attrib_id;
    GLuint normal_attrib_id;
+
    PShader defaultShader;
    GLuint Mmatrix;
    GLuint PVmatrix;
@@ -218,6 +222,7 @@ public:
       std::swap(coords_attrib_id,x.coords_attrib_id);
       std::swap(colors_attrib_id,x.colors_attrib_id);
       std::swap(tindex_attrib_id,x.tindex_attrib_id);
+      std::swap(tunit_attrib_id,x.tunit_attrib_id);
       std::swap(normal_attrib_id,x.normal_attrib_id);
       std::swap(defaultShader,x.defaultShader);
       std::swap(Mmatrix,x.Mmatrix);
@@ -323,6 +328,7 @@ public:
       coords_attrib_id = shader.getAttribLocation("coords");
       colors_attrib_id = shader.getAttribLocation("colors");
       tindex_attrib_id = shader.getAttribLocation("mindex");
+      tunit_attrib_id = shader.getAttribLocation("tunit");
       Mmatrix = shader.getUniformLocation("Mmatrix");
       PVmatrix = shader.getUniformLocation("PVmatrix");
       AmbientLight = shader.getUniformLocation("ambientLight");

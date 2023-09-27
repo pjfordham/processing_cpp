@@ -11,7 +11,8 @@
 typedef unsigned int GLuint;
 
 class PTexture {
-   int layer;
+public:
+  int layer;
    int left;
    int top;
    int right;
@@ -45,13 +46,12 @@ public:
       return sheet_width != 0;
    }
 
-   PVector normalize(PVector t) const {
+   PVector2 normalize(PVector2 t) const {
       // could check return values are within 0-1
       if (isValid()) {
             return {
                map(t.x,0,1.0,(1.0*left)/sheet_width,(1.0*(right-1))/sheet_width),
-               map(t.y,0,1.0,(1.0*top)/sheet_height,(1.0*(bottom-1))/sheet_height),
-               (float)layer };
+               map(t.y,0,1.0,(1.0*top)/sheet_height,(1.0*(bottom-1))/sheet_height) };
       } else {
          return t;
       }

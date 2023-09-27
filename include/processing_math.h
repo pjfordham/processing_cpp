@@ -250,6 +250,10 @@ inline PVector lerp(PVector start, PVector end, float i) {
 }
 
 
+struct PVector2 {
+   float x,y;
+};
+
 struct PVector4 {
    float data[4];
 };

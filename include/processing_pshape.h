@@ -218,14 +218,14 @@ public:
       vertex({x, y, 0.0f}, { u , v });
    }
 
-   void vertex(PVector p, PVector t) {
+   void vertex(PVector p, PVector2 t) {
 
       if (mode == IMAGE) {
          t.x /= texture_.width();
          t.y /= texture_.height();
       }
 
-      vertices.push_back( { p, n, texture_.normalize( t ), fill_color } );
+      vertices.push_back( { p, n, texture_.normalize( t ), texture_.layer, fill_color } );
       extras.push_back( {stroke_color, tint_color, stroke_weight, contour } );
    }
 

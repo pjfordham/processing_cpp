@@ -109,15 +109,17 @@ void PShader::compileShaders() {
 }
 
 const char *PShader::defaultVertexShader = R"glsl(
-      #version 330
+      #version 400
       in vec3 position;
       in vec3 normal;
-      in vec3 coords;
+      in vec2 coords;
+      in int tindex;
       in vec4 colors;
       in int mindex;
       uniform mat4 PVmatrix;
       uniform mat4 Mmatrix[16];
-      out vec3 vTexture;
+      flat out int vTindex;
+      out vec2 vTexture;
       out vec4 vColor;
       out vec3 vNormal;
       out vec4 vPosition;
@@ -128,6 +130,7 @@ const char *PShader::defaultVertexShader = R"glsl(
           vPosition = M * vec4(position,1.0);
           vNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vPosition).xyz;
           vTexture = coords;
+          vTindex = tindex;
           vColor = colors;
 
           gl_Position = PVmatrix * vPosition;
@@ -135,13 +138,14 @@ const char *PShader::defaultVertexShader = R"glsl(
 )glsl";
 
 const char *PShader::defaultFragmentShader = R"glsl(
-      #version 330
-      in vec3 vTexture;
+      #version 400
+      in vec2 vTexture;
       in vec3 vNormal;
       in vec4 vColor;
       in vec4 vPosition;
+      flat in int vTindex;
       out vec4 fragColor;
-      uniform sampler2D myTextures;
+      uniform sampler2D myTextures[4];
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
       uniform vec3 directionLightVector;
@@ -160,7 +164,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
           vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
 
           vec4 texelColor;
-          if ( vTexture.z == 8 ) { // It's a circle
+          if ( vTindex == 8 ) { // It's a circle
               vec2 pos = vTexture.xy;
               vec2 centre = vec2(0.5,0.5);
                if (distance(pos,centre) > 0.5)
@@ -168,7 +172,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
                else
                    texelColor = vec4(1.0,1.0,1.0,1.0);
           } else {
-              texelColor = texture(myTextures, vTexture.xy);
+              texelColor = texture(myTextures[vTindex], vTexture.xy);
           }
           fragColor = vec4(vLighting,1.0) * vColor * texelColor;
       }
