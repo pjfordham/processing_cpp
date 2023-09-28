@@ -57,7 +57,7 @@ void initializeSphere(int numPtsW, int numPtsH_2pi) {
   }
 }
 
-void textureSphere(float rx, float ry, float rz, PImage t) {
+void textureSphere(float rx, float ry, float rz, PImage &t) {
   // These are so we can map certain parts of the image on to the shape
   float changeU=t.width/(float)(numPointsW-1);
   float changeV=t.height/(float)(numPointsH-1);
