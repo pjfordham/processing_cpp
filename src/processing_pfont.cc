@@ -262,7 +262,7 @@ PImage PFont::render_as_pimage(std::string_view text) const {
       }
    }
 
-   PImage image(width, height, 0);
+   PImage image = createImage(width, height, 0);
    image.loadPixels();
 
    // Makesure texture is clear

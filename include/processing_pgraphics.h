@@ -113,7 +113,7 @@ public:
       glc.flush();
       gl_framebuffer frame(width, height, 1, SSAA);
       glc.blit( frame );
-      PImage image(width, height, 0);
+      PImage image = createImage(width, height, 0);
       frame.saveFrame( image.pixels );
       image.save_as( fileName );
    }
@@ -725,7 +725,7 @@ public:
    MAKE_GLOBAL(noTexture, _shape);
    MAKE_GLOBAL(textureMode, _shape);
 
-   void texture(PImage &img) {
+   void texture(PImage img) {
       texture( img.getTexture( glc ) );
    }
 
