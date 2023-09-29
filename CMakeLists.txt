@@ -97,7 +97,6 @@ set(skip_examples
   "examples/Demos/Graphics/Particles/Particle.cc"
   "examples/Demos/Graphics/Particles/ParticleSystem.cc"
   "examples/Demos/Graphics/Particles/Particles.cc"
-  "examples/Demos/Graphics/Planets/Perlin.cc"
   "examples/Demos/Graphics/Ribbons/Ribbons.cc"
   "examples/Demos/Graphics/Trefoil/Surface.cc"
   "examples/Demos/Graphics/Trefoil/Trefoil.cc"
