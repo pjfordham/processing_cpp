@@ -460,7 +460,8 @@ inline float norm(float value, float start1, float stop1, float start2, float st
    return start2 + (stop2 - start2) * adjustedValue;
 }
 
-inline float constrain(float value, float lower, float upper) {
+template <typename T>
+inline T constrain(T value, T lower, T upper) {
    if (value < lower) {
       return lower;
    } else if (value > upper) {

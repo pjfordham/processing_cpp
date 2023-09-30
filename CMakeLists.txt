@@ -110,7 +110,6 @@ set(skip_examples
   "examples/Demos/Tests/OffscreenTest/OffscreenTest.cc"
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"
-  "examples/Topics/Advanced Data/CountingStrings/CountingStrings.cc"
   "examples/Topics/Advanced Data/HashMapClass/HashMapClass.cc"
   "examples/Topics/Advanced Data/HashMapClass/Word.cc"
   "examples/Topics/Advanced Data/IntListLottery/IntListLottery.cc"

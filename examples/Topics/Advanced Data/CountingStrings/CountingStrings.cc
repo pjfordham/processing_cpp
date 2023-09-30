@@ -17,17 +17,15 @@
 IntDict concordance;
 
 // The raw array of words in
-String[] tokens;
+std::vector<std::string> tokens;
 int counter = 0;
 
 void setup() {
   size(640, 360);
 
-  concordance = new IntDict();
-
   // Load file and chop it up
-  String[] lines = loadStrings("dracula.txt");
-  String allText = join(lines, " ").toLowerCase();
+  std::vector<std::string> lines = loadStrings("dracula.txt");
+  std::string allText = toLowerCase(join(lines, " "));
   tokens = splitTokens(allText, " ,.?!:;[]-\"");
 
   // Create the font
@@ -39,8 +37,8 @@ void draw() {
   fill(255);
 
   // Look at words one at a time
-  if (counter < tokens.length) {
-    String s = tokens[counter];
+  if (counter < tokens.size()) {
+    std::string s = tokens[counter];
     counter++;
     concordance.increment(s);
   }
@@ -51,10 +49,10 @@ void draw() {
 
   concordance.sortValues();
 
-  String[] keys = concordance.keyArray();
+  auto keys = concordance.keyArray();
 
   // Look at each word
-  for (String word : keys) {
+  for (std::string word : keys) {
     int count = concordance.get(word);
 
     // Only display words that appear 3 times
