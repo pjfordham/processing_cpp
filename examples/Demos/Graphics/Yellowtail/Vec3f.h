@@ -1,4 +1,5 @@
 class Vec3f {
+public:
   float x;
   float y;
   float p;  // Pressure
@@ -16,4 +17,5 @@ class Vec3f {
     y = iy;
     p = ip;
   }
-}
+
+};

@@ -12,18 +12,16 @@
  * worm-like textures.
  */
 
+#include "Gesture.h"
 
-import java.awt.Polygon;
-
-Gesture gestureArray[];
-final int nGestures = 36;  // Number of gestures
-final int minMove = 3;     // Minimum travel for a new point
+std::vector<Gesture> gestureArray;
+const int nGestures = 36;  // Number of gestures
+const int minMove = 3;     // Minimum travel for a new point
 int currentGestureID;
 
-Polygon tempP;
-int tmpXp[];
-int tmpYp[];
-
+void clearGestures();
+void updateGeometry();
+void renderGesture(Gesture &gesture, int w, int h);
 
 void setup() {
   size(1024, 768, P2D);
@@ -31,9 +29,8 @@ void setup() {
   noStroke();
 
   currentGestureID = -1;
-  gestureArray = new Gesture[nGestures];
   for (int i = 0; i < nGestures; i++) {
-    gestureArray[i] = new Gesture(width, height);
+    gestureArray.emplace_back(width, height);
   }
   clearGestures();
 }
@@ -51,7 +48,7 @@ void draw() {
 
 void mousePressed() {
   currentGestureID = (currentGestureID+1) % nGestures;
-  Gesture G = gestureArray[currentGestureID];
+  Gesture &G = gestureArray[currentGestureID];
   G.clear();
   G.clearPolys();
   G.addPoint(mouseX, mouseY);
@@ -60,7 +57,7 @@ void mousePressed() {
 
 void mouseDragged() {
   if (currentGestureID >= 0) {
-    Gesture G = gestureArray[currentGestureID];
+    Gesture &G = gestureArray[currentGestureID];
     if (G.distToLast(mouseX, mouseY) > minMove) {
       G.addPoint(mouseX, mouseY);
       G.smooth();
@@ -74,13 +71,13 @@ void keyPressed() {
   if (key == '+' || key == '=') {
     if (currentGestureID >= 0) {
       float th = gestureArray[currentGestureID].thickness;
-      gestureArray[currentGestureID].thickness = min(96, th+1);
+      gestureArray[currentGestureID].thickness = std::min(96.0f, th+1);
       gestureArray[currentGestureID].compile();
     }
   } else if (key == '-') {
     if (currentGestureID >= 0) {
       float th = gestureArray[currentGestureID].thickness;
-      gestureArray[currentGestureID].thickness = max(2, th-1);
+      gestureArray[currentGestureID].thickness = std::max(2.0f, th-1);
       gestureArray[currentGestureID].compile();
     }
   } else if (key == ' ') {
@@ -89,24 +86,21 @@ void keyPressed() {
 }
 
 
-void renderGesture(Gesture gesture, int w, int h) {
+void renderGesture(Gesture &gesture, int w, int h) {
   if (gesture.exists) {
     if (gesture.nPolys > 0) {
-      Polygon polygons[] = gesture.polygons;
-      int crosses[] = gesture.crosses;
+      auto &polygons = gesture.polygons;
+      auto &crosses = gesture.crosses;
 
-      int xpts[];
-      int ypts[];
-      Polygon p;
       int cr;
 
       beginShape(QUADS);
       int gnp = gesture.nPolys;
       for (int i=0; i<gnp; i++) {
 
-        p = polygons[i];
-        xpts = p.xpoints;
-        ypts = p.ypoints;
+        auto &p = polygons[i];
+        auto &xpts = p.xpoints;
+        auto &ypts = p.ypoints;
 
         vertex(xpts[0], ypts[0]);
         vertex(xpts[1], ypts[1]);
@@ -147,30 +141,31 @@ void renderGesture(Gesture gesture, int w, int h) {
   }
 }
 
+void advanceGesture(Gesture &gesture);
+
 void updateGeometry() {
-  Gesture J;
   for (int g=0; g<nGestures; g++) {
-    if ((J=gestureArray[g]).exists) {
+     auto &J=gestureArray[g];
+     if (J.exists) {
       if (g!=currentGestureID) {
         advanceGesture(J);
-      } else if (!mousePressed) {
+      } else if (!mousePressedb) {
         advanceGesture(J);
       }
     }
   }
 }
 
-void advanceGesture(Gesture gesture) {
+void advanceGesture(Gesture &gesture) {
   // Move a Gesture one step
   if (gesture.exists) { // check
     int nPts = gesture.nPoints;
     int nPts1 = nPts-1;
-    Vec3f path[];
     float jx = gesture.jumpDx;
     float jy = gesture.jumpDy;
 
     if (nPts > 0) {
-      path = gesture.path;
+      auto &path = gesture.path;
       for (int i = nPts1; i > 0; i--) {
         path[i].x = path[i-1].x;
         path[i].y = path[i-1].y;

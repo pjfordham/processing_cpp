@@ -1,5 +1,15 @@
-class Gesture {
+#include "Vec3f.h"
+#include "processing.h"
 
+struct Polygon {
+   std::vector<int> xpoints;
+   std::vector<int> ypoints;
+   int npoints;
+   Polygon(int points) : xpoints( points ), ypoints( points), npoints( points ) {}
+};
+
+class Gesture {
+public:
   float  damp = 5.0;
   float  dampInv = 1.0 / damp;
   float  damp1 = damp - 1;
@@ -8,9 +18,9 @@ class Gesture {
   int h;
   int capacity;
 
-  Vec3f path[];
-  int crosses[];
-  Polygon polygons[];
+  std::vector<Vec3f> path;
+  std::vector<int> crosses;
+  std::vector<Polygon> polygons;
   int nPoints;
   int nPolys;
 
@@ -23,13 +33,10 @@ class Gesture {
     w = mw;
     h = mh;
     capacity = 600;
-    path = new Vec3f[capacity];
-    polygons = new Polygon[capacity];
-    crosses  = new int[capacity];
+    path.resize(capacity);
+    crosses.resize(capacity);
     for (int i=0;i<capacity;i++) {
-      polygons[i] = new Polygon();
-      polygons[i].npoints = 4;
-      path[i] = new Vec3f();
+      polygons.emplace_back( 4 );
       crosses[i] = 0;
     }
     nPoints = 0;
@@ -71,10 +78,10 @@ class Gesture {
   }
 
   float getPressureFromVelocity(float v) {
-    final float scale = 18;
-    final float minP = 0.02;
-    final float oldP = (nPoints > 0) ? path[nPoints-1].p : 0;
-    return ((minP + max(0, 1.0 - v/scale)) + (damp1*oldP))*dampInv;
+    const float scale = 18;
+    const float minP = 0.02;
+    const float oldP = (nPoints > 0) ? path[nPoints-1].p : 0;
+    return ((minP + std::max(0.0, 1.0 - v/scale)) + (damp1*oldP))*dampInv;
   }
 
   void setPressures() {
@@ -95,7 +102,7 @@ class Gesture {
       Vec3f v = path[nPoints-1];
       float dx = v.x - ix;
       float dy = v.y - iy;
-      return mag(dx, dy);
+      return fsqrt(dx*dx + dy*dy);
     }
     else {
       return 30;
@@ -140,9 +147,6 @@ class Gesture {
       bx = p0.x + si01;
       by = p0.y - co01;
 
-      int xpts[];
-      int ypts[];
-
       int LC = 20;
       int RC = w-LC;
       int TC = 20;
@@ -151,9 +155,7 @@ class Gesture {
       float tapow = 0.4;
 
       // handle the middle points
-      int i = 1;
-      Polygon apoly;
-      for (i = 1; i < nPathPoints; i++) {
+      for (int i = 1; i < nPathPoints; i++) {
         taper = pow((lastPolyIndex-i)*npm1finv,tapow);
 
         p0 = path[i-1];
@@ -161,12 +163,12 @@ class Gesture {
         p2 = path[i+1];
         p1x = p1.x;
         p1y = p1.y;
-        radius1 = Math.max(mint,taper*p1.p*thickness);
+        radius1 = std::max(mint,taper*p1.p*thickness);
 
         // assumes all segments are roughly the same length...
         dx02 = p2.x - p0.x;
         dy02 = p2.y - p0.y;
-        hp02 = (float) Math.sqrt(dx02*dx02 + dy02*dy02);
+        hp02 = fsqrt(dx02*dx02 + dy02*dy02);
         if (hp02 != 0) {
           hp02 = radius1/hp02;
         }
@@ -182,9 +184,9 @@ class Gesture {
         ayid = ayi-ayip;
 
         // set the vertices of the polygon
-        apoly = polygons[nPolys++];
-        xpts = apoly.xpoints;
-        ypts = apoly.ypoints;
+        auto &apoly = polygons[nPolys++];
+        auto &xpts = apoly.xpoints;
+        auto &ypts = apoly.ypoints;
         xpts[0] = axi = axid + axip;
         xpts[1] = bxi = axid + (int) bx;
         xpts[2] = cxi = axid + (int)(cx = p1x + si02);
@@ -218,9 +220,9 @@ class Gesture {
 
       // handle the last point
       p2 = path[nPathPoints];
-      apoly = polygons[nPolys++];
-      xpts = apoly.xpoints;
-      ypts = apoly.ypoints;
+      auto &apoly = polygons[nPolys++];
+      auto &xpts = apoly.xpoints;
+      auto &ypts = apoly.ypoints;
 
       xpts[0] = (int)ax;
       xpts[1] = (int)bx;
@@ -238,8 +240,8 @@ class Gesture {
   void smooth() {
     // average neighboring points
 
-    final float weight = 18;
-    final float scale  = 1.0 / (weight + 2);
+    const float weight = 18;
+    const float scale  = 1.0 / (weight + 2);
     int nPointsMinusTwo = nPoints - 2;
     Vec3f lower, upper, center;
 
@@ -252,5 +254,5 @@ class Gesture {
       center.y = (lower.y + weight*center.y + upper.y)*scale;
     }
   }
-}
+};
 
