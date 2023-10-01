@@ -18,13 +18,14 @@
  * while words the other (Frankenstein) are colored black.
  */
 
-HashMap<String, Word> words;  // HashMap object
+#include "Word.h"
+
+std::unordered_map<std::string, Word> words;  // HashMap object
+
+void loadFile(std::string filename);
 
 void setup() {
   size(640, 360);
-
-  // Create the HashMap
-  words = new HashMap<String, Word>();
 
   // Load two files
   loadFile("dracula.txt");
@@ -38,43 +39,43 @@ void draw() {
   background(126);
 
   // Show words
-  for (Word w : words.values()) {
+  for (auto& [key, w] : words) {
     if (w.qualify()) {
-        w.display();
-        w.move();
+       w.display();
+       w.move();
     }
   }
 }
 
 // Load a file
-void loadFile(String filename) {
-  String[] lines = loadStrings(filename);
-  String allText = join(lines, " ").toLowerCase();
-  String[] tokens = splitTokens(allText, " ,.?!:;[]-\"'");
+void loadFile(std::string filename) {
+  std::vector<std::string> lines = loadStrings(filename);
+  std::string allText = toLowerCase(join(lines, " "));
+  std::vector<std::string> tokens = splitTokens(allText, " ,.?!:;[]-\"'");
 
-  for (String s : tokens) {
-    // Is the word in the HashMap
-    if (words.containsKey(s)) {
+  for (std::string &s : tokens) {
+     // Is the word in the HashMap
+    if (words.count(s) != 0) {
       // Get the word object and increase the count
       // We access objects from a HashMap via its key, the String
-      Word w = words.get(s);
+      Word &w = words[s];
       // Which book am I loading?
-      if (filename.contains("dracula")) {
+      if (filename.find("dracula") != std::string::npos) {
         w.incrementDracula();
       }
-      else if (filename.contains("frankenstein")) {
+      else if (filename.find("frankenstein") != std::string::npos) {
         w.incrementFranken();
       }
     }
     else {
       // Otherwise make a new word
-      Word w = new Word(s);
+      Word w(s);
       // And add to the HashMap put() takes two arguments, "key" and "value"
       // The key for us is the String and the value is the Word object
-      words.put(s, w);
-      if (filename.contains("dracula")) {
+      words[s] = w;
+      if (filename.find("dracula") != std::string::npos) {
         w.incrementDracula();
-      } else if (filename.contains("frankenstein")) {
+      } else if (filename.find("frankenstein") != std::string::npos) {
         w.incrementFranken();
       }
     }
