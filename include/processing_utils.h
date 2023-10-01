@@ -7,6 +7,9 @@
 #include <fmt/core.h>
 #include <map>
 #include <algorithm>
+#include <filesystem>
+#include <chrono>
+#include <ctime>
 
 // This macro pulls the API a subobject into current scope.
 #define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }
@@ -185,5 +188,74 @@ public:
 };
 
 typedef PDict<std::string, int> IntDict;
+typedef PDict<std::string, float> FloatDict;
+
+template <typename TP>
+std::time_t to_time_t(TP tp) {
+   using namespace std::chrono;
+   auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
+                                                       + system_clock::now());
+   return system_clock::to_time_t(sctp);
+}
+
+class File {
+   std::filesystem::path path;
+
+public:
+   File(std::string name) { path = name; }
+
+   std::time_t lastModified() const {
+      return to_time_t(std::filesystem::last_write_time(path));
+   }
+
+   std::string getName() const {
+      return path.filename();
+   }
+
+   std::string getAbsolutePath() const {
+      return absolute( path );
+   }
+
+   bool isDirectory() const {
+      return is_directory(path);
+   }
+
+   int length() const {
+      try {
+         return file_size(path);
+      } catch(...) {
+         return 0;
+      }
+   }
+
+   std::vector<std::string> list() const {
+      try {
+         std::vector<std::string> files;
+         for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            files.push_back(entry.path());
+         }
+         return files;
+      }
+      catch(...) {
+         return {};
+      }
+   }
+
+   std::vector<File> listFiles() const {
+      try {
+         std::vector<File> files;
+         for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            files.push_back(File(entry.path()));
+         }
+         return files;
+      }
+      catch(...) {
+         return {};
+      }
+   }
+
+};
+
+inline std::string sketchPath() { return File(".").getAbsolutePath(); }
 
 #endif

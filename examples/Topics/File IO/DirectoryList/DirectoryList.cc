@@ -10,41 +10,43 @@
  *    of files in a directory and all subdirectories (using recursion)
  */
 
-import java.util.Date;
+std::vector<std::string> listFileNames(std::string path);
+std::vector<File> listFilesRecursive(std::string path);
+std::vector<File> listFiles(std::string path);
 
 void setup() {
 
   // Using just the path of this sketch to demonstrate,
   // but you can list any directory you like.
-  String path = sketchPath();
+  std::string path = sketchPath();
 
-  println("Listing all filenames in a directory: ");
-  String[] filenames = listFileNames(path);
+  fmt::print("Listing all filenames in a directory: \n");
+  std::vector<std::string> filenames = listFileNames(path);
   printArray(filenames);
 
-  println("\nListing info about all files in a directory: ");
-  File[] files = listFiles(path);
-  for (int i = 0; i < files.length; i++) {
+  fmt::print("\nListing info about all files in a directory: \n");
+  std::vector<File> files = listFiles(path);
+  for (int i = 0; i < files.size(); i++) {
     File f = files[i];
-    println("Name: " + f.getName());
-    println("Is directory: " + f.isDirectory());
-    println("Size: " + f.length());
-    String lastModified = new Date(f.lastModified()).toString();
-    println("Last Modified: " + lastModified);
-    println("-----------------------");
+    fmt::print("Name: {}\n", f.getName());
+    fmt::print("Is directory: {}\n", f.isDirectory());
+    fmt::print("Size: {}\n", f.length());
+    auto time = f.lastModified();
+    fmt::print("Last Modified: {}\n", std::asctime(std::localtime(&time)));
+    fmt::print("-----------------------\n");
   }
 
-  println("\nListing info about all files in a directory and all subdirectories: ");
-  ArrayList<File> allFiles = listFilesRecursive(path);
+  fmt::print("\nListing info about all files in a directory and all subdirectories: \n");
+  std::vector<File> allFiles = listFilesRecursive(path);
 
   for (File f : allFiles) {
-    println("Name: " + f.getName());
-    println("Full path: " + f.getAbsolutePath());
-    println("Is directory: " + f.isDirectory());
-    println("Size: " + f.length());
-    String lastModified = new Date(f.lastModified()).toString();
-    println("Last Modified: " + lastModified);
-    println("-----------------------");
+    fmt::print("Name: {}\n", f.getName());
+    fmt::print("Full path: {}\n", f.getAbsolutePath());
+    fmt::print("Is directory: {}\n", f.isDirectory());
+    fmt::print("Size: {}\n", f.length());
+    auto time = f.lastModified();
+    fmt::print("Last Modified: {}\n", std::asctime(std::localtime(&time)));
+    fmt::print("-----------------------\n");
   }
 
   noLoop();
@@ -56,49 +58,51 @@ void draw() {
 }
 
 // This function returns all the files in a directory as an array of Strings
-String[] listFileNames(String dir) {
-  File file = new File(dir);
+std::vector<std::string> listFileNames(std::string dir) {
+  File file(dir);
   if (file.isDirectory()) {
-    String names[] = file.list();
+     std::vector<std::string> names = file.list();
     return names;
   } else {
     // If it's not a directory
-    return null;
+    return {};;
   }
 }
 
 // This function returns all the files in a directory as an array of File objects
 // This is useful if you want more info about the file
-File[] listFiles(String dir) {
-  File file = new File(dir);
+std::vector<File> listFiles(std::string dir) {
+  File file(dir);
   if (file.isDirectory()) {
-    File[] files = file.listFiles();
+     std::vector<File> files = file.listFiles();
     return files;
   } else {
     // If it's not a directory
-    return null;
+     return {};
   }
 }
 
+void recurseDir(std::vector<File> &a, std::string dir);
+
 // Function to get a list of all files in a directory and all subdirectories
-ArrayList<File> listFilesRecursive(String dir) {
-  ArrayList<File> fileList = new ArrayList<File>();
+std::vector<File> listFilesRecursive(std::string dir) {
+  std::vector<File> fileList;
   recurseDir(fileList, dir);
   return fileList;
 }
 
 // Recursive function to traverse subdirectories
-void recurseDir(ArrayList<File> a, String dir) {
-  File file = new File(dir);
+void recurseDir(std::vector<File> &a, std::string dir) {
+  File file(dir);
   if (file.isDirectory()) {
     // If you want to include directories in the list
-    a.add(file);
-    File[] subfiles = file.listFiles();
-    for (int i = 0; i < subfiles.length; i++) {
+    a.push_back(file);
+    std::vector<File> subfiles = file.listFiles();
+    for (int i = 0; i < subfiles.size(); i++) {
       // Call this function on all files in this directory
       recurseDir(a, subfiles[i].getAbsolutePath());
     }
   } else {
-    a.add(file);
+    a.push_back(file);
   }
 }
