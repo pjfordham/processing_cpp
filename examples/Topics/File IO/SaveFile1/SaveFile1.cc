@@ -7,8 +7,7 @@
  * is saved to the sketch's folder.
  */
 
-int[] x = new int[0];
-int[] y = new int[0];
+std::vector<int> x,y;
 
 void setup()
 {
@@ -21,26 +20,26 @@ void draw()
   stroke(0);
   noFill();
   beginShape();
-  for (int i = 0; i < x.length; i++) {
+  for (int i = 0; i < x.size(); i++) {
     vertex(x[i], y[i]);
   }
   endShape();
   // Show the next segment to be added
-  if (x.length >= 1) {
+  if (x.size() >= 1) {
     stroke(255);
-    line(mouseX, mouseY, x[x.length-1], y[x.length-1]);
+    line(mouseX, mouseY, x[x.size()-1], y[x.size()-1]);
   }
 }
 
 void mousePressed() { // Click to add a line segment
-  x = append(x, mouseX);
-  y = append(y, mouseY);
+   x.push_back( mouseX );
+   y.push_back( mouseY);
 }
 
 void keyPressed() { // Press a key to save the data
-  String[] lines = new String[x.length];
-  for (int i = 0; i < x.length; i++) {
-    lines[i] = x[i] + "\t" + y[i];
+  std::vector<std::string> lines;
+  for (int i = 0; i < x.size(); i++) {
+     lines.push_back( fmt::format("{}\t{}", x[i], y[i]) );
   }
   saveStrings("lines.txt", lines);
   exit(); // Stop the program

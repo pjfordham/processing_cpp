@@ -6,7 +6,7 @@
  * itself and the program is stopped.
  */
 
-PrintWriter output;
+PWriter output;
 
 void setup()
 {
@@ -18,11 +18,11 @@ void setup()
 
 void draw()
 {
-  if (mousePressed) {
+  if (mousePressedb) {
     point(mouseX, mouseY);
     // Write the coordinate to a file with a
     // "\t" (TAB character) between each entry
-    output.println(mouseX + "\t" + mouseY);
+    output.println(fmt::format("{}\t{}", mouseX, mouseY));
   }
 }
 

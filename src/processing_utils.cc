@@ -22,6 +22,22 @@ std::vector<std::string> loadStrings(std::string_view fileName) {
    return lines;
 }
 
+void saveStrings(std::string_view fileName, std::vector<std::string> &data) {
+   std::vector<std::string> lines;
+   std::ofstream outputFile("data/"s.append(fileName));
+
+   if (!outputFile.is_open()) {
+      abort();
+   }
+
+   for (const std::string& line : data) {
+      outputFile << line << std::endl; // Write each string followed by a newline
+   }
+
+   outputFile.close();
+   return;
+}
+
 std::vector<std::string> split(std::string_view str, char delimiter) {
    std::vector<std::string> result;
    std::string token;

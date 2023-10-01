@@ -10,6 +10,8 @@
 #include <filesystem>
 #include <chrono>
 #include <ctime>
+#include <fstream>
+
 
 // This macro pulls the API a subobject into current scope.
 #define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }
@@ -21,10 +23,37 @@ const char TAB = '\t';
 void link(std::string_view link);
 std::vector<std::string> split(std::string_view str, char delimiter);
 std::vector<std::string> loadStrings(std::string_view fileName);
+void saveStrings(std::string_view fileName, std::vector<std::string> &data);
 std::vector<std::string> splitTokens(std::string_view input, std::string_view delimiters);
 std::string join(const std::vector<std::string>& strings, std::string_view separator);
 std::string toLowerCase(std::string_view input);
 
+class PWriter {
+   std::ofstream output;
+
+ public:
+   PWriter() {}
+
+   PWriter(std::string_view filename) :
+      output("data/"s.append(filename)) {
+   }
+
+   void println(std::string_view data) {
+      output << data << "\n";
+   }
+
+   void close() {
+      output.close();
+   }
+
+   void flush() {
+      output.flush();
+   }
+};
+
+inline PWriter createWriter(std::string_view name) {
+   return {name};
+}
 
 template <typename T>
 std::string nf(T num, int digits) {

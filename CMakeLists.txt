@@ -129,8 +129,6 @@ set(skip_examples
   "examples/Topics/Create Shapes/WigglePShape/Wiggler.cc"
   "examples/Topics/Curves/ArcLengthParametrization/ArcLengthParametrization.cc"
   "examples/Topics/Curves/ArcLengthParametrization/BezierCurve.cc"
-  "examples/Topics/File IO/SaveFile1/SaveFile1.cc"
-  "examples/Topics/File IO/SaveFile2/SaveFile2.cc"
   "examples/Topics/Image Processing/Blending/Blending.cc"
   "examples/Topics/Image Processing/EdgeDetection/EdgeDetection.cc"
   "examples/Topics/Image Processing/Explode/Explode.cc"
