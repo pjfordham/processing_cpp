@@ -11,8 +11,11 @@
  *
  */
 
+#include <thread>
+#include <atomic>
+
 // This sketch will load data from all of these URLs in a separate thread
-String[] urls = {
+std::vector<std::string> urls = {
   "http://processing.org",
   "http://www.processing.org/exhibition/",
   "http://www.processing.org/reference/",
@@ -29,17 +32,20 @@ String[] urls = {
 };
 
 // This will keep track of whether the thread is finished
-boolean finished = false;
+std::atomic<boolean> finished = false;
 // And how far along
 float percent = 0;
 
 // A variable to keep all the data loaded
-String allData;
+std::string allData;
+std::thread myThread;
+
+void loadData();
 
 void setup() {
   size(640, 360);
   // Spawn the thread!
-  thread("loadData");
+  myThread = std::thread(loadData);
 }
 
 void draw() {
@@ -63,6 +69,8 @@ void draw() {
     text("Loading", width/2, height/2+30);
   }
   else {
+    if (myThread.joinable())
+       myThread.join();
     // The thread is complete!
     textAlign(CENTER);
     textSize(24);
@@ -72,7 +80,8 @@ void draw() {
 }
 
 void mousePressed() {
-   thread("loadData");
+   if( finished )
+      myThread = std::thread (loadData);
 }
 
 void loadData() {
@@ -84,22 +93,22 @@ void loadData() {
   // Look at each URL
   // This example is doing some highly arbitrary things just to make it take longer
   // If you had a lot of data parsing you needed to do, this can all happen in the background
-  for (int i = 0; i < urls.length; i++) {
-    String[] lines = loadStrings(urls[i]);
+  for (int i = 0; i < urls.size(); i++) {
+    std::vector<std::string> lines = loadStrings(urls[i]);
     // Demonstrating some arbitrary text splitting, joining, and sorting to make the thread take longer
-    String allTxt = join(lines, " ");
-    String[] words = splitTokens(allTxt, "\t+\n <>=\\-!@#$%^&*(),.;:/?\"\'");
-    for (int j = 0; j < words.length; j++) {
-      words[j] = words[j].trim();
-      words[j] = words[j].toLowerCase();
+    std::string allTxt = join(lines, " ");
+    std::vector<std::string> words = splitTokens(allTxt, "\t+\n <>=\\-!@#$%^&*(),.;:/?\"\'");
+    for (int j = 0; j < words.size(); j++) {
+      words[j] = trim( words[j] );
+      words[j] = toLowerCase(words[j]);
     }
-    words = sort(words);
+    std::sort(words.begin(), words.end());
     allData += join(words, " ");
-    percent = float(i)/urls.length;
+    percent = float(i)/urls.size();;
   }
 
-  String[] words = split(allData," ");
-  words = sort(words);
+  std::vector<std::string> words = split(allData," ");
+  sort(words.begin(), words.end());
   allData = join(words, " ");
 
   // The thread is completed!

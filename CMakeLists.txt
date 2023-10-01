@@ -117,7 +117,6 @@ set(skip_examples
   "examples/Topics/Advanced Data/LoadSaveXML/Bubble.cc"
   "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"
   "examples/Topics/Advanced Data/Regex/Regex.cc"
-  "examples/Topics/Advanced Data/Threads/Threads.cc"
   "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"
   "examples/Topics/Cellular Automata/Spore1/Spore1.cc"
   "examples/Topics/Cellular Automata/Spore2/Spore2.cc"

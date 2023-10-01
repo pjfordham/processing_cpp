@@ -28,6 +28,9 @@ std::vector<std::string> splitTokens(std::string_view input, std::string_view de
 std::string join(const std::vector<std::string>& strings, std::string_view separator);
 std::string toLowerCase(std::string_view input);
 
+std::string trim(const std::string& str);
+std::vector<std::string> split(std::string_view input, std::string_view delimiter);
+
 class PWriter {
    std::ofstream output;
 
