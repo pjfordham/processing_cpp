@@ -110,7 +110,6 @@ set(skip_examples
   "examples/Demos/Tests/OffscreenTest/OffscreenTest.cc"
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"
-  "examples/Topics/Advanced Data/IntListLottery/IntListLottery.cc"
   "examples/Topics/Advanced Data/LoadSaveJSON/Bubble.cc"
   "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"
   "examples/Topics/Advanced Data/LoadSaveTable/Bubble.cc"

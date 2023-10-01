@@ -12,38 +12,41 @@
  * that is shuffled and picked randomly from.  One is the list of "picked" numbers.
  * And one is a lottery "ticket" which includes 5 numbers that are trying to be matched.
  */
+#include <deque>
 
 // Three lists of integers
-IntList lottery;
-IntList results;
-IntList ticket;
+std::deque<int> lottery;
+std::deque<int> results;
+std::deque<int> ticket;
+
+// Create a random number generator engine
+std::random_device rd;
+std::mt19937 gen(rd());
 
 void setup() {
   size(640, 360);
   frameRate(30);
-  // Create empy lists
-  lottery = new IntList();
-  results = new IntList();
-  ticket  = new IntList();
 
 
   // Add 20 integers in order to the lottery list
   for (int i = 0; i < 20; i++) {
-    lottery.append(i);
+    lottery.push_back(i);
   }
 
   // Pick five numbers from the lottery list to go into the Ticket list
   for (int i = 0; i < 5; i++) {
     int index = int(random(lottery.size()));
-    ticket.append(lottery.get(index));
+    ticket.push_back(lottery[index]);
   }
 }
+
+void showList(std::deque<int> &list, float x, float y);
 
 void draw() {
   background(51);
 
   // The shuffle() method randomly shuffles the order of the values in the list
-  lottery.shuffle();
+  std::shuffle(lottery.begin(), lottery.end(), gen);
 
   // Call a method that will display the integers in the list at an x,y location
   showList(lottery, 16, 48);
@@ -55,7 +58,7 @@ void draw() {
   // match the ticket numbers
   for (int i = 0; i < results.size(); i++) {
     // Are the integers equal?
-    if (results.get(i) == ticket.get(i)) {
+    if (results[i] == ticket[i]) {
       fill(0, 255, 0, 100);  // if so green
     } else {
       fill(255, 0, 0, 100);  // if not red
@@ -68,14 +71,14 @@ void draw() {
   if (frameCount % 30 == 0) {
     if (results.size() < 5) {
       // Get the first value in the lottery list and remove it
-      int val = lottery.remove(0);
+      int val = lottery.front(); lottery.pop_front();
       // Put it in the results
-      results.append(val);
+      results.push_back(val);
     } else {
       // Ok we picked five numbers, let's reset
       for (int i = 0; i < results.size(); i++) {
         // Put the picked results back into the lottery
-        lottery.append(results.get(i));
+        lottery.push_back(results[i]);
       }
       // Clear the results and start over
       results.clear();
@@ -84,16 +87,16 @@ void draw() {
 }
 
 // Draw a list of numbers starting at an x,y location
-void showList(IntList list, float x, float y) {
+void showList(std::deque<int> &list, float x, float y) {
   for (int i = 0; i < list.size(); i++) {
     // Use get() to pull a value from the list at the specified index
-    int val = list.get(i);
+    int val = list[i];
     stroke(255);
     noFill();
     ellipse(x+i*32, y, 24, 24);
     textAlign(CENTER);
     fill(255);
-    text(val, x+i*32, y+6);
+    text(fmt::format("{}",val), x+i*32, y+6);
   }
 }
 
