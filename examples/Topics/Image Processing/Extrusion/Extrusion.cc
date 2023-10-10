@@ -7,15 +7,15 @@
 
 PImage a;
 boolean onetime = true;
-int[][] aPixels;
-int[][] values;
+const int W = 640;
+const int H = 300;
+int aPixels[W][H];
+int values[W][H];
 float angle;
 
 void setup() {
-  size(640, 360, P3D);
+  size(W, H, P3D);
 
-  aPixels = new int[width][height];
-  values = new int[width][height];
   noFill();
 
   // Load the image into a new array
