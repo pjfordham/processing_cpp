@@ -31,6 +31,20 @@ std::string toLowerCase(std::string_view input);
 std::string trim(const std::string& str);
 std::vector<std::string> split(std::string_view input, std::string_view delimiter);
 
+inline bool startsWith(std::string_view str, std::string_view prefix) {
+    if (str.size() < prefix.size()) {
+        return false;
+    }
+    return str.substr(0, prefix.size()) == prefix;
+}
+
+inline std::string substr(std::string_view str, size_t start, size_t end) {
+   if (start >= str.size() || end >= str.size()) {
+      return ""; // If the position is out of bounds, return an empty string_view
+   }
+   return std::string(str.data() + start, end-start);
+}
+
 class PWriter {
    std::ofstream output;
 
