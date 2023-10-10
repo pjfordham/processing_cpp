@@ -45,22 +45,25 @@ public:
    }
    color(float _r, float _g, float _b) : color( _r, _g, _b, scaleA) {
    }
+   color(color c, float _a) : color( c.r, c.g, c.b, _a ) {
+   }
    color(float _r)  : color( _r, _r, _r, scaleA) {
    }
-   color(unsigned int c, bool) : r( red(c) ), g(green(c)), b(blue(c)), a(alpha(c))  {
+   color(unsigned int c) : r( red(c) ), g(green(c)), b(blue(c)), a(alpha(c))  {
    }
+   color(int c) = delete;
    color()  {
    }
    void print() const;
    void printf() const;
 };
 
-const color DEFAULT_GRAY = color(240);
-const color BLACK = color(0);
-const color WHITE = color(255);
-//const color GRAY = color(127);
-const color LIGHT_GRAY = color(192);
-const color DARK_GRAY = color(64);
+const color DEFAULT_GRAY = color(240.0f);
+const color BLACK = color(0.0f);
+const color WHITE = color(255.0f);
+//const color GRAY = color(127.0f);
+const color LIGHT_GRAY = color(192.0f);
+const color DARK_GRAY = color(64.0f);
 const color RED = color(255, 0, 0);
 const color GREEN = color(0, 255, 0);
 const color BLUE = color(0, 0, 255);

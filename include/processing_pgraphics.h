@@ -587,7 +587,7 @@ public:
    color get(int x, int y) {
       if (!pixels_current)
          loadPixels();
-      return color( pixels[y*width+x], true );
+      return pixels[y*width+x];
    }
 
    void set(int x, int y, color c) {

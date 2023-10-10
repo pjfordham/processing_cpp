@@ -54,7 +54,7 @@ public:
 
    color get(int x, int y) const {
       if ( 0 <= x && x < width && 0 <= y && y < height)
-         return { pixels[y * width + x], false };
+         return pixels[y * width + x];
       else
          return BLACK;
    }
