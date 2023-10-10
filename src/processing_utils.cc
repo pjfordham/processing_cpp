@@ -54,7 +54,11 @@ std::vector<char> loadURL(std::string_view URL) {
       std::ifstream file(("data/"s + sURL), std::ios::binary);
       if (file.is_open()) {
          // Read the local file into a vector
-         std::vector<char> local_data(file.tellg());
+         file.seekg(0, std::ios::end);
+         std::streampos file_size = file.tellg();
+         file.seekg(0, std::ios::beg);
+
+         std::vector<char> local_data(file_size);
          file.read(local_data.data(), local_data.size());
          file.close();
          return local_data;
