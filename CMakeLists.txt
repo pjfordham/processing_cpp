@@ -125,7 +125,6 @@ set(skip_examples
   "examples/Topics/Curves/ArcLengthParametrization/ArcLengthParametrization.cc"
   "examples/Topics/Curves/ArcLengthParametrization/BezierCurve.cc"
   "examples/Topics/Image Processing/Blending/Blending.cc"
-  "examples/Topics/Image Processing/EdgeDetection/EdgeDetection.cc"
   "examples/Topics/Shaders/BlurFilter/BlurFilter.cc"
   "examples/Topics/Shaders/Conway/Conway.cc"
   "examples/Topics/Shaders/CustomBlend/CustomBlend.cc"

@@ -6,9 +6,9 @@
  * the image. This example is currently not accurate in JavaScript mode.
  */
 
-float[][] kernel = {{ -1, -1, -1},
-                    { -1,  9, -1},
-                    { -1, -1, -1}};
+float kernel[3][3] = {{ -1, -1, -1},
+                      { -1,  9, -1},
+                      { -1, -1, -1}};
 
 PImage img;
 
