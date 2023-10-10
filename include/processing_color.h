@@ -96,6 +96,13 @@ inline color lerpColor(const color& c1, const color& c2, float amt) {
       c1.a + (c2.a - c1.a) * amt};
 }
 
+inline float brightness(color rgb) {
+  if (color::mode == HSB) {
+     return rgb.r;
+   }
+   return 0.299f * rgb.r + 0.587f * rgb.g + 0.114f * rgb.b;
+}
+
 // ----
 // End color handling.
 // ----

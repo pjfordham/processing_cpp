@@ -128,7 +128,6 @@ set(skip_examples
   "examples/Topics/Image Processing/EdgeDetection/EdgeDetection.cc"
   "examples/Topics/Image Processing/Explode/Explode.cc"
   "examples/Topics/Image Processing/Extrusion/Extrusion.cc"
-  "examples/Topics/Image Processing/Histogram/Histogram.cc"
   "examples/Topics/Image Processing/LinearImage/LinearImage.cc"
   "examples/Topics/Shaders/BlurFilter/BlurFilter.cc"
   "examples/Topics/Shaders/Conway/Conway.cc"

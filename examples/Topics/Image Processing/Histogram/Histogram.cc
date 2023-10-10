@@ -16,7 +16,7 @@ size(640, 360);
 // Load a different image by modifying the comments
 PImage img = loadImage("frontier.jpg");
 image(img, 0, 0);
-int[] hist = new int[256];
+int hist[256] = {};
 
 // Calculate the histogram
 for (int i = 0; i < img.width; i++) {
@@ -27,7 +27,7 @@ for (int i = 0; i < img.width; i++) {
 }
 
 // Find the largest value in the histogram
-int histMax = max(hist);
+int histMax = *std::max_element(std::begin(hist), std::end(hist));
 
 stroke(255);
 // Draw half of the histogram (skip every second value)

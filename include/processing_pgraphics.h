@@ -19,6 +19,7 @@ public:
 
    static void close();
 
+   bool pixels_current = false;
    gl_framebuffer windowFrame;
    PTexture currentTexture;
    int textureMode_ = IMAGE;
@@ -59,6 +60,7 @@ public:
       std::swap(textureMode_, x.textureMode_);
       std::swap(glc, x.glc);
 
+      std::swap(pixels_current, x.pixels_current);
       std::swap(windowFrame, x.windowFrame);
       std::swap(ellipse_mode, x.ellipse_mode);
       std::swap(rect_mode, x.rect_mode);
@@ -574,6 +576,7 @@ public:
    void loadPixels() {
       glc.flush();
       glc.loadPixels( pixels );
+      pixels_current = true;
    }
 
    void updatePixels() {
@@ -582,8 +585,9 @@ public:
     }
 
    color get(int x, int y) {
-      loadPixels();
-      return pixels[y*width+x];
+      if (!pixels_current)
+         loadPixels();
+      return color( pixels[y*width+x], true );
    }
 
    void set(int x, int y, color c) {
@@ -643,6 +647,7 @@ public:
       pushMatrix();
       translate(x,y);
       scale(width / pshape.width, height / pshape.height);
+      pixels_current = false;
       pshape.draw( glc, _shape.shape_matrix );
       popMatrix();
    }
@@ -652,6 +657,7 @@ public:
    }
 
    void shape(const PShape &pshape) {
+      pixels_current = false;
       pshape.draw( glc, _shape.shape_matrix );
    }
 
