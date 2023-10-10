@@ -73,7 +73,7 @@ for (int j = 0; j < height; j++) {
     // We color each pixel based on how long it takes to get to infinity
     // If we never got there, let's pick the color black
     if (n == maxiterations) {
-      pixels[i+j*width] = color(0);
+      pixels[i+j*width] = BLACK;
     } else {
       // Gosh, we could make fancy colors here if we wanted
       float norm = map(convergeNumber, 0, maxiterations, 0, 1);

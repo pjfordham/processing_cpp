@@ -39,7 +39,7 @@ void draw() {
     sval -= 0.01;
   }
 
-  sval = constrain(sval, 1.0, 2.0);
+  sval = constrain(sval, 1.0f, 2.0f);
 
   translate(width/2 + nmx * sval-100, height/2 + nmy*sval - 100, -50);
   scale(sval);

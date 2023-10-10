@@ -497,6 +497,10 @@ public:
       line_end_cap = cap;
    }
 
+   void setStroke(bool c) {
+      setStroke( color( 0.0f, 0.0f, 0.0f, 0.0f ) );
+   }
+
    void setStroke(color c) {
       for ( auto&&v : extras ) {
          v.stroke = c;

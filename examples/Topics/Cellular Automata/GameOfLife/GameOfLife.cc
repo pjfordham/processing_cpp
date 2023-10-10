@@ -22,7 +22,7 @@ int lastRecordedTime = 0;
 
 // Colors for active/inactive cells
 color alive = color(0, 200, 0);
-color dead = color(0);
+color dead = BLACK;
 
 // Array of cells
 std::vector<std::vector<int>> cells;

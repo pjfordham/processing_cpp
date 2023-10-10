@@ -36,8 +36,8 @@ void draw()
   ay[num-1] += random(-range, range);
 
   // Constrain all points to the screen
-  ax[num-1] = constrain(ax[num-1], 0, width);
-  ay[num-1] = constrain(ay[num-1], 0, height);
+  ax[num-1] = constrain(ax[num-1], 0.0f, (float)width);
+  ay[num-1] = constrain(ay[num-1], 0.0f, (float)height);
 
   // Draw a line connecting the points
   for(int i=1; i<num; i++) {

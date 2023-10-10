@@ -29,7 +29,7 @@ void draw() {
       //float val = cos(r);                            // Another simple function
       //float val = sin(theta);                        // Another simple function
       // Map resulting vale to grayscale value
-      pixels[i+j*width] = color((val + 1.0) * 255.0/2.0);     // Scale to between 0 and 255
+      pixels[i+j*width] = color((val + 1.0f) * 255.0f/2.0f);     // Scale to between 0 and 255
       y += dy;                // Increment y
     }
     x += dx;                  // Increment x

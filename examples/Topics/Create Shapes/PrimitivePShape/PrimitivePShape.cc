@@ -17,7 +17,7 @@ void setup() {
 void draw() {
   background(51);
   // We can dynamically set the stroke and fill of the shape
-  circle.setStroke(color(255));
+  circle.setStroke(WHITE);
   circle.setStrokeWeight(4);
   circle.setFill(color(map(mouseX, 0, width, 0, 255)));
   // We can use translate to move the PShape

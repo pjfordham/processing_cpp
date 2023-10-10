@@ -21,7 +21,7 @@ public:
   PVector attract(Planet m) {
      PVector force = PVector::sub(position, m.position);    // Calculate direction of force
     float d = force.mag();                               // Distance between objects
-    d = constrain(d, 5.0, 25.0);                           // Limiting the distance to eliminate "extreme" results for very close or very far objects
+    d = constrain(d, 5.0f, 25.0f);                           // Limiting the distance to eliminate "extreme" results for very close or very far objects
     float strength = (G * mass * m.mass) / (d * d);      // Calculate gravitional force magnitude
     force.setMag(strength);                              // Get force vector --> magnitude * direction
     return force;

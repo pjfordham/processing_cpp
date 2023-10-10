@@ -73,7 +73,7 @@ void updateSpring() {
   // Set and constrain the position of top bar
   if(move) {
     ps = mouseY - springHeight/2;
-    ps = constrain(ps, miny, maxy);
+    ps = constrain(ps, (float)miny, (float)maxy);
   }
 }
 

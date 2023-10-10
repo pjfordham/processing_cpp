@@ -68,9 +68,9 @@ color convolution(int x, int y, std::vector<std::vector<float>> &matrix, int mat
     }
   }
   // Make sure RGB is within range
-  rtotal = constrain(rtotal, 0, 255);
-  gtotal = constrain(gtotal, 0, 255);
-  btotal = constrain(btotal, 0, 255);
+  rtotal = constrain(rtotal, 0.0f, 255.0f);
+  gtotal = constrain(gtotal, 0.0f, 255.0f);
+  btotal = constrain(btotal, 0.0f, 255.0f);
   // Return the resulting color
   return color(rtotal, gtotal, btotal);
 }

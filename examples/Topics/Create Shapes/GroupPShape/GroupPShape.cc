@@ -45,7 +45,7 @@ void setup() {
   // Make a primitive (Rectangle) PShape
   PShape rectangle = createRect(-10,-10,20,20);
   rectangle.setFill(false);
-  rectangle.setStroke(color(255));
+  rectangle.setStroke(WHITE);
 
   // Add them all to the group
   group.addChild(star);

@@ -45,12 +45,15 @@ public:
    }
    color(float _r, float _g, float _b) : color( _r, _g, _b, scaleA) {
    }
+   color(float _r, float _a) : color( _r, _r, _r, _a ) {
+   }
    color(color c, float _a) : color( c.r, c.g, c.b, _a ) {
    }
    color(float _r)  : color( _r, _r, _r, scaleA) {
    }
    color(unsigned int c) : r( red(c) ), g(green(c)), b(blue(c)), a(alpha(c))  {
    }
+   color(bool b) = delete;
    color(int c) = delete;
    color()  {
    }

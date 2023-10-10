@@ -51,9 +51,9 @@ void update(int x, int y) {
 
 void setup() {
   size(640, 360);
-  rectColor = color(0);
-  circleColor = color(255);
-  baseColor = color(102);
+  rectColor = BLACK;
+  circleColor = WHITE;
+  baseColor = color(102.0f);
   circleX = width/2+circleSize/2+10;
   circleY = height/2;
   rectX = width/2-rectSize-10;

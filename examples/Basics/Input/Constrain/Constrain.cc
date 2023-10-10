@@ -29,8 +29,8 @@ void draw() {
     my = my + (mouseY- my) * easing;
   }
 
-  mx = constrain(mx, inner, width - inner);
-  my = constrain(my, inner, height - inner);
+  mx = constrain(mx, (float)inner, (float)width - inner);
+  my = constrain(my, (float)inner, (float)height - inner);
   fill(76);
   rect(edge, edge, width-edge, height-edge);
   fill(255);

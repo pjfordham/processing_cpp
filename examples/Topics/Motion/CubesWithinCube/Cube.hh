@@ -24,12 +24,12 @@ public:
 
     quadBG.resize(6);
     // Colors are hardcoded
-    quadBG[0] = color(0);
-    quadBG[1] = color(51);
-    quadBG[2] = color(102);
-    quadBG[3] = color(153);
-    quadBG[4] = color(204);
-    quadBG[5] = color(255);
+    quadBG[0] = color(0.0f);
+    quadBG[1] = color(51.0f);
+    quadBG[2] = color(102.0f);
+    quadBG[3] = color(153.0f);
+    quadBG[4] = color(204.0f);
+    quadBG[5] = color(255.0f);
 
     // Start in center
     // Random velocity vector

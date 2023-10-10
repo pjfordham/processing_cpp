@@ -60,11 +60,11 @@ void mousePressed() {
 
 void setup() {
   size(640, 360);
-  rectColor = color(0);
-  rectHighlight = color(51);
-  circleColor = color(255);
-  circleHighlight = color(204);
-  baseColor = color(102);
+  rectColor = color(0.0f);
+  rectHighlight = color(51.0f);
+  circleColor = color(255.0f);
+  circleHighlight = color(204.0f);
+  baseColor = color(102.0f);
   currentColor = baseColor;
   circleX = width/2+circleSize/2+10;
   circleY = height/2;

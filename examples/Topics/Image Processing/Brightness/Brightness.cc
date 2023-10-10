@@ -36,7 +36,7 @@ void draw() {
       //g += adjustbrightness;
       //b += adjustbrightness;
       // Constrain RGB to make sure they are within 0-255 color range
-      r = constrain(r, 0, 255);
+      r = constrain(r, 0.0f, 255.0f);
       //g = constrain(g, 0, 255);
       //b = constrain(b, 0, 255);
       // Make a new color and set pixel in the window
