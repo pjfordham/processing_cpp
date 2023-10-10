@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <random>
+#include <array>
 
 void noiseSeed(int seed);
 void noiseDetail(int lod, float falloff = 0.5);
@@ -51,6 +52,22 @@ inline float lerp(float start, float stop, float amt) {
    return start + (stop - start) * amt;
 }
 
+inline float angularDifference(float angle1, float angle2) {
+   // Normalize angles to the range [0, 2π)
+    angle1 = fmod(angle1, 2 * M_PI);
+    angle2 = fmod(angle2, 2 * M_PI);
+
+    // Calculate the absolute angular difference, taking wrapping into account
+    float angularDifference = fabs(angle1 - angle2);
+
+    // Ensure that the angular difference is within the specified tolerance
+    if (angularDifference > M_PI) {
+        // If the difference is greater than π, consider the smaller wrapped angle
+        angularDifference = 2 * M_PI - angularDifference;
+    }
+    return angularDifference;
+}
+
 class PVector {
 public:
    float x, y,z;
@@ -62,8 +79,16 @@ public:
       y = y - b.y;
       z = z - b.z;
    }
-   float heading() {
+   static float angleBetween(const PVector &a, const PVector &b) {
+      return angularDifference(a.heading(), b.heading());
+   }
+   float heading() const {
       return atan2(y, x);
+   }
+   void set( std::array<float,3> a ) {
+      x = a[0];
+      y = a[1];
+      z = a[2];
    }
    void set( float _x, float _y, float _z ) {
       x = _x;
@@ -449,6 +474,10 @@ inline float randomGaussian()
 
 inline float radians(float degrees) {
    return degrees * M_PI / 180.0;
+}
+
+inline float degrees(float radians) {
+   return (radians * 180) / M_PI;
 }
 
 inline float norm(float value, float start, float stop) {

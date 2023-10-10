@@ -202,22 +202,6 @@ PVector fast_ellipse_point(const PVector &center, int index, float xradius, floa
                    center.z);
 }
 
-float angularDifference(float angle1, float angle2) {
-   // Normalize angles to the range [0, 2π)
-    angle1 = fmod(angle1, 2 * M_PI);
-    angle2 = fmod(angle2, 2 * M_PI);
-
-    // Calculate the absolute angular difference, taking wrapping into account
-    float angularDifference = fabs(angle1 - angle2);
-
-    // Ensure that the angular difference is within the specified tolerance
-    if (angularDifference > M_PI) {
-        // If the difference is greater than π, consider the smaller wrapped angle
-        angularDifference = 2 * M_PI - angularDifference;
-    }
-    return angularDifference;
-}
-
 bool anglesWithinTolerance(float angle1, float angle2, float tolerance) {
     return angularDifference(angle1, angle2)  <= tolerance;
 }
