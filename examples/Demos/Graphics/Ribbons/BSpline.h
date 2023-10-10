@@ -1,6 +1,6 @@
-final int MAX_BEZIER_ORDER = 10; // Maximum curve order.
+const int MAX_BEZIER_ORDER = 10; // Maximum curve order.
 
-final float[][] BSplineMatrix = {
+const float BSplineMatrix[][4] = {
   {-1.0/6.0,  1.0/2.0, -1.0/2.0, 1.0/6.0},
   { 1.0/2.0,     -1.0,  1.0/2.0,     0.0},
   {-1.0/2.0,      0.0,  1.0/2.0,     0.0},
@@ -9,7 +9,7 @@ final float[][] BSplineMatrix = {
 
 // The element(i, n) of this array contains the binomial coefficient
 // C(i, n) = n!/(i!(n-i)!)
-final int[][] BinomialCoefTable = {
+const int BinomialCoefTable[][10] = {
   {1, 1, 1, 1,  1,  1,  1,  1,   1,   1},
   {1, 2, 3, 4,  5,  6,  7,  8,   9,  10},
   {0, 1, 3, 6, 10, 15, 21, 28,  36,  45},
@@ -24,7 +24,7 @@ final int[][] BinomialCoefTable = {
 };
 
 // The element of this(i, j) of this table contains(i/10)^(3-j).
-final float[][] TVectorTable = {
+const float TVectorTable[][4] = {
 //   t^3,  t^2, t^1, t^0
   {    0,    0,   0,   1}, // t = 0.0
   {0.001, 0.01, 0.1,   1}, // t = 0.1
@@ -41,7 +41,7 @@ final float[][] TVectorTable = {
 
 // The element of this(i, j) of this table contains(3-j)*(i/10)^(2-j) if
 // j < 3, 0 otherwise.
-final float[][] DTVectorTable = {
+const float DTVectorTable[][4] = {
 // 3t^2,  2t^1, t^0
   {   0,     0,   1, 0}, // t = 0.0
   {0.03,   0.2,   1, 0}, // t = 0.1
@@ -56,18 +56,21 @@ final float[][] DTVectorTable = {
   {   3,     2,   1, 0}  // t = 1.0
 };
 
-abstract class Curve3D {
-  abstract void feval(float t, PVector p);
-  abstract void deval(float t, PVector d);
-  abstract float fevalX(float t);
-  abstract float fevalY(float t);
-  abstract float fevalZ(float t);
-  abstract float devalX(float t);
-  abstract float devalY(float t);
-  abstract float devalZ(float t);
-}
+class Curve3D {
+public:
+  virtual void feval(float t, PVector &p) = 0;
+  virtual void deval(float t, PVector &d) = 0;
+  virtual float fevalX(float t) = 0;
+  virtual float fevalY(float t) = 0;
+  virtual float fevalZ(float t) = 0;
+  virtual float devalX(float t) = 0;
+  virtual float devalY(float t) = 0;
+  virtual float devalZ(float t) = 0;
+};
 
-abstract class Spline extends Curve3D {
+class Spline : public Curve3D {
+public:
+
   // The factorial of n.
   int factorial(int n) {
     return n <= 0 ? 1 : n * factorial(n - 1);
@@ -93,21 +96,22 @@ abstract class Spline extends Curve3D {
     else s2 = -(n - i) * pow(u, i) * pow(1 - u, n - i - 1);
     return binomialCoef(i, n) *(s1 + s2);
   }
-}
+};
 
-class BSpline extends Spline {
+class BSpline: public Spline {
+public:
   // Control points.
-  float[][] bsplineCPoints;
+  std::array<std::array<float,3>,4> bsplineCPoints;
 
   // Parameters.
   boolean lookup;
 
   // Auxiliary arrays used in the calculations.
-  float[][] M3;
-  float[] TVector, DTVector;
+  std::array<std::array<float,3>,4> M3;
+  std::array<float,4> TVector, DTVector;
 
   // Point and tangent vectors.
-  float[] pt, tg;
+  std::array<float,3> pt, tg;
 
   BSpline() {
     initParameters(true);
@@ -119,12 +123,6 @@ class BSpline extends Spline {
 
   // Sets lookup table use.
   void initParameters(boolean t) {
-    bsplineCPoints = new float[4][3];
-    TVector = new float[4];
-    DTVector = new float[4];
-    M3 = new float[4][3];
-    pt = new float[3];
-    tg = new float[3];
     lookup = t;
   }
 
@@ -137,8 +135,10 @@ class BSpline extends Spline {
   }
 
   // Gets n-th control point.
-  void getCPoint(int n, PVector P) {
-    P.set(bsplineCPoints[n]);
+  void getCPoint(int n, PVector &p) {
+    p.x = bsplineCPoints[n][0];
+    p.y = bsplineCPoints[n][1];
+    p.z = bsplineCPoints[n][2];
   }
 
   // Replaces the current B-spline control points(0, 1, 2) with(1, 2, 3). This
@@ -171,12 +171,12 @@ class BSpline extends Spline {
     }
   }
 
-  void feval(float t, PVector p) {
+  void feval(float t, PVector &p) {
     evalPoint(t);
     p.set(pt);
   }
 
-  void deval(float t, PVector d) {
+  void deval(float t, PVector &d) {
     evalTangent(t);
     d.set(tg);
   }
@@ -304,4 +304,4 @@ class BSpline extends Spline {
       tg[j] = s;
     }
   }
-}
+};

@@ -1,63 +1,64 @@
-void readPDB(String filename) {
-  String strLines[];
+#include "Geometry.h"
+
+extern std::vector<PShape> models;
+extern float scaleFactor;
+
+inline void readPDB(std::string filename) {
+  std::vector<std::string> strLines;
 
   float xmin, xmax, ymin, ymax, zmin, zmax;
 
-  String xstr, ystr, zstr;
+  std::string xstr, ystr, zstr;
   float x, y, z;
   int res, res0;
   int nmdl;
-  String atstr, resstr;
+  std::string atstr, resstr;
 
   PShape model;
-  ArrayList atoms;
-  ArrayList residues;
+  std::vector<PVector> atoms;
+  std::vector<HashMap> residues;
   HashMap residue;
   PVector v;
-  String s;
+  std::string s;
   strLines = loadStrings(filename);
 
-  models = new ArrayList();
+  models.clear();
 
   xmin = ymin = zmin = 10000;
   xmax = ymax = zmax = -10000;
 
-  atoms = null;
-  residues = null;
-  residue = null;
-  model = null;
   res0 = -1;
   nmdl = -1;
-  for (int i = 0; i < strLines.length; i++) {
+  for (int i = 0; i < strLines.size(); i++) {
     s = strLines[i];
 
-    if (s.startsWith("MODEL") || (s.startsWith("ATOM") && res0 == -1)) {
+    if (startsWith(s, "MODEL") || (startsWith(s,"ATOM") && res0 == -1)) {
       nmdl++;
 
       res0 = -1;
 
-      atoms = new ArrayList();
-      residues = new ArrayList();
+      atoms.clear();
+      residues.clear();
     }
 
-    if (s.startsWith("ATOM")) {
-      atstr = s.substring(12, 15);
-      atstr = atstr.trim();
-      resstr = s.substring(22, 26);
-      resstr = resstr.trim();
-      res = parseInt(resstr);
+    if (startsWith(s,"ATOM")) {
+      atstr = substr(s, 12, 15);
+      atstr = trim(atstr);
+      resstr = substr(s, 22, 26);
+      resstr = trim(resstr);
+      res = std::stoi(resstr);
 
-      xstr = s.substring(30, 37);
-      xstr = xstr.trim();
-      ystr = s.substring(38, 45);
-      ystr = ystr.trim();
-      zstr = s.substring(46, 53);
-      zstr = zstr.trim();
+      xstr = substr(s, 30, 37);
+      xstr = trim(xstr);
+      ystr = substr(s, 38, 45);
+      ystr = trim(ystr);
+      zstr = substr(s, 46, 53);
+      zstr = trim(zstr);
 
-      x = scaleFactor * parseFloat(xstr);
-      y = scaleFactor * parseFloat(ystr);
-      z = scaleFactor * parseFloat(zstr);
-      v = new PVector(x, y, z);
+      x = scaleFactor * std::stof(xstr);
+      y = scaleFactor * std::stof(ystr);
+      z = scaleFactor * std::stof(zstr);
+      v = PVector(x, y, z);
 
       xmin = min(xmin, x);
       xmax = max(xmax, x);
@@ -68,38 +69,38 @@ void readPDB(String filename) {
       zmin = min(zmin, z);
       zmax = max(zmax, z);
 
-      atoms.add(v);
+      atoms.push_back(v);
 
       if (res0 != res) {
-        if (residue != null) residues.add(residue);
-        residue = new HashMap();
+        if (!residue.empty()) residues.push_back(residue);
+        residue.clear();
       }
-      residue.put(atstr, v);
+      residue[atstr] = v;
 
       res0 = res;
     }
 
-    if (s.startsWith("ENDMDL") || s.startsWith("TER")) {
-      if (residue != null) residues.add(residue);
+    if (startsWith(s, "ENDMDL") || startsWith(s, "TER")) {
+      if (!residue.empty()) residues.push_back(residue);
 
       createRibbonModel(residues, model, models);
       float rgyr = calculateGyrRadius(atoms);
 
       res0 = -1;
-      residue = null;
-      atoms = null;
-      residues = null;
+      residue.clear();
+      atoms.clear();
+      residues.clear();
     }
   }
 
-  if (residue != null) {
-    if (residue != null) residues.add(residue);
+  if (!residue.empty()) {
+     if (!residue.empty()) residues.push_back(residue);
 
     createRibbonModel(residues, model, models);
     float rgyr = calculateGyrRadius(atoms);
 
-    atoms = null;
-    residues = null;
+    atoms.clear();
+    residues.clear();
   }
 
   // Centering models at (0, 0, 0).
@@ -107,9 +108,9 @@ void readPDB(String filename) {
   float dy = -0.5f * (ymin + ymax);
   float dz = -0.5f * (zmin + zmax);
   for (int n = 0; n < models.size(); n++) {
-    model = (PShape) models.get(n);
+    model = models.at(n);
     model.translate(dx, dy, dz);
   }
 
-  println("Loaded PDB file with " + models.size() + " models.");
+  fmt::print("Loaded PDB file with {} models.\n", models.size());
 }
