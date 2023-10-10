@@ -22,21 +22,23 @@ void draw() {
   if (signal > img.height-1 || signal < 0) {
     direction = direction * -1;
   }
-  if (mousePressed == true) {
-    signal = abs(mouseY % img.height);
+  if (mousePressedb) {
+    signal = fabs(mouseY % img.height);
   }
   else {
     signal += (0.3*direction);
   }
 
-  if (keyPressed == true) {
+  if (keyPressedb) {
     set(0, 0, img);
     line(0, signal, img.width, signal);
   }
   else {
     int signalOffset = int(signal)*img.width;
     for (int y = 0; y < img.height; y++) {
-      arrayCopy(img.pixels, signalOffset, pixels, y*width, img.width);
+      std::copy(img.pixels + signalOffset,
+                img.pixels + signalOffset + img.width,
+                pixels + y*width );
     }
     updatePixels();
   }
