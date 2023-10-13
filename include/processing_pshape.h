@@ -20,8 +20,9 @@ public:
       color stroke;
       color tint;
       float weight;
-      bool contour;
    };
+
+   int contour = 0;
 
    std::vector<gl_context::vertex> vertices;
    std::vector<vInfoExtra> extras;
@@ -43,7 +44,6 @@ public:
    float stroke_weight = 1.0f;
    int line_end_cap = ROUND;
    float tightness = 0.0f;
-   bool contour = false;
 
    PShape(const PShape& other) = default;
    PShape& operator=(const PShape& other) = default;
@@ -78,6 +78,7 @@ public:
       std::swap(width, other.width);
       std::swap(height, other.height);
       std::swap(tightness, other.tightness);
+      std::swap(contour, other.contour);
       return *this;
    }
 
@@ -159,11 +160,10 @@ public:
    }
 
    void beginContour() {
-      contour = true;
+      contour = vertices.size();
    }
 
    void endContour() {
-      contour = false;
    }
 
    void textureMode( int mode_ ) {
@@ -226,7 +226,7 @@ public:
       }
 
       vertices.push_back( { p, n, texture_.normalize( t ), texture_.layer, fill_color } );
-      extras.push_back( {stroke_color, tint_color, stroke_weight, contour } );
+      extras.push_back( {stroke_color, tint_color, stroke_weight } );
    }
 
    void index(unsigned short i) {

@@ -20,18 +20,10 @@ bool PShape::isClockwise() const {
    return sum < 0;
 }
 
-static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_context::vertex> &vertices) {
+static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_context::vertex> &vertices, int contour) {
 
    if (vertices.size() < 3) {
       return {}; // empty vector
-   }
-
-   std::vector<float> pointlist;
-   std::vector<int> markerlist;
-   for ( auto &v : vertices ) {
-      pointlist.push_back(v.position.x);
-      pointlist.push_back(v.position.y);
-      pointlist.push_back(v.position.z);
    }
 
    TESSalloc ma;
@@ -57,7 +49,12 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_conte
    tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
    const int nvp = 3;
 
-   tessAddContour(tess, 3, pointlist.data(), sizeof(float)*3, pointlist.size()/3, 0);
+   if ( contour != 0 ) {
+      tessAddContour(tess, 3, vertices.data(),           sizeof(gl_context::vertex), contour,                 offsetof(gl_context::vertex,position));
+      tessAddContour(tess, 3, vertices.data() + contour, sizeof(gl_context::vertex), vertices.size()-contour, offsetof(gl_context::vertex,position));
+   } else {
+      tessAddContour(tess, 3, vertices.data(), sizeof(gl_context::vertex), vertices.size(), offsetof(gl_context::vertex,position));
+   }
 
    if (!tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_POLYGONS, nvp, 3, 0))
       abort();
@@ -95,7 +92,7 @@ void PShape::populateIndices() {
    if (style == QUADS) {
       if (vertices.size() % 4 != 0) abort();
       for (int i= 0; i< vertices.size(); i+=4) {
-         auto quad = triangulatePolygon( {vertices.begin() + i, vertices.begin() + i + 4} );
+         auto quad = triangulatePolygon( {vertices.begin() + i, vertices.begin() + i + 4},0);
          for( auto &&j : quad ) {
             indices.push_back(j + i);
          }
@@ -123,7 +120,7 @@ void PShape::populateIndices() {
          indices.push_back( i+1 );
       }
    } else if (style == POLYGON) {
-      indices = triangulatePolygon({vertices.begin(),vertices.end()});
+      indices = triangulatePolygon(vertices, contour);
    } else if (style == TRIANGLES) {
       for (int i = 0; i < vertices.size(); i++ ) {
          indices.push_back( i );
@@ -402,7 +399,15 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
             drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( glc, transform );
          } else {
-            drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc, transform );
+            if ( contour != 0 ) {
+               drawLinePoly( contour, vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc, transform );
+               drawLinePoly( vertices.size() - contour,
+                             vertices.data() + contour,
+                             extras.data()   + contour,
+                             type == CLOSE, shape_matrix).draw_fill( glc, transform );
+            } else {
+               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc, transform );
+            }
          }
       } else if (vertices.size() == 2) {
          switch(line_end_cap) {
