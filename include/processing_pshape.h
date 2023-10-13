@@ -22,7 +22,7 @@ public:
       float weight;
    };
 
-   int contour = 0;
+   std::vector<int> contour;
 
    std::vector<gl_context::vertex> vertices;
    std::vector<vInfoExtra> extras;
@@ -160,7 +160,7 @@ public:
    }
 
    void beginContour() {
-      contour = vertices.size();
+      contour.push_back(vertices.size());
    }
 
    void endContour() {
