@@ -72,6 +72,7 @@ pkg_check_modules(SAIL_CXX IMPORTED_TARGET REQUIRED libsail-c++)
 target_link_libraries(Processing
     PUBLIC
     PkgConfig::SAIL_CXX
+    tess2
     glfw
     ${FREETYPE_LIBRARIES}
     ${GLEW_LIBRARIES}
