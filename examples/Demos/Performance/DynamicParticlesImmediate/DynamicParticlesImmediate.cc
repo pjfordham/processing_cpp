@@ -7,13 +7,18 @@ float gravity = 0.05;
 float partSize = 20;
 
 int partLifetime;
-PVector positions[];
-PVector velocities[];
-int lifetimes[];
+std::vector<PVector> positions;
+std::vector<PVector> velocities;
+std::vector<int> lifetimes;
 
 int fcount, lastm;
 float frate;
 int fint = 3;
+
+void initPositions();
+void initVelocities();
+void initLifetimes();
+void drawParticle(PVector center, float opacity);
 
 void setup() {
   size(640, 480, P3D);
@@ -73,12 +78,12 @@ void draw () {
     frate = float(fcount) / fint;
     fcount = 0;
     lastm = m;
-    println("fps: " + frate);
+    fmt::print("fps: {}\n", frate);
   }
 }
 
 void drawParticle(PVector center, float opacity) {
-  beginShape(QUAD);
+  beginShape(QUADS);
   noStroke();
   tint(255, opacity * 255);
   texture(sprite);
@@ -91,28 +96,21 @@ void drawParticle(PVector center, float opacity) {
 }
 
 void initPositions() {
-  positions = new PVector[npartTotal];
-  for (int n = 0; n < positions.length; n++) {
-    positions[n] = new PVector();
-  }
+  positions.resize(npartTotal);
 }
 
 void initVelocities() {
-  velocities = new PVector[npartTotal];
-  for (int n = 0; n < velocities.length; n++) {
-    velocities[n] = new PVector();
-  }
+  velocities.resize(npartTotal);
 }
 
 void initLifetimes() {
   // Initializing particles with negative lifetimes so they are added
   // progressively into the screen during the first frames of the sketch
-  lifetimes = new int[npartTotal];
   int t = -1;
-  for (int n = 0; n < lifetimes.length; n++) {
+  for (int n = 0; n < npartTotal; n++) {
     if (n % npartPerFrame == 0) {
       t++;
     }
-    lifetimes[n] = -t;
+    lifetimes.push_back(-t );
   }
 }
