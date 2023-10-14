@@ -4,13 +4,14 @@
  * How to move the individual vertices of a PShape
  */
 
+#include "Wiggler.h"
 
 // A "Wiggler" object
 Wiggler w;
 
 void setup() {
   size(640, 360, P2D);
-  w = new Wiggler();
+  w = Wiggler();
 }
 
 void draw() {

@@ -1,7 +1,7 @@
 // An object that wraps the PShape
 
 class Wiggler {
-
+public:
   // The PShape to be "wiggled"
   PShape s;
   // Its location
@@ -12,22 +12,20 @@ class Wiggler {
 
   // We are using an ArrayList to keep a duplicate copy
   // of vertices original locations.
-  ArrayList<PVector> original;
+  std::vector<PVector> original;
 
   Wiggler() {
     x = width/2;
     y = height/2;
 
     // The "original" locations of the vertices make up a circle
-    original = new ArrayList<PVector>();
     for (float a = 0; a < TWO_PI; a+=0.2) {
-      PVector v = PVector.fromAngle(a);
+      PVector v = PVector::fromAngle(a);
       v.mult(100);
-      original.add(v);
+      original.push_back(v);
     }
 
     // Now make the PShape with those vertices
-    s = createShape();
     s.beginShape();
     s.fill(127);
     s.stroke(0);
@@ -43,9 +41,9 @@ class Wiggler {
     // Apply an offset to each vertex
     for (int i = 0; i < s.getVertexCount(); i++) {
       // Calculate a new vertex location based on noise around "original" location
-      PVector pos = original.get(i);
+      PVector pos = original[i];
       float a = TWO_PI*noise(xoff,yoff);
-      PVector r = PVector.fromAngle(a);
+      PVector r = PVector::fromAngle(a);
       r.mult(4);
       r.add(pos);
       // Set the location of each vertex to the new one
@@ -63,5 +61,5 @@ class Wiggler {
     shape(s);
     popMatrix();
   }
-}
+};
 
