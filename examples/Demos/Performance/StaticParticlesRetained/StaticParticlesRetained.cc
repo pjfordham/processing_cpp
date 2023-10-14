@@ -12,7 +12,7 @@ void setup() {
   size(800, 600, P3D);
   frameRate(60);
 
-  particles = createShape(PShape.GROUP);
+  particles = createGroup();
   sprite = loadImage("sprite.png");
 
   for (int n = 0; n < npartTotal; n++) {
@@ -20,11 +20,11 @@ void setup() {
     float cy = random(-500, +500);
     float cz = random(-500, +500);
 
-    PShape part = createShape();
-    part.beginShape(QUAD);
+    PShape part;
+    part.beginShape(QUADS);
     part.noStroke();
     part.tint(255);
-    part.texture(sprite);
+    part.texture(g.glc, sprite);
     part.normal(0, 0, 1);
     part.vertex(cx - partSize/2, cy - partSize/2, cz, 0, 0);
     part.vertex(cx + partSize/2, cy - partSize/2, cz, sprite.width, 0);
@@ -54,7 +54,7 @@ void draw () {
     frate = float(fcount) / fint;
     fcount = 0;
     lastm = m;
-    println("fps: " + frate);
+    fmt::print("fps: {}\n", frate);
   }
 }
 

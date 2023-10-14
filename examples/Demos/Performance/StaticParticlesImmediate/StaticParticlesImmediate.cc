@@ -3,11 +3,14 @@ PImage sprite;
 int npartTotal = 50000;
 float partSize = 20;
 
-PVector positions[];
+std::vector<PVector> positions;
 
 int fcount, lastm;
 float frate;
 int fint = 3;
+
+void initPositions();
+void drawParticle(PVector center);
 
 void setup() {
   size(800, 600, P3D);
@@ -39,12 +42,12 @@ void draw () {
     frate = float(fcount) / fint;
     fcount = 0;
     lastm = m;
-    println("fps: " + frate);
+    fmt::print("fps: {}\n", frate);
   }
 }
 
 void drawParticle(PVector center) {
-  beginShape(QUAD);
+  beginShape(QUADS);
   noStroke();
   tint(255);
   texture(sprite);
@@ -57,9 +60,8 @@ void drawParticle(PVector center) {
 }
 
 void initPositions() {
-  positions = new PVector[npartTotal];
-  for (int n = 0; n < positions.length; n++) {
-    positions[n] = new PVector(random(-500, +500), random(-500, +500), random(-500, +500));
+  for (int n = 0; n < npartTotal; n++) {
+    positions.emplace_back(random(-500, +500), random(-500, +500), random(-500, +500));
   }
 }
 

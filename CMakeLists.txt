@@ -103,8 +103,6 @@ set(skip_examples
   "examples/Demos/Performance/CubicGridRetained/CubicGridRetained.cc"
   "examples/Demos/Performance/DynamicParticlesImmediate/DynamicParticlesImmediate.cc"
   "examples/Demos/Performance/DynamicParticlesRetained/DynamicParticlesRetained.cc"
-  "examples/Demos/Performance/StaticParticlesImmediate/StaticParticlesImmediate.cc"
-  "examples/Demos/Performance/StaticParticlesRetained/StaticParticlesRetained.cc"
   "examples/Demos/Tests/MultipleWindows/Arcball.cc"
   "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
