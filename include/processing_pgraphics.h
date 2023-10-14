@@ -40,7 +40,7 @@ public:
    float xsphere_ures = 30;
    float xsphere_vres = 30;
 
-   bool xSmoothing = true;
+   int xSmoothing = 1;
    PShape _shape;
    std::vector<unsigned int> pixels;
 
@@ -525,8 +525,10 @@ public:
       return;
    }
 
-   void image(PGraphics &gfx, int x, int y) {
+   void image(PGraphics &gfx, int x, int y, int width=-1, int height=-1) {
       float left = x;
+      if (width == -1) width = gfx.width;
+      if (height == -1) height = gfx.height;
       float right = x + gfx.width;
       float top = y;
       float bottom = y + gfx.height;
@@ -990,10 +992,12 @@ public:
 // ----
 
 
-
+   void smooth(int AA=2) {
+      xSmoothing = AA;
+   }
    void noSmooth() {
       // Doesn't yet apply to actual graphics
-      xSmoothing = false;
+      xSmoothing = 1;
    }
 
    void beginDraw() {}
