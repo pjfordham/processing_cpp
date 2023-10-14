@@ -10,7 +10,6 @@ void setup() {
   size(640, 360, P2D);
 
   // Make a shape
-  s = createShape();
   s.beginShape();
   s.fill(0);
   s.stroke(255);
