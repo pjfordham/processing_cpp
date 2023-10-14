@@ -20,7 +20,7 @@ void setup() {
   noSmooth();
   noStroke();
 
-  grid = createShape(GROUP);
+  grid = createGroup();
 
   // Build grid using multiple translations
   for (float i =- depth/2+margin; i <= depth/2-margin; i += boxSize){
@@ -29,7 +29,7 @@ void setup() {
         // Base fill color on counter values, abs function
         // ensures values stay within legal range
         boxFill = color(abs(i), abs(j), abs(k), 50);
-        PShape cube = createShape(BOX, boxSize, boxSize, boxSize);
+        PShape cube = createBox( boxSize, boxSize, boxSize);
         cube.setFill(boxFill);
         cube.translate(k, j, i);
         grid.addChild(cube);
@@ -60,8 +60,8 @@ void draw() {
     frate = float(fcount) / fint;
     fcount = 0;
     lastm = m;
-    println("fps: " + frate);
+    fmt::print("fps: {}\n", frate);
   }
   fill(0);
-  text("fps: " + frate, 10, 20);
+  text(fmt::format("fps: {}\n",frate), 10, 20);
 }

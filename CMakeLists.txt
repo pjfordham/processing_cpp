@@ -100,7 +100,6 @@ set(skip_examples
   "examples/Demos/Graphics/Particles/Particles.cc"
   "examples/Demos/Graphics/Trefoil/Surface.cc"
   "examples/Demos/Graphics/Trefoil/Trefoil.cc"
-  "examples/Demos/Performance/CubicGridRetained/CubicGridRetained.cc"
   "examples/Demos/Tests/MultipleWindows/Arcball.cc"
   "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"

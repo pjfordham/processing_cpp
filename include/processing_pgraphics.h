@@ -396,7 +396,7 @@ public:
       image_mode = iMode;
    }
 
-   void box(float w, float h, float d) {
+   PShape createBox(float w, float h, float d) {
       w = w / 2;
       h = h / 2;
       d = d / 2;
@@ -455,9 +455,12 @@ public:
       };
 
       cube.endShape();
+      return cube;
+   }
 
-      shape( cube );
-   };
+   void box(float w, float h, float d) {
+      shape( createBox(w,h,d) );
+   }
 
    void box(float size) {
       box(size, size, size);
