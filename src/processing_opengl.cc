@@ -7,6 +7,51 @@
 
 static const int ATLAS_TEXTURE_UNIT = 0;
 
+void gl_context::blendMode(int b ) {
+   glEnable(GL_BLEND);
+   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+   switch (b) {
+   case BLEND:
+      glBlendEquation(GL_FUNC_ADD);
+      break;
+   case ADD:
+      glBlendEquation(GL_FUNC_ADD);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+      break;
+   case SUBTRACT:
+      glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+      break;
+   case DARKEST:
+      glBlendEquation(GL_MIN);
+      break;
+   case LIGHTEST:
+      glBlendEquation(GL_MAX);
+      break;
+   case DIFFERENCE:
+      glBlendEquation(GL_FUNC_SUBTRACT);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+      break;
+   case EXCLUSION:
+      glBlendEquation(GL_FUNC_ADD);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+      break;
+   case MULTIPLY:
+      glBlendEquation(GL_FUNC_ADD);
+      glBlendFunc(GL_DST_COLOR, GL_ZERO);
+      break;
+   case SCREEN:
+      glBlendEquation(GL_FUNC_ADD);
+      glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+      break;
+   case REPLACE:
+      glDisable(GL_BLEND);
+      break;
+   default:
+      abort();
+   }
+}
+
 void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
    glBindVertexArray(VAO);
 

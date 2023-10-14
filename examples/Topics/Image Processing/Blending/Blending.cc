@@ -11,7 +11,7 @@
 
 PImage img1, img2;
 int selMode = REPLACE;
-String name = "REPLACE";
+std::string name = "REPLACE";
 int picAlpha = 255;
 
 void setup() {

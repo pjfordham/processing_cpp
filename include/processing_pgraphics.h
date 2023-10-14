@@ -331,6 +331,7 @@ public:
       currentFont = createFont(currentFont.name, size);
    }
 
+   MAKE_GLOBAL(blendMode, glc);
 
    MAKE_GLOBAL(textAscent, currentFont);
    MAKE_GLOBAL(textDescent, currentFont);

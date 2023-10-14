@@ -240,6 +240,8 @@ public:
       return *this;
    }
 
+   void blendMode( int b );
+
    float screenX(float x, float y, float z) {
       PVector4 in = { x, y, z, 1.0 };
       return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).data[0];
