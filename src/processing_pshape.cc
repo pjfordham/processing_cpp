@@ -1,7 +1,7 @@
 #include "processing_pshape.h"
 #include "processing_math.h"
 #include <vector>
-#include <tesselator.h>
+#include <tesselator_cpp.h>
 
 bool PShape::isClockwise() const {
    if ( style != POLYGON && style != QUADS )
@@ -42,35 +42,35 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_conte
    ma.userData = (void*)&allocated;
    ma.extraVertices = 256; // realloc not provided, allow 256 extra vertices.
 
-   TESStesselator* tess = tessNewTess(&ma);
+   Tesselator tess(&ma);
    if (!tess)
       abort();
 
-   tessSetOption(tess, TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
+   tess.setOption(TESS_CONSTRAINED_DELAUNAY_TRIANGULATION, 1);
    const int nvp = 3;
 
    if ( contour.empty() ) {
-      tessAddContour(tess, 3, vertices.data(), sizeof(gl_context::vertex), vertices.size(), offsetof(gl_context::vertex,position));
+      tess.addContour(3, vertices.data(), sizeof(gl_context::vertex), vertices.size(), offsetof(gl_context::vertex,position));
    } else {
-      tessAddContour(tess, 3, vertices.data(), sizeof(gl_context::vertex), contour[0],      offsetof(gl_context::vertex,position));
+      tess.addContour(3, vertices.data(), sizeof(gl_context::vertex), contour[0],      offsetof(gl_context::vertex,position));
       contour.push_back(vertices.size());
       for ( int i = 0; i < contour.size() - 1; ++i ) {
          auto &c = contour[i];
          auto start = vertices.data() + c;
          auto size = contour[i+1] - contour[i];
-         tessAddContour(tess, 3, start, sizeof(gl_context::vertex), size, offsetof(gl_context::vertex,position));
+         tess.addContour(3, start, sizeof(gl_context::vertex), size, offsetof(gl_context::vertex,position));
       }
    }
 
-   if (!tessTesselate(tess, TESS_WINDING_POSITIVE, TESS_POLYGONS, nvp, 3, 0))
+   if (!tess.tesselate(TESS_WINDING_POSITIVE, TESS_POLYGONS, nvp, 3, 0))
       abort();
 
    // Draw tesselated pieces.
-   const float* verts = tessGetVertices(tess);
-   const int* vinds = tessGetVertexIndices(tess);
-   const int* elems = tessGetElements(tess);
-   const int nverts = tessGetVertexCount(tess);
-   const int nelems = tessGetElementCount(tess);
+   const float* verts = tess.getVertices();
+   const int* vinds = tess.getVertexIndices();
+   const int* elems = tess.getElements();
+   const int nverts = tess.getVertexCount();
+   const int nelems = tess.getElementCount();
 
    std::vector<unsigned short> triangles;
 
@@ -81,8 +81,6 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_conte
          triangles.push_back( vinds[ p[j] ] );
       }
    }
-
-   tessDeleteTess(tess);
 
    return triangles;
 }
