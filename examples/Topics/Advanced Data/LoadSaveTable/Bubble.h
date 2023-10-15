@@ -1,14 +1,15 @@
 // A Bubble class
 
 class Bubble {
+public:
   float x,y;
   float diameter;
-  String name;
+  std::string name;
 
   boolean over = false;
 
   // Create  the Bubble
-  Bubble(float x_, float y_, float diameter_, String s) {
+  Bubble(float x_, float y_, float diameter_, std::string s) {
     x = x_;
     y = y_;
     diameter = diameter_;
@@ -37,4 +38,4 @@ class Bubble {
       text(name,x,y+diameter/2+20);
     }
   }
-}
+};
