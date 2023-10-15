@@ -15,21 +15,24 @@
 
 
 class BezierCurve {
+  static const int SEGMENT_COUNT = 100;
 
-  private final int SEGMENT_COUNT = 100;
+  PVector v0, v1, v2, v3;
 
-  private PVector v0, v1, v2, v3;
+  std::vector<float> arcLengths;
 
-  private float arcLengths[] = new float[SEGMENT_COUNT + 1]; // there are n segments between n+1 points
+  float curveLength;
 
-  private float curveLength;
+public:
 
+  BezierCurve() {}
 
   BezierCurve(PVector a, PVector b, PVector c, PVector d) {
-    v0 = a.get(); // curve begins here
-    v1 = b.get();
-    v2 = c.get();
-    v3 = d.get(); // curve ends here
+    arcLengths.resize(SEGMENT_COUNT + 1); // there are n segments between n+1 points
+    v0 = a; // curve begins here
+    v1 = b;
+    v2 = c;
+    v3 = d; // curve ends here
 
     // The idea here is to make a handy look up table, which contains
     // parameter values with their arc lengths along the curve. Later,
@@ -41,8 +44,8 @@ class BezierCurve {
     // we will keep current length along the curve here
     float arcLength = 0;
 
-    PVector prev = new PVector();
-    prev.set(v0);
+    PVector prev;
+    prev = v0;
 
     // i goes from 0 to SEGMENT_COUNT
     for (int i = 0; i <= SEGMENT_COUNT; i++) {
@@ -54,7 +57,7 @@ class BezierCurve {
       PVector point = pointAtParameter(t);
 
       // get distance from previous point
-      float distanceFromPrev = PVector.dist(prev, point);
+      float distanceFromPrev = PVector::dist(prev, point);
 
       // add arc length of last segment to total length
       arcLength += distanceFromPrev;
@@ -63,7 +66,7 @@ class BezierCurve {
       arcLengths[i] = arcLength;
 
       // keep this point to compute length of next segment
-      prev.set(point);
+      prev = point;
     }
 
     // Here we have sum of all segment lengths, which should be
@@ -81,7 +84,7 @@ class BezierCurve {
 
   // Returns a point along the curve at a specified parameter value.
   PVector pointAtParameter(float t) {
-    PVector result = new PVector();
+    PVector result;
     result.x = bezierPoint(v0.x, v1.x, v2.x, v3.x, t);
     result.y = bezierPoint(v0.y, v1.y, v2.y, v3.y, t);
     result.z = bezierPoint(v0.z, v1.z, v2.z, v3.z, t);
@@ -100,10 +103,20 @@ class BezierCurve {
 
   // Returns a point at a specified arc length along the curve.
   PVector pointAtLength(float wantedLength) {
-    wantedLength = constrain(wantedLength, 0.0, curveLength);
+    wantedLength = constrain(wantedLength, 0.0f, curveLength);
 
+    int index = -1;
+
+    // TODO: This should be switched back to a binary search
     // look up the length in our look up table
-    int index = java.util.Arrays.binarySearch(arcLengths, wantedLength);
+    for ( int i = 0; i < arcLengths.size(); ++i ) {
+       if (arcLengths[i] > wantedLength) {
+          index = i - 1;
+          break;
+       }
+    }
+    if (index == -1)
+       index =  arcLengths.size() -1;
 
     float mappedIndex;
 
@@ -132,13 +145,13 @@ class BezierCurve {
 
 
   // Returns an array of equidistant point on the curve
-  PVector[] equidistantPoints(int howMany) {
+  std::vector<PVector> equidistantPoints(int howMany) {
 
-    PVector[] resultPoints = new PVector[howMany];
+    std::vector<PVector> resultPoints(howMany);
 
     // we already know the beginning and the end of the curve
-    resultPoints[0] = v0.get();
-    resultPoints[howMany - 1] = v3.get();
+    resultPoints[0] = v0;
+    resultPoints[howMany - 1] = v3;
 
     int arcLengthIndex = 1;
     for (int i = 1; i < howMany - 1; i++) {
@@ -148,7 +161,7 @@ class BezierCurve {
       float wantedLength = fraction * curveLength;
 
       // move through the look up table until we find greater length
-      while (wantedLength > arcLengths[arcLengthIndex] && arcLengthIndex < arcLengths.length) {
+      while (wantedLength > arcLengths[arcLengthIndex] && arcLengthIndex < arcLengths.size()) {
         arcLengthIndex++;
       }
 
@@ -163,20 +176,20 @@ class BezierCurve {
       float parameter = mappedIndex / SEGMENT_COUNT;
 
       resultPoints[i] = pointAtParameter(parameter);
-    }
+   }
 
     return resultPoints;
   }
 
 
   // Returns an array of points on the curve.
-  PVector[] points(int howMany) {
+  std::vector<PVector> points(int howMany) {
 
-    PVector[] resultPoints = new PVector[howMany];
+    std::vector<PVector> resultPoints(howMany);
 
     // we already know the first and the last point of the curve
-    resultPoints[0] = v0.get();
-    resultPoints[howMany - 1] = v3.get();
+    resultPoints[0] = v0;
+    resultPoints[howMany - 1] = v3;
 
     for (int i = 1; i < howMany - 1; i++) {
 
@@ -189,4 +202,4 @@ class BezierCurve {
     return resultPoints;
   }
 
-}
+};

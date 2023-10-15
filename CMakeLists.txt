@@ -114,8 +114,6 @@ set(skip_examples
   "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"
   "examples/Topics/Cellular Automata/Spore1/Spore1.cc"
   "examples/Topics/Cellular Automata/Spore2/Spore2.cc"
-  "examples/Topics/Curves/ArcLengthParametrization/ArcLengthParametrization.cc"
-  "examples/Topics/Curves/ArcLengthParametrization/BezierCurve.cc"
   "examples/Topics/Shaders/BlurFilter/BlurFilter.cc"
   "examples/Topics/Shaders/Conway/Conway.cc"
   "examples/Topics/Shaders/CustomBlend/CustomBlend.cc"

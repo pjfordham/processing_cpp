@@ -10,17 +10,26 @@
   parametric curve.
 */
 
+#include "BezierCurve.h"
+
 BezierCurve curve;
 
-PVector[] points;
-PVector[] equidistantPoints;
+std::vector<PVector> points;
+std::vector<PVector> equidistantPoints;
 
 float t = 0.0;
 float tStep = 0.004;
 
-final int POINT_COUNT = 80;
+const int POINT_COUNT = 80;
 
 int borderSize = 40;
+
+void curveStyle();
+void labelStyle();
+void circleStyle();
+void barBgStyle();
+void barStyle();
+void barLabelStyle();
 
 void setup() {
   size(640, 360, P2D);
@@ -31,12 +40,12 @@ void setup() {
   textSize(16);
   strokeWeight(2);
 
-  PVector a = new PVector(   0, 300);
-  PVector b = new PVector( 440,   0);
-  PVector c = new PVector(-200,   0);
-  PVector d = new PVector( 240, 300);
+  PVector a(   0, 300);
+  PVector b( 440,   0);
+  PVector c(-200,   0);
+  PVector d( 240, 300);
 
-  curve = new BezierCurve(a, b, c, d);
+  curve = BezierCurve(a, b, c, d);
 
   points = curve.points(POINT_COUNT);
   equidistantPoints = curve.equidistantPoints(POINT_COUNT);
@@ -46,7 +55,7 @@ void setup() {
 void draw() {
 
   // Show static value when mouse is pressed, animate otherwise
-  if (mousePressed) {
+  if (mousePressedb) {
     int a = constrain(mouseX, borderSize, width - borderSize);
     t = map(a, borderSize, width - borderSize, 0.0, 1.0);
   } else {
@@ -66,7 +75,7 @@ void draw() {
 
     curveStyle();
     beginShape(LINES);
-      for (int i = 0; i < points.length - 1; i += 2) {
+    for (int i = 0; i < points.size() - 1; i += 2) {
         vertex(points[i].x, points[i].y);
         vertex(points[i+1].x, points[i+1].y);
       }
@@ -88,10 +97,10 @@ void draw() {
 
     curveStyle();
     beginShape(LINES);
-      for (int i = 0; i < equidistantPoints.length - 1; i += 2) {
-        vertex(equidistantPoints[i].x, equidistantPoints[i].y);
-        vertex(equidistantPoints[i+1].x, equidistantPoints[i+1].y);
-      }
+    for (int i = 0; i < equidistantPoints.size() - 1; i += 2) {
+      vertex(equidistantPoints[i].x, equidistantPoints[i].y);
+      vertex(equidistantPoints[i+1].x, equidistantPoints[i+1].y);
+    }
     endShape();
 
     circleStyle();
