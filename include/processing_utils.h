@@ -77,6 +77,10 @@ std::string nf(T num, int digits) {
    return fmt::format("{0:0{1}}", num, digits);
 }
 
+inline std::string nf(float num, int left, int right) {
+   return fmt::format("{0:0{1}.{2}f}", num, left, right);
+}
+
 template <typename T>
 std::vector<T> subset(const std::vector<T> &c, int start, int length) {
    return { c.begin() + start, c.begin() + start + length };
