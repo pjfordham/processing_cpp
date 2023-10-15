@@ -40,6 +40,10 @@ inline float bezierPointCubic(float a, float b, float c, float d, float t) {
       1 * t  * t  * t  * d;
 }
 
+inline float bezierPoint(float a, float b, float c, float d, float t) {
+   return bezierPointCubic(a, b, c, d, t);
+}
+
 inline float bezierPointQuadratic(float a, float b, float c, float t) {
    float t_ = 1 - t;
    return
