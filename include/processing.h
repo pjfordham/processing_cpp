@@ -71,6 +71,7 @@ MAKE_GLOBAL(strokeWeight, g);
 MAKE_GLOBAL(strokeCap, g);
 MAKE_GLOBAL(ellipseMode, g);
 MAKE_GLOBAL(rectMode, g);
+MAKE_GLOBAL(smooth,g);
 MAKE_GLOBAL(noSmooth,g);
 MAKE_GLOBAL(updatePixels, g);
 MAKE_GLOBAL(textFont, g);
