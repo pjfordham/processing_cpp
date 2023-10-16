@@ -72,6 +72,11 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_conte
    const int nverts = tess.getVertexCount();
    const int nelems = tess.getElementCount();
 
+   // If we can't find a valid triangulation just return a dummy
+   if (nelems == 0) {
+      return {0,1,2};
+   }
+
    std::vector<unsigned short> triangles;
 
    for (int i = 0; i < nelems; ++i)
