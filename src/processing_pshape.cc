@@ -82,9 +82,13 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_conte
    for (int i = 0; i < nelems; ++i)
    {
       const int* p = &elems[i*nvp];
-      for (int j = 0; j < nvp && p[j] != TESS_UNDEF; ++j) {
-         triangles.push_back( vinds[ p[j] ] );
-      }
+      // TODO: Discard any triangle that needs a new vertex
+      if( vinds[ p[0] ] == TESS_UNDEF ||
+          vinds[ p[1] ] == TESS_UNDEF ||
+          vinds[ p[2] ] == TESS_UNDEF ) continue;
+      triangles.push_back( vinds[ p[0] ] );
+      triangles.push_back( vinds[ p[1] ] );
+      triangles.push_back( vinds[ p[2] ] );
    }
 
    return triangles;
