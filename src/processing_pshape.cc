@@ -407,6 +407,19 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
    case TRIANGLES_NOSTROKE:
       break;
    case TRIANGLES:
+      for (int i = 0; i < indices.size(); i+=3 ) {
+         std::vector<gl_context::vertex> triangle;
+         std::vector<vInfoExtra> xtras;
+         triangle.push_back( vertices[indices[i]] );
+         triangle.push_back( vertices[indices[i+1]] );
+         triangle.push_back( vertices[indices[i+2]] );
+         xtras.push_back( extras[indices[i]] );
+         xtras.push_back( extras[indices[i+1]] );
+         xtras.push_back( extras[indices[i+2]] );
+
+         drawLinePoly( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( glc, transform );
+      }
+      break;
    case POLYGON:
    case CONVEX_POLYGON:
    case LINES:
