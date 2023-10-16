@@ -12,7 +12,7 @@ PImage imgMask;
 void setup() {
   size(640, 360);
   img = loadImage("moonwalk.jpg");
-  imgMask = loadImage("mask.jpg");
+  imgMask = loadImage("alphamask.jpg");
   img.mask(imgMask);
   imageMode(CENTER);
 }
