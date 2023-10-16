@@ -25,17 +25,13 @@ void setup() {
   // textFont(body);
 
   lines = loadStrings("cars2.tsv");
-  records.resize(lines.size());
   for (int i = 0; i < lines.size(); i++) {
      std::vector<std::string> pieces = split(lines[i], TAB); // Load data into array
      if (pieces.size() == 9) {
-      records[recordCount] = Record(pieces);
-      recordCount++;
+        records.emplace_back( pieces );
     }
   }
-  if (recordCount != records.size()) {
-    records = subset(records, 0, recordCount);
-  }
+  recordCount = records.size();
 }
 
 void draw() {
@@ -43,7 +39,7 @@ void draw() {
   for (int i = 0; i < num; i++) {
     int thisEntry = startingEntry + i;
     if (thisEntry < recordCount) {
-      text(thisEntry + " > " + records[thisEntry].name, 20, 20 + i*20);
+       text(fmt::format("{} > {}", thisEntry, records[thisEntry].name), 20, 20 + i*20);
     }
   }
 }

@@ -10,17 +10,33 @@ public:
   int year;
   float origin;
 
+  float stof( const std::string &s ) {
+     try {
+        return std::stof(s);
+     } catch( ... ) {
+        return {};
+     }
+  }
+
+  int stoi( const std::string &s ) {
+     try {
+        return std::stoi(s);
+     } catch( ... ) {
+        return {};
+     }
+  }
+
   Record() {}
 
-  Record(std::vector<std::string> pieces) {
-    name = pieces[0];
-    mpg = std::stof(pieces[1]);
-    cylinders = std::stoi(pieces[2]);
-    displacement = std::stof(pieces[3]);
-    horsepower = std::stof(pieces[4]);
-    weight = std::stof(pieces[5]);
-    acceleration = std::stof(pieces[6]);
-    year = std::stoi(pieces[7]);
-    origin = std::stof(pieces[8]);
+  Record(const std::vector<std::string> &pieces) :
+     name( pieces[0] ),
+     mpg( stof(pieces[1]) ),
+     cylinders( stoi(pieces[2]) ),
+     displacement( stof(pieces[3]) ),
+     horsepower( stof(pieces[4]) ),
+     weight( stof(pieces[5]) ),
+     acceleration( stof(pieces[6]) ),
+     year( stoi(pieces[7]) ),
+     origin( stof(pieces[8]) ) {
   }
 };
