@@ -348,22 +348,24 @@ public:
       PImage &text_image = words[text];
 
       twidth = text_image.width;
-      theight = textAscent();
+      theight = text_image.height;
+
+      float ascent = textAscent();
 
       // this works well enough for the Letters.cc example but it's not really general
       if ( xTextAlign == CENTER ) {
-         x = x - twidth / 2;
+         x = x - twidth / 2.0;
       }
       if ( yTextAlign == CENTER ) {
-         y = y - theight / 2;
+         y = y - ascent / 2.0;
       } else {
-         y = y - theight;
+         y = y - ascent;
       }
       if ( xTextAlign == RIGHT ) {
          x = x - twidth;
       }
       if ( yTextAlign == RIGHT ) {
-         y = y - theight;
+         y = y - ascent;
       }
 
       drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
