@@ -23,8 +23,6 @@ public:
     float x = radio * cos(theta) * cos(phi);
     float y = radio * cos(theta) * sin(phi);
     float z = radio * sin(theta);
-    float msx= screenX(x, y, z);
-    float msy= screenY(x, y, z);
 
     float xo = radio * cos(thetaff) * cos(phff);
     float yo = radio * cos(thetaff) * sin(phff);
@@ -44,16 +42,14 @@ public:
 };
 
 int cuantos = 4000;
-std::vector<Pelo> lista(cuantos);
-std::vector<float> z(cuantos);
-std::vector<float> phi(cuantos);
-std::vector<float> largos(cuantos);
+std::vector<Pelo> lista;
 float rx = 0;
-float ry =0;
+float ry = 0;
 
 void setup() {
   size(640, 360, P3D);
   radio = height/3;
+  lista.resize(cuantos);
   noiseDetail(3);
 }
 
