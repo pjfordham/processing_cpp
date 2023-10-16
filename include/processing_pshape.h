@@ -546,7 +546,8 @@ public:
             child.draw(glc, transform * shape_matrix);
          }
       } else {
-         draw_fill(glc, transform);
+         if ( fill_color.a != 0 )
+            draw_fill(glc, transform);
          if ( stroke_color.a != 0 )
             draw_stroke(glc, transform);
       }

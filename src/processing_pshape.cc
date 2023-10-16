@@ -94,6 +94,9 @@ void PShape::populateIndices() {
    if (indices.size() != 0)
       return;
 
+   if ( fill_color.a == 0 )
+      return;
+
    if (style == GROUP) return;
 
    if (vertices.size() == 0) abort();
