@@ -91,7 +91,7 @@ void gl_framebuffer::blit(gl_framebuffer &dest) const {
    glBlitFramebuffer(0,0,width,height,0,0,dest.width,dest.height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
 }
 
-void gl_framebuffer::updatePixels( std::vector<unsigned int> &pixels ) {
+void gl_framebuffer::updatePixels( const std::vector<unsigned int> &pixels ) {
    glBindTexture(GL_TEXTURE_2D, colorBufferID);
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    0, 0,
@@ -102,7 +102,7 @@ void gl_framebuffer::updatePixels( std::vector<unsigned int> &pixels ) {
 void gl_framebuffer::loadPixels( std::vector<unsigned int> &pixels ) {
    pixels.resize(width*height);
    bind();
-   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+   glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 }
 
 void gl_framebuffer::saveFrame(void *surface) {

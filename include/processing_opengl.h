@@ -300,14 +300,17 @@ public:
       localFrame.blit( target );
    }
 
-   void loadPixels( std::vector<unsigned int> &pixels );
+   void loadPixels( std::vector<unsigned int> &pixels ) {
+      gl_framebuffer frame(window_width, window_height, 1, SSAA);
+      localFrame.blit( frame );
+      frame.loadPixels( pixels );
+   };
 
-   // Draw our pixels into a new texture and call drawTexturedQuad over whole screen
-   void updatePixels( std::vector<unsigned int> &pixels) {
-      gl_framebuffer temp(window_width, window_height, 1, SSAA);
-      temp.updatePixels( pixels );
-      temp.blit( localFrame );
-  }
+   void updatePixels( const std::vector<unsigned int> &pixels) {
+      gl_framebuffer frame(window_width, window_height, 1, SSAA);
+      frame.updatePixels( pixels );
+      frame.blit( localFrame );
+   }
 
    PTexture getTexture( int width, int height, void *pixels );
 

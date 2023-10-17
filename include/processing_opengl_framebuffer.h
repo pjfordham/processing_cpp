@@ -66,7 +66,7 @@ public:
       return *this;
    }
 
-   void updatePixels( std::vector<unsigned int> &pixels );
+   void updatePixels( const std::vector<unsigned int> &pixels );
 
    void loadPixels( std::vector<unsigned int> &pixels );
 

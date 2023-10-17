@@ -254,17 +254,6 @@ PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
    return shader;
 }
 
-
-void gl_context::loadPixels( std::vector<unsigned int> &pixels ) {
-
-   gl_framebuffer frame(window_width, window_height, 1, SSAA);
-
-   localFrame.blit( frame );
-
-   frame.loadPixels( pixels );
-}
-
-
 // We need to handle textures over flushes.
 PTexture gl_context::getTexture( int width, int height, void *pixels ) {
    glActiveTexture(GL_TEXTURE0 + ATLAS_TEXTURE_UNIT);
