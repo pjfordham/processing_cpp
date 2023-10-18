@@ -27,7 +27,6 @@ add_library(Processing
   src/processing_color.cc
   src/processing_opengl.cc
   src/processing_opengl_framebuffer.cc
-  src/processing_texture_manager.cc
   src/processing_pgraphics.cc
   src/processing_pshader.cc
   glad/src/glad.c
@@ -49,7 +48,6 @@ install(FILES
   include/processing_profile.h
   include/processing_pshader.h
   include/processing_java_compatability.h
-  include/processing_texture_manager.h
   include/processing_time.h
   include/processing_enum.h
   DESTINATION include)

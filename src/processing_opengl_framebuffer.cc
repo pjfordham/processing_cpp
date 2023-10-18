@@ -40,6 +40,7 @@ gl_framebuffer::gl_framebuffer(int width_, int height_, int aaFactor_, int aaMod
 
    glGenTextures(1, &colorBufferID);
 
+   glActiveTexture(GL_TEXTURE0);
    if (aaMode == MSAA) {
       glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorBufferID);
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, aaFactor, GL_RGBA, width, height, GL_TRUE);
@@ -92,6 +93,7 @@ void gl_framebuffer::blit(gl_framebuffer &dest) const {
 }
 
 void gl_framebuffer::updatePixels( const std::vector<unsigned int> &pixels ) {
+   glActiveTexture(GL_TEXTURE0);
    glBindTexture(GL_TEXTURE_2D, colorBufferID);
    glTexSubImage2D(GL_TEXTURE_2D, 0,
                    0, 0,

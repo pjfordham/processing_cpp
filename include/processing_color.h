@@ -56,6 +56,21 @@ public:
    color(int c) = delete;
    color()  {
    }
+   color blend(const color& a) {
+        float alpha_a = a.a;
+        float alpha_bg = this->a;
+
+        // Calculate the blended color components
+        float result_r = (a.r * alpha_a + this->r * alpha_bg * (1.0 - alpha_a)) / (alpha_a + alpha_bg * (1.0 - alpha_a));
+        float result_g = (a.g * alpha_a + this->g * alpha_bg * (1.0 - alpha_a)) / (alpha_a + alpha_bg * (1.0 - alpha_a));
+        float result_b = (a.b * alpha_a + this->b * alpha_bg * (1.0 - alpha_a)) / (alpha_a + alpha_bg * (1.0 - alpha_a));
+        float result_alpha = alpha_a + alpha_bg * (1.0 - alpha_a);
+
+        return color(result_r, result_g, result_b, result_alpha);
+   }
+   color tint(const color &a) {
+      return color(a.r*r,a.g*g, a.b*b, a.a*a);
+   }
    void print() const;
    void printf() const;
 };

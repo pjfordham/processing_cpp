@@ -21,7 +21,6 @@ public:
 
    bool pixels_current = false;
    gl_framebuffer windowFrame;
-   PTexture currentTexture;
    int textureMode_ = IMAGE;
    gl_context glc;
 
@@ -56,7 +55,6 @@ public:
 
    PGraphics& operator=(const PGraphics&) = delete;
    PGraphics& operator=(PGraphics&&x) noexcept {
-      std::swap(currentTexture, x.currentTexture);
       std::swap(textureMode_, x.textureMode_);
       std::swap(glc, x.glc);
 
@@ -109,6 +107,19 @@ public:
       perspective();
 
       background(DEFAULT_GRAY);
+   }
+
+   void drawPImageWithCPU( PImage img, int x, int y ) {
+      img.loadPixels();
+      loadPixels();
+      for (int row = 0; row < img.width; row++) {
+         for (int col = 0; col < img.height; col++) {
+            // Need to blend properly since font image is alpha only
+            unsigned char fontp = color(img.pixels[(img.height - col-1)*img.width + row]).a;
+            pixels[(col+y)*width+(row+x)] = color(fontp,fontp,fontp);
+         }
+      }
+      updatePixels();
    }
 
    void save( const std::string &fileName ) {
@@ -367,7 +378,7 @@ public:
       }
 
       drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
-                       text_image.getTexture( glc ), _shape.fill_color);
+                       text_image, _shape.fill_color);
    }
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
@@ -404,7 +415,6 @@ public:
       PShape cube;
       cube.copyStyle( _shape );
       cube.beginShape(TRIANGLES);
-      cube.texture(currentTexture);
 
       // Front face
       cube.normal(0.0,  0.0,  1.0);
@@ -459,7 +469,8 @@ public:
    }
 
    void box(float w, float h, float d) {
-      shape( createBox(w,h,d) );
+      auto b =  createBox(w,h,d);
+      shape( b );
    }
 
    void box(float size) {
@@ -479,7 +490,7 @@ public:
       PShape sphere;
       sphere.copyStyle( _shape );
       sphere.beginShape(TRIANGLES);
-      sphere.texture(currentTexture);
+      sphere.textureMode(NORMAL);
 
       float latStep = M_PI / xsphere_ures;
       float lonStep = 2 * M_PI / xsphere_vres;
@@ -536,12 +547,13 @@ public:
       float right = x + gfx.width;
       float top = y;
       float bottom = y + gfx.height;
-      PTexture texture = glc.getTexture( gfx.glc );
+
       drawTexturedQuad( {left, bottom},
                         {right,bottom},
                         {right, top},
                         {left, top},
-                        texture , _shape.tint_color );
+                        createImageFromTexture(gfx.glc.getColorBufferID()),
+                        _shape.tint_color );
    }
 
    void image(PImage &pimage, float left, float top, float right, float bottom) {
@@ -558,9 +570,8 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      PTexture texture = pimage.getTexture( glc );
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
-                       texture, _shape.tint_color  );
+                       pimage, _shape.tint_color  );
    }
 
    void image(PImage &pimage, float x, float y) {
@@ -616,7 +627,7 @@ public:
    }
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
-                         PTexture texture, color tint ) {
+                         PImage texture, color tint ) {
       PShape quad;
       quad.tint( tint );
       quad.textureMode(NORMAL);
@@ -633,7 +644,7 @@ public:
    }
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
-                         PTexture texture, gl_context::color fill ) {
+                         PImage texture, gl_context::color fill ) {
       PShape quad;
       quad.fill( fill );
       quad.textureMode(NORMAL);
@@ -649,7 +660,7 @@ public:
       shape( quad );
    }
 
-   void shape(const PShape &pshape, float x, float y, float width, float height) {
+   void shape(PShape &pshape, float x, float y, float width, float height) {
       pushMatrix();
       translate(x,y);
       scale(width / pshape.width, height / pshape.height);
@@ -658,11 +669,11 @@ public:
       popMatrix();
    }
 
-   void shape(const PShape &pshape, float x, float y) {
+   void shape(PShape &pshape, float x, float y) {
       shape( pshape, x, y, pshape.width, pshape.height );
    }
 
-   void shape(const PShape &pshape) {
+   void shape(PShape &pshape) {
       pixels_current = false;
       pshape.draw( glc, _shape.shape_matrix );
    }
@@ -736,10 +747,6 @@ public:
    MAKE_GLOBAL(texture, _shape);
    MAKE_GLOBAL(noTexture, _shape);
    MAKE_GLOBAL(textureMode, _shape);
-
-   void texture(PImage img) {
-      texture( img.getTexture( glc ) );
-   }
 
    void endShape(int type = OPEN) {
       _shape.endShape(type);
@@ -847,7 +854,7 @@ public:
       default:
          abort();
       }
-      if (_shape.stroke_color.a == 0.0 && !_shape.texture_.isValid()) {
+      if (_shape.stroke_color.a == 0.0 && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
          PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color, _shape.shape_matrix );
          return shape;
@@ -919,13 +926,12 @@ public:
          abort();
       }
 
-      if (_shape.stroke_color.a == 0.0 && !_shape.texture_.isValid()) {
+      if (_shape.stroke_color.a == 0.0 && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
 
          PShape shape;
          shape.copyStyle( _shape );
-         // Hack to get the circle texture
-         shape.texture( PTexture::circle() );
+         shape.circleTexture();
          if (fillMode == PIE) {
             // This isn't really a CONVEX_POLYGON but I know
             // it will fill ok with a traingle fan

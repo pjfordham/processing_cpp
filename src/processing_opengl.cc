@@ -5,8 +5,6 @@
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
 
-static const int ATLAS_TEXTURE_UNIT = 0;
-
 static gl_context::color HSBtoRGB(float h, float s, float v, float a)
 {
    int i = floorf(h * 6);
@@ -83,11 +81,8 @@ void gl_context::blendMode(int b ) {
    }
 }
 
-void gl_context::drawGeometry( const geometry_t &geometry, GLuint bufferID ) {
+void gl_context::drawGeometry( const geometry_t &geometry ) {
    glBindVertexArray(VAO);
-
-   glActiveTexture(GL_TEXTURE0 + ATLAS_TEXTURE_UNIT);
-   glBindTexture(GL_TEXTURE_2D, bufferID);
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(vertex), geometry.vbuffer.data(), GL_STREAM_DRAW );
@@ -165,7 +160,6 @@ void gl_context::hint(int type) {
 }
 
 gl_context::gl_context(int width, int height, float aaFactor) :
-   tm(3 * width, 3 * height, ATLAS_TEXTURE_UNIT),
    batch( width, height ) {
    this->aaFactor = aaFactor;
    this->width = width;
@@ -184,14 +178,16 @@ gl_context::gl_context(int width, int height, float aaFactor) :
    defaultShader = loadShader();
    shader( defaultShader );
 
-   std::array<int, 2> textures = {ATLAS_TEXTURE_UNIT,1};
-   glUniform1iv(uSampler,2,textures.data());
+   std::array<int, 16> textures = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+   glUniform1iv(uSampler,16,textures.data());
 
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
    glDepthFunc(GL_LEQUAL);
    glEnable(GL_DEPTH_TEST);
+
+   glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
 
    initVAO();
 }
@@ -254,27 +250,31 @@ PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
    return shader;
 }
 
-// We need to handle textures over flushes.
-PTexture gl_context::getTexture( int width, int height, void *pixels ) {
-   glActiveTexture(GL_TEXTURE0 + ATLAS_TEXTURE_UNIT);
-   glBindTexture(GL_TEXTURE_2D, tm.getTextureID() );
-   PTexture texture = tm.getFreeBlock(width, height);
-   if( !texture.isValid() ) {
-      fmt::print(stderr,"Texture atlas is full.\n");
-      abort();
-   }
-   glTexSubImage2D(GL_TEXTURE_2D, 0,
-                   texture.left, texture.top,
-                   width, height,
-                   GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-   return texture;
+
+void gl_context::flush() {
+   flushes++;
+   batch.draw( this );
+   return;
 }
 
-PTexture gl_context::getTexture( gl_context &source ) {
-   glActiveTexture(GL_TEXTURE0 + 1);
-   glBindTexture(GL_TEXTURE_2D,source.localFrame.getColorBufferID());
-   glActiveTexture(GL_TEXTURE0 + ATLAS_TEXTURE_UNIT);
-   return { 1,0,0, source.width,source.height,source.width, source.height };
+
+int gl_context::bindNextTextureUnit( PImage img ) {
+   if (img.isDirty()) {
+      img.updatePixels();
+   }
+   if (batch.textures.count(img) != 1) {
+      glActiveTexture(GL_TEXTURE0 + batch.unit);
+      auto textureID = img.getTextureID();
+      glBindTexture(GL_TEXTURE_2D, img.getTextureID());
+      // This map serves two purposes, first to keep the PImage alive by holding
+      // a copy of it until the batch is flushed and secondly mapping from an already
+      // used texture to its texture unit in case we see it again. This is paritculaly
+      // important for the blankTexture.
+      batch.textures[img] = batch.unit;
+      return batch.unit++;
+   } else {
+      return batch.textures[img];
+   }
 }
 
 void gl_context::clear(gl_framebuffer &fb, float r, float g, float b, float a) {
@@ -332,12 +332,13 @@ void gl_context::initVAO() {
 
 void gl_context::drawTriangles( const std::vector<vertex> &vertices,
                                 const std::vector<unsigned short> &indices,
+                                PImage texture,
                                 const PMatrix &move_matrix ){
 
    if (indices.size() == 0) abort();
 
-   while (!batch.enqueue( vertices, indices, move_matrix ) )
-      batch.draw( this );
+   while (!batch.enqueue( this, vertices, indices, texture, move_matrix ) )
+      flush();
 }
 
 void gl_context::cleanupVAO() {

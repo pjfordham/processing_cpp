@@ -4,7 +4,6 @@
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_enum.h"
-#include "processing_texture_manager.h"
 #include "processing_opengl.h"
 #include "processing_pimage.h"
 
@@ -13,7 +12,10 @@ class PShape {
 
 public:
 
-   PTexture texture_;
+   static PImage blankTexture;
+
+   PImage texture_ = blankTexture;
+
    PMatrix shape_matrix = PMatrix::Identity();
 
    struct vInfoExtra {
@@ -170,16 +172,21 @@ public:
       mode = mode_;
    }
 
-   void texture(PTexture texure) {
-      texture_ = texure;
+   bool isTextureSet() const {
+      return texture_ != blankTexture;
    }
 
-   void texture(gl_context &glc, PImage &img) {
-      texture( img.getTexture( glc ) );
+   void texture(const PImage &img) {
+      texture_ = img;
+   }
+
+   void circleTexture() {
+      mode = NORMAL;
+      texture_ = PImage::circle();
    }
 
    void noTexture() {
-      texture_ = {};
+      texture_ = blankTexture;
    }
 
    void noNormal() {
@@ -219,13 +226,7 @@ public:
    }
 
    void vertex(PVector p, PVector2 t) {
-
-      if (mode == IMAGE) {
-         t.x /= texture_.width();
-         t.y /= texture_.height();
-      }
-
-      vertices.push_back( { p, n, texture_.normalize( t ), texture_.layer, fill_color } );
+      vertices.push_back( { p, n, t, 0, fill_color } );
       extras.push_back( {stroke_color, tint_color, stroke_weight } );
    }
 
@@ -512,12 +513,8 @@ public:
       }
    }
 
-   void setTexture( gl_context &glc, PImage &img ) {
-     // need to recalc texture coordintaes.
-     texture( glc, img );
-     for ( auto&&v : vertices ) {
-        v.coord = texture_.normalize( v.coord );
-     }
+   void setTexture( const PImage &img ) {
+      texture( img );
    }
 
    void setFill(bool z) {
@@ -539,7 +536,13 @@ public:
       }
    }
 
-   void draw(gl_context &glc, const PMatrix& transform) const {
+   void draw(gl_context &glc, const PMatrix& transform) {
+       for (auto &v : vertices) {
+         if (mode == IMAGE) {
+            v.coord.x /= texture_.width;
+            v.coord.y /= texture_.height;
+         }
+      }
       if ( style == GROUP ) {
          for (auto &&child : children) {
             child.draw(glc, transform * shape_matrix);

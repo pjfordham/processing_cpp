@@ -29,7 +29,7 @@ void setup() {
     PShape part;
     part.beginShape(QUADS);
     part.noStroke();
-    part.texture(g.glc, sprite);
+    part.texture(sprite);
     part.normal(0, 0, 1);
     part.vertex(-partSize/2, -partSize/2, 0, 0);
     part.vertex(+partSize/2, -partSize/2, sprite.width, 0);

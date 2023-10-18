@@ -6,9 +6,10 @@
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_pshader.h"
-#include "processing_texture_manager.h"
 #include "processing_enum.h"
 #include "processing_opengl_framebuffer.h"
+#include "processing_utils.h"
+#include "processing_pimage.h"
 
 #include <fmt/core.h>
 
@@ -55,8 +56,18 @@ public:
       int width, height;
       int currentM;
    public:
+      int unit;
       scene_t scene;
       std::unique_ptr<geometry_t> geometry;
+      struct PImageHash {
+         std::size_t operator()(const PImage& obj) const {
+            std::size_t hash = std::hash<int>()(obj.width);
+            hash ^= std::hash<int>()(obj.height) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+            hash ^= std::hash<void*>()(obj.pixels);
+            return hash;
+         }
+      };
+      std::unordered_map<PImage, int, PImageHash> textures;
 
       batch_t(int width, int height) :
          geometry( std::make_unique<geometry_t>() ) {
@@ -71,12 +82,18 @@ public:
          *this = std::move(x);
       }
 
-      bool enqueue( const std::vector<vertex> &vertices,
+      bool enqueue( gl_context *glc,
+                    const std::vector<vertex> &vertices,
                     const std::vector<unsigned short> &indices,
+                    PImage texture,
                     const PMatrix &move_matrix ) {
 
          if (vertices.size() > geometry->CAPACITY) {
             abort();
+         }
+
+         if (unit == glc->MaxTextureImageUnits ) {
+            return false;
          }
 
          if ((vertices.size() + geometry->vCount) > geometry->CAPACITY) {
@@ -96,9 +113,17 @@ public:
             geometry->mCount++;
          }
 
+         int tunit;
+         if (texture == PImage::circle()) {
+            tunit = -1;
+         } else {
+            tunit = glc->bindNextTextureUnit( texture );
+         }
+
          int offset = geometry->vCount;
          for (int i = 0; i < vertices.size(); ++i) {
             geometry->vbuffer[offset + i] = vertices[i];
+            geometry->vbuffer[offset + i].tunit = tunit;
             geometry->tbuffer[offset + i] = currentM;
          }
          geometry->vCount += vertices.size();
@@ -112,18 +137,21 @@ public:
          return true;
       }
 
+      static const int INTERNAL_TEXTURE_UNIT = 0;
       void reset() {
          geometry->vCount = 0;
          geometry->mCount = 0;
          geometry->iCount = 0;
          currentM = 0;
-      }
+         unit = INTERNAL_TEXTURE_UNIT + 1;
+         textures.clear();
+     }
 
       void draw( gl_context *glc ) {
          if (geometry->vCount != 0 ) {
             glc->loadMoveMatrix( geometry->move, geometry->mCount );
             glc->setScene( scene );
-            glc->drawGeometry( *geometry, glc->tm.getTextureID() );
+            glc->drawGeometry( *geometry );
          }
          reset();
       }
@@ -136,6 +164,8 @@ public:
          std::swap(height,x.height);
          std::swap(scene,x.scene);
          std::swap(geometry,x.geometry);
+         std::swap(textures,x.textures);
+         std::swap(unit,x.unit);
 
          return *this;
       }
@@ -182,7 +212,11 @@ private:
 
    GLuint VAO;
 
+   int MaxTextureImageUnits;
+
 public:
+   MAKE_GLOBAL(getColorBufferID, localFrame);
+
    gl_context() : width(0), height(0), batch(0,0) {
       index_buffer_id = 0;
       vertex_buffer_id = 0;
@@ -198,12 +232,9 @@ public:
       *this = std::move(x);
    }
 
-   TextureManager tm;
-
    gl_context& operator=(const gl_context&) = delete;
 
    gl_context& operator=(gl_context&&x) noexcept {
-      std::swap(tm,x.tm);
       std::swap(batch,x.batch);
 
       std::swap(flushes,x.flushes);
@@ -238,8 +269,12 @@ public:
 
       std::swap(VAO,x.VAO);
 
+      std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);
+
       return *this;
    }
+
+   int bindNextTextureUnit( PImage img );
 
    void blendMode( int b );
 
@@ -252,7 +287,7 @@ public:
       return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).data[1];
    }
 
-   void drawGeometry( const geometry_t &geometry, GLuint bufferID );
+   void drawGeometry( const geometry_t &geometry );
 
    void setScene( const scene_t &scene );
 
@@ -312,10 +347,6 @@ public:
       frame.blit( localFrame );
    }
 
-   PTexture getTexture( int width, int height, void *pixels );
-
-   PTexture getTexture( gl_context &source );
-
    void clear(gl_framebuffer &fb, float r, float g, float b, float a);
 
    void clear( float r, float g, float b, float a) {
@@ -352,14 +383,11 @@ public:
 
    void loadProjectionViewMatrix( const float *data );
 
-   void flush() {
-      flushes++;
-      batch.draw( this );
-      return;
-   }
+   void flush();
 
    void drawTriangles( const std::vector<vertex> &vertices,
                        const std::vector<unsigned short> &indices,
+                       PImage texture,
                        const PMatrix &move_matrix );
 
    int getFlushCount() const {

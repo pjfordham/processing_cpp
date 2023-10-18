@@ -145,7 +145,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
       in vec4 vPosition;
       flat in int vTindex;
       out vec4 fragColor;
-      uniform sampler2D myTextures[4];
+      uniform sampler2D myTextures[16];
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
       uniform vec3 directionLightVector;
@@ -164,7 +164,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
           vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
 
           vec4 texelColor;
-          if ( vTindex == 8 ) { // It's a circle
+          if ( vTindex == -1 ) { // It's a circle
               vec2 pos = vTexture.xy;
               vec2 centre = vec2(0.5,0.5);
                if (distance(pos,centre) > 0.5)
@@ -172,7 +172,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
                else
                    texelColor = vec4(1.0,1.0,1.0,1.0);
           } else {
-              texelColor = texture(myTextures[vTindex], vTexture.xy);
+              texelColor =  texture(myTextures[vTindex], vTexture.xy);
           }
           fragColor = vec4(vLighting,1.0) * vColor * texelColor;
       }

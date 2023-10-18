@@ -2,14 +2,13 @@
 #define PROCESSING_PIMAGE_H
 
 #include "processing_color.h"
-#include "processing_texture_manager.h"
-#include "processing_opengl.h"
 
 #include <vector>
 #include <string_view>
 #include <memory>
 
 class PImageImpl;
+typedef unsigned int GLuint;
 
 // Use the PIMPL idiom to completely encapsulate the implementation
 // but also to force PImage to behave with Java style reference
@@ -23,8 +22,13 @@ public:
 
    static void close();
 
-   operator bool() const;
-
+   explicit operator bool() const;
+   bool operator==(const PImage &x) const {
+      return impl == x.impl && width == x.width && height == x.height && pixels == x.pixels;
+   };
+   bool operator!=(const PImage &x) const {
+      return !(x==*this);
+   };
    // int width() { return impl->width; }
    // int height() { return impl->height; }
    // unsigned int *pixels() { return impl->pixels; }
@@ -34,13 +38,20 @@ public:
 
    PImage() {}
 
+   static PImage circle() {
+      PImage a;
+      a.width = -1;
+      a.height = -1;
+      return a;
+   }
+
    PImage( std::shared_ptr<PImageImpl> impl_ );
 
    void mask(const PImage m);
 
-   PTexture getTexture(gl_context &glc);
-
    color get(int x, int y) const;
+
+   GLuint getTextureID() const;
 
    void set(int x, int y, color c);
 
@@ -50,15 +61,20 @@ public:
 
    void updatePixels();
 
+   bool isDirty() const;
+
+   void setClean();
+
    void convolve (const std::vector<std::vector<float>> &kernel);
 
    void filter(int x, float level=1.0);
 
    void save_as( std::string_view filename ) const;
-
 };
 
 PImage createImage(int width, int height, int mode);
+PImage createBlankImage();
+PImage createImageFromTexture(GLuint textureID);
 PImage loadImage(std::string_view URL);
 PImage requestImage(std::string_view URL);
 

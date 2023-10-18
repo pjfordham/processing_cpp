@@ -332,17 +332,14 @@ PShape drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, colo
    return shape;
 }
 
-
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, gl_context::color color, const PMatrix &transform) {
    PShape shape;
-   // Hack to get the circle texture
-   shape.texture( PTexture::circle() );
+   shape.circleTexture();
    shape.noStroke();
    shape.fill_color = color ;
    shape.beginShape(TRIANGLES);
    x = x - width / 2.0;
    y = y - height / 2.0;
-   shape.textureMode( NORMAL );
    shape.vertex(x,y,0,0);
    shape.vertex(x+width,y,1.0,0);
    shape.vertex(x+width,y+height,1.0,1.0);
@@ -351,6 +348,8 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.endShape(CLOSE);
    return shape;
 }
+
+PImage PShape::blankTexture = createBlankImage();
 
 void _line(PShape &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
 
@@ -486,6 +485,6 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
 
 void PShape::draw_fill(gl_context &glc, const PMatrix& transform) const {
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
-      glc.drawTriangles( vertices, indices, transform * shape_matrix );
+      glc.drawTriangles( vertices, indices, texture_, transform * shape_matrix );
    }
 }

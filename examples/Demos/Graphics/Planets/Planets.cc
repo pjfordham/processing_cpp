@@ -65,13 +65,13 @@ void setup() {
   sphereDetail(40);
 
   sun = createSphere(150);
-  sun.setTexture(g.glc, suntex);
+  sun.setTexture(suntex);
 
   planet1 = createSphere(150);
-  planet1.setTexture(g.glc, surftex1);
+  planet1.setTexture(surftex1);
 
   planet2 = createSphere(50);
-  planet2.setTexture(g.glc, surftex2);
+  planet2.setTexture(surftex2);
 }
 
 void draw() {
