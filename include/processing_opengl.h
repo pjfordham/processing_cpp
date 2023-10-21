@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "processing_math.h"
+#include "processing_color.h"
 #include "processing_pshader.h"
 #include "processing_texture_manager.h"
 #include "processing_enum.h"
@@ -383,6 +384,8 @@ public:
    void initVAO();
    void cleanupVAO();
 };
+
+gl_context::color flatten_color_mode(color c);
 
 
 #endif

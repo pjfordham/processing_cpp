@@ -3,9 +3,11 @@
 
 #include "processing_color.h"
 #include "processing_texture_manager.h"
+#include "processing_opengl.h"
 
 #include <vector>
 #include <string_view>
+#include <memory>
 
 class PImageImpl;
 

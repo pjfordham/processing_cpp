@@ -2,7 +2,6 @@
 #define PROCESSING_COLOR_H
 
 #include "processing_enum.h"
-#include "processing_opengl.h"
 
 #include <cmath>
 
@@ -91,8 +90,6 @@ inline void colorMode(int mode, float scale) {
 inline void colorMode(int mode, float r, float g, float b) {
    colorMode(mode, r,g,b,255);
 }
-
-gl_context::color flatten_color_mode(color c);
 
 inline color lerpColor(const color& c1, const color& c2, float amt) {
    return {
