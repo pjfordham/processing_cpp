@@ -226,6 +226,10 @@ public:
    }
 
    void vertex(PVector p, PVector2 t) {
+      if (mode == IMAGE) {
+         t.x /= texture_.width;
+         t.y /= texture_.height;
+      }
       vertices.push_back( { p, n, t, 0, fill_color } );
       extras.push_back( {stroke_color, tint_color, stroke_weight } );
    }
@@ -537,12 +541,6 @@ public:
    }
 
    void draw(gl_context &glc, const PMatrix& transform) {
-       for (auto &v : vertices) {
-         if (mode == IMAGE) {
-            v.coord.x /= texture_.width;
-            v.coord.y /= texture_.height;
-         }
-      }
       if ( style == GROUP ) {
          for (auto &&child : children) {
             child.draw(glc, transform * shape_matrix);
