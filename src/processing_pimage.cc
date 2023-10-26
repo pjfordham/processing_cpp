@@ -1,17 +1,25 @@
 #include "processing_pimage.h"
+#include "processing_debug.h"
 #include <sail-c++/sail-c++.h>
 #include <curl/curl.h>
 #include "glad/glad.h"
+#include <fmt/core.h>
+
+#undef DEBUG_METHOD
+#define DEBUG_METHOD() do {} while (false)
+
+template <> struct fmt::formatter<PImageImpl>;
 
 class PImageImpl {
 public:
-   int width;
-   int height;
-   unsigned int *pixels;
-   GLuint textureID;
-   bool dirty;
+   int width = 0;
+   int height = 0;
+   unsigned int *pixels = nullptr;
+   GLuint textureID = 0;
+   bool dirty = true;
 
    ~PImageImpl() {
+      DEBUG_METHOD();
       if (textureID) {
          glDeleteTextures(1, &textureID);
       }
@@ -20,32 +28,40 @@ public:
       }
    }
 
-   PImageImpl() : width(0), height(0), pixels{NULL}, textureID(0), dirty{true} {}
+   PImageImpl() {
+      DEBUG_METHOD();
+   }
 
    PImageImpl(PImageImpl &&x) noexcept : PImageImpl() {
+      DEBUG_METHOD();
       *this = std::move(x);
    }
 
    PImageImpl(const PImageImpl &x) : PImageImpl(x.width, x.height, x.pixels) {
+      DEBUG_METHOD();
    }
 
-   PImageImpl(int w, int h, int mode) : width(w), height(h), textureID(0), dirty{true} {
+   PImageImpl(int w, int h, int mode) : width(w), height(h) {
+      DEBUG_METHOD();
       pixels = new uint32_t[width*height];
       std::fill(pixels, pixels+width*height, color(BLACK));
    }
 
-   PImageImpl(GLuint textureID_) : pixels{nullptr}, textureID(textureID_), dirty{true} {
+   PImageImpl(GLuint textureID_) : textureID(textureID_) {
+      DEBUG_METHOD();
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
    }
 
-   PImageImpl(int w, int h, uint32_t *pixels_) : width(w), height(h), textureID(0), dirty{true} {
+   PImageImpl(int w, int h, uint32_t *pixels_) : width(w), height(h) {
+      DEBUG_METHOD();
       pixels = new uint32_t[width*height];
       std::copy(pixels_, pixels_+width*height, pixels);
    }
 
    PImageImpl& operator=(const PImageImpl&) = delete;
    PImageImpl& operator=(PImageImpl&&x) noexcept {
+      DEBUG_METHOD();
       std::swap(width, x.width);
       std::swap(height, x.height);
       std::swap(pixels, x.pixels);
@@ -55,6 +71,7 @@ public:
    }
 
    void mask(const PImageImpl &mask) {
+      DEBUG_METHOD();
       if ( width != mask.width || height != mask.height )
          abort();
       if (!pixels)
@@ -68,6 +85,7 @@ public:
    }
 
    color get(int x, int y) {
+      DEBUG_METHOD();
       if (!pixels)
          loadPixels();
       if ( 0 <= x && x < width && 0 <= y && y < height)
@@ -77,6 +95,7 @@ public:
    }
 
    void set(int x, int y, color c) {
+      DEBUG_METHOD();
       if (!pixels)
          loadPixels();
       if ( 0 <= x && x < width && 0 <= y && y < height) {
@@ -86,18 +105,22 @@ public:
    }
 
    bool isDirty() {
+      DEBUG_METHOD();
       return dirty;
    }
 
    void setClean() {
+      DEBUG_METHOD();
       dirty = false;
    }
 
    int pixels_length() const {
+      DEBUG_METHOD();
       return width * height;
    }
 
    void updatePixels() {
+      DEBUG_METHOD();
       if (textureID == 0) {
          glActiveTexture(GL_TEXTURE0);
          glGenTextures(1, &textureID);
@@ -109,12 +132,16 @@ public:
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       }
       if (dirty) {
+         glActiveTexture(GL_TEXTURE0);
+         glBindTexture(GL_TEXTURE_2D, textureID);
          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
          dirty = false;
       }
+      glBindTexture(GL_TEXTURE_2D, 0);
    }
 
    void filter(int x, float level=1.0) {
+      DEBUG_METHOD();
       if (!pixels)
          loadPixels();
       switch (x) {
@@ -159,6 +186,7 @@ public:
    }
 
    void loadPixels() {
+      DEBUG_METHOD();
       if (pixels) return;
       if (textureID == 0)
          abort();
@@ -167,6 +195,7 @@ public:
    }
 
    void convolve(const std::vector<std::vector<float>> &kernel) {
+      DEBUG_METHOD();
       loadPixels();
       // Create a new image of the same size as the original surface
       auto blurred = new uint32_t[width*height];
@@ -209,6 +238,7 @@ public:
    }
 
    void save_as( const std::string &filename ) {
+      DEBUG_METHOD();
       loadPixels();
       sail::image_output output(filename);
       sail::image image = sail::image( (void*)pixels, SAIL_PIXEL_FORMAT_BPP32_RGBA, width, height );
@@ -218,6 +248,20 @@ public:
       output.finish();
    }
 
+};
+
+template <>
+struct fmt::formatter<PImageImpl> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const PImageImpl& v, FormatContext& ctx) {
+        return format_to(ctx.out(), "width={:<4} height={:<4} pixels={:<16} textureID={:<4} dirty={:<6}", v.width, v.height, (void*)v.pixels, v.textureID,v.dirty);
+    }
 };
 
 bool PImage::isDirty() const {
