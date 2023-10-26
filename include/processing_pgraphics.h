@@ -346,7 +346,14 @@ public:
 
    MAKE_GLOBAL(textAscent, currentFont);
    MAKE_GLOBAL(textDescent, currentFont);
-   MAKE_GLOBAL(textWidth, currentFont);
+
+   float textWidth(const std::string &text) {
+      auto existing = words.find( text );
+      if ( existing == words.end() ) {
+         words[text] = currentFont.render_as_pimage(text);
+      }
+      return words[text].width;
+   }
 
    void text(const std::string &text, float x, float y, float twidth = -1, float theight = -1) {
       auto existing = words.find( text );
