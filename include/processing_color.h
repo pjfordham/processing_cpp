@@ -2,6 +2,7 @@
 #define PROCESSING_COLOR_H
 
 #include "processing_enum.h"
+#include <fmt/core.h>
 
 #include <cmath>
 
@@ -71,8 +72,6 @@ public:
    color tint(const color &a) {
       return color(a.r*r,a.g*g, a.b*b, a.a*a);
    }
-   void print() const;
-   void printf() const;
 };
 
 const color DEFAULT_GRAY = color(240.0f);
@@ -120,6 +119,20 @@ inline float brightness(color rgb) {
    }
    return 0.299f * rgb.r + 0.587f * rgb.g + 0.114f * rgb.b;
 }
+
+template <>
+struct fmt::formatter<color> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const color& v, FormatContext& ctx) {
+       return format_to(ctx.out(), "R{:3},G{:3},B{:3},A{:3}",(int)v.r,(int)v.g,(int)v.b,(int)v.a);
+    }
+};
 
 // ----
 // End color handling.

@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <random>
 #include <array>
+#include <fmt/core.h>
 
 void noiseSeed(int seed);
 void noiseDetail(int lod, float falloff = 0.5);
@@ -77,7 +78,6 @@ public:
    float x, y,z;
    PVector() : x(0), y(0),z(0) {}
    PVector(float _x, float _y, float _z=0.0) : x(_x), y(_y),z(_z) {}
-   void print() const;
    void sub(PVector b) {
       x = x - b.x;
       y = y - b.y;
@@ -519,5 +519,48 @@ T random(const std::initializer_list<T>& c) {
    auto random_it = std::next(std::begin(c), random(std::size(c)));
    return *random_it;
 }
+
+template <>
+struct fmt::formatter<PVector> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const PVector& v, FormatContext& ctx) {
+        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z);
+    }
+};
+
+template <>
+struct fmt::formatter<PVector2> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const PVector2& v, FormatContext& ctx) {
+        return format_to(ctx.out(), "{:8.2f},{:8.2f}",v.x,v.y);
+    }
+};
+
+template <>
+struct fmt::formatter<PVector4> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const PVector4& v, FormatContext& ctx) {
+        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f},{:8.2f}",v.data[0],v.data[1],v.data[2],v.data[3]);
+    }
+};
+
 
 #endif

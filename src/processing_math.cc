@@ -126,10 +126,6 @@ float noise(float x, float y, float z) {
    return total/maxValue;
 }
 
-void PVector::print() const {
-   fmt::print(" {:>8.2} {:>8.2} {:>8.2}\n",x,y,z);
-}
-
 void PMatrix::print() const {
    if ( identity ) {
       fmt::print("Identity\n");
