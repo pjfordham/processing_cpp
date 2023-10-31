@@ -343,8 +343,6 @@ public:
          words[text] = currentFont.render_as_pimage(text);
       }
 
-      // Maybe use a different texturemanager for text processing
-      // which can be flushed if needed
       PImage &text_image = words[text];
 
       twidth = text_image.width;
