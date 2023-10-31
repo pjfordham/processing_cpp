@@ -9,7 +9,7 @@
 #include "processing_pimage.h"
 
 class PShape {
-   PVector n = { 0.0, 0.0, 1.0 };
+   PVector n = { 0.0, 0.0, 0.0 };
 
 public:
 
@@ -371,7 +371,6 @@ public:
             vertices[indices[i * 3 + 1]].normal = vertices[indices[i * 3 + 1]].normal + normal;
             vertices[indices[i * 3 + 2]].normal = vertices[indices[i * 3 + 2]].normal + normal;
          }
-         // The shader will normalize all the normals
       }
    }
 
