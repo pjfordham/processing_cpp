@@ -14,13 +14,9 @@
 #include <fmt/core.h>
 
 class gl_context {
-
 public:
    struct color {
       float r,g,b,a;
-      void print() {
-         fmt::print("R{} G{} B{} A{}\n",r,g,b,a);
-      }
    };
    struct vertex {
       PVector position;
@@ -417,6 +413,39 @@ public:
 };
 
 gl_context::color flatten_color_mode(color c);
+
+template <>
+struct fmt::formatter<gl_context::color> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const gl_context::color& v, FormatContext& ctx) {
+       return format_to(ctx.out(), "R{:8.2f},G{:8.2f},B{:8.2f},A{:8.2f}",v.r,v.g,v.b,v.a);
+    }
+};
+
+template <>
+struct fmt::formatter<gl_context::vertex> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const gl_context::vertex& v, FormatContext& ctx) {
+       return format_to(ctx.out(), "T{} Tu{} N{} P{} C{}",
+                        v.coord,
+                        v.tunit,
+                        v.normal,
+                        v.position,
+                        v.fill);
+    }
+};
 
 
 #endif

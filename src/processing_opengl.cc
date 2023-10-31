@@ -2,6 +2,11 @@
 
 #include "processing_opengl.h"
 
+#undef DEBUG_METHOD
+#undef DEBUG_METHOD_MESSAGE
+#define DEBUG_METHOD() do {} while (false)
+#define DEBUG_METHOD_MESSAGE(x) do {} while (false)
+
 #include <fstream>     // For std::ifstream
 #include <sstream>     // For std::stringstream
 
@@ -98,14 +103,14 @@ void gl_context::drawGeometry( const geometry_t &geometry ) {
 #if 0
    fmt::print("### GEOMETRY DUMP START ###\n");
    for ( int i = 0; i < geometry.vCount; ++i ) {
-      fmt::print("{}: {},{},{} ", i,
-                 geometry.vbuffer[i].coord.x,
-                 geometry.vbuffer[i].coord.y,
-                 geometry.vbuffer[i].tunit);
-      geometry.vbuffer[i].position.print();
+      fmt::print("{:3}: {}", i, geometry.vbuffer[i]);
+      fmt::print(" Tr {:3}\n", geometry.tbuffer[i]);
    }
-   for ( int i = 0; i < geometry.iCount; ++i ) {
-      fmt::print("{}",  geometry.ibuffer[i]);
+   for ( int i = 0; i < geometry.vCount; ++i ) {
+   }
+   fmt::print("Triangles: ");
+   for ( int i = 0; i < geometry.iCount; i+=3 ) {
+      fmt::print("{},{},{} ", geometry.ibuffer[i],geometry.ibuffer[i+1],geometry.ibuffer[i+2]);
    }
    fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
@@ -167,9 +172,8 @@ gl_context::gl_context(int width, int height, float aaFactor) :
    this->window_width = width;
    this->window_height = height;
 
-   bool useMainFramebuffer = false;
-
-   localFrame = gl_framebuffer( this->width, this->height, 2, MSAA );
+   // localFrame = gl_framebuffer::constructMainFrame(width, height);
+   localFrame = gl_framebuffer( this->width, this->height, aaFactor, MSAA );
 
    glGenBuffers(1, &index_buffer_id);
    glGenBuffers(1, &vertex_buffer_id);
@@ -257,8 +261,22 @@ void gl_context::flush() {
    return;
 }
 
+template <>
+struct fmt::formatter<gl_context> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const gl_context& v, FormatContext& ctx) {
+       return format_to(ctx.out(), "gl_context");
+    }
+};
 
 int gl_context::bindNextTextureUnit( PImage img ) {
+   DEBUG_METHOD();
    if (img.isDirty()) {
       img.updatePixels();
    }
@@ -271,8 +289,10 @@ int gl_context::bindNextTextureUnit( PImage img ) {
       // used texture to its texture unit in case we see it again. This is paritculaly
       // important for the blankTexture.
       batch.textures[img] = batch.unit;
+      DEBUG_METHOD_MESSAGE(fmt::format("cache miss unit={} texID={}", batch.textures[img], img.getTextureID()));
       return batch.unit++;
    } else {
+      DEBUG_METHOD_MESSAGE(fmt::format("cache hit! unit={} texID={}", batch.textures[img], img.getTextureID()));
       return batch.textures[img];
    }
 }
