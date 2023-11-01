@@ -145,16 +145,17 @@ public:
    }
 
    void pushMatrix() {
-      matrix_stack.push_back(_shape.shape_matrix);
+      matrix_stack.push_back(_shape.getShapeMatrix());
    }
 
    void popMatrix() {
-      _shape.shape_matrix = matrix_stack.back();
+      _shape.resetMatrix();
+      _shape.transform( matrix_stack.back() );
       matrix_stack.pop_back();
    }
 
    void translate(PVector t) {
-      _shape.shape_matrix = _shape.shape_matrix * TranslateMatrix(t);
+      _shape.transform( TranslateMatrix(t) );
    }
 
    void translate(float x, float y, float z=0.0 ) {
@@ -162,11 +163,11 @@ public:
    }
 
    void transform(const PMatrix &transform_matrix) {
-      _shape.shape_matrix = _shape.shape_matrix * transform_matrix;
+      _shape.transform( transform_matrix );
    }
 
    void scale(float x, float y,float z = 1.0) {
-      _shape.shape_matrix = _shape.shape_matrix * ScaleMatrix(PVector{x,y,z});
+      _shape.transform( ScaleMatrix(PVector{x,y,z}) );
    }
 
    void scale(float x) {
@@ -174,7 +175,7 @@ public:
    }
 
    void rotate(float angle, PVector axis) {
-      _shape.shape_matrix = _shape.shape_matrix * RotateMatrix(angle,axis);
+      _shape.transform( RotateMatrix(angle,axis) );
    }
 
    void rotate(float angle) {
@@ -465,11 +466,11 @@ public:
       cube.vertex( -w,  h,  d, 1.0, 1.0 );
       cube.vertex( -w,  h, -d, 0.0, 1.0 );
 
-      cube.indices = {
-         0,1,2, 0,2,3, 4,5,6, 4,6,7,
-         8,9,10, 8,10,11, 12,13,14, 12,14,15,
-         16,17,18, 16,18,19, 20,21,22, 20,22,23
-      };
+      cube.populateIndices( {
+            0,1,2, 0,2,3, 4,5,6, 4,6,7,
+            8,9,10, 8,10,11, 12,13,14, 12,14,15,
+            16,17,18, 16,18,19, 20,21,22, 20,22,23
+         } );
 
       cube.endShape();
       return cube;
@@ -644,7 +645,7 @@ public:
       quad.vertex( p1, {1.0, 0.0} );
       quad.vertex( p2, {1.0, 1.0} );
       quad.vertex( p3, {0.0, 1.0} );
-      quad.indices = { 0,1,2, 0,2,3 };
+      quad.populateIndices( { 0,1,2, 0,2,3 } );
       quad.endShape();
 
       shape( quad );
@@ -661,28 +662,27 @@ public:
       quad.vertex( p1, {1.0, 0.0} );
       quad.vertex( p2, {1.0, 1.0} );
       quad.vertex( p3, {0.0, 1.0} );
-      quad.indices = { 0,1,2, 0,2,3 };
+      quad.populateIndices( { 0,1,2, 0,2,3 } );
       quad.endShape();
 
       shape( quad );
-   }
-
-   void shape(PShape &pshape, float x, float y, float width, float height) {
-      pushMatrix();
-      translate(x,y);
-      scale(width / pshape.width, height / pshape.height);
-      pixels_current = false;
-      pshape.draw( glc, _shape.shape_matrix );
-      popMatrix();
    }
 
    void shape(PShape &pshape, float x, float y) {
       shape( pshape, x, y, pshape.width, pshape.height );
    }
 
+   void shape(PShape &pshape, float x, float y, float width, float height) {
+      pushMatrix();
+      translate(x,y);
+      scale(width / pshape.width, height / pshape.height);
+      shape(pshape);
+      popMatrix();
+   }
+
    void shape(PShape &pshape) {
       pixels_current = false;
-      pshape.draw( glc, _shape.shape_matrix );
+      pshape.draw( glc, _shape.getShapeMatrix() );
    }
 
    void ellipse(float x, float y, float width, float height) {
@@ -796,7 +796,7 @@ public:
       shape.vertex(x+width,y);
       shape.vertex(x+width,y+height);
       shape.vertex(x,y+height);
-      shape.indices = { 0,1,2,0,2,3 };
+      shape.populateIndices( { 0,1,2,0,2,3 } );
       shape.endShape(CLOSE);
       return shape;
    }
@@ -830,7 +830,7 @@ public:
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
-      shape.indices = { 0,1,2 };
+      shape.populateIndices( { 0,1,2 } );
       shape.endShape(CLOSE);
       return shape;
    }
@@ -861,9 +861,9 @@ public:
       default:
          abort();
       }
-      if (_shape.stroke_color.a == 0.0 && !_shape.isTextureSet()) {
+      if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color, _shape.shape_matrix );
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color, _shape.getShapeMatrix() );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
@@ -933,7 +933,7 @@ public:
          abort();
       }
 
-      if (_shape.stroke_color.a == 0.0 && !_shape.isTextureSet()) {
+      if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
 
          PShape shape;

@@ -344,7 +344,7 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.vertex(x+width,y,1.0,0);
    shape.vertex(x+width,y+height,1.0,1.0);
    shape.vertex(x,y+height,0,1.0);
-   shape.indices = { 0,1,2,0,2,3 };
+   shape.populateIndices( { 0,1,2,0,2,3 } );
    shape.endShape(CLOSE);
    return shape;
 }
@@ -399,7 +399,7 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
          drawUntexturedFilledEllipse(
             vertices[i].position.x, vertices[i].position.y,
             extras[i].weight, extras[i].weight,
-            flatten_color_mode(extras[i].stroke), shape_matrix ).draw( glc, transform );
+            flatten_color_mode(extras[i].stroke), shape_matrix ).draw_fill( glc, transform );
       }
       break;
    }
@@ -465,7 +465,7 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
          drawUntexturedFilledEllipse(
             vertices[0].position.x, vertices[0].position.y,
             extras[0].weight, extras[0].weight,
-            flatten_color_mode(extras[0].stroke), shape_matrix ).draw( glc, transform );
+            flatten_color_mode(extras[0].stroke), shape_matrix ).draw_fill( glc, transform );
       }
       break;
    }

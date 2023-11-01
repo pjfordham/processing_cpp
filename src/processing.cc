@@ -106,7 +106,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
    g.glc.resetFlushCount();
 
-   g._shape.shape_matrix = PMatrix::Identity();
+   g._shape.resetMatrix();
    g.noLights();
    // Call the sketch's draw()
    draw();

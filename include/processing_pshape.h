@@ -8,44 +8,48 @@
 #include "processing_pimage.h"
 
 class PShape {
-   PVector n = { 0.0, 0.0, 0.0 };
-
 public:
-
-   static PImage blankTexture;
-
-   PImage texture_ = blankTexture;
-
-   PMatrix shape_matrix = PMatrix::Identity();
-
    struct vInfoExtra {
       color stroke;
       color tint;
       float weight;
    };
 
-   std::vector<int> contour;
-
-   std::vector<gl_context::vertex> vertices;
-   std::vector<vInfoExtra> extras;
+private:
 
    bool setNormals = false;
+   PVector n = { 0.0, 0.0, 0.0 };
+
+   std::vector<int> contour;
+   std::vector<gl_context::vertex> vertices;
+   std::vector<vInfoExtra> extras;
+   std::vector<PShape> children;
    std::vector<unsigned short> indices;
 
-   std::vector<PShape> children;
-
-   int style = POLYGON;
    int type = OPEN;
    int mode = IMAGE;
-   float width = 1.0;
-   float height = 1.0;
-
-   color stroke_color = BLACK;
-   gl_context::color fill_color = flatten_color_mode(WHITE);
-   color tint_color = WHITE;
    float stroke_weight = 1.0f;
    int line_end_cap = ROUND;
    float tightness = 0.0f;
+   std::vector<PVector> curve_vertices;
+   PMatrix shape_matrix = PMatrix::Identity();
+   color stroke_color = BLACK;
+
+public:
+
+   static PImage blankTexture;
+   PImage texture_ = blankTexture;
+
+   int style = POLYGON;
+   float width = 1.0;
+   float height = 1.0;
+
+   gl_context::color fill_color = flatten_color_mode(WHITE);
+   color tint_color = WHITE;
+
+   const PMatrix& getShapeMatrix() const {
+      return shape_matrix;
+   }
 
    PShape(const PShape& other) = default;
    PShape& operator=(const PShape& other) = default;
@@ -145,7 +149,7 @@ public:
    }
 
    void transform(const PMatrix &transform) {
-      shape_matrix = transform;
+      shape_matrix = shape_matrix * transform;
    }
 
    void resetMatrix() {
@@ -272,8 +276,6 @@ public:
       tightness = alpha;
    }
 
-   std::vector<PVector> curve_vertices;
-
    void curveVertex(PVector c) {
       curve_vertices.push_back(c);
    }
@@ -385,6 +387,10 @@ public:
 
    void populateIndices();
 
+   void populateIndices( std::vector<unsigned short> &&i ) {
+      indices = i;
+   }
+
    void addChild(PShape &&shape) {
       children.emplace_back( std::move(shape) );
    }
@@ -463,6 +469,14 @@ public:
 
    void noFill() {
       fill_color = {0,0,0,0};
+   }
+
+   bool isStroked() const {
+      return stroke_color.a != 0.0;
+   }
+
+   bool isFilled() const {
+      return fill_color.a != 0.0;
    }
 
    void tint(float r,float g,  float b, float a) {

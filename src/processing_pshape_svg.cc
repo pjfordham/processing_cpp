@@ -495,9 +495,10 @@ PShape loadShape(const std::string &filename) {
    }
 
    PShape svgShape;
-   svgShape.style = GROUP;
-
+   svgShape.beginShape(GROUP);
    parseNode(xmlDocGetRootElement(doc), svgShape);
+   svgShape.endShape();
+
    fmt::print("PShape end GROUP {} {} \n",(void*)&svgShape,svgShape.getChildCount());
 
    xmlFreeDoc(doc);
