@@ -59,6 +59,8 @@ public:
 
    int pixels_length()const ;
 
+   void releaseTexture();
+
    void updatePixels();
 
    bool isDirty() const;

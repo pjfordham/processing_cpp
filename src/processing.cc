@@ -235,9 +235,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    // Clean up resources, force g to be destructed before we close down GLFW
    g = {};
-   g._shape.texture_ = {};
-   g.rect_opt.texture_ = {};
-   PShape::blankTexture = {};
+   PShape::blankTexture.releaseTexture();
 
    glfwTerminate();
 

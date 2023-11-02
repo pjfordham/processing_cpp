@@ -140,6 +140,15 @@ public:
       glBindTexture(GL_TEXTURE_2D, 0);
    }
 
+   void releaseTexture() {
+      DEBUG_METHOD();
+      if (textureID) {
+         glDeleteTextures(1,&textureID);
+         textureID = 0;
+         dirty = true;
+      }
+   }
+
    void filter(int x, float level=1.0) {
       DEBUG_METHOD();
       if (!pixels)
@@ -309,6 +318,10 @@ int PImage::pixels_length() const {
 
 void PImage::updatePixels() {
    impl->updatePixels();
+}
+
+void PImage::releaseTexture() {
+   impl->releaseTexture();
 }
 
 void PImage::convolve (const std::vector<std::vector<float>> &kernel) {
