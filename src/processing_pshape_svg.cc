@@ -372,7 +372,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          }
          xmlFree(xdata);
          fmt::print("Circle {} {} {}\n",cx,cy,r);
-         shape = drawUntexturedFilledEllipse( cx,cy,2*r,2*r, shape.fill_color, PMatrix::Identity() );
+         shape = drawUntexturedFilledEllipse( cx,cy,2*r,2*r, shape.getFillColor(), PMatrix::Identity() );
       } else if (type == "ellipse") {
          int alpha = 255;
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
@@ -415,7 +415,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          }
          xmlFree(xdata);
          fmt::print("Ellipse {} {} {} {}\n",cx,cy,rx,ry);
-         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.fill_color, PMatrix::Identity() );
+         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.getFillColor(), PMatrix::Identity() );
       } else if (type == "polygon") {
          int alpha = 255;
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
@@ -471,13 +471,14 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          }
          xmlFree(xdata);
       } else {
-         shape.style = GROUP;
+         shape.beginShape( GROUP );
          for (xmlNode* child = node->children; child; child = child->next) {
             parseNode(child, shape);
          }
+         shape.endShape();
       }
       pshape.addChild( shape );
-      if (shape.style == GROUP)
+      if (shape.isGroup())
          fmt::print("PShape end GROUP {} {} #{}#\n",(void*)&shape,shape.getChildCount(),type);
       else
          fmt::print("PShape end {} {} \n",type, (void*)&shape);

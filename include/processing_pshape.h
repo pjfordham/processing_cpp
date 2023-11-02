@@ -37,16 +37,14 @@ private:
    color stroke_color = BLACK;
    PImage texture_ = blankTexture;
    gl_context::color gl_fill_color = flatten_color_mode(WHITE);
-
+   color fill_color = WHITE;
+   color tint_color = WHITE;
+   int style = POLYGON;
 
 public:
 
-   int style = POLYGON;
    float width = 1.0;
    float height = 1.0;
-
-   color fill_color = WHITE;
-   color tint_color = WHITE;
 
    const PMatrix& getShapeMatrix() const {
       return shape_matrix;
@@ -99,6 +97,18 @@ public:
 
    PShape &getChild( int i ) {
       return children[i];
+   }
+
+   color getFillColor() const {
+      return fill_color;
+   }
+
+   color getTintColor() const {
+      return tint_color;
+   }
+
+   bool isGroup() const {
+      return style == GROUP;
    }
 
    void copyStyle( const PShape &other ) {

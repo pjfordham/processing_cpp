@@ -386,7 +386,7 @@ public:
       }
 
       drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
-                       text_image, _shape.fill_color);
+                       text_image, _shape.getFillColor() );
    }
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
@@ -569,7 +569,7 @@ public:
                         {right, top},
                         {left, top},
                         createImageFromTexture(gfx.glc.getColorBufferID()),
-                        _shape.tint_color );
+                        _shape.getTintColor() );
    }
 
    void image(PImage pimage, float left, float top, float right, float bottom) {
@@ -587,7 +587,7 @@ public:
          bottom = top + iheight;
       }
       drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
-                       pimage, _shape.tint_color  );
+                       pimage, _shape.getTintColor()  );
    }
 
    void image(PImage pimage, float x, float y) {
@@ -854,7 +854,7 @@ public:
       }
       if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.fill_color, _shape.getShapeMatrix() );
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.getFillColor(), _shape.getShapeMatrix() );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
