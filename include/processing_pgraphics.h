@@ -362,7 +362,7 @@ public:
          words[text] = currentFont.render_as_pimage(text);
       }
 
-      PImage &text_image = words[text];
+      PImage text_image = words[text];
 
       twidth = text_image.width;
       theight = text_image.height;
@@ -548,6 +548,14 @@ public:
       return;
    }
 
+   // // Doesn't work becuase we need to flip the texture on Y axis
+   // operator PImage() {
+   //    PImage img = createImageFromTexture(glc.getColorBufferID());
+   //    img.width = width;
+   //    img.height = height;
+   //    return img;
+   // }
+
    void image(PGraphics &gfx, int x, int y, int width=-1, int height=-1) {
       float left = x;
       if (width == -1) width = gfx.width;
@@ -564,7 +572,7 @@ public:
                         _shape.tint_color );
    }
 
-   void image(PImage &pimage, float left, float top, float right, float bottom) {
+   void image(PImage pimage, float left, float top, float right, float bottom) {
       if ( image_mode == CORNER ) {
          float iwidth = right;
          float iheight = bottom;
@@ -582,10 +590,10 @@ public:
                        pimage, _shape.tint_color  );
    }
 
-   void image(PImage &pimage, float x, float y) {
+   void image(PImage pimage, float x, float y) {
       if ( image_mode == CORNER ) {
          image( pimage, x, y, pimage.width, pimage.height );;
-      } else if ( image_mode == CORNERS ) {
+    } else if ( image_mode == CORNERS ) {
          image( pimage, x, y, x + pimage.width, y + pimage.height );;
       } else   if (image_mode == CENTER) {
          image( pimage, x, y, pimage.width, pimage.height );
@@ -594,7 +602,7 @@ public:
       }
    }
 
-   void background(PImage &bg) {
+   void background(PImage bg) {
       image(bg,0,0);
    }
 
@@ -620,7 +628,7 @@ public:
       updatePixels();
    }
 
-   void set(int x, int y, PImage &i) {
+   void set(int x, int y, PImage i) {
       image(i,x,y);
    }
 

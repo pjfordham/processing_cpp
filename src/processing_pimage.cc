@@ -28,19 +28,6 @@ public:
       }
    }
 
-   PImageImpl() {
-      DEBUG_METHOD();
-   }
-
-   PImageImpl(PImageImpl &&x) noexcept : PImageImpl() {
-      DEBUG_METHOD();
-      *this = std::move(x);
-   }
-
-   PImageImpl(const PImageImpl &x) : PImageImpl(x.width, x.height, x.pixels) {
-      DEBUG_METHOD();
-   }
-
    PImageImpl(int w, int h, int mode) : width(w), height(h) {
       DEBUG_METHOD();
       pixels = new uint32_t[width*height];
@@ -59,16 +46,11 @@ public:
       std::copy(pixels_, pixels_+width*height, pixels);
    }
 
+   PImageImpl() = delete;
+   PImageImpl(PImageImpl &&x) = delete;
+   PImageImpl(const PImageImpl &x) = delete;
    PImageImpl& operator=(const PImageImpl&) = delete;
-   PImageImpl& operator=(PImageImpl&&x) noexcept {
-      DEBUG_METHOD();
-      std::swap(width, x.width);
-      std::swap(height, x.height);
-      std::swap(pixels, x.pixels);
-      std::swap(textureID, x.textureID);
-      std::swap(dirty, x.dirty);
-      return *this;
-   }
+   PImageImpl& operator=(PImageImpl&&x) = delete;
 
    void mask(const PImageImpl &mask) {
       DEBUG_METHOD();

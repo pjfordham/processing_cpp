@@ -9,6 +9,8 @@
 
 class PShape {
 public:
+   static PImage blankTexture;
+
    struct vInfoExtra {
       color stroke;
       color tint;
@@ -34,11 +36,9 @@ private:
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
    color stroke_color = BLACK;
+   PImage texture_ = blankTexture;
 
 public:
-
-   static PImage blankTexture;
-   PImage texture_ = blankTexture;
 
    int style = POLYGON;
    float width = 1.0;
@@ -180,7 +180,7 @@ public:
       return texture_ != blankTexture;
    }
 
-   void texture(const PImage &img) {
+   void texture(PImage img) {
       texture_ = img;
    }
 
@@ -531,7 +531,7 @@ public:
       }
    }
 
-   void setTexture( const PImage &img ) {
+   void setTexture( PImage img ) {
       texture( img );
    }
 
