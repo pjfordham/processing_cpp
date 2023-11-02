@@ -13,7 +13,6 @@ public:
 
    struct vInfoExtra {
       color stroke;
-      color tint;
       float weight;
    };
 
@@ -37,6 +36,8 @@ private:
    PMatrix shape_matrix = PMatrix::Identity();
    color stroke_color = BLACK;
    PImage texture_ = blankTexture;
+   gl_context::color gl_fill_color = flatten_color_mode(WHITE);
+
 
 public:
 
@@ -44,7 +45,7 @@ public:
    float width = 1.0;
    float height = 1.0;
 
-   gl_context::color fill_color = flatten_color_mode(WHITE);
+   color fill_color = WHITE;
    color tint_color = WHITE;
 
    const PMatrix& getShapeMatrix() const {
@@ -77,6 +78,7 @@ public:
       std::swap(mode, other.mode);
       std::swap(shape_matrix, other.shape_matrix);
       std::swap(stroke_color, other.stroke_color);
+      std::swap(gl_fill_color, other.gl_fill_color);
       std::swap(fill_color, other.fill_color);
       std::swap(tint_color, other.tint_color);
       std::swap(stroke_weight, other.stroke_weight);
@@ -104,6 +106,7 @@ public:
       n = other.n;
       stroke_color = other.stroke_color;
       fill_color = other.fill_color;
+      gl_fill_color = other.gl_fill_color;
       tint_color = other.tint_color;
       stroke_weight = other.stroke_weight;
       line_end_cap = other.line_end_cap;
@@ -234,8 +237,8 @@ public:
          t.x /= texture_.width;
          t.y /= texture_.height;
       }
-      vertices.push_back( { p, n, t, 0, fill_color } );
-      extras.push_back( {stroke_color, tint_color, stroke_weight } );
+      vertices.push_back( { p, n, t, 0, gl_fill_color } );
+      extras.push_back( {stroke_color, stroke_weight } );
    }
 
    void index(unsigned short i) {
@@ -396,7 +399,8 @@ public:
    }
 
    void fill(float r,float g,  float b, float a) {
-      fill_color = flatten_color_mode( {r,g,b,a} );
+      fill_color = {r,g,b,a};
+      gl_fill_color = flatten_color_mode( fill_color );
     }
 
    void fill(float r,float g, float b) {
@@ -421,10 +425,6 @@ public:
 
    void fill(class color color) {
       fill(color.r,color.g,color.b,color.a);
-   }
-
-   void fill(class gl_context::color color) {
-      fill_color = color;
    }
 
    void fill(class color color, float a) {
@@ -469,6 +469,7 @@ public:
 
    void noFill() {
       fill_color = {0,0,0,0};
+      gl_fill_color = flatten_color_mode( fill_color );
    }
 
    bool isStroked() const {
@@ -476,11 +477,12 @@ public:
    }
 
    bool isFilled() const {
-      return fill_color.a != 0.0;
+      return fill_color.a != 0;
    }
 
    void tint(float r,float g,  float b, float a) {
       tint_color = {r,g,b,a};
+      gl_fill_color = flatten_color_mode( tint_color );
    }
 
    void tint(float r,float g, float b) {
@@ -509,6 +511,7 @@ public:
 
    void noTint() {
       tint_color = WHITE;
+      gl_fill_color = flatten_color_mode( tint_color );
    }
 
    void strokeCap(int cap) {
@@ -543,14 +546,18 @@ public:
    }
 
    void setFill(color c) {
-      for ( auto&&v : vertices ) {
-         v.fill = flatten_color_mode(c);
+      fill_color = c;
+      gl_context::color clr = flatten_color_mode(fill_color);
+         for ( auto&&v : vertices ) {
+            v.fill = clr;
       }
    }
 
    void setTint(color c) {
-      for ( auto&&v : extras ) {
-         v.tint = c;
+      tint_color = c;
+      gl_context::color clr = flatten_color_mode(tint_color);
+         for ( auto&&v : vertices ) {
+            v.fill = clr;
       }
    }
 
@@ -596,6 +603,6 @@ public:
 };
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);
-PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, gl_context::color color, const PMatrix &transform);
+PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform);
 
 #endif

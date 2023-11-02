@@ -659,23 +659,6 @@ public:
       shape( quad );
    }
 
-   void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
-                         PImage texture, gl_context::color fill ) {
-      PShape quad;
-      quad.fill( fill );
-      quad.textureMode(NORMAL);
-      quad.texture(texture);
-      quad.beginShape(TRIANGLES_NOSTROKE);
-      quad.vertex( p0, {0.0, 0.0} );
-      quad.vertex( p1, {1.0, 0.0} );
-      quad.vertex( p2, {1.0, 1.0} );
-      quad.vertex( p3, {0.0, 1.0} );
-      quad.populateIndices( { 0,1,2, 0,2,3 } );
-      quad.endShape();
-
-      shape( quad );
-   }
-
    void shape(PShape &pshape, float x, float y) {
       shape( pshape, x, y, pshape.width, pshape.height );
    }
