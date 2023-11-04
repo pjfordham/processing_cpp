@@ -32,7 +32,7 @@ public:
     return generations;
   }
 
-  void render() {
+  virtual void render() {
     translate(width/2, height/2);
     steps += 5;
     if (steps > production.length()) {
@@ -75,7 +75,7 @@ public:
      return str;
   }
 
-  std::string iterate(std::string prod_, std::string rule_) {
+  virtual std::string iterate(std::string prod_, std::string rule_) {
     drawLength = drawLength * 0.6;
     generations++;
     std::string newProduction = prod_;
