@@ -579,11 +579,13 @@ public:
       } else {
          if ( fill_color.a != 0 )
             draw_fill(glc, transform);
+         // draw_normals(glc,transform);
          if ( stroke_color.a != 0 )
             draw_stroke(glc, transform);
       }
    }
 
+   void draw_normals(gl_context &glc, const PMatrix& transform) const;
    void draw_stroke(gl_context &glc, const PMatrix& transform) const;
    void draw_fill(gl_context &gl, const PMatrix& transform) const;
 

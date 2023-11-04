@@ -423,6 +423,7 @@ public:
       PShape cube;
       cube.copyStyle( _shape );
       cube.beginShape(TRIANGLES);
+      cube.textureMode(NORMAL);
 
       // Front face
       cube.normal(0.0,  0.0,  1.0);
@@ -695,12 +696,12 @@ public:
    }
 
    void line(float x1, float y1, float z1, float x2, float y2, float z2) {
-      PShape pshape = createLine( x1, y1, z1, x2, y2, z1);
+      PShape pshape = createLine( x1, y1, z1, x2, y2, z2);
       shape( pshape );
    }
 
    void line(PVector start, PVector end) {
-      line(start.x,start.y, end.x,end.y);
+      line(start.x,start.y, start.z, end.x,end.y, end.z);
    }
 
    void line(PLine l) {
@@ -808,7 +809,7 @@ public:
       PShape shape;
       shape.copyStyle( _shape );
       shape.beginShape(POLYGON);
-      shape.vertex(x1,y1,z2);
+      shape.vertex(x1,y1,z1);
       shape.vertex(x2,y2,z2);
       shape.endShape(OPEN);
       return shape;

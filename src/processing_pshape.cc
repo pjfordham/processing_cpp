@@ -391,6 +391,48 @@ PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::
    return triangles;
 }
 
+PShape drawTriangleNormal(int points, const gl_context::vertex *p,
+                          const PShape::vInfoExtra *extras, bool closed,
+                          const PMatrix &transform) {
+   PShape shape;
+   shape.beginShape(TRIANGLES);
+   shape.transform( transform );
+   PVector pos = (p[0].position + p[1].position + p[2].position) / 3;
+   PVector n = ((p[0].normal + p[1].normal + p[2].normal) / 3).normalize();
+   _line(shape, pos, pos + 1 * n, 1.0f,1.0f,RED,RED);
+   shape.endShape();
+   return shape;
+}
+
+void PShape::draw_normals(gl_context &glc, const PMatrix &transform) const {
+   switch( style ) {
+   case TRIANGLES_NOSTROKE:
+   case TRIANGLES:
+      for (int i = 0; i < indices.size(); i+=3 ) {
+         std::vector<gl_context::vertex> triangle;
+         std::vector<vInfoExtra> xtras;
+         triangle.push_back( vertices[indices[i]] );
+         triangle.push_back( vertices[indices[i+1]] );
+         triangle.push_back( vertices[indices[i+2]] );
+         xtras.push_back( extras[indices[i]] );
+         xtras.push_back( extras[indices[i+1]] );
+         xtras.push_back( extras[indices[i+2]] );
+         drawTriangleNormal( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( glc, transform );
+      }
+      break;
+   case POINTS:
+   case POLYGON:
+   case CONVEX_POLYGON:
+   case LINES:
+   case TRIANGLE_STRIP:
+   case TRIANGLE_FAN:
+      break;
+   default:
+      abort();
+      break;
+   }
+}
+
 void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
    switch( style ) {
    case POINTS:

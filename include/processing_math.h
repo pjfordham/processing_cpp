@@ -159,7 +159,8 @@ public:
    }
 
    PVector normal() {
-      return PVector(-y, x);
+      if (x == 0 && y == 0) return PVector{z > 0.0 ? 1.0f : -1.0f ,0,0};
+      return PVector(-y, x, z);
    }
 
    void setMag(float mag) {
