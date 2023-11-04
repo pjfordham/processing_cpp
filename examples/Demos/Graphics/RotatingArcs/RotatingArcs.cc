@@ -16,9 +16,10 @@ int SINCOS_LENGTH= int((360.0/SINCOS_PRECISION));
 boolean dosave=false;
 int num;
 std::vector<float> pt;
+std::vector<color> c;
 std::vector<int> style;
 
-int colorBlended(float fract, float r, float g, float b, float r2, float g2, float b2, float a);
+color colorBlended(float fract, float r, float g, float b, float r2, float g2, float b2, float a);
 void arcLine(float x,float y,float deg,float rad,float w);
 void arcLineBars(float x,float y,float deg,float rad,float w);
 void zarc(float x,float y,float deg,float rad,float w);
@@ -28,16 +29,15 @@ void setup() {
   background(255);
 
   // Fill the tables
-  sinLUT.resize(SINCOS_LENGTH);
-  cosLUT.resize(SINCOS_LENGTH);
   for (int i = 0; i < SINCOS_LENGTH; i++) {
-    sinLUT[i]= sinf(i*DEG_TO_RAD*SINCOS_PRECISION);
-    cosLUT[i]= cosf(i*DEG_TO_RAD*SINCOS_PRECISION);
+    sinLUT.push_back( sinf(i*DEG_TO_RAD*SINCOS_PRECISION) );
+    cosLUT.push_back( cosf(i*DEG_TO_RAD*SINCOS_PRECISION) );
   }
 
   num = 150;
   pt.resize(6*num); // rotx, roty, deg, rad, w, speed
-  style.resize(2*num); // color, render style
+  style.resize(num); // render style
+  c.resize(num); // color
 
   // Set up arc shapes
   int index=0;
@@ -58,16 +58,16 @@ void setup() {
 
     // get colors
     prob = random(100);
-    if(prob<30) style[i*2]=colorBlended(random(1), 255,0,100, 255,0,0, 210);
-    else if(prob<70) style[i*2]=colorBlended(random(1), 0,153,255, 170,225,255, 210);
-    else if(prob<90) style[i*2]=colorBlended(random(1), 200,255,0, 150,255,0, 210);
+    if(prob<30) c[i]=colorBlended(random(1), 255,0,100, 255,0,0, 210);
+    else if(prob<70) c[i]=colorBlended(random(1), 0,153,255, 170,225,255, 210);
+    else if(prob<90) c[i]=colorBlended(random(1), 200,255,0, 150,255,0, 210);
+    else c[i]=color(255,255,255, 220);
+
+    if(prob<50) c[i]=colorBlended(random(1), 200,255,0, 50,120,0, 210);
+    else if(prob<90) c[i]=colorBlended(random(1), 255,100,0, 255,255,0, 210);
     else style[i*2]=color(255,255,255, 220);
 
-    if(prob<50) style[i*2]=colorBlended(random(1), 200,255,0, 50,120,0, 210);
-    else if(prob<90) style[i*2]=colorBlended(random(1), 255,100,0, 255,255,0, 210);
-    else style[i*2]=color(255,255,255, 220);
-
-    style[i*2+1]=(int)(random(100))%3;
+    style[i]=(int)(random(100))%3;
   }
 }
 
@@ -86,21 +86,21 @@ void draw() {
     rotateX(pt[index++]);
     rotateY(pt[index++]);
 
-    if(style[i*2+1]==0) {
-      stroke(style[i*2]);
+    if(style[i]==0) {
+       stroke(c[i]);
       noFill();
       strokeWeight(1);
       arcLine(0,0, pt[index],pt[index+1],pt[index+2]);
       index += 3;
     }
-    else if(style[i*2+1]==1) {
-      fill(style[i*2]);
+    else if(style[i]==1) {
+      fill(c[i]);
       noStroke();
       arcLineBars(0,0, pt[index],pt[index+1],pt[index+2]);
       index += 3;
     }
     else {
-      fill(style[i*2]);
+      fill(c[i]);
       noStroke();
       zarc(0,0, pt[index],pt[index+1],pt[index+2]);
       index += 3;
@@ -116,10 +116,9 @@ void draw() {
 
 
 // Get blend of two colors
-int colorBlended(float fract,
+color colorBlended(float fract,
 float r, float g, float b,
 float r2, float g2, float b2, float a) {
-
   r2 = (r2 - r);
   g2 = (g2 - g);
   b2 = (b2 - b);
