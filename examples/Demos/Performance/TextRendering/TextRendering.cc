@@ -5,7 +5,7 @@ void setup() {
 }
 
 void draw() {
-  background(0);
+  background(255);
   for (int i = 0; i < 10000; i++) {
     float x = random(width);
     float y = random(height);
