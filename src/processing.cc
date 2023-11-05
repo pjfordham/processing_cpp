@@ -64,6 +64,26 @@ void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mo
          key = CODED;
          keyCode = ENTER;
          break;
+      case GLFW_KEY_A:
+         keyCode = 0;
+         key = (mods & GLFW_MOD_SHIFT) ? 'A' : 'a';
+         break;
+      case GLFW_KEY_S:
+         keyCode = 0;
+         key = (mods & GLFW_MOD_SHIFT) ? 'S' : 's';
+         break;
+      case GLFW_KEY_X:
+         keyCode = 0;
+         key = (mods & GLFW_MOD_SHIFT) ? 'X' : 'x';
+         break;
+      case GLFW_KEY_W:
+         keyCode = 0;
+         key = (mods & GLFW_MOD_SHIFT) ? 'W' : 'w';
+         break;
+      case GLFW_KEY_H:
+         keyCode = 0;
+         key = (mods & GLFW_MOD_SHIFT) ? 'H' : 'h';
+         break;
       case GLFW_KEY_P:
          keyCode = 0;
          key = (mods & GLFW_MOD_SHIFT) ? 'P' : 'p';
@@ -71,6 +91,7 @@ void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mo
       default:
          keyCode = CODED;
          key = 0;
+         break;
       }
    }
    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
