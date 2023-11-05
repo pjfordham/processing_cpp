@@ -386,8 +386,9 @@ void _line(PShape &triangles, PVector p1, PVector p2, float weight1, float weigh
    triangles.index( i + 3 );
 }
 
-PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras ) {
+PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras, const PMatrix &transform ) {
    PShape triangles;
+   triangles.transform( transform );
    triangles.beginShape(TRIANGLES);
    _line(triangles, p[0].position, p[1].position,
          extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
@@ -408,7 +409,7 @@ PShape drawTriangleNormal(int points, const gl_context::vertex *p,
    shape.transform( transform );
    PVector pos = (p[0].position + p[1].position + p[2].position) / 3;
    PVector n = ((p[0].normal + p[1].normal + p[2].normal) / 3).normalize();
-   float length = (p[0].position - p[1].position).mag() / 10.0;
+   float length = (p[0].position - p[1].position).mag() / 10.0f;
    _line(shape, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
    shape.endShape();
    return shape;
@@ -419,6 +420,7 @@ void PShape::draw_normals(gl_context &glc, const PMatrix &transform) const {
    case TRIANGLES_NOSTROKE:
    case TRIANGLES:
    case TRIANGLE_STRIP:
+   case QUAD_STRIP:
    case POLYGON:
    case CONVEX_POLYGON:
    case TRIANGLE_FAN:
@@ -522,11 +524,12 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
       }
       break;
    }
+   case QUAD_STRIP:
+      // This isn't exactly right since we draw an extra line for every quad,
+      // but it's close enought for now.
    case TRIANGLE_STRIP:
-   {
-      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data()).draw_fill( glc, transform );
+      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( glc, transform );
       break;
-   }
    case TRIANGLE_FAN:
       abort();
       break;
