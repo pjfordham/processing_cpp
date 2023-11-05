@@ -265,6 +265,9 @@ public:
    bool operator==(const PVector &other) const {
       return x == other.x && y == other.y && z == other.z;
    }
+   operator std::array<float,3>() {
+      return { x, y, z };
+   }
 };
 
 inline PVector operator*(float s, PVector a) {
@@ -282,10 +285,16 @@ inline PVector lerp(PVector start, PVector end, float i) {
 
 struct PVector2 {
    float x,y;
+   operator std::array<float,2>() {
+      return { x , y };
+   }
 };
 
 struct PVector4 {
    float data[4];
+   operator PVector() {
+      return { data[0], data[1], data[2] };
+   }
 };
 
 struct PMatrix {
@@ -384,6 +393,10 @@ public:
          }
       }
       return result;
+   }
+
+   PVector operator*(const PVector &x) const {
+      return operator*( PVector4{x.x,x.y,x.z,1} );
    }
 };
 

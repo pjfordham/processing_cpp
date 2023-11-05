@@ -293,7 +293,8 @@ public:
       glc.flush();
       glc.setLights( true );
       glc.setPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
-      glc.setPointLightPosition( {nx, ny, nz} );
+      PVector worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
+      glc.setPointLightPosition( worldPos );
    }
 
    void lightFalloff(float r, float g, float b) {

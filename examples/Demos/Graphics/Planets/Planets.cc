@@ -95,8 +95,7 @@ void draw() {
   shape(sun);
   popMatrix();
 
-  lights();
-  //pointLight(255,  255,  255,  0,  0,  0);
+  pointLight(255,  255,  255,  0,  0,  0);
   rotateY(PI * frameCount / 300);
   translate(0, 0, 300);
 
@@ -104,7 +103,8 @@ void draw() {
 
   popMatrix();
 
-  //pointLight(255,  255,  255,  0,  0,  -150);
+  noLights();
+  pointLight(255,  255,  255,  0,  0,  -150);
 
   translate(0.75 * width,  0.6 * height,  50);
   shape(planet1);

@@ -158,7 +158,7 @@ const char *PShader::defaultFragmentShader = R"glsl(
 
           float d = length(pointLightDirection);
           float pointLightIntensity = 1 / ( pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
-          float pointLight = max(dot(vNormal, -pointLightDirection), 0.0) * pointLightIntensity;
+          float pointLight = max(dot(vNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
 
           float directional = max(dot(vNormal, -directionLightVector), 0.0);
           vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
