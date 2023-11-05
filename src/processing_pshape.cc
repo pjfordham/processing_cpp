@@ -115,10 +115,18 @@ void PShape::populateIndices() {
       }
       style = TRIANGLES;
    } else if (style == TRIANGLE_STRIP || style == QUAD_STRIP) {
+      bool reverse = false;
       for (int i = 0; i < vertices.size() - 2; i++ ){
-         indices.push_back(i);
-         indices.push_back(i+1);
-         indices.push_back(i+2);
+         if (reverse) {
+            indices.push_back(i+2);
+            indices.push_back(i+1);
+            indices.push_back(i);
+         } else {
+            indices.push_back(i);
+            indices.push_back(i+1);
+            indices.push_back(i+2);
+         }
+         reverse = !reverse;
       }
       style = TRIANGLE_STRIP;
    } else if (style == CONVEX_POLYGON) {
@@ -396,10 +404,12 @@ PShape drawTriangleNormal(int points, const gl_context::vertex *p,
                           const PMatrix &transform) {
    PShape shape;
    shape.beginShape(TRIANGLES);
+   shape.fill(RED);
    shape.transform( transform );
    PVector pos = (p[0].position + p[1].position + p[2].position) / 3;
    PVector n = ((p[0].normal + p[1].normal + p[2].normal) / 3).normalize();
-   _line(shape, pos, pos + 1 * n, 1.0f,1.0f,RED,RED);
+   float length = (p[0].position - p[1].position).mag() / 10.0;
+   _line(shape, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
    shape.endShape();
    return shape;
 }
@@ -408,6 +418,11 @@ void PShape::draw_normals(gl_context &glc, const PMatrix &transform) const {
    switch( style ) {
    case TRIANGLES_NOSTROKE:
    case TRIANGLES:
+   case TRIANGLE_STRIP:
+   case POLYGON:
+   case CONVEX_POLYGON:
+   case TRIANGLE_FAN:
+      // All of these should have just been flattened to triangles
       for (int i = 0; i < indices.size(); i+=3 ) {
          std::vector<gl_context::vertex> triangle;
          std::vector<vInfoExtra> xtras;
@@ -421,11 +436,7 @@ void PShape::draw_normals(gl_context &glc, const PMatrix &transform) const {
       }
       break;
    case POINTS:
-   case POLYGON:
-   case CONVEX_POLYGON:
    case LINES:
-   case TRIANGLE_STRIP:
-   case TRIANGLE_FAN:
       break;
    default:
       abort();
