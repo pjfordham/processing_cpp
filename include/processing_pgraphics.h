@@ -286,7 +286,8 @@ public:
       glc.flush();
       glc.setLights( true );
       glc.setDirectionLightColor( {r/255.0f, g/255.0f, b/255.0f} );
-      glc.setDirectionLightVector( {nx, ny, nz} );
+      PVector worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
+      glc.setDirectionLightVector( worldDir );
    }
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
