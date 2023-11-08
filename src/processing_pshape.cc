@@ -357,8 +357,6 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    return shape;
 }
 
-PImage PShape::blankTexture = createBlankImage();
-
 void _line(PShape &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
 
    PVector normal1 = (p2 - p1).normal();

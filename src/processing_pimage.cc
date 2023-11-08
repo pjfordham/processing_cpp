@@ -338,7 +338,7 @@ static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdat
 
 PImage createBlankImage() {
    auto p = PImage( std::make_shared<PImageImpl>(1,1,0) );
-   p.pixels[0] = WHITE;
+   p.pixels[0] = color(255.0f);
    return p;
 }
 

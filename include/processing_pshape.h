@@ -9,7 +9,13 @@
 
 class PShape {
 public:
-   static PImage blankTexture;
+   static const PImage getBlankTexture(bool release = false) {
+      static PImage blankTexture = createBlankImage();
+      if (release) {
+         blankTexture.releaseTexture();
+      }
+      return blankTexture;
+   }
 
    struct vInfoExtra {
       color stroke;
@@ -35,7 +41,7 @@ private:
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
    color stroke_color = BLACK;
-   PImage texture_ = blankTexture;
+   PImage texture_ = getBlankTexture();
    gl_context::color gl_fill_color = flatten_color_mode(WHITE);
    color fill_color = WHITE;
    color tint_color = WHITE;
@@ -190,7 +196,7 @@ public:
    }
 
    bool isTextureSet() const {
-      return texture_ != blankTexture;
+      return texture_ != getBlankTexture();
    }
 
    void texture(PImage img) {
@@ -203,7 +209,7 @@ public:
    }
 
    void noTexture() {
-      texture_ = blankTexture;
+      texture_ = getBlankTexture();
    }
 
    void noNormal() {
