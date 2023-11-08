@@ -263,11 +263,25 @@ void PImage::setClean() {
    impl->setClean();
 }
 
+static std::vector<std::weak_ptr<PImageImpl>> &imageHandles() {
+   static std::vector<std::weak_ptr<PImageImpl>> handles;
+   return handles;
+}
+
+static void PImage_releaseAllTextures() {
+   for (auto i : imageHandles()) {
+      if (auto p = i.lock()) {
+         p->releaseTexture();
+      }
+   }
+}
+
 PImage::PImage( std::shared_ptr<PImageImpl> impl_ ) {
    impl = impl_;
    width = impl_->width;
    height = impl_->height;
    pixels = impl_->pixels;
+   imageHandles().push_back( impl_ );
 }
 
 PImage::operator bool() const {
@@ -324,6 +338,7 @@ void PImage::init() {
 }
 
 void PImage::close() {
+   PImage_releaseAllTextures();
    curl_global_cleanup();
 }
 

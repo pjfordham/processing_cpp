@@ -9,11 +9,8 @@
 
 class PShape {
 public:
-   static const PImage getBlankTexture(bool release = false) {
+   static const PImage getBlankTexture() {
       static PImage blankTexture = createBlankImage();
-      if (release) {
-         blankTexture.releaseTexture();
-      }
       return blankTexture;
    }
 
