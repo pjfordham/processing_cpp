@@ -1,16 +1,153 @@
 #include "processing_pshader.h"
+#include "processing_debug.h"
 #include <vector>
+#include <map>
+#include <string>
+#include <array>
 #include <fmt/core.h>
 
 #include "glad/glad.h"
 
-PShader::~PShader() {
+#undef DEBUG_METHOD
+#define DEBUG_METHOD() do {} while (false)
+
+template <> struct fmt::formatter<PShaderImpl>;
+
+static const char *defaultVertexShader = R"glsl(
+      #version 400
+      in vec3 position;
+      in vec3 normal;
+      in vec2 coords;
+      in int tunit;
+      in vec4 colors;
+      in int mindex;
+      uniform mat4 PVmatrix;
+      uniform mat4 Mmatrix[16];
+      flat out int vTindex;
+      out vec2 vTexture;
+      out vec4 vColor;
+      out vec3 vNormal;
+      out vec4 vPosition;
+
+      void main()
+      {
+          mat4 M = Mmatrix[mindex];
+          vPosition = M * vec4(position,1.0);
+          vNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vPosition).xyz;
+          vTexture = coords;
+          vTindex = tunit;
+          vColor = colors;
+
+          gl_Position = PVmatrix * vPosition;
+       }
+)glsl";
+
+static const char *defaultFragmentShader = R"glsl(
+      #version 400
+      in vec2 vTexture;
+      in vec3 vNormal;
+      in vec4 vColor;
+      in vec4 vPosition;
+      flat in int vTindex;
+      out vec4 fragColor;
+      uniform sampler2D myTextures[16];
+      uniform vec3 ambientLight;
+      uniform vec3 directionLightColor;
+      uniform vec3 directionLightVector;
+      uniform vec3 pointLightColor;
+      uniform vec3 pointLightPosition;
+      uniform vec3 pointLightFalloff;
+      void main()
+      {
+          vec3 pointLightDirection = vPosition.xyz - pointLightPosition;
+
+          float d = length(pointLightDirection);
+          float pointLightIntensity = 1 / ( pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
+          float pointLight = max(dot(vNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
+
+          float directional = max(dot(vNormal, -directionLightVector), 0.0);
+          vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
+
+          vec4 texelColor;
+          if ( vTindex == -1 ) { // It's a circle
+              vec2 pos = vTexture.xy;
+              vec2 centre = vec2(0.5,0.5);
+               if (distance(pos,centre) > 0.5)
+                   discard;
+               else
+                   texelColor = vec4(1.0,1.0,1.0,1.0);
+          } else {
+              texelColor =  texture(myTextures[vTindex], vTexture.xy);
+          }
+          fragColor = vec4(vLighting,1.0) * vColor * texelColor;
+      }
+)glsl";
+
+class PShaderImpl {
+   std::map<GLuint, float> uniforms1f;
+   std::map<GLuint, std::array<float,2>> uniforms2fv;
+   std::map<GLuint, std::array<float,3>> uniforms3fv;
+
+   std::string vertexShader;
+   std::string fragmentShader;
+
+   GLuint programID;
+public:
+
+   ~PShaderImpl();
+
+   void compileShaders();
+
+public:
+   PShaderImpl(GLuint parent, const char *vertSource, const char *fragSource);
+
+   void releaseShaders();
+
+   void set_uniforms();
+
+   void set(const char *uniform, float value);
+
+   void set(const char *uniform, float v1, float v2);
+
+   void set(const char *uniform, float v1, float v2, float v3);
+
+   GLuint getAttribLocation(const char *attribute);
+
+   GLuint getUniformLocation(const char *uniform);
+
+   void useProgram();
+   friend struct fmt::formatter<PShaderImpl>;
+
+};
+
+static std::vector<std::weak_ptr<PShaderImpl>> &imageHandles() {
+   static std::vector<std::weak_ptr<PShaderImpl>> handles;
+   return handles;
+}
+
+static void PShader_releaseAllShaders() {
+   for (auto i : imageHandles()) {
+      if (auto p = i.lock()) {
+         p->releaseShaders();
+      }
+   }
+}
+
+PShaderImpl::PShaderImpl(GLuint parent, const char *vertSource,
+                         const char *fragSource)
+   : vertexShader(vertSource), fragmentShader(fragSource), programID(0) {
+   DEBUG_METHOD();
+}
+
+PShaderImpl::~PShaderImpl() {
+   DEBUG_METHOD();
    if (programID) {
       glDeleteProgram(programID);
    }
 }
 
-void PShader::set_uniforms() {
+void PShaderImpl::set_uniforms() {
+   DEBUG_METHOD();
    for (const auto& [id, value] : uniforms1f) {
       glUniform1f(id,value);
    }
@@ -22,36 +159,43 @@ void PShader::set_uniforms() {
    }
 }
 
-void PShader::set(const char *uniform, float value) {
+void PShaderImpl::set(const char *uniform, float value) {
+   DEBUG_METHOD();
    GLuint id = glGetUniformLocation(programID, uniform);
    uniforms1f[id] = value;
 }
 
-void PShader::set(const char *uniform, float v1, float v2) {
+void PShaderImpl::set(const char *uniform, float v1, float v2) {
+   DEBUG_METHOD();
    std::array<float,2> vec = {v1,v2};
    GLuint id = glGetUniformLocation(programID, uniform);
    uniforms2fv[id] = vec;
 }
 
-void PShader::set(const char *uniform, float v1, float v2, float v3) {
+void PShaderImpl::set(const char *uniform, float v1, float v2, float v3) {
+   DEBUG_METHOD();
    std::array<float,3> vec = {v1,v2,v3};
    GLuint id = glGetUniformLocation(programID, uniform);
    uniforms3fv[id] = vec;
 }
 
-GLuint PShader::getAttribLocation(const char *attribute) {
+GLuint PShaderImpl::getAttribLocation(const char *attribute) {
+   DEBUG_METHOD();
    return glGetAttribLocation(programID, attribute);;
 }
 
-GLuint PShader::getUniformLocation(const char *uniform) {
+GLuint PShaderImpl::getUniformLocation(const char *uniform) {
+   DEBUG_METHOD();
    return glGetUniformLocation(programID, uniform);
 }
 
-void PShader::useProgram() {
+void PShaderImpl::useProgram() {
+   DEBUG_METHOD();
    glUseProgram(programID);
 }
 
-void PShader::compileShaders() {
+void PShaderImpl::compileShaders() {
+   DEBUG_METHOD();
    // Create the shaders
    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -108,72 +252,82 @@ void PShader::compileShaders() {
    glDeleteShader(FragmentShaderID);
 }
 
-const char *PShader::defaultVertexShader = R"glsl(
-      #version 400
-      in vec3 position;
-      in vec3 normal;
-      in vec2 coords;
-      in int tunit;
-      in vec4 colors;
-      in int mindex;
-      uniform mat4 PVmatrix;
-      uniform mat4 Mmatrix[16];
-      flat out int vTindex;
-      out vec2 vTexture;
-      out vec4 vColor;
-      out vec3 vNormal;
-      out vec4 vPosition;
+void PShaderImpl::releaseShaders() {
+   DEBUG_METHOD();
+   if ( programID ) {
+      glDeleteProgram( programID );
+      programID = 0;
+   }
+}
 
-      void main()
-      {
-          mat4 M = Mmatrix[mindex];
-          vPosition = M * vec4(position,1.0);
-          vNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vPosition).xyz;
-          vTexture = coords;
-          vTindex = tunit;
-          vColor = colors;
+template <>
+struct fmt::formatter<PShaderImpl> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
 
-          gl_Position = PVmatrix * vPosition;
-       }
-)glsl";
+    template <typename FormatContext>
+    auto format(const PShaderImpl& v, FormatContext& ctx) {
+       return format_to(ctx.out(), "programID={:<4} vertexShader={:<25} fragmentShader={:<25}", v.programID, (void*)&v.vertexShader, (void*)&v.fragmentShader);
+    }
+};
 
-const char *PShader::defaultFragmentShader = R"glsl(
-      #version 400
-      in vec2 vTexture;
-      in vec3 vNormal;
-      in vec4 vColor;
-      in vec4 vPosition;
-      flat in int vTindex;
-      out vec4 fragColor;
-      uniform sampler2D myTextures[16];
-      uniform vec3 ambientLight;
-      uniform vec3 directionLightColor;
-      uniform vec3 directionLightVector;
-      uniform vec3 pointLightColor;
-      uniform vec3 pointLightPosition;
-      uniform vec3 pointLightFalloff;
-      void main()
-      {
-          vec3 pointLightDirection = vPosition.xyz - pointLightPosition;
+PShader::PShader(GLuint parent, const char *vertSource, const char *fragSource)
+   : impl( std::make_shared<PShaderImpl>(parent, vertSource, fragSource) ) {
+   imageHandles().push_back( impl );
+}
 
-          float d = length(pointLightDirection);
-          float pointLightIntensity = 1 / ( pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
-          float pointLight = max(dot(vNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
+PShader::PShader(GLuint parent, const char *fragSource)
+   : impl( std::make_shared<PShaderImpl>(parent, defaultVertexShader, fragSource) ) {
+   imageHandles().push_back( impl );
+}
 
-          float directional = max(dot(vNormal, -directionLightVector), 0.0);
-          vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
+PShader::PShader(GLuint parent)
+   : impl( std::make_shared<PShaderImpl>(parent, defaultVertexShader, defaultFragmentShader) ) {
+   imageHandles().push_back( impl );
+}
 
-          vec4 texelColor;
-          if ( vTindex == -1 ) { // It's a circle
-              vec2 pos = vTexture.xy;
-              vec2 centre = vec2(0.5,0.5);
-               if (distance(pos,centre) > 0.5)
-                   discard;
-               else
-                   texelColor = vec4(1.0,1.0,1.0,1.0);
-          } else {
-              texelColor =  texture(myTextures[vTindex], vTexture.xy);
-          }
-          fragColor = vec4(vLighting,1.0) * vColor * texelColor;
-      }
-)glsl";
+PShader::PShader()
+   : impl( std::make_shared<PShaderImpl>(0,defaultVertexShader, defaultFragmentShader) ) {
+   imageHandles().push_back( impl );
+}
+
+void PShader::compileShaders() {
+   impl->compileShaders();
+}
+
+void PShader::set_uniforms() {
+   impl->set_uniforms();
+}
+
+void PShader::set(const char *uniform, float value) {
+   impl->set( uniform, value );
+}
+
+void PShader::set(const char *uniform, float v1, float v2) {
+   impl->set( uniform, v1, v2 );
+}
+
+void PShader::set(const char *uniform, float v1, float v2, float v3) {
+   impl->set( uniform, v1, v2, v3 );
+}
+
+GLuint PShader::getAttribLocation(const char *attribute) {
+   return impl->getAttribLocation( attribute );
+}
+
+GLuint PShader::getUniformLocation(const char *uniform) {
+   return impl->getUniformLocation( uniform );
+}
+
+void PShader::useProgram() {
+   impl->useProgram();
+}
+
+void PShader::init() {
+}
+
+void PShader::close() {
+   PShader_releaseAllShaders();
+}

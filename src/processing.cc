@@ -216,6 +216,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    }
 
    PGraphics::init();
+   PShader::init();
    PFont::init();
    PImage::init();
 
@@ -274,6 +275,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    PFont::close();
    PImage::close();
+   PShader::close();
    PGraphics::close();
 
    // Clean up resources, force g to be destructed before we close down GLFW
