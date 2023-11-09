@@ -98,9 +98,6 @@ void PShape::populateIndices() {
    if (indices.size() != 0)
       return;
 
-   if ( fill_color.a == 0 )
-      return;
-
    if (style == GROUP) return;
 
    if (vertices.size() == 0) abort();
@@ -149,6 +146,10 @@ void PShape::populateIndices() {
       for (int i = 0; i < vertices.size(); i++ ) {
          indices.push_back( i );
       }
+   } else if (style == POINTS || style == LINES) {
+      // no indices required for these types.
+   } else {
+      abort();
    }
 }
 
@@ -459,19 +460,29 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
    case TRIANGLES_NOSTROKE:
       break;
    case TRIANGLES:
+   {
+      // TODO: Fix mitred lines to somehow work in 3D
+      PShape shape;
+      shape.beginShape(TRIANGLES);
       for (int i = 0; i < indices.size(); i+=3 ) {
-         std::vector<gl_context::vertex> triangle;
-         std::vector<vInfoExtra> xtras;
-         triangle.push_back( vertices[indices[i]] );
-         triangle.push_back( vertices[indices[i+1]] );
-         triangle.push_back( vertices[indices[i+2]] );
-         xtras.push_back( extras[indices[i]] );
-         xtras.push_back( extras[indices[i+1]] );
-         xtras.push_back( extras[indices[i+2]] );
+         PVector p0 = vertices[indices[i]].position;
+         PVector p1 = vertices[indices[i+1]].position;
+         PVector p2 = vertices[indices[i+2]].position;
+         float w0 = extras[indices[i]].weight;
+         float w1 = extras[indices[i+1]].weight;
+         float w2 = extras[indices[i+2]].weight;
+         color c0 =  extras[indices[i]].stroke;
+         color c1 =  extras[indices[i+1]].stroke;
+         color c2 =  extras[indices[i+2]].stroke;
 
-         drawLinePoly( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( glc, transform );
+         _line(shape, p0, p1, w0, w1, c0, c1 );
+         _line(shape, p1, p2, w1, w2, c1, c2 );
+         _line(shape, p2, p0, w2, w0, c2, c0 );
       }
+      shape.endShape();
+      shape.draw_fill( glc, transform );
       break;
+   }
    case POLYGON:
    case CONVEX_POLYGON:
    case LINES:
