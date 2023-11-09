@@ -238,7 +238,7 @@ PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
    buffer << inputFile.rdbuf();
 
    inputFile.close();
-   std::ifstream inputFile2(vertShader);
+   std::ifstream inputFile2("data/"s + vertShader);
 
    if (!inputFile2.is_open()) {
       abort();
