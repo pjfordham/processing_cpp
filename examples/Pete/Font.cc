@@ -8,8 +8,9 @@ void setup() {
 
 void draw() {
    background(BLACK);
-   stroke(GREEN);
-   text("Fordham", 0, 0);
+   fill(RED);
+   text("Fordham", 0, 200);
    shape(font.render_as_pshape("Fordham"), 0, 200 );
+   tint(BLUE);
    image(font.render_as_pimage("Fordham"), 0 ,400);
 }
