@@ -64,29 +64,51 @@ void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mo
          key = CODED;
          keyCode = ENTER;
          break;
+      case GLFW_KEY_SPACE:
+         key = ' ';
+         keyCode = 0;
+         break;
       case GLFW_KEY_A:
-         keyCode = 0;
-         key = (mods & GLFW_MOD_SHIFT) ? 'A' : 'a';
-         break;
-      case GLFW_KEY_S:
-         keyCode = 0;
-         key = (mods & GLFW_MOD_SHIFT) ? 'S' : 's';
-         break;
-      case GLFW_KEY_X:
-         keyCode = 0;
-         key = (mods & GLFW_MOD_SHIFT) ? 'X' : 'x';
-         break;
-      case GLFW_KEY_W:
-         keyCode = 0;
-         key = (mods & GLFW_MOD_SHIFT) ? 'W' : 'w';
-         break;
+      case GLFW_KEY_B:
+      case GLFW_KEY_C:
+      case GLFW_KEY_D:
+      case GLFW_KEY_E:
+      case GLFW_KEY_F:
+      case GLFW_KEY_G:
       case GLFW_KEY_H:
-         keyCode = 0;
-         key = (mods & GLFW_MOD_SHIFT) ? 'H' : 'h';
-         break;
+      case GLFW_KEY_I:
+      case GLFW_KEY_J:
+      case GLFW_KEY_K:
+      case GLFW_KEY_L:
+      case GLFW_KEY_M:
+      case GLFW_KEY_N:
+      case GLFW_KEY_O:
       case GLFW_KEY_P:
+      case GLFW_KEY_Q:
+      case GLFW_KEY_R:
+      case GLFW_KEY_S:
+      case GLFW_KEY_T:
+      case GLFW_KEY_U:
+      case GLFW_KEY_V:
+      case GLFW_KEY_W:
+      case GLFW_KEY_X:
+      case GLFW_KEY_Y:
+      case GLFW_KEY_Z:
          keyCode = 0;
-         key = (mods & GLFW_MOD_SHIFT) ? 'P' : 'p';
+         key = (mods & GLFW_MOD_SHIFT) ? (key_ - GLFW_KEY_A + 'A') : (key_ - GLFW_KEY_A + 'a');
+         break;
+      case GLFW_KEY_0:
+      case GLFW_KEY_1:
+      case GLFW_KEY_2:
+      case GLFW_KEY_3:
+      case GLFW_KEY_4:
+      case GLFW_KEY_5:
+      case GLFW_KEY_6:
+      case GLFW_KEY_7:
+      case GLFW_KEY_8:
+      case GLFW_KEY_9:
+         keyCode = 0;
+         key = key_ - GLFW_KEY_0 + '0';
          break;
       default:
          keyCode = CODED;
