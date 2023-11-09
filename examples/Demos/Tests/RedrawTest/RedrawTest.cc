@@ -6,7 +6,6 @@ void setup() {
 void draw() {
   background(255, 0, 0);
   ellipse(mouseX, mouseY, 100, 50);
-  fmt::print("draw\n");
 }
 
 void keyPressed() {
