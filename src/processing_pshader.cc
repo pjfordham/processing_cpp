@@ -87,6 +87,8 @@ class PShaderImpl {
    std::map<GLuint, float> uniforms1f;
    std::map<GLuint, std::array<float,2>> uniforms2fv;
    std::map<GLuint, std::array<float,3>> uniforms3fv;
+   std::map<std::string, GLuint> attribLocation;
+   std::map<std::string, GLuint> uniformLocation;
 
    std::string vertexShader;
    std::string fragmentShader;
@@ -117,6 +119,9 @@ public:
 
    void useProgram();
    friend struct fmt::formatter<PShaderImpl>;
+
+   void enumerateAttributes();
+   void enumerateUniforms();
 
 };
 
@@ -181,7 +186,7 @@ void PShaderImpl::set(const char *uniform, float v1, float v2, float v3) {
 
 GLuint PShaderImpl::getAttribLocation(const char *attribute) {
    DEBUG_METHOD();
-   return glGetAttribLocation(programID, attribute);;
+   return glGetAttribLocation(programID, attribute);
 }
 
 GLuint PShaderImpl::getUniformLocation(const char *uniform) {
@@ -250,6 +255,46 @@ void PShaderImpl::compileShaders() {
 
    glDeleteShader(VertexShaderID);
    glDeleteShader(FragmentShaderID);
+
+   enumerateUniforms();
+   enumerateAttributes();
+}
+
+void PShaderImpl::enumerateUniforms() {
+   DEBUG_METHOD();
+   GLint size; // size of the variable
+   GLenum type; // type of the variable (float, vec3 or mat4, etc)
+
+   const GLsizei bufSize = 64; // maximum name length
+   GLchar name[bufSize]; // variable name in GLSL
+   GLsizei length; // name length
+
+   GLint count;
+   glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &count);
+
+   for (int i = 0; i < count; i++) {
+      glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name);
+      uniformLocation[name] = glGetUniformLocation(programID, name);
+   }
+}
+
+void PShaderImpl::enumerateAttributes() {
+   DEBUG_METHOD();
+   GLint size; // size of the variable
+   GLenum type; // type of the variable (float, vec3 or mat4, etc)
+
+   const GLsizei bufSize = 64; // maximum name length
+   GLchar name[bufSize]; // variable name in GLSL
+   GLsizei length; // name length
+
+   GLint count;
+   glGetProgramiv(programID, GL_ACTIVE_ATTRIBUTES, &count);
+
+   for (int i = 0; i < count; i++) {
+      glGetActiveAttrib(programID, (GLuint)i, bufSize, &length, &size, &type, name);
+      attribLocation[name] = glGetAttribLocation(programID, name);
+   }
+
 }
 
 void PShaderImpl::releaseShaders() {
@@ -269,7 +314,8 @@ struct fmt::formatter<PShaderImpl> {
 
     template <typename FormatContext>
     auto format(const PShaderImpl& v, FormatContext& ctx) {
-       return format_to(ctx.out(), "programID={:<4} vertexShader={:<25} fragmentShader={:<25}", v.programID, (void*)&v.vertexShader, (void*)&v.fragmentShader);
+       return format_to(ctx.out(), "programID={:<4} vertexShader={:<25} fragmentShader={:<25} numUniforms={:4} numAttributes={:4}",
+                        v.programID, (void*)&v.vertexShader, (void*)&v.fragmentShader, v.uniformLocation.size(), v.attribLocation.size());
     }
 };
 
