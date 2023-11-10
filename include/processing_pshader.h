@@ -16,7 +16,15 @@ public:
    PShader(GLuint parent, const char *vertSource, const char *fragSource);
    PShader(GLuint parent, const char *fragSource);
    PShader(GLuint parent);
-   PShader();
+   PShader() { }
+
+   bool operator==(const PShader &other) const {
+      return this->impl == other.impl;
+   }
+
+   bool operator!=(const PShader &other) const {
+      return this->impl != other.impl;
+   }
 
    void compileShaders();
 

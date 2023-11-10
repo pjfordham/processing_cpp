@@ -165,7 +165,8 @@ void gl_context::hint(int type) {
 }
 
 gl_context::gl_context(int width, int height, float aaFactor) :
-   batch( width, height ) {
+   batch( width, height ),
+   defaultShader( loadShader() ) {
    this->aaFactor = aaFactor;
    this->width = width;
    this->height = height;
@@ -179,7 +180,6 @@ gl_context::gl_context(int width, int height, float aaFactor) :
    glGenBuffers(1, &vertex_buffer_id);
    glGenBuffers(1, &tindex_buffer_id);
 
-   defaultShader = loadShader();
    shader( defaultShader );
 
    std::array<int, 16> textures = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};

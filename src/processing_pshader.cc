@@ -120,13 +120,13 @@ public:
 
 };
 
-static std::vector<std::weak_ptr<PShaderImpl>> &imageHandles() {
+static std::vector<std::weak_ptr<PShaderImpl>> &shaderHandles() {
    static std::vector<std::weak_ptr<PShaderImpl>> handles;
    return handles;
 }
 
 static void PShader_releaseAllShaders() {
-   for (auto i : imageHandles()) {
+   for (auto i : shaderHandles()) {
       if (auto p = i.lock()) {
          p->releaseShaders();
       }
@@ -275,22 +275,17 @@ struct fmt::formatter<PShaderImpl> {
 
 PShader::PShader(GLuint parent, const char *vertSource, const char *fragSource)
    : impl( std::make_shared<PShaderImpl>(parent, vertSource, fragSource) ) {
-   imageHandles().push_back( impl );
+   shaderHandles().push_back( impl );
 }
 
 PShader::PShader(GLuint parent, const char *fragSource)
    : impl( std::make_shared<PShaderImpl>(parent, defaultVertexShader, fragSource) ) {
-   imageHandles().push_back( impl );
+   shaderHandles().push_back( impl );
 }
 
 PShader::PShader(GLuint parent)
    : impl( std::make_shared<PShaderImpl>(parent, defaultVertexShader, defaultFragmentShader) ) {
-   imageHandles().push_back( impl );
-}
-
-PShader::PShader()
-   : impl( std::make_shared<PShaderImpl>(0,defaultVertexShader, defaultFragmentShader) ) {
-   imageHandles().push_back( impl );
+   shaderHandles().push_back( impl );
 }
 
 void PShader::compileShaders() {

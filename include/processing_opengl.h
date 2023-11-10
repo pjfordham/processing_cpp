@@ -196,6 +196,7 @@ private:
    GLuint normal_attrib_id;
 
    PShader defaultShader;
+   PShader currentShader;
    GLuint Mmatrix;
    GLuint PVmatrix;
    GLuint uSampler;
@@ -253,6 +254,7 @@ public:
       std::swap(tunit_attrib_id,x.tunit_attrib_id);
       std::swap(normal_attrib_id,x.normal_attrib_id);
       std::swap(defaultShader,x.defaultShader);
+      std::swap(currentShader,x.currentShader);
       std::swap(Mmatrix,x.Mmatrix);
       std::swap(PVmatrix,x.PVmatrix);
       std::swap(uSampler,x.uSampler);
@@ -355,23 +357,26 @@ public:
       clearDepthBuffer( localFrame );
    }
 
-   void shader(PShader &shader, int kind = TRIANGLES) {
-      vertex_attrib_id = shader.getAttribLocation("position");
-      normal_attrib_id = shader.getAttribLocation("normal");
-      coords_attrib_id = shader.getAttribLocation("coords");
-      colors_attrib_id = shader.getAttribLocation("colors");
-      tindex_attrib_id = shader.getAttribLocation("mindex");
-      tunit_attrib_id = shader.getAttribLocation("tunit");
-      Mmatrix = shader.getUniformLocation("Mmatrix");
-      PVmatrix = shader.getUniformLocation("PVmatrix");
-      AmbientLight = shader.getUniformLocation("ambientLight");
-      DirectionLightColor = shader.getUniformLocation("directionLightColor");
-      DirectionLightVector = shader.getUniformLocation("directionLightVector");
-      PointLightColor = shader.getUniformLocation("pointLightColor");
-      PointLightPosition = shader.getUniformLocation("pointLightPosition");
-      PointLightFalloff = shader.getUniformLocation("pointLightFalloff");
-      uSampler = shader.getUniformLocation("myTextures");
-      shader.useProgram();
+   void shader(PShader shader, int kind = TRIANGLES) {
+      if ( currentShader != shader ) {
+         currentShader = shader;
+         vertex_attrib_id = shader.getAttribLocation("position");
+         normal_attrib_id = shader.getAttribLocation("normal");
+         coords_attrib_id = shader.getAttribLocation("coords");
+         colors_attrib_id = shader.getAttribLocation("colors");
+         tindex_attrib_id = shader.getAttribLocation("mindex");
+         tunit_attrib_id = shader.getAttribLocation("tunit");
+         Mmatrix = shader.getUniformLocation("Mmatrix");
+         PVmatrix = shader.getUniformLocation("PVmatrix");
+         AmbientLight = shader.getUniformLocation("ambientLight");
+         DirectionLightColor = shader.getUniformLocation("directionLightColor");
+         DirectionLightVector = shader.getUniformLocation("directionLightVector");
+         PointLightColor = shader.getUniformLocation("pointLightColor");
+         PointLightPosition = shader.getUniformLocation("pointLightPosition");
+         PointLightFalloff = shader.getUniformLocation("pointLightFalloff");
+         uSampler = shader.getUniformLocation("myTextures");
+         shader.useProgram();
+      }
       shader.set_uniforms();
    }
 
