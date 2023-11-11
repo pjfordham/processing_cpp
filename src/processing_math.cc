@@ -130,9 +130,10 @@ void PMatrix::print() const {
    if ( identity ) {
       fmt::print("Identity\n");
    } else {
-      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat(0,0), mat(0,1), mat(0,2), mat(0,3) );
-      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat(1,0), mat(1,1), mat(1,2), mat(1,3) );
-      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat(2,0), mat(2,1), mat(2,2), mat(2,3) );
-      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat(3,0), mat(3,1), mat(3,2), mat(3,3) );
+      const glm::mat4 &mat = *((glm::mat4*)this);
+      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat[0][0], mat[0][1], mat[0][2], mat[0][3] );
+      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat[1][0], mat[1][1], mat[1][2], mat[1][3] );
+      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat[2][0], mat[2][1], mat[2][2], mat[2][3] );
+      fmt::print(" {:>8.2} {:>8.2} {:>8.2} {:>8.2}\n",mat[3][0], mat[3][1], mat[3][2], mat[3][3] );
    }
 }

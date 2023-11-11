@@ -277,12 +277,12 @@ public:
    void blendMode( int b );
 
    float screenX(float x, float y, float z) {
-      PVector4 in = { x, y, z, 1.0 };
-      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).data[0];
+      PVector in = { x, y, z };
+      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).x;
    }
    float screenY(float x, float y, float z) {
-      PVector4 in = { x, y, z, 1.0 };
-      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).data[1];
+      PVector in = { x, y, z };
+      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).y;
    }
 
    void drawGeometry( const geometry_t &geometry );

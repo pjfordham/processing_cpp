@@ -11,6 +11,10 @@
 #include <array>
 #include <fmt/core.h>
 
+#include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 void noiseSeed(int seed);
 void noiseDetail(int lod, float falloff = 0.5);
 float noise(float x, float y = 0, float z = 0);
@@ -59,65 +63,66 @@ inline float lerp(float start, float stop, float amt) {
 
 inline float angularDifference(float angle1, float angle2) {
    // Normalize angles to the range [0, 2π)
-    angle1 = fmod(angle1, 2 * M_PI);
-    angle2 = fmod(angle2, 2 * M_PI);
+   angle1 = fmod(angle1, 2 * M_PI);
+   angle2 = fmod(angle2, 2 * M_PI);
 
-    // Calculate the absolute angular difference, taking wrapping into account
-    float angularDifference = fabs(angle1 - angle2);
+   // Calculate the absolute angular difference, taking wrapping into account
+   float angularDifference = fabs(angle1 - angle2);
 
-    // Ensure that the angular difference is within the specified tolerance
-    if (angularDifference > M_PI) {
-        // If the difference is greater than π, consider the smaller wrapped angle
-        angularDifference = 2 * M_PI - angularDifference;
-    }
-    return angularDifference;
+   // Ensure that the angular difference is within the specified tolerance
+   if (angularDifference > M_PI) {
+      // If the difference is greater than π, consider the smaller wrapped angle
+      angularDifference = 2 * M_PI - angularDifference;
+   }
+   return angularDifference;
 }
 
-class PVector {
+class PVector : public glm::vec3 {
 public:
-   float x, y,z;
-   PVector() : x(0), y(0),z(0) {}
-   PVector(float _x, float _y, float _z=0.0) : x(_x), y(_y),z(_z) {}
-   void sub(PVector b) {
-      x = x - b.x;
-      y = y - b.y;
-      z = z - b.z;
+   PVector() : glm::vec3{0.0f,0.0f,0.0f} {}
+   PVector(const glm::vec3 &o) : glm::vec3{o} {}
+   PVector(float x, float y, float z = 0.0f) : glm::vec3{x, y, z} {}
+
+   PVector &add(PVector b) {
+      return *this = *this + b;
    }
+
+   PVector &sub(PVector b) {
+      return *this = *this - b;
+   }
+
+   PVector &mult(float a) {
+      return *this = *this * a;
+   }
+
+   PVector &div(float a) {
+      return *this = *this / a;
+   }
+
    static float angleBetween(const PVector &a, const PVector &b) {
       return angularDifference(a.heading(), b.heading());
    }
+
    float heading() const {
       return atan2(y, x);
    }
+
    void set( std::array<float,3> a ) {
       x = a[0];
       y = a[1];
       z = a[2];
    }
+
    void set( float _x, float _y, float _z ) {
       x = _x;
       y = _y;
       z = _z;
    }
-   void add(PVector b) {
-      x = x + b.x;
-      y = y + b.y;
-      z = z + b.z;
-   }
-   PVector &mult(float a) {
-      x*=a;
-      y*=a;
-      z*=a;
-      return *this;
-   }
-   void div(float a) {
-      x/=a;
-      y/=a;
-      z/=a;
-   }
+
    // Returns the magnitude (length) of the vector
-   double mag() const {
-      return std::sqrt(x * x + y * y + z * z);
+   float mag() const {
+      const glm::vec3 &vec = *this;
+      return glm::length( vec );
    }
 
    void rotate(float angle) {
@@ -130,45 +135,44 @@ public:
    }
 
    // Limits the magnitude of the vector to a specified value
-   void limit(double maxMag) {
-      double m = mag();
+   void limit(float maxMag) {
+      float m = mag();
       if (m > maxMag) {
-         x = x * maxMag / m;
-         y = y * maxMag / m;
-         z = z * maxMag / m;
+         *this = *this * maxMag / m;
       }
    }
+
    float norm() const {
-      return sqrtf(x * x + y * y + z * z);
+      return mag();
    }
-   // Method to normalize the vector
+
    PVector &normalize() {
-      float mag = sqrtf(x * x + y * y + z * z);
-      if (mag != 0) {
-         x /= mag;
-         y /= mag;
-         z /= mag;
+      float length = mag();
+      if (length != 0) {
+         return *this = *this / length;
       }
       return *this;
    }
+
    PVector cross(PVector v) {
-      float crossX = y * v.z - z * v.y;
-      float crossY = z * v.x - x * v.z;
-      float crossZ = x * v.y - y * v.x;
-      return PVector{crossX, crossY, crossZ};
+      const glm::vec3 &veca = *this;
+      const glm::vec3 &vecb = v;
+      return glm::cross( veca, vecb );
    }
 
    PVector normal() {
-      if (x == 0 && y == 0) return PVector{z > 0.0 ? 1.0f : -1.0f ,0,0};
-      return PVector(-y, x, z);
+      if (x == 0 && y == 0) {
+         return PVector{z > 0.0 ? 1.0f : -1.0f ,0,0};
+      } else {
+         return PVector(-y, x, z);
+      }
    }
 
    void setMag(float mag) {
       normalize();
-      x *= mag;
-      y *= mag;
-      z *= mag;
+      *this = *this * mag;
    }
+
    // Static method to create a PVector from an angle
    static PVector fromAngle(float a) {
       float x = cosf(a);
@@ -176,7 +180,6 @@ public:
       return {x, y};
    }
 
-   // Static method to create a PVector from an angle
    static PVector random2D() {
       return PVector::fromAngle(random(TWO_PI));
    }
@@ -185,42 +188,38 @@ public:
       // Ugly hack
       return {random(1), random(1), random(1)};
    }
+
    // Method to calculate the dot product of two vectors
    float dot(PVector v) {
-      return x * v.x + y * v.y + z * v.z;
+      const glm::vec3 &veca = *this;
+      const glm::vec3 &vecb = v;
+      return glm::dot( veca, vecb );
    }
 
-// Method to calculate the distance between two vectors
-   static float dist(PVector a, PVector b) {
-      float dx = a.x - b.x;
-      float dy = a.y - b.y;
-      float dz = a.z - b.z;
-      return sqrtf(dx*dx + dy*dy + dz*dz);
-   }
    // Method to calculate the distance between two vectors
+   static float dist(PVector a, PVector b) {
+      const glm::vec3 &veca = a;
+      const glm::vec3 &vecb = b;
+      return glm::distance( veca, vecb );
+   }
+
    static PVector sub(PVector a, PVector b) {
       float dx = a.x - b.x;
       float dy = a.y - b.y;
       float dz = a.z - b.z;
       return {dx,dy,dz};
    }
+
    static PVector mult(PVector a, float q) {
-      float dx = a.x * q;
-      float dy = a.y * q;
-      float dz = a.z * q;
-      return {dx,dy,dz};
+      return a * q;
    }
+
    static PVector div(PVector a, float q) {
-      float dx = a.x / q;
-      float dy = a.y / q;
-      float dz = a.z / q;
-      return {dx,dy,dz};
+      return a / q;
    }
+
    static PVector add(PVector a, PVector b) {
-      float dx = a.x + b.x;
-      float dy = a.y + b.y;
-      float dz = a.z + b.z;
-      return {dx,dy,dz};
+      return a + b;
    }
 
    void lerp(PVector v, float amt) {
@@ -229,46 +228,45 @@ public:
       z = ::lerp(z, v.z, amt);
    }
 
-   PVector operator+(const PVector &other) const {
-      return PVector{
-         x + other.x,
-         y + other.y,
-         z + other.z};
-   }
-
-   PVector &operator+=(const PVector &other) {
-      *this = *this + other;
-      return *this;
-   }
-
-   PVector operator-(const PVector &other) const {
-      return PVector{
-         x - other.x,
-         y - other.y,
-         z - other.z};
-   }
-
-   PVector operator*(const float &other) const {
-      return PVector{
-         x * other,
-         y * other,
-         z * other};
-   }
-
-   PVector operator/(const float &other) const {
-      return PVector{
-         x / other,
-         y / other,
-         z / other};
-   }
-
-   bool operator==(const PVector &other) const {
-      return x == other.x && y == other.y && z == other.z;
-   }
    operator std::array<float,3>() {
       return { x, y, z };
    }
 };
+
+inline PVector &operator+=(PVector &a, const PVector &b) {
+   glm::vec3 &veca = a;
+   const glm::vec3 &vecb = b;
+   veca = veca + vecb;
+   return a;
+}
+
+inline PVector operator-(const PVector &a, const PVector &b) {
+   const glm::vec3 &veca = a;
+   const glm::vec3 &vecb = b;
+   return veca - vecb;
+}
+
+inline PVector operator*(const PVector &a, const float &b) {
+   const glm::vec3 &veca = a;
+   return veca * b;
+}
+
+inline PVector operator/(const PVector &a, const float &b)  {
+   const glm::vec3 &veca = a;
+   return veca / b;
+}
+
+inline bool operator==(const PVector &a, const PVector &b)  {
+   const glm::vec3 &veca = a;
+   const glm::vec3 &vecb = b;
+   return veca == vecb;
+}
+
+inline PVector operator+(const PVector &a, const PVector &b) {
+   const glm::vec3 &veca = a;
+   const glm::vec3 &vecb = b;
+   return veca + vecb;
+}
 
 inline PVector operator*(float s, PVector a) {
    return a * s;
@@ -282,41 +280,46 @@ inline PVector lerp(PVector start, PVector end, float i) {
    };
 }
 
-
-struct PVector2 {
-   float x,y;
+class PVector2 : public glm::vec2 {
+public:
+   PVector2() : glm::vec2{0.0f,0.0f} {}
+   PVector2(const glm::vec2 &o) : glm::vec2{o} {}
+   PVector2(float x, float y) : glm::vec2{x,y} {}
    operator std::array<float,2>() {
       return { x , y };
    }
 };
 
-struct PVector4 {
-   float data[4];
+class PVector4 : public glm::vec4 {
+public:
+   PVector4() : glm::vec4{0.0f,0.0f,0.0f,0.0f} {}
+   PVector4(const glm::vec4 &o) : glm::vec4{o} {}
+   PVector4(float x, float y, float z, float w) : glm::vec4{x,y,z,w} {}
    operator PVector() {
-      return { data[0], data[1], data[2] };
+      return { x, y, z };
    }
 };
 
-struct PMatrix {
-private:
-   float m_data[16];
+class PMatrix {
+   glm::mat4 m_data;
    bool identity = true;
-   constexpr static float i[] = {
-      1.0 ,0 ,0 ,0,
-      0 ,1.0 ,0 ,0,
-      0 ,0 ,1.0 ,0,
-      0 ,0 ,0 ,1.0,
+   constexpr static glm::mat4 i = {
+      {1.0f, 0.0f, 0.0f, 0.0f},
+      {0.0f, 1.0f, 0.0f, 0.0f},
+      {0.0f, 0.0f, 1.0f, 0.0f},
+      {0.0f, 0.0f, 0.0f, 1.0f},
    };
+
 public:
    PMatrix() {}
-   PMatrix( const PVector4 &a, const PVector4 &b, const PVector4 &c, const PVector4 &d) {
-      identity = false;
-      for(int i = 0; i< 4; i++ ){
-         m_data[i*4] = a.data[i];
-         m_data[(i*4)+1] = b.data[i];
-         m_data[(i*4)+2] = c.data[i];
-         m_data[(i*4)+3] = d.data[i];
-      }
+   PMatrix( const glm::mat4& m) : m_data(m), identity{false} {}
+   PMatrix( const PVector4 &a, const PVector4 &b, const PVector4 &c, const PVector4 &d) :
+      m_data{
+         {a.x,b.x,c.x,d.x},
+         {a.y,b.y,c.y,d.y},
+         {a.z,b.z,c.z,d.z},
+         {a.w,b.w,c.w,d.w},
+      }, identity{ false } {
    }
 
    void print() const;
@@ -327,79 +330,60 @@ public:
 
    static PMatrix FlipY() {
       return PMatrix(
-         PVector4{ 1.0,  0.0, 0.0, 0.0 },
-         PVector4{ 0.0, -1.0, 0.0, 0.0 },
-         PVector4{ 0.0,  0.0, 1.0, 0.0 } ,
-         PVector4{ 0.0,  0.0, 0.0, 1.0 } );
+         { 1.0f,  0.0f, 0.0f, 0.0f },
+         { 0.0f, -1.0f, 0.0f, 0.0f },
+         { 0.0f,  0.0f, 1.0f, 0.0f } ,
+         { 0.0f,  0.0f, 0.0f, 1.0f } );
    }
 
    const float *data() const {
-      if (identity)
-         return i;
-      else
-         return m_data;
-   }
-
-   bool operator==(const PMatrix &x) const {
-      if (identity && x.identity) return true;
-      for (int i = 0 ; i< 16 ; i++ ) {
-         if (data()[i] != x.data()[i]) {
-            return false;
-         }
+      if (identity) {
+         return glm::value_ptr( i );
+      } else {
+         return glm::value_ptr( m_data );
       }
-      return true;
    }
 
-   bool operator!=(const PMatrix &x) const {
-      return !(*this == x);
-   }
-
-private:
-   const float &mat(int row, int col) const {
-      if (identity)
-         abort();
-      return m_data[row * 4 + col];
-   }
-   float &mat(int row, int col) {
-      if (identity)
-         abort();
-      return m_data[row * 4 + col];
-   }
-public:
-
-   PMatrix operator*(const PMatrix &x) const {
-      PMatrix result;
-      if (identity) return x;
-      if (x.identity) return *this;
-      result.identity = false;
-      for (int col = 0; col < 4; col++) {
-         for (int row = 0; row < 4; row++) {
-            result.mat(col,row) = 0.0;
-            for (int k = 0; k < 4; k++) {
-               result.mat(col,row) += mat(k, row) * x.mat(col, k);
-            }
-         }
+   friend bool operator==(const PMatrix &x, const PMatrix &y)  {
+      if (x.identity && y.identity) {
+         return true;
+      } else if (y.identity) {
+         return x.m_data == i;
+      } else if (x.identity) {
+         return i == y.m_data;
+      } else {
+         return x.m_data == y.m_data;
       }
-      return result;
    }
 
-   PVector4 operator*(const PVector4 &x) const {
-      PVector4 result;
-      if (identity) return x;
-      for (int col = 0; col < 4; col++) {
-         result.data[col] = 0.0;
-         for (int row = 0; row < 4; row++) {
-            result.data[col] += mat(row,col) * x.data[row];
-         }
+   friend PMatrix operator*(const PMatrix &x, const PMatrix &y)  {
+      if (y.identity) {
+         return x;
+      } else if (x.identity) {
+         return y;
+      } else {
+         return x.m_data * y.m_data;
       }
-      return result;
    }
 
-   PVector operator*(const PVector &x) const {
-      return operator*( PVector4{x.x,x.y,x.z,1} );
+   friend PVector4 operator*(const PMatrix &x, const PVector4 &y)  {
+      if (x.identity) {
+         return y;
+      } else {
+         const glm::vec4 &vec = y;
+         return x.m_data * vec;
+      }
    }
+
 };
 
+inline bool operator!=(const PMatrix &x, const PMatrix &y)  {
+   return !(x == y);
+}
+
+inline PVector operator*(const PMatrix &x, const PVector &y) {
+   return x * PVector4{y.x,y.y,y.z,1};
+}
 
 
 struct PLine {
@@ -535,7 +519,7 @@ T random(const std::initializer_list<T>& c) {
 }
 
 template <>
-struct fmt::formatter<PVector> {
+struct fmt::formatter<glm::vec2> {
     // Format the MyClass object
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) {
@@ -543,27 +527,13 @@ struct fmt::formatter<PVector> {
     }
 
     template <typename FormatContext>
-    auto format(const PVector& v, FormatContext& ctx) {
-        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z);
-    }
-};
-
-template <>
-struct fmt::formatter<PVector2> {
-    // Format the MyClass object
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext>
-    auto format(const PVector2& v, FormatContext& ctx) {
+    auto format(const glm::vec2& v, FormatContext& ctx) {
         return format_to(ctx.out(), "{:8.2f},{:8.2f}",v.x,v.y);
     }
 };
 
 template <>
-struct fmt::formatter<PVector4> {
+struct fmt::formatter<glm::vec3> {
     // Format the MyClass object
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) {
@@ -571,8 +541,22 @@ struct fmt::formatter<PVector4> {
     }
 
     template <typename FormatContext>
-    auto format(const PVector4& v, FormatContext& ctx) {
-        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f},{:8.2f}",v.data[0],v.data[1],v.data[2],v.data[3]);
+    auto format(const glm::vec3& v, FormatContext& ctx) {
+        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z);
+    }
+};
+
+template <>
+struct fmt::formatter<glm::vec4> {
+    // Format the MyClass object
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const glm::vec4& v, FormatContext& ctx) {
+        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z,v.w);
     }
 };
 
