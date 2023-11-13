@@ -265,7 +265,7 @@ PImage PFont::render_as_pimage(std::string_view text) const {
    PImage image = createImage(width, height, 0);
 
    // Makesure texture is clear
-   std::fill( image.pixels, image.pixels + (width * height), 0);
+   std::fill( image._pixels(), image._pixels() + (width * height), 0);
 
    int x = 0; // Current X position
    int y = 0; // Current Y position

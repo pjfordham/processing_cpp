@@ -278,9 +278,6 @@ static void PImage_releaseAllTextures() {
 
 PImage::PImage( std::shared_ptr<PImageImpl> impl_ ) {
    impl = impl_;
-   width = impl_->width;
-   height = impl_->height;
-   pixels = impl_->pixels;
    imageHandles().push_back( impl_ );
 }
 
@@ -401,3 +398,23 @@ PImage requestImage(std::string_view URL) {
    // This should be an async load
    return loadImage(URL);
 }
+
+//
+// Supply width, height and pixels as properties for compatability.
+//
+
+int &PImage::_width() {return impl->width; }
+int &PImage::_height() {return impl->height; }
+unsigned int *&PImage::_pixels() {return impl->pixels; }
+const int &PImage::_width() const{return impl->width; }
+const int &PImage::_height() const {return impl->height; }
+unsigned int *const &PImage::_pixels() const{return impl->pixels; }
+
+std::size_t PImage::_width_offset() { return offsetof(PImage,width); }
+std::size_t PImage::_height_offset() { return offsetof(PImage,height); }
+std::size_t PImage::_pixels_offset() { return offsetof(PImage,pixels); }
+
+//
+// End of properties.
+//
+

@@ -1,6 +1,7 @@
 #ifndef PROCESSING_PIMAGE_H
 #define PROCESSING_PIMAGE_H
 
+#include "processing_properties.h"
 #include "processing_color.h"
 
 #include <vector>
@@ -24,24 +25,40 @@ public:
 
    explicit operator bool() const;
    bool operator==(const PImage &x) const {
-      return impl == x.impl && width == x.width && height == x.height && pixels == x.pixels;
+      return impl == x.impl;
    };
    bool operator!=(const PImage &x) const {
       return !(x==*this);
    };
-   // int width() { return impl->width; }
-   // int height() { return impl->height; }
-   // unsigned int *pixels() { return impl->pixels; }
-   int width = 0;
-   int height = 0;
-   unsigned int *pixels = nullptr;
+
+   //
+   // Supply width, height and pixels as properties for compatability.
+   //
+
+   int &_width();
+   int &_height();
+   unsigned int *&_pixels();
+
+   const int &_width() const;
+   const int &_height() const;
+   unsigned int *const &_pixels() const;
+
+   static std::size_t _width_offset();
+   static std::size_t _height_offset();
+   static std::size_t _pixels_offset();
+
+   [[no_unique_address]] property_t<PImage,int, &PImage::_width,  &PImage::_width,  &PImage::_width_offset>  width;
+   [[no_unique_address]] property_t<PImage,int, &PImage::_height, &PImage::_height, &PImage::_height_offset> height;
+   [[no_unique_address]] property_t<PImage,unsigned int*, &PImage::_pixels, &PImage::_pixels, &PImage::_pixels_offset> pixels;
+
+   //
+   // End of properties.
+   //
 
    PImage() {}
 
    static PImage circle() {
       PImage a;
-      a.width = -1;
-      a.height = -1;
       return a;
    }
 

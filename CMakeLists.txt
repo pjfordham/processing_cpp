@@ -36,6 +36,7 @@ install(TARGETS Processing DESTINATION lib)
 
 install(FILES
   include/processing.h
+  include/processing_properties.h
   include/processing_math.h
   include/processing_utils.h
   include/processing_debug.h

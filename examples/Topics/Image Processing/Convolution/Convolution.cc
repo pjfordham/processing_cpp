@@ -30,10 +30,10 @@ void draw() {
   image(img, 0, 0);
 
   // Calculate the small rectangle we will process
-  int xstart = constrain(mouseX - w/2, 0, img.width);
-  int ystart = constrain(mouseY - w/2, 0, img.height);
-  int xend = constrain(mouseX + w/2, 0, img.width);
-  int yend = constrain(mouseY + w/2, 0, img.height);
+  int xstart = constrain(mouseX - w/2, 0, (int)img.width);
+  int ystart = constrain(mouseY - w/2, 0, (int)img.height);
+  int xend = constrain(mouseX + w/2, 0, (int)img.width);
+  int yend = constrain(mouseY + w/2, 0, (int)img.height);
   int matrixsize = 3;
   loadPixels();
   // Begin our loop for every pixel in the smaller image
