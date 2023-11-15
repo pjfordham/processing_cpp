@@ -363,34 +363,35 @@ PImage createImageFromTexture(GLuint textureID) {
 }
 
 PImage loadImage(std::string_view URL) {
-   // Set up the libcurl easy handle
+
    std::string sURL{URL};
-   CURL* curl = curl_easy_init();
-   curl_easy_setopt(curl, CURLOPT_URL, sURL.c_str());
-   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-   std::vector<unsigned char> response_body;
-   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
-
-   // Perform the request
-   CURLcode res = curl_easy_perform(curl);
-
-   sail::image image = [&] {
+   // try local fileysystem
+   using namespace std::literals;
+   sail::image image;
+   try {
+      image =sail::image(("data/"s + sURL).c_str());
+   } catch (...) {
+      // If that didn't work try downling it with CURL
+      // Set up the libcurl easy handle
+      CURL* curl = curl_easy_init();
+      curl_easy_setopt(curl, CURLOPT_URL, sURL.c_str());
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+      std::vector<unsigned char> response_body;
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
+      // Perform the request
+      CURLcode res = curl_easy_perform(curl);
       if (res == CURLE_OK) {
          // Load the image from the response data
          sail::image_input image_input(response_body.data(), response_body.size());
          curl_easy_cleanup(curl);
-         return image_input.next_frame();
-      } else {
-         // If it didn't download check the local filesystem
-         using namespace std::literals;
-         return sail::image(("data/"s + sURL).c_str());
-      } } ();
-
+         image = image_input.next_frame();
+      }
+   }
    if (!image.is_valid()) {
       abort();
    }
-   image.convert(SAIL_PIXEL_FORMAT_BPP32_RGBA);
 
+   image.convert(SAIL_PIXEL_FORMAT_BPP32_RGBA);
    return PImage( std::make_shared<PImageImpl>( image.width(), image.height(), (uint32_t*)image.pixels()) );
 }
 
