@@ -126,17 +126,21 @@ void gl_context::setScene( const scene_t &scene ) {
    loadProjectionViewMatrix( (scene.projection_matrix * scene.view_matrix).data() );
 
    if (scene.lights) {
+      int numPointLights = (int)scene.pointLightColors.size();
       glUniform3fv(DirectionLightColor,  1, scene.directionLightColor.data() );
       glUniform3fv(DirectionLightVector, 1, scene.directionLightVector.data() );
       glUniform3fv(AmbientLight,         1, scene.ambientLight.data());
-      glUniform3fv(PointLightColor,      1, scene.pointLightColor.data() );
-      glUniform3fv(PointLightPosition,   1, scene.pointLightPosition.data()  );
+      glUniform1iv(NumberOfPointLights,  1, &numPointLights);
+      glUniform3fv(PointLightColor,      numPointLights, scene.pointLightColors[0].data());
+      glUniform3fv(PointLightPosition,   numPointLights, scene.pointLightPoss[0].data());
       glUniform3fv(PointLightFalloff,    1, scene.pointLightFalloff.data() );
    } else {
       std::array<float,3> on { 1.0, 1.0, 1.0};
       std::array<float,3> off { 0.0, 0.0, 0.0};
       std::array<float,3> unity { 1.0, 0.0, 0.0 };
 
+      int numPointLights = 0;
+      glUniform1iv(NumberOfPointLights,  1, &numPointLights);
       glUniform3fv(DirectionLightColor,  1, off.data() );
       glUniform3fv(AmbientLight,         1, on.data());
       glUniform3fv(PointLightColor,      1, off.data());

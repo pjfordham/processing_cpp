@@ -30,8 +30,8 @@ public:
       std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
       std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
       std::array<float,3> ambientLight =         { 0.0, 0.0, 0.0 };
-      std::array<float,3> pointLightColor =      { 0.0, 0.0, 0.0 };
-      std::array<float,3> pointLightPosition =   { 0.0, 0.0, 0.0 };
+      std::vector<std::array<float,3>> pointLightColors;
+      std::vector<std::array<float,3>> pointLightPoss;
       std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
       PMatrix projection_matrix = PMatrix::Identity();
       PMatrix view_matrix = PMatrix::Identity();
@@ -203,8 +203,9 @@ private:
    GLuint AmbientLight;
    GLuint DirectionLightColor;
    GLuint DirectionLightVector;
+   GLuint NumberOfPointLights;
    GLuint PointLightColor;
-   GLuint PointLightPosition;
+   GLuint PointLightPosition; 
    GLuint PointLightFalloff;
 
    GLuint VAO;
@@ -263,6 +264,7 @@ public:
       std::swap(DirectionLightVector,x.DirectionLightVector);
       std::swap(PointLightPosition,x.PointLightPosition);
       std::swap(PointLightColor,x.PointLightColor);
+      std::swap(NumberOfPointLights,x.NumberOfPointLights);
       std::swap(PointLightFalloff,x.PointLightFalloff);
 
       std::swap(VAO,x.VAO);
@@ -309,12 +311,23 @@ public:
       batch.scene.ambientLight = color;
    }
 
-   void setPointLightColor(const std::array<float,3>  &color){
-      batch.scene.pointLightColor = color;
+   void pushPointLightColor( const std::array<float,3>  &color ) {
+      if (batch.scene.pointLightColors.size() < 8) {
+         batch.scene.pointLightColors.push_back( color );
+      } else {
+         fmt::print("Ignoring >8 point lights\n.");
+      }
    }
 
-   void setPointLightPosition( const std::array<float,3>  &pos ){
-      batch.scene.pointLightPosition = pos;
+   void pushPointLightPosition( const std::array<float,3>  &pos  ) {
+      if (batch.scene.pointLightColors.size() < 8) {
+         batch.scene.pointLightPoss.push_back( pos );
+      }
+   }
+
+   void clearPointLights() {
+      batch.scene.pointLightColors.clear();
+      batch.scene.pointLightPoss.clear();
    }
 
    void setPointLightFalloff( const std::array<float,3>  &data){
@@ -371,6 +384,7 @@ public:
          AmbientLight = shader.getUniformLocation("ambientLight");
          DirectionLightColor = shader.getUniformLocation("directionLightColor");
          DirectionLightVector = shader.getUniformLocation("directionLightVector");
+         NumberOfPointLights = shader.getUniformLocation("numberOfPointLights");
          PointLightColor = shader.getUniformLocation("pointLightColor");
          PointLightPosition = shader.getUniformLocation("pointLightPosition");
          PointLightFalloff = shader.getUniformLocation("pointLightFalloff");

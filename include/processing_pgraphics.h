@@ -293,9 +293,9 @@ public:
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
       glc.flush();
       glc.setLights( true );
-      glc.setPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
       PVector worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
-      glc.setPointLightPosition( worldPos );
+      glc.pushPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
+      glc.pushPointLightPosition( worldPos );
    }
 
    void lightFalloff(float r, float g, float b) {
@@ -315,8 +315,7 @@ public:
       glc.setAmbientLight(    { 0.5, 0.5, 0.5 } );
       glc.setDirectionLightColor(  { 0.5, 0.5, 0.5 } );
       glc.setDirectionLightVector( { 0.0, 0.0,-1.0 });
-      glc.setPointLightColor(      { 0.0, 0.0, 0.0 });
-      glc.setPointLightPosition(   { 0.0, 0.0, 0.0 });
+      glc.clearPointLights();
       glc.setPointLightFalloff(    { 1.0, 0.0, 0.0 });
       //lightSpecular(0, 0, 0);
    };
@@ -324,6 +323,7 @@ public:
    void noLights() {
       glc.flush();
       glc.setLights( false );
+      glc.clearPointLights();
    }
 
    void textFont(PFont font) {

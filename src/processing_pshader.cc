@@ -54,19 +54,23 @@ static const char *defaultFragmentShader = R"glsl(
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
       uniform vec3 directionLightVector;
-      uniform vec3 pointLightColor;
-      uniform vec3 pointLightPosition;
+      uniform int  numberOfPointLights;
+      uniform vec3 pointLightColor[8];
+      uniform vec3 pointLightPosition[8];
       uniform vec3 pointLightFalloff;
       void main()
       {
-          vec3 pointLightDirection = vPosition.xyz - pointLightPosition;
-
-          float d = length(pointLightDirection);
-          float pointLightIntensity = 1 / ( pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
-          float pointLight = max(dot(vNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
-
+          vec3 totalPointLight = vec3(0.0); // Accumulate point light contribution
+          for (int i = 0; i < numberOfPointLights; ++i) {
+              vec3 pointLightDirection = vPosition.xyz - pointLightPosition[i];
+              float d = length(pointLightDirection);
+              float pointLightIntensity = 1.0 / (pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
+              float pointLight = max(dot(vNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
+              totalPointLight += pointLightColor[i] * pointLight;
+         }
+        
           float directional = max(dot(vNormal, -directionLightVector), 0.0);
-          vec3 vLighting = ambientLight + (directionLightColor * directional) + (pointLightColor * pointLight );
+          vec3 vLighting = ambientLight + (directionLightColor * directional) + totalPointLight;
 
           vec4 texelColor;
           if ( vTindex == -1 ) { // It's a circle
