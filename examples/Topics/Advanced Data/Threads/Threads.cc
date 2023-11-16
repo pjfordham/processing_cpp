@@ -38,14 +38,14 @@ float percent = 0;
 
 // A variable to keep all the data loaded
 std::string allData;
-std::thread myThread;
+std::jthread myThread;
 
 void loadData();
 
 void setup() {
   size(640, 360);
   // Spawn the thread!
-  myThread = std::thread(loadData);
+  myThread = std::jthread(loadData);
 }
 
 void draw() {
@@ -81,7 +81,7 @@ void draw() {
 
 void mousePressed() {
    if( finished )
-      myThread = std::thread (loadData);
+      myThread = std::jthread (loadData);
 }
 
 void loadData() {

@@ -30,7 +30,7 @@ std::vector<std::vector<int>> cells;
 std::vector<std::vector<int>> cellsBuffer;
 
 // Pause
-boolean pause = false;
+boolean pauseGame = false;
 
 void setup() {
   size (640, 360);
@@ -123,14 +123,14 @@ void draw() {
   }
   // Iterate if timer ticks
   if (millis()-lastRecordedTime>interval) {
-    if (!pause) {
+    if (!pauseGame) {
       iteration();
       lastRecordedTime = millis();
     }
   }
 
-  // Create  new cells manually on pause
-  if (pause && mousePressed) {
+  // Create  new cells manually on pauseGame
+  if (pauseGame && mousePressed) {
     // Map and avoid out of bound errors
     int xCellOver = int(map(mouseX, 0, width, 0, width/cellSize));
     xCellOver = constrain(xCellOver, 0, width/cellSize-1);
@@ -147,7 +147,7 @@ void draw() {
       fill(alive); // Fill alive color
     }
   }
-  else if (pause && !mousePressed) { // And then save to buffer once mouse goes up
+  else if (pauseGame && !mousePressed) { // And then save to buffer once mouse goes up
     // Save cells to buffer (so we opeate with one array keeping the other intact)
     for (int x=0; x<width/cellSize; x++) {
       for (int y=0; y<height/cellSize; y++) {
@@ -174,8 +174,8 @@ void keyPressed() {
       }
     }
   }
-  if (key==' ') { // On/off of pause
-    pause = !pause;
+  if (key==' ') { // On/off of pauseGame
+    pauseGame = !pauseGame;
   }
   if (key=='c' || key == 'C') { // Clear all
     for (int x=0; x<width/cellSize; x++) {
