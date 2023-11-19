@@ -559,7 +559,7 @@ public:
    //    return img;
    // }
 
-   void image(PGraphics &gfx, int x, int y, int width=-1, int height=-1) {
+   void image(PGraphics &gfx, float x, float y, float width=-1, float height=-1) {
       float left = x;
       if (width == -1) width = gfx.width;
       if (height == -1) height = gfx.height;
@@ -635,7 +635,7 @@ public:
       image(i,x,y);
    }
 
-   void rect(int x, int y, int _width, int _height) {
+   void rect(float x, float y, float _width, float _height) {
       PShape rect = createRect(x,y,_width,_height);
       shape( rect );
       rect_opt = std::move( rect );
