@@ -15,6 +15,8 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+using std::lerp;
+
 void noiseSeed(int seed);
 void noiseDetail(int lod, float falloff = 0.5);
 float noise(float x, float y = 0, float z = 0);
@@ -55,10 +57,6 @@ inline float bezierPointQuadratic(float a, float b, float c, float t) {
       t_ * t_ * a +
       2 * t_ * t * b +
       t * t * c;
-}
-
-inline float lerp(float start, float stop, float amt) {
-   return start + (stop - start) * amt;
 }
 
 inline float angularDifference(float angle1, float angle2) {
