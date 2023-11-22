@@ -205,13 +205,23 @@ PShape PFont::render_as_pshape(std::string_view text) const {
    // TODO: This translate draws the font to the right and underneath
    // the point requested like other draw commands.
    group.translate( 0, size, 0);
-   group.scale( (0.0 + size) / font.em_size() );
-   int advance = 0;
+   // Font is font.em_size() virtual units tall and
+   // we want it to be size units tall.
+   float scale_factor = (0.0 + size) / font.em_size();
+   group.scale( scale_factor );
+   fmt::print("{}\n", scale_factor);
+   float x = 0;
+   float y = 0;
    for ( auto c : text ) {
-      auto shape = font.glyph(c);
-      shape.translate( advance, 0, 0 );
-      group.addChild( shape );
-      advance += font.advance(c);
+      if (c == '\n') {
+         x = 0;
+         y += font.face->size->metrics.height/64.0 / ( scale_factor );
+      } else {
+         auto shape = font.glyph(c);
+         shape.translate( x, y, 0 );
+         group.addChild( shape );
+         x += font.advance(c);
+      }
    }
    group.endShape();
    return group;
@@ -246,19 +256,23 @@ PImage PFont::render_as_pimage(std::string_view text) const {
       int y = 0; // Current Y position
 
       for (size_t i = 0; text[i] != '\0'; i++) {
-         FT_Load_Char(face, text[i], FT_LOAD_RENDER);
+         if (text[i] == '\n') {
+            x = 0;
+            y += face->size->metrics.height;
+         } else {
+            FT_Load_Char(face, text[i], FT_LOAD_RENDER);
+            auto baseline_offset = (face->size->metrics.ascender);
 
-         auto baseline_offset = (face->size->metrics.ascender);
+            int oX = (x/64) + face->glyph->bitmap_left;
+            int oY = (baseline_offset/64) + (y/64) - face->glyph->bitmap_top;
 
-         int oX = (x/64) + face->glyph->bitmap_left;
-         int oY = (baseline_offset/64) + y - face->glyph->bitmap_top;
+            int destY = oY + face->glyph->bitmap.rows;
+            height = std::max( destY, height );
+            int destX = oX + face->glyph->bitmap.width;
+            width = std::max( destX, width );
 
-         int destY = oY + face->glyph->bitmap.rows;
-         height = std::max( destY, height );
-         int destX = oX + face->glyph->bitmap.width;
-         width = std::max( destX, width );
-
-         x += face->glyph->advance.x;
+            x += face->glyph->advance.x;
+         }
       }
    }
 
@@ -271,29 +285,33 @@ PImage PFont::render_as_pimage(std::string_view text) const {
    int y = 0; // Current Y position
 
    for (size_t i = 0; text[i] != '\0'; i++) {
-      FT_Load_Char(face, text[i], FT_LOAD_RENDER);
+      if (text[i] == '\n') {
+         x = 0;
+         y += face->size->metrics.height;
+      } else {
+         FT_Load_Char(face, text[i], FT_LOAD_RENDER);
 
-      auto baseline_offset = (face->size->metrics.ascender);
+         auto baseline_offset = (face->size->metrics.ascender);
 
-      int oX = (x/64) + face->glyph->bitmap_left;
-      int oY = (baseline_offset/64) + y - face->glyph->bitmap_top;
+         int oX = (x/64) + face->glyph->bitmap_left;
+         int oY = (baseline_offset/64) + (y/64) - face->glyph->bitmap_top;
 
-      // Render the text into the PImage
-      for (int row = 0; row < face->glyph->bitmap.rows; row++) {
-         int destY = oY + row;
-         for (int col = 0; col < face->glyph->bitmap.width; col++) {
-            int destX = oX + col;
-            int srcIndex = col + row * face->glyph->bitmap.pitch;
-            int destIndex = destX + destY * width;
-            if (destX < width && destY < height) {
-               image.pixels[destIndex] = color( 255,255,255, face->glyph->bitmap.buffer[srcIndex]);
+         // Render the text into the PImage
+         for (int row = 0; row < face->glyph->bitmap.rows; row++) {
+            int destY = oY + row;
+            for (int col = 0; col < face->glyph->bitmap.width; col++) {
+               int destX = oX + col;
+               int srcIndex = col + row * face->glyph->bitmap.pitch;
+               int destIndex = destX + destY * width;
+               if (destX < width && destY < height) {
+                  image.pixels[destIndex] = color( 255,255,255, face->glyph->bitmap.buffer[srcIndex]);
+               }
             }
          }
-      }
 
-      // Advance to the next position
-      x += face->glyph->advance.x;
+         // Advance to the next position
+         x += face->glyph->advance.x;
+      }
    }
    return image;
 }
-
