@@ -346,6 +346,7 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.circleTexture();
    shape.noStroke();
    shape.fill(color);
+   shape.transform( transform );
    shape.beginShape(TRIANGLES);
    x = x - width / 2.0;
    y = y - height / 2.0;

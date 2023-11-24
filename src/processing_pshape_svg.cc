@@ -37,7 +37,7 @@ static void parseFloat(std::string::const_iterator &end, float &value) {
    value = std::stof(x);
 }
 
-float cx, cy, lx, ly;
+static float cx, cy, lx, ly;
 
 static void parseMove(std::string::const_iterator &i, PShape& pshape) {
    parseWhiteSpace( i );
@@ -50,7 +50,6 @@ static void parseMove(std::string::const_iterator &i, PShape& pshape) {
       parseFloat( i, y );
       pshape.beginShape();
       pshape.vertex(x,y);
-      fmt::print("vertex {},{}\n", x,y);
       lx = x;
       ly = y;
    }
@@ -67,7 +66,6 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
       pshape.vertex(lx+x2,ly+y2);
       lx = lx+x2;
       ly = ly+y2;
-      fmt::print("vertex relative {},{}\n", x2,y2);
    }
    else if (*i == 'L') {
       i++;
@@ -78,7 +76,6 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
       pshape.vertex(x2,y2);
       lx = x2;
       ly = y2;
-      fmt::print("vertex absolute {},{}\n", x2,y2);
    }
    else if (*i == 'h') {
       i++;
@@ -87,14 +84,12 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
       pshape.vertex(lx+x2,ly);
       lx = lx + x2;
       ly = ly;
-      fmt::print("vertex horizontal relative {}\n", x2);
    }
    else if (*i == 'H') {
       i++;
       float x2;
       parseFloat( i,x2);
       pshape.vertex(x2,ly);
-      fmt::print("vertex horizontal absolute {}\n", x2);
       lx = x2;
       ly = ly;
    }
@@ -105,7 +100,6 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
       pshape.vertex(lx,ly+y2);
       lx = lx;
       ly = ly +y2;
-      fmt::print("vertex vertical relative {}\n", y2);
    }
    else if (*i == 'V') {
       i++;
@@ -114,7 +108,6 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
       pshape.vertex(lx,y2);
       lx = lx;
       ly = y2;
-      fmt::print("vertex vertical absolute {}\n", y2);
    }
 }
 
@@ -136,7 +129,6 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
       parseFloat( i,y4);
 
       pshape.bezierVertex(lx+x2,ly+y2,lx+x3,ly+y3,lx+x4,ly+y4);
-      fmt::print("bezierBertex relative  {},{} {},{} {},{}\n", x2,y2,x3,y3,x4,y4);
       cx = lx+x3;
       cy = ly+y3;
       lx = lx+x4;
@@ -158,7 +150,6 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
       parseFloat( i,y4);
 
       pshape.bezierVertex(x2,y2,x3,y3,x4,y4);
-      fmt::print("bezierBertex absolute  {},{} {},{} {},{}\n", x2,y2,x3,y3,x4,y4);
       cx = x3;
       cy = y3;
       lx = x4;
@@ -178,7 +169,6 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
       parseFloat( i,y4);
 
       pshape.bezierVertex(lx+x2,ly+y2,lx+x3,ly+y3,lx+x4,ly+y4);
-      fmt::print("bezierBertex shortcut relative  {},{} {},{} {},{}\n", x2,y2,x3,y3,x4,y4);
       cx = lx+x3;
       cy = ly+y3;
       lx = lx+x4;
@@ -198,7 +188,6 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
       parseFloat( i,y4);
 
       pshape.bezierVertex(x2,y2,x3,y3,x4,y4);
-      fmt::print("bezierBertex shortcut absolute  {},{} {},{} {},{}\n", x2,y2,x3,y3,x4,y4);
       cx = x3;
       cy = y3;
       lx = x4;
@@ -206,8 +195,38 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
    }
 }
 
+static void parseText(std::string::const_iterator &i, std::string_view text) {
+   parseWhiteSpace( i );
+   for( char x : text ) {
+      if (x != *i++) abort();
+   }
+}
+
+static void parseSVGTransform(const std::string &data, PShape &pshape,
+                              PMatrix &transform) {
+   auto i = data.begin();
+   parseText(i , "matrix\(");
+   float x1,x2,x3,x4,x5,x6;
+   parseFloat( i,x1);
+   if ( *i == ',') i++;
+   parseFloat( i,x2);
+   if ( *i == ',') i++;
+   parseFloat( i,x3);
+   if ( *i == ',') i++;
+   parseFloat( i,x4);
+   if ( *i == ',') i++;
+   parseFloat( i,x5);
+   if ( *i == ',') i++;
+   parseFloat( i,x6);
+   parseText(i , ")");
+
+   transform = PMatrix{ { x1, x2, 0, 0 },
+                        { x3, x3, 0, 0 },
+                        {  0,  0, 1, 0 },
+                        { x5, x6, 0, 1 } };
+}
+
 static void parseSVGFillColor(const std::string &data, PShape &pshape, int alpha) {
-   fmt::print("Fill Color {}\n", data);
    if (data != "none") {
       std::string R( data.begin()+1, data.begin()+3 );
       std::string G( data.begin()+3, data.begin()+5 );
@@ -215,7 +234,6 @@ static void parseSVGFillColor(const std::string &data, PShape &pshape, int alpha
       int iR = std::stoi(R,nullptr,16);
       int iG = std::stoi(G,nullptr,16);
       int iB = std::stoi(B,nullptr,16);
-      fmt::print("Fill Color {} {} {} {} {} \n", data, iR, iG, iB, alpha);
       pshape.fill(iR,iG,iB, alpha );
    } else {
       pshape.noFill();
@@ -223,7 +241,6 @@ static void parseSVGFillColor(const std::string &data, PShape &pshape, int alpha
 }
 
 static void parseSVGStrokeColor(const std::string &data, PShape &pshape, int alpha) {
-   fmt::print("Stroke Color {}\n", data);
    if (data != "none") {
       std::string R( data.begin()+1, data.begin()+3 );
       std::string G( data.begin()+3, data.begin()+5 );
@@ -235,54 +252,58 @@ static void parseSVGStrokeColor(const std::string &data, PShape &pshape, int alp
 }
 
 static void parseSVGStrokeWeight(const std::string &data, PShape &pshape) {
-   fmt::print("Stroke Weight {}\n", data);
    pshape.strokeWeight( std::stof( data ) );
 }
 
 static void parseSVGOpacity(const std::string &data, int &alpha) {
-   fmt::print("Opacity {}\n", data);
    alpha = std::stof( data ) * 255;
 }
 
 static void parseSVGPath(const std::string &data, PShape& pshape) {
    std::string::const_iterator i = data.begin();
-   if (*i == 'M') {
+   pshape.beginShape();
+
+   parseWhiteSpace(i) ;
+   bool open = true;
+   while ( *i == 'M') {
+      pshape.beginContour();
       i++;
       float x;
       parseFloat( i, x );
       if ( *i == ',') i++;
       float y;
       parseFloat( i, y );
-      pshape.beginShape();
-      fmt::print("beginshape\n");
       pshape.vertex(x,y);
       lx = x;
       ly = y;
-      fmt::print("vertex {},{}\n", x,y);
       parseWhiteSpace(i);
       while (*i == 'c' || *i == 'C' || *i == 's' || *i == 'S'|| *i == 'l' || *i == 'L') {
          parseCurve(i, pshape );
          parseLine( i, pshape );
          parseWhiteSpace(i);
       }
-      if (*i == 'z')
+      if (*i == 'z' || *i == 'Z')
       {
-         fmt::print("end shape close\n");
-         pshape.endShape(CLOSE);
+         open = false;
+         pshape.endContour( );
       }
       else
       {
-         fmt::print("end shape open {}\n", *i);
-         pshape.endShape();
+         open = true;
+         pshape.endContour();
       }
-
+      parseWhiteSpace(++i);
+   }
+   if (open) {
+      pshape.endShape( OPEN );
+   } else {
+      pshape.endShape( CLOSE );
    }
    return;
 }
 
 static void parseSVGPolygon(const std::string &data, PShape& pshape) {
    std::string::const_iterator i = data.begin();
-   fmt::print("beginshape POLYGON\n");
    pshape.beginShape();
    parseWhiteSpace(i);
    while ( i != data.end() ) {
@@ -292,10 +313,8 @@ static void parseSVGPolygon(const std::string &data, PShape& pshape) {
       float y;
       parseFloat( i, y );
       pshape.vertex(x,y);
-      fmt::print("vertex {},{}\n", x,y);
       parseWhiteSpace(i);
    }
-   fmt::print("endshape\n");
    pshape.endShape(CLOSE);
    return;
 }
@@ -312,7 +331,6 @@ static void parseNode(xmlNode* node, PShape& pshape) {
       type = (char*)node->name;
 
       PShape shape;
-      fmt::print("PShape start {} {}\n",type,(void*)&shape);
       shape.fill(BLACK);
       shape.noStroke();
 
@@ -334,7 +352,6 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             pshape.height = height;
          }
          xmlFree(xdata);
-         fmt::print("W{},H{}\n", width,height);
       }
 
       if (type == "circle") {
@@ -371,7 +388,6 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             parseSVGFillColor((char*)xdata, shape, alpha);
          }
          xmlFree(xdata);
-         fmt::print("Circle {} {} {}\n",cx,cy,r);
          shape = drawUntexturedFilledEllipse( cx,cy,2*r,2*r, shape.getFillColor(), PMatrix::Identity() );
       } else if (type == "ellipse") {
          int alpha = 255;
@@ -414,8 +430,13 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             parseSVGFillColor((char*)xdata, shape, alpha);
          }
          xmlFree(xdata);
-         fmt::print("Ellipse {} {} {} {}\n",cx,cy,rx,ry);
-         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.getFillColor(), PMatrix::Identity() );
+         xdata = xmlGetProp(node, (xmlChar*)"transform");
+         PMatrix transform;
+         if (xdata) {
+            parseSVGTransform((char*)xdata, shape, transform);
+         }
+         xmlFree(xdata);
+         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.getFillColor(), transform );
       } else if (type == "polygon") {
          int alpha = 255;
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
@@ -478,10 +499,6 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          shape.endShape();
       }
       pshape.addChild( shape );
-      if (shape.isGroup())
-         fmt::print("PShape end GROUP {} {} #{}#\n",(void*)&shape,shape.getChildCount(),type);
-      else
-         fmt::print("PShape end {} {} \n",type, (void*)&shape);
    }
 }
 
@@ -499,8 +516,6 @@ PShape loadShape(std::string_view filename) {
    svgShape.beginShape(GROUP);
    parseNode(xmlDocGetRootElement(doc), svgShape);
    svgShape.endShape();
-
-   fmt::print("PShape end GROUP {} {} \n",(void*)&svgShape,svgShape.getChildCount());
 
    xmlFreeDoc(doc);
    xmlCleanupParser();

@@ -857,7 +857,7 @@ public:
       }
       if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.getFillColor(), _shape.getShapeMatrix() );
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.getFillColor(), PMatrix::Identity() );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
