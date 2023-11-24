@@ -57,6 +57,17 @@ struct Font {
 static std::map<std::string, std::string> fontFileMap;
 static std::map<PFont, Font> fontMap;
 
+static void bezierVertexQuadratic(PVector control, PVector anchor2, std::vector<PVector> &out) {
+   float anchor1_x = out.back().x;
+   float anchor1_y = out.back().y;
+   for (float t = 0.01; t <= 1; t += 0.01) {
+      // Compute the Bezier curve points
+      float x = bezierPointQuadratic( anchor1_x, control.x, anchor2.x, t );
+      float y = bezierPointQuadratic( anchor1_y, control.y, anchor2.y, t );
+      out.emplace_back( x, y );
+   }
+}
+
 static PShape buildPShapeFromFace(FT_Face face, char c) {
    // Load and unpack FT glyph outline data
    if (FT_Load_Char(face, c, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_NO_SCALE))
@@ -71,62 +82,38 @@ static PShape buildPShapeFromFace(FT_Face face, char c) {
 
    // Create our PShape for this glyph
    PShape glyph_shape;
-   glyph_shape.beginShape(GROUP);
-
-   std::vector<PShape> holes;
-   bool drawn = false;
+   glyph_shape.beginShape(POLYGON);
    int vertex_index = 0;
    for (int i = 0 ; i < outline.n_contours ; i ++) {
       std::optional<PVector> prev_control;
-      PShape contour_shape;
-      contour_shape.fill(WHITE);
-      contour_shape.noStroke();
-      contour_shape.beginShape();
+      std::vector<PVector> contour;
 
       for (; vertex_index <= outline.contours[i] ; ++vertex_index) {
          // Check if it's an 'on' point (start or end of a contour)
          PVector pos{(float)points[vertex_index].x, -(float)points[vertex_index].y};
          bool anchor = tags[vertex_index] & 1;
          if (anchor && !prev_control) {
-            contour_shape.vertex(pos);
+            contour.push_back(pos);
          } else if (anchor && prev_control) {
-            contour_shape.bezierVertexQuadratic( prev_control.value(), pos);
+            bezierVertexQuadratic( prev_control.value(), pos, contour);
             prev_control.reset();
          } else if (!anchor && !prev_control) {
             prev_control = pos;
          } else { // if (!anchor && prev_control)
             PVector anchor = ( pos + prev_control.value() ) / 2;
-            contour_shape.bezierVertexQuadratic( prev_control.value(), anchor);
+            bezierVertexQuadratic( prev_control.value(), anchor, contour);
             prev_control = pos;
          }
       }
       if (prev_control) {
-         contour_shape.bezierVertexQuadratic( prev_control.value(), contour_shape.getVertex(0) );
+         bezierVertexQuadratic( prev_control.value(), contour[0], contour );
       }
-      contour_shape.endShape(CLOSE);
 
-      if (!contour_shape.isClockwise() && !drawn) {
-         holes.push_back(contour_shape);
-      } else if (contour_shape.isClockwise() && !drawn) {
-         drawn = true;
-         glyph_shape.addChild(contour_shape);
-         for (auto hole : holes ) {
-            hole.setFill(BLACK);
-            glyph_shape.addChild(hole);
-         }
-         holes.clear();
-      } else if (!contour_shape.isClockwise() && drawn) {
-         contour_shape.setFill(BLACK);
-         glyph_shape.addChild( contour_shape );
-      } else if (contour_shape.isClockwise() && drawn) {
-         glyph_shape.addChild(contour_shape);
-      } else {
-         abort();
+      glyph_shape.beginContour();
+      for (auto &v : contour ) {
+         glyph_shape.vertex( v );
       }
-   }
-   for (auto &hole : holes ) {
-      hole.setFill(BLACK);
-      glyph_shape.addChild( hole);
+      glyph_shape.endContour();
    }
    glyph_shape.endShape();
    return glyph_shape;
@@ -209,7 +196,6 @@ PShape PFont::render_as_pshape(std::string_view text) const {
    // we want it to be size units tall.
    float scale_factor = (0.0 + size) / font.em_size();
    group.scale( scale_factor );
-   fmt::print("{}\n", scale_factor);
    float x = 0;
    float y = 0;
    for ( auto c : text ) {

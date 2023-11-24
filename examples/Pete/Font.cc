@@ -10,8 +10,8 @@ void setup() {
 void draw() {
    background(BLACK);
    fill(RED);
-   text("Peter\nFordham", 0, 200);
-   shape(font.render_as_pshape("Peter\nFordham"), 0, 800 );
+   text("Peter 0\nFordham", 0, 200);
+   shape(font.render_as_pshape("Peter 0\nFordham"), 0, 800 );
    tint(BLUE);
-   image(font.render_as_pimage("Peter\nFordham"), 0 ,400);
+   image(font.render_as_pimage("Peter 0\nFordham"), 0 ,400);
 }

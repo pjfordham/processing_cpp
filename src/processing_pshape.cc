@@ -100,7 +100,7 @@ void PShape::populateIndices() {
 
    if (style == GROUP) return;
 
-   if (vertices.size() == 0) abort();
+   if (vertices.size() == 0) return;
 
    if (style == QUADS) {
       if (vertices.size() % 4 != 0) abort();
