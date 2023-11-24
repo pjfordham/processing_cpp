@@ -485,11 +485,11 @@ static void parseNode(xmlNode* node, PShape& pshape) {
    }
 }
 
-PShape loadShape(const std::string &filename) {
+PShape loadShape(std::string_view filename) {
    LIBXML_TEST_VERSION;
 
    using namespace std::string_literals;
-   xmlDoc* doc = xmlReadFile(("data/"s+filename).c_str(), nullptr, 0);
+   xmlDoc* doc = xmlReadFile(("data/"s+std::string(filename)).c_str(), nullptr, 0);
    if (doc == nullptr) {
       std::cerr << "Error loading SVG file." << std::endl;
       return {};

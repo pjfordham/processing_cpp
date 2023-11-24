@@ -172,9 +172,6 @@ public:
       shape_matrix = PMatrix::Identity();
    }
 
-   void loadShape(const char *filename) {
-   }
-
    void beginShape(int style_ = POLYGON) {
       // Supported types, POLYGON, POINTS, TRIANGLES, TRINALGE_STRIP, GROUP
       style = style_;
