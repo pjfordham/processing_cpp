@@ -11,13 +11,13 @@ PShape rocket;
 
 float ry;
 
-public void setup() {
+void setup() {
   size(640, 360, P3D);
 
   rocket = loadShape("rocket.obj");
 }
 
-public void draw() {
+void draw() {
   background(0);
   lights();
 

@@ -6,6 +6,7 @@
 #include "processing_enum.h"
 #include "processing_opengl.h"
 #include "processing_pimage.h"
+#include "processing_pmaterial.h"
 
 class PShape {
 public:
@@ -191,6 +192,12 @@ public:
 
    bool isTextureSet() const {
       return texture_ != getBlankTexture();
+   }
+
+   void material(PMaterial &mat) {
+      noStroke();
+      textureMode( NORMAL );
+      texture( mat.texture );
    }
 
    void texture(PImage img) {
@@ -616,5 +623,7 @@ public:
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform);
+
+PShape loadShape(const char *objPath);
 
 #endif

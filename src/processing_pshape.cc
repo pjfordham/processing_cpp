@@ -2,6 +2,7 @@
 #include "processing_math.h"
 #include <vector>
 #include <tesselator_cpp.h>
+#include <unordered_map>
 
 bool PShape::isClockwise() const {
    if ( style != POLYGON && style != QUADS )
@@ -553,4 +554,97 @@ void PShape::draw_fill(gl_context &glc, const PMatrix& transform) const {
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
       glc.drawTriangles( vertices, indices, texture_, transform * shape_matrix );
    }
+}
+
+
+PShape loadShape( const char *objPath ) {
+   struct VertRef {
+      VertRef(int v, int vt, int vn) : v(v), vt(vt), vn(vn) { }
+      int v, vt, vn;
+   };
+
+   using namespace std::literals;
+
+   std::ifstream inputFile("data/"s + objPath);
+
+   if (!inputFile.is_open()) {
+      abort();
+   }
+
+   PShape obj_shape;
+   obj_shape.beginShape( TRIANGLES );
+
+   std::vector< glm::vec4 > positions( 1, glm::vec4( 0, 0, 0, 0 ) );
+   std::vector< glm::vec3 > normals( 1, glm::vec3( 0, 0, 0 ) );
+   std::vector< glm::vec2 > coords( 1, glm::vec2( 0, 0 ) );
+
+   std::string currentMaterial;
+   std::string currentGroup;
+   std::string lineStr;
+   while( std::getline( inputFile, lineStr ) ) {
+      std::istringstream lineSS( lineStr );
+      std::string lineType;
+      lineSS >> lineType;
+
+      if( lineType == "v" ) {
+         // position
+         float x = 0, y = 0, z = 0, w = 1;
+         lineSS >> x >> y >> z >> w;
+         positions.emplace_back( x, y, z, w );
+      } else if( lineType == "vn" ) {
+         // normal
+         float i = 0, j = 0, k = 0;
+         lineSS >> i >> j >> k;
+         normals.push_back( glm::normalize( glm::vec3( i, j, k ) ) );
+      } else if( lineType == "vt" ) {
+         // texture coordinate
+         float i = 0, j = 0;
+         lineSS >> i >> j;
+         coords.push_back( glm::vec2( i, j ) );
+      } else if( lineType == "f" ) {
+         // polygon
+         std::vector< VertRef > refs;
+         std::string refStr;
+         while( lineSS >> refStr ) {
+            int v = 0, vt = 0, vn = 0;
+            char x = 0, y = 0;
+            std::istringstream ref( refStr );
+            ref >> v >> x >> vt >> y >> vn;
+            refs.emplace_back( v, vt, vn );
+         }
+
+         // triangulate, assuming n>3-gons are convex and coplanar
+         for( size_t i = 1; i+1 < refs.size(); ++i ) {
+            const VertRef* p[3] = { &refs[0], &refs[i], &refs[i+1] };
+
+            // http://www.opengl.org/wiki/Calculating_a_Surface_Normal
+            glm::vec3 U( positions[ p[1]->v ] - positions[ p[0]->v ] );
+            glm::vec3 V( positions[ p[2]->v ] - positions[ p[0]->v ] );
+            glm::vec3 faceNormal = glm::normalize( glm::cross( U, V ) );
+
+            for(auto & j : p) {
+               obj_shape.normal( j->vn != 0 ? normals[ j->vn ] : faceNormal );
+               obj_shape.vertex( glm::vec3( positions[ j->v ] ), {coords[ j->vt].x,1.0f-coords[ j->vt].y}  );
+            }
+         }
+      } else if( lineType == "g" ) {
+         std::string name;
+         lineSS >> name;
+         currentGroup = name;
+      } else if( lineType == "usemtl" ) {
+         std::string name;
+         lineSS >> name;
+         currentMaterial = name;
+         obj_shape.material( materials[currentMaterial] );
+      } else if( lineType == "mtllib" ) {
+         std::string name;
+         lineSS >> name;
+         loadMaterials( name.c_str() );
+      } else if( lineType == "#" ) {
+      } else {
+         fmt::print("Unrecognized OBJ file line: {}\n", lineStr);
+      }
+   }
+   obj_shape.endShape();
+   return obj_shape;;
 }

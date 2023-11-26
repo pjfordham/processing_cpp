@@ -22,6 +22,7 @@ add_library(Processing
   src/processing_utils.cc
   src/processing_pfont.cc
   src/processing_pimage.cc
+  src/processing_pmaterial.cc
   src/processing_pshape_svg.cc
   src/processing_pshape.cc
   src/processing_color.cc
@@ -42,6 +43,7 @@ install(FILES
   include/processing_debug.h
   include/processing_pfont.h
   include/processing_pimage.h
+  include/processing_pmaterial.h
   include/processing_pshape.h
   include/processing_pshape_svg.h
   include/processing_color.h
@@ -91,7 +93,6 @@ set(skip_examples
   "examples/Basics/Lights/Spot/Spot.cc"
   "examples/Basics/Shape/DisableStyle/DisableStyle.cc"
   "examples/Basics/Shape/GetChild/GetChild.cc"
-  "examples/Basics/Shape/LoadDisplayOBJ/LoadDisplayOBJ.cc"
   "examples/Demos/Graphics/DepthSort/DepthSort.cc"
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"
   "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"
