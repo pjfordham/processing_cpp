@@ -4,6 +4,6 @@
 #include <string_view>
 #include "processing_pshape.h"
 
-PShape loadShape(std::string_view filename);
+PShape loadShapeSVG(std::string_view filename);
 
 #endif

@@ -624,6 +624,7 @@ public:
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform);
 
-PShape loadShape(const char *objPath);
+PShape loadShapeOBJ(std::string_view objPath);
+PShape loadShape(std::string_view objPath);
 
 #endif

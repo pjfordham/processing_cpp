@@ -30,6 +30,7 @@ std::string toLowerCase(std::string_view input);
 
 std::string trim(const std::string& str);
 std::vector<std::string> split(std::string_view input, std::string_view delimiter);
+bool endsWith(std::string_view fullString, std::string_view ending);
 
 inline bool startsWith(std::string_view str, std::string_view prefix) {
     if (str.size() < prefix.size()) {

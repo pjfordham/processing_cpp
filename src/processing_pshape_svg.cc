@@ -502,7 +502,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
    }
 }
 
-PShape loadShape(std::string_view filename) {
+PShape loadShapeSVG(std::string_view filename) {
    LIBXML_TEST_VERSION;
 
    using namespace std::string_literals;

@@ -1,4 +1,5 @@
 #include "processing_pshape.h"
+#include "processing_pshape_svg.h"
 #include "processing_math.h"
 #include <vector>
 #include <tesselator_cpp.h>
@@ -556,8 +557,15 @@ void PShape::draw_fill(gl_context &glc, const PMatrix& transform) const {
    }
 }
 
+PShape loadShape( std::string_view filename ) {
+   if ( endsWith( toLowerCase( filename ) , ".obj" ) ) {
+      return loadShapeOBJ( filename );
+   } else {
+      return loadShapeSVG( filename );
+   }
+}
 
-PShape loadShape( const char *objPath ) {
+PShape loadShapeOBJ( std::string_view objPath ) {
    struct VertRef {
       VertRef(int v, int vt, int vn) : v(v), vt(vt), vn(vn) { }
       int v, vt, vn;
@@ -565,7 +573,7 @@ PShape loadShape( const char *objPath ) {
 
    using namespace std::literals;
 
-   std::ifstream inputFile("data/"s + objPath);
+   std::ifstream inputFile("data/"s + std::string(objPath));
 
    if (!inputFile.is_open()) {
       abort();

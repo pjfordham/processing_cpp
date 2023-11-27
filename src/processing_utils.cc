@@ -194,3 +194,11 @@ std::string toLowerCase(std::string_view input) {
 
    return output;
 }
+
+bool endsWith(std::string_view fullString, std::string_view ending) {
+   if (fullString.length() >= ending.length()) {
+      return (fullString.compare(fullString.length() - ending.length(), ending.length(), ending) == 0);
+   } else {
+      return false;
+   }
+}
