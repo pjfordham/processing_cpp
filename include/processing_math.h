@@ -341,6 +341,13 @@ public:
          return glm::value_ptr( m_data );
       }
    }
+   const glm::mat4 &glm_data() const {
+      if (identity) {
+         return i;
+      } else {
+         return m_data;
+      }
+   }
 
    friend bool operator==(const PMatrix &x, const PMatrix &y)  {
       if (x.identity && y.identity) {

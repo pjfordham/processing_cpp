@@ -98,9 +98,6 @@ public:
 
       windowFrame = gl_framebuffer::constructMainFrame( width, height );
 
-      glc.setProjectionMatrix( PMatrix::Identity() );
-      glc.setViewMatrix( PMatrix::Identity() );
-
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
       camera();
@@ -202,18 +199,19 @@ public:
       return glc.screenY(x,y,z);
    }
 
-   PMatrix get_projection_matrix(float fov, float a, float near, float far) {
+   glm::mat4 get_projection_matrix(float fov, float a, float near, float far) {
       float f = 1 / tan(0.5 * fov);
       float rangeInv = 1.0 / (near - far);
       float A = (near + far) * rangeInv;
       float B = near * far * rangeInv * 2;
-      PMatrix ret = PMatrix{
+      glm::mat4 projection{
          {f/a,  0,  0,  0} ,
          {0,  f,  0,  0} ,
          {0,  0,  A,  B} ,
          {0,  0, -1,  0}
       };
-      return ret;
+      projection = glm::transpose(projection);
+      return projection;
    }
 
    void ortho(float left, float right, float bottom, float top, float near, float far) {
@@ -222,11 +220,13 @@ public:
       float tz = -(far + near) / (far - near);
 
       glc.flush();
-      glc.setProjectionMatrix( {
+      glm::mat4 projection =  {
             { 2/(right-left),               0,              0,  tx},
             {             0,  2/(top-bottom),              0,  ty},
             {           0,               0, -2/(far - near), tz},
-            {0,               0,              0,   1}} );
+            {0,               0,              0,   1}};
+      projection = glm::transpose( projection );
+      glc.setProjectionMatrix( projection );
    }
 
    void ortho(float left, float right, float bottom, float top) {
@@ -260,17 +260,19 @@ public:
       PVector side = forward.cross(_up).normalize();
       PVector up = side.cross(forward).normalize();
 
-      PMatrix view{
+      glm::mat4 view{
          {     side.x,     side.y,     side.z, 0.0f},
          {      up.x,       up.y,       up.z, 0.0f},
          {-forward.x, -forward.y, -forward.z, 0.0f},
          {0.0f,       0.0f,       0.0f, 1.0f} };
+      view = glm::transpose(view);
 
-      PMatrix translate{
+      glm::mat4 translate{
          {1.0,    0,     0,    -eyeX},
          {0,    1.0,     0,    -eyeY},
          {0,      0,   1.0,    -eyeZ},
          {0.0f, 0.0f,  0.0f,    1.0f} };
+      translate = glm::transpose(translate);
 
       glc.flush();
       // Translate the camera to the origin

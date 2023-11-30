@@ -88,17 +88,19 @@ static const char *defaultFragmentShader = R"glsl(
 )glsl";
 
 class PShaderImpl {
-   std::map<GLuint, float> uniforms1f;
-   std::map<GLuint, std::array<float,2>> uniforms2fv;
-   std::map<GLuint, std::array<float,3>> uniforms3fv;
+
+   std::map<std::string, glm::vec3> uniforms3fv;
+   std::map<std::string, glm::vec2> uniforms2fv;
+   std::map<std::string, float>     uniforms1f;
+
    std::map<std::string, GLuint> attribLocation;
    std::map<std::string, GLuint> uniformLocation;
 
    std::string vertexShader;
    std::string fragmentShader;
 
-   GLuint programID;
 public:
+   GLuint programID;
 
    ~PShaderImpl();
 
@@ -117,9 +119,9 @@ public:
 
    void set(const char *uniform, float v1, float v2, float v3);
 
-   GLuint getAttribLocation(const char *attribute);
+   GLuint getAttribLocation(const char *attribute) const;
 
-   GLuint getUniformLocation(const char *uniform);
+   GLuint getUniformLocation(const char *uniform) const;
 
    void useProgram();
    friend struct fmt::formatter<PShaderImpl>;
@@ -158,42 +160,43 @@ PShaderImpl::~PShaderImpl() {
 void PShaderImpl::set_uniforms() {
    DEBUG_METHOD();
    for (const auto& [id, value] : uniforms1f) {
-      glUniform1f(id,value);
+      GLint loc = getUniformLocation( id.c_str() );
+      if ( loc != -1 )
+         glUniform1f(loc,value);
    }
    for (const auto& [id, value] : uniforms2fv) {
-      glUniform2fv(id,1,value.data());
+      GLint loc = getUniformLocation( id.c_str() );
+      if ( loc != -1 )
+         glUniform2fv(loc, 1, glm::value_ptr(value) );
    }
    for (const auto& [id, value] : uniforms3fv) {
-      glUniform3fv(id,1,value.data());
+      GLint loc = getUniformLocation( id.c_str() );
+      if ( loc != -1 )
+         glUniform3fv(loc, 1, glm::value_ptr(value) );
    }
 }
 
-void PShaderImpl::set(const char *uniform, float value) {
+void PShaderImpl::set(const char *id, float value) {
    DEBUG_METHOD();
-   GLuint id = glGetUniformLocation(programID, uniform);
    uniforms1f[id] = value;
 }
 
-void PShaderImpl::set(const char *uniform, float v1, float v2) {
+void PShaderImpl::set(const char *id, float v1, float v2) {
    DEBUG_METHOD();
-   std::array<float,2> vec = {v1,v2};
-   GLuint id = glGetUniformLocation(programID, uniform);
-   uniforms2fv[id] = vec;
+   uniforms2fv[id] = {v1,v2};
 }
 
-void PShaderImpl::set(const char *uniform, float v1, float v2, float v3) {
+void PShaderImpl::set(const char *id, float v1, float v2, float v3) {
    DEBUG_METHOD();
-   std::array<float,3> vec = {v1,v2,v3};
-   GLuint id = glGetUniformLocation(programID, uniform);
-   uniforms3fv[id] = vec;
+   uniforms3fv[id] = {v1, v2, v3};
 }
 
-GLuint PShaderImpl::getAttribLocation(const char *attribute) {
+GLuint PShaderImpl::getAttribLocation(const char *attribute) const {
    DEBUG_METHOD();
    return glGetAttribLocation(programID, attribute);
 }
 
-GLuint PShaderImpl::getUniformLocation(const char *uniform) {
+GLuint PShaderImpl::getUniformLocation(const char *uniform) const {
    DEBUG_METHOD();
    return glGetUniformLocation(programID, uniform);
 }
@@ -358,16 +361,20 @@ void PShader::set(const char *uniform, float v1, float v2, float v3) {
    impl->set( uniform, v1, v2, v3 );
 }
 
-GLuint PShader::getAttribLocation(const char *attribute) {
+GLuint PShader::getAttribLocation(const char *attribute) const {
    return impl->getAttribLocation( attribute );
 }
 
-GLuint PShader::getUniformLocation(const char *uniform) {
+GLuint PShader::getUniformLocation(const char *uniform) const {
    return impl->getUniformLocation( uniform );
 }
 
 void PShader::useProgram() {
    impl->useProgram();
+}
+
+GLuint PShader::getProgramID() const {
+   return impl->programID;
 }
 
 void PShader::init() {

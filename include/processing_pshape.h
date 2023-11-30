@@ -391,7 +391,7 @@ public:
             // Calculate the normal vector of the current triangle
             PVector edge1 = v2 - v1;
             PVector edge2 = v3 - v1;
-            PVector normal = (edge1.cross(edge2)).normalize();
+            glm::vec3 normal = (edge1.cross(edge2)).normalize();
 
             // Add the normal to the normals list for each vertex of the triangle
             vertices[indices[i * 3]].normal = vertices[indices[i * 3]].normal + normal;

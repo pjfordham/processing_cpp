@@ -20,22 +20,22 @@ public:
       float r,g,b,a;
    };
    struct vertex {
-      PVector position;
-      PVector normal;
-      PVector2 coord;
+      glm::vec3 position;
+      glm::vec3 normal;
+      glm::vec2 coord;
       int tunit;
       color fill;
    };
    struct scene_t {
       bool lights = false;;
-      std::array<float,3> directionLightColor =  { 0.0, 0.0, 0.0 };
-      std::array<float,3> directionLightVector = { 0.0, 0.0, 0.0 };
-      std::array<float,3> ambientLight =         { 0.0, 0.0, 0.0 };
-      std::vector<std::array<float,3>> pointLightColors;
-      std::vector<std::array<float,3>> pointLightPoss;
-      std::array<float,3> pointLightFalloff =    { 1.0, 0.0, 0.0 };
-      PMatrix projection_matrix = PMatrix::Identity();
-      PMatrix view_matrix = PMatrix::Identity();
+      glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
+      glm::vec3 directionLightVector = { 0.0, 0.0, 0.0 };
+      glm::vec3 ambientLight =         { 0.0, 0.0, 0.0 };
+      std::vector<glm::vec3> pointLightColors;
+      std::vector<glm::vec3> pointLightPoss;
+      glm::vec3 pointLightFalloff =    { 1.0, 0.0, 0.0 };
+      glm::mat4 projection_matrix;
+      glm::mat4 view_matrix;
    };
    struct geometry_t {
       static const int CAPACITY = 65536;
@@ -43,8 +43,7 @@ public:
       std::array<int, CAPACITY> tbuffer;
       unsigned int vCount = 0;
       std::vector<unsigned short> ibuffer;
-      std::array<PMatrix,16> move;
-      unsigned int mCount = 0;
+      std::vector<glm::mat4> move;
    };
 
    struct batch_t {
@@ -78,7 +77,7 @@ public:
                     const std::vector<vertex> &vertices,
                     const std::vector<unsigned short> &indices,
                     PImage texture,
-                    const PMatrix &move_matrix ) {
+                    const glm::mat4 &move_matrix ) {
 
          if (vertices.size() > geometry->CAPACITY) {
             abort();
@@ -92,13 +91,12 @@ public:
             return false;
          }
 
-         if ( geometry->mCount == 0 || !(move_matrix == geometry->move[geometry->mCount - 1]) ) {
-            if (geometry->mCount == geometry->move.size()) {
+         if ( geometry->move.size() == 0 || !(move_matrix == geometry->move[geometry->move.size() - 1]) ) {
+            if (geometry->move.size() == 16) {
                return false;
             }
-            geometry->move[geometry->mCount] = move_matrix;
-            currentM = geometry->mCount;
-            geometry->mCount++;
+            currentM = geometry->move.size();
+            geometry->move.push_back(move_matrix) ;
          }
 
          int tunit;
@@ -126,8 +124,8 @@ public:
       static const int INTERNAL_TEXTURE_UNIT = 0;
       void reset() {
          geometry->vCount = 0;
-         geometry->mCount = 0;
          geometry->ibuffer.clear();
+         geometry->move.clear();
          currentM = 0;
          unit = INTERNAL_TEXTURE_UNIT + 1;
          textures.clear();
@@ -135,8 +133,10 @@ public:
 
       void draw( gl_context *glc ) {
          if (geometry->vCount != 0 ) {
-            glc->loadMoveMatrix( geometry->move, geometry->mCount );
+            glc->loadMoveMatrix( geometry->move );
             glc->setScene( scene );
+            glc->TransformMatrix.set(scene.projection_matrix * scene.view_matrix * geometry->move[0]);
+
             glc->drawGeometry( *geometry );
          }
          reset();
@@ -174,27 +174,14 @@ private:
 
    GLuint index_buffer_id;
    GLuint vertex_buffer_id;
-   GLuint tindex_buffer_id;
-
-   GLuint vertex_attrib_id;
-   GLuint coords_attrib_id;
-   GLuint colors_attrib_id;
-   GLuint tindex_attrib_id;
-   GLuint tunit_attrib_id;
-   GLuint normal_attrib_id;
+   GLuint mindex_buffer_id;
 
    PShader defaultShader;
    PShader currentShader;
-   GLuint Mmatrix;
-   GLuint PVmatrix;
-   GLuint uSampler;
-   GLuint AmbientLight;
-   GLuint DirectionLightColor;
-   GLuint DirectionLightVector;
-   GLuint NumberOfPointLights;
-   GLuint PointLightColor;
-   GLuint PointLightPosition; 
-   GLuint PointLightFalloff;
+
+   PShader::Attribute Position, Normal, Color, Coord, TUnit, MIndex;
+   PShader::Uniform AmbientLight, DirectionLightColor, DirectionLightVector, NumberOfPointLights,
+      PointLightColor,PointLightPosition,PointLightFalloff, uSampler, Mmatrix, PVmatrix, TransformMatrix;
 
    GLuint VAO;
 
@@ -206,7 +193,7 @@ public:
    gl_context() : width(0), height(0), batch() {
       index_buffer_id = 0;
       vertex_buffer_id = 0;
-      tindex_buffer_id = 0;
+      mindex_buffer_id = 0;
       VAO = 0;
    }
 
@@ -235,15 +222,18 @@ public:
 
       std::swap(index_buffer_id,x.index_buffer_id);
       std::swap(vertex_buffer_id,x.vertex_buffer_id);
-      std::swap(tindex_buffer_id,x.tindex_buffer_id);
-      std::swap(vertex_attrib_id,x.vertex_attrib_id);
-      std::swap(coords_attrib_id,x.coords_attrib_id);
-      std::swap(colors_attrib_id,x.colors_attrib_id);
-      std::swap(tindex_attrib_id,x.tindex_attrib_id);
-      std::swap(tunit_attrib_id,x.tunit_attrib_id);
-      std::swap(normal_attrib_id,x.normal_attrib_id);
+      std::swap(mindex_buffer_id,x.mindex_buffer_id);
+
+      std::swap(Position,x.Position);
+      std::swap(Normal,x.Normal);
+      std::swap(Color,x.Color);
+      std::swap(Coord,x.Coord);
+      std::swap(TUnit, x.TUnit);
+      std::swap(MIndex,x.MIndex);
+
       std::swap(defaultShader,x.defaultShader);
       std::swap(currentShader,x.currentShader);
+
       std::swap(Mmatrix,x.Mmatrix);
       std::swap(PVmatrix,x.PVmatrix);
       std::swap(uSampler,x.uSampler);
@@ -279,27 +269,27 @@ public:
 
    void setScene( const scene_t &scene );
 
-   void setProjectionMatrix( const PMatrix &PV ) {
+   void setProjectionMatrix( const glm::mat4 &PV ) {
       batch.scene.projection_matrix = PV;
    }
 
-   void setViewMatrix( const PMatrix &PV ) {
-      batch.scene.view_matrix = PMatrix::FlipY() * PV ;
+   void setViewMatrix( const glm::mat4 &PV ) {
+      batch.scene.view_matrix = PMatrix::FlipY().glm_data() * PV ;
    }
 
-   void setDirectionLightColor(const std::array<float,3>  &color ){
+   void setDirectionLightColor(const glm::vec3 &color ){
       batch.scene.directionLightColor = color;
    }
 
-   void setDirectionLightVector(const std::array<float,3>  &dir  ){
+   void setDirectionLightVector(const glm::vec3 &dir  ){
       batch.scene.directionLightVector = dir;
    }
 
-   void setAmbientLight(const std::array<float,3>  &color ){
+   void setAmbientLight(const glm::vec3  &color ){
       batch.scene.ambientLight = color;
    }
 
-   void pushPointLightColor( const std::array<float,3>  &color ) {
+   void pushPointLightColor( const glm::vec3  &color ) {
       if (batch.scene.pointLightColors.size() < 8) {
          batch.scene.pointLightColors.push_back( color );
       } else {
@@ -307,7 +297,7 @@ public:
       }
    }
 
-   void pushPointLightPosition( const std::array<float,3>  &pos  ) {
+   void pushPointLightPosition( const glm::vec3 &pos  ) {
       if (batch.scene.pointLightColors.size() < 8) {
          batch.scene.pointLightPoss.push_back( pos );
       }
@@ -318,7 +308,7 @@ public:
       batch.scene.pointLightPoss.clear();
    }
 
-   void setPointLightFalloff( const std::array<float,3>  &data){
+   void setPointLightFalloff( const glm::vec3 &data){
       batch.scene.pointLightFalloff = data;
    }
 
@@ -362,38 +352,44 @@ public:
       if ( currentShader != shader ) {
          cleanupVAO();
          currentShader = shader;
-         vertex_attrib_id = shader.getAttribLocation("position");
-         normal_attrib_id = shader.getAttribLocation("normal");
-         coords_attrib_id = shader.getAttribLocation("coord");
-         colors_attrib_id = shader.getAttribLocation("color");
-         tindex_attrib_id = shader.getAttribLocation("mindex");
-         tunit_attrib_id = shader.getAttribLocation("tunit");
-         Mmatrix = shader.getUniformLocation("Mmatrix");
-         PVmatrix = shader.getUniformLocation("PVmatrix");
-         AmbientLight = shader.getUniformLocation("ambientLight");
-         DirectionLightColor = shader.getUniformLocation("directionLightColor");
-         DirectionLightVector = shader.getUniformLocation("directionLightVector");
-         NumberOfPointLights = shader.getUniformLocation("numberOfPointLights");
-         PointLightColor = shader.getUniformLocation("pointLightColor");
-         PointLightPosition = shader.getUniformLocation("pointLightPosition");
-         PointLightFalloff = shader.getUniformLocation("pointLightFalloff");
-         uSampler = shader.getUniformLocation("myTextures");
          shader.useProgram();
+
+         uSampler = shader.get_uniform("myTextures");
+         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+
+         Mmatrix = shader.get_uniform("Mmatrix");
+         PVmatrix = shader.get_uniform( "PVmatrix");
+         TransformMatrix = shader.get_uniform("transformMatrix");
+         DirectionLightColor = shader.get_uniform("directionLightColor");
+         DirectionLightVector = shader.get_uniform("directionLightVector");
+         AmbientLight = shader.get_uniform("ambientLight");
+         NumberOfPointLights = shader.get_uniform("numberOfPointLights");
+         PointLightColor = shader.get_uniform("pointLightColor");
+         PointLightPosition = shader.get_uniform("pointLightPosition");
+         PointLightFalloff = shader.get_uniform("pointLightFalloff");
+
+         Position = shader.get_attribute("position");
+         Normal = shader.get_attribute("normal");
+         Color = shader.get_attribute("color");
+         Coord = shader.get_attribute("coord");
+         TUnit = shader.get_attribute("tunit");
+         MIndex = shader.get_attribute("mindex");
+
          initVAO();
       }
       shader.set_uniforms();
    }
 
-   void loadMoveMatrix(  const std::array<PMatrix,16> &transforms, int mCount );
+   void loadMoveMatrix(  const std::vector<glm::mat4> &transforms );
 
-   void loadProjectionViewMatrix( const float *data );
+   void loadProjectionViewMatrix( const glm::mat4 &data );
 
    void flush();
 
    void drawTriangles( const std::vector<vertex> &vertices,
                        const std::vector<unsigned short> &indices,
                        PImage texture,
-                       const PMatrix &move_matrix );
+                       const glm::mat4 &move_matrix );
 
    int getFlushCount() const {
       return flushes;

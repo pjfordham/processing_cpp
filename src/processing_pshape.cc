@@ -226,14 +226,14 @@ PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfo
       start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
       end = start;
    } else {
-      PVector normal = (p[1].position - p[0].position).normal();
+      PVector normal = PVector{p[1].position - p[0].position}.normal();
       normal.normalize();
       normal.mult(half_weight);
-      start = {  p[0].position + normal, p[0].position - normal };
-      normal = (p[points-1].position - p[points-2].position).normal();
+      start = {  PVector{p[0].position} + normal, PVector{p[0].position} - normal };
+      normal = PVector{p[points-1].position - p[points-2].position}.normal();
       normal.normalize();
       normal.mult(half_weight);
-      end = { p[points-1].position + normal, p[points-1].position - normal };
+      end = { PVector{p[points-1].position} + normal, PVector{p[points-1].position} - normal };
    }
 
    triangle_strip.vertex( start.start );
@@ -411,7 +411,7 @@ PShape drawTriangleNormal(int points, const gl_context::vertex *p,
    shape.transform( transform );
    PVector pos = (p[0].position + p[1].position + p[2].position) / 3;
    PVector n = ((p[0].normal + p[1].normal + p[2].normal) / 3).normalize();
-   float length = (p[0].position - p[1].position).mag() / 10.0f;
+   float length = PVector{p[0].position - p[1].position}.mag() / 10.0f;
    _line(shape, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
    shape.endShape();
    return shape;
@@ -553,7 +553,7 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
 
 void PShape::draw_fill(gl_context &glc, const PMatrix& transform) const {
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
-      glc.drawTriangles( vertices, indices, texture_, transform * shape_matrix );
+      glc.drawTriangles( vertices, indices, texture_, (transform * shape_matrix).glm_data() );
    }
 }
 

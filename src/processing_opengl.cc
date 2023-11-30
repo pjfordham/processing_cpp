@@ -86,22 +86,24 @@ void gl_context::blendMode(int b ) {
    }
 }
 
+template <typename T>
+static void loadBufferData(GLenum target, GLint bufferId, const std::vector<T> &data, GLenum usage) {
+   glBindBuffer(target, bufferId);
+   glBufferData(target, data.size() * sizeof(T), data.data(), usage);
+   glBindBuffer(target, 0);
+}
+
 void gl_context::drawGeometry( const geometry_t &geometry ) {
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(vertex), geometry.vbuffer.data(), GL_STREAM_DRAW );
 
-   glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
+   glBindBuffer(GL_ARRAY_BUFFER, mindex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
 
    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.ibuffer.size() * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
-
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
+   loadBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id, geometry.ibuffer, GL_STREAM_DRAW);
 
    localFrame.bind();
 
@@ -126,28 +128,28 @@ void gl_context::drawGeometry( const geometry_t &geometry ) {
 }
 
 void gl_context::setScene( const scene_t &scene ) {
-   loadProjectionViewMatrix( (scene.projection_matrix * scene.view_matrix).data() );
+   loadProjectionViewMatrix( scene.projection_matrix * scene.view_matrix );
+   auto id = currentShader.getProgramID();
 
    if (scene.lights) {
       int numPointLights = (int)scene.pointLightColors.size();
-      glUniform3fv(DirectionLightColor,  1, scene.directionLightColor.data() );
-      glUniform3fv(DirectionLightVector, 1, scene.directionLightVector.data() );
-      glUniform3fv(AmbientLight,         1, scene.ambientLight.data());
-      glUniform1iv(NumberOfPointLights,  1, &numPointLights);
-      glUniform3fv(PointLightColor,      numPointLights, scene.pointLightColors[0].data());
-      glUniform3fv(PointLightPosition,   numPointLights, scene.pointLightPoss[0].data());
-      glUniform3fv(PointLightFalloff,    1, scene.pointLightFalloff.data() );
+      DirectionLightColor.set( scene.directionLightColor);
+      DirectionLightVector.set( scene.directionLightVector );
+      AmbientLight.set( scene.ambientLight );
+      NumberOfPointLights.set( numPointLights);
+      PointLightColor.set( scene.pointLightColors );
+      PointLightPosition.set( scene.pointLightPoss );
+      PointLightFalloff.set( scene.pointLightFalloff );
    } else {
-      std::array<float,3> on { 1.0, 1.0, 1.0};
-      std::array<float,3> off { 0.0, 0.0, 0.0};
-      std::array<float,3> unity { 1.0, 0.0, 0.0 };
-
       int numPointLights = 0;
-      glUniform1iv(NumberOfPointLights,  1, &numPointLights);
-      glUniform3fv(DirectionLightColor,  1, off.data() );
-      glUniform3fv(AmbientLight,         1, on.data());
-      glUniform3fv(PointLightColor,      1, off.data());
-      glUniform3fv(PointLightFalloff,    1, unity.data() );
+      glm::vec3 on {1.0, 1.0, 1.0};
+      glm::vec3 off {0.0, 0.0, 0.0};
+      glm::vec3 unity {1.0, 0.0, 0.0};
+
+      NumberOfPointLights.set( 0 );
+      DirectionLightColor.set( off );
+      AmbientLight.set( on );
+      PointLightFalloff.set( unity );
    }
 }
 
@@ -185,12 +187,9 @@ gl_context::gl_context(int width, int height, float aaFactor) :
 
    glGenBuffers(1, &index_buffer_id);
    glGenBuffers(1, &vertex_buffer_id);
-   glGenBuffers(1, &tindex_buffer_id);
+   glGenBuffers(1, &mindex_buffer_id);
 
    shader( defaultShader );
-
-   std::array<int, 16> textures = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-   glUniform1iv(uSampler,16,textures.data());
 
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -208,8 +207,8 @@ gl_context::~gl_context() {
       glDeleteBuffers(1, &index_buffer_id);
    if (vertex_buffer_id)
       glDeleteBuffers(1, &vertex_buffer_id);
-   if (tindex_buffer_id)
-      glDeleteBuffers(1, &tindex_buffer_id);
+   if (mindex_buffer_id)
+      glDeleteBuffers(1, &mindex_buffer_id);
 }
 
 PShader gl_context::loadShader(const char *fragShader) {
@@ -314,19 +313,14 @@ void gl_context::clearDepthBuffer(gl_framebuffer &fb) {
    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void gl_context::loadMoveMatrix( const std::array<PMatrix,16> &transforms, int mCount ) {
-   std::vector<float> movePack;
-   movePack.reserve( 16 * mCount );
-   for (int j = 0 ; j < mCount; j++ ) {
-      for (int i = 0; i < 16; i++) {
-         movePack.push_back(transforms[j].data()[i]);
-      }
-   }
-   glUniformMatrix4fv(Mmatrix, mCount, false, movePack.data() );
+void gl_context::loadMoveMatrix( const std::vector<glm::mat4> &transforms ) {
+   if (transforms.size() > 16 || transforms.size() < 1)
+      abort();
+   Mmatrix.set( transforms );
 }
 
-void gl_context::loadProjectionViewMatrix( const float *data ) {
-   glUniformMatrix4fv(PVmatrix, 1,false, data );
+void gl_context::loadProjectionViewMatrix( const glm::mat4 &data ) {
+   PVmatrix.set( data );
 }
 
 void gl_context::initVAO() {
@@ -335,23 +329,15 @@ void gl_context::initVAO() {
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
 
-   glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,position) );
-   glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,normal) );
-   glVertexAttribPointer( coords_attrib_id, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,coord) );
-   glVertexAttribIPointer( tunit_attrib_id, 1, GL_INT,             sizeof(vertex), (void*)offsetof(vertex,tunit) );
-   glVertexAttribPointer( colors_attrib_id, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,fill) );
+   Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
+   Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
+   Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
+   TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
+   Color.bind_vec4( sizeof(vertex), (void*)offsetof(vertex,fill));
 
-   glEnableVertexAttribArray(vertex_attrib_id);
-   glEnableVertexAttribArray(normal_attrib_id);
-   glEnableVertexAttribArray(coords_attrib_id);
-   glEnableVertexAttribArray(colors_attrib_id);
-   glEnableVertexAttribArray(tunit_attrib_id);
+   glBindBuffer(GL_ARRAY_BUFFER, mindex_buffer_id);
 
-   glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
-
-   glVertexAttribIPointer( tindex_attrib_id, 1, GL_INT, 0, 0 );
-
-   glEnableVertexAttribArray(tindex_attrib_id);
+   MIndex.bind_int( 0,0 );
 
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
    glBindVertexArray(0);
@@ -371,7 +357,7 @@ void gl_context::cleanupVAO() {
 void gl_context::drawTriangles( const std::vector<vertex> &vertices,
                                 const std::vector<unsigned short> &indices,
                                 PImage texture,
-                                const PMatrix &move_matrix ){
+                                const glm::mat4 &move_matrix ){
 
    if (indices.size() == 0) abort();
 
