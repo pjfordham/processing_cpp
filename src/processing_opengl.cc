@@ -197,7 +197,6 @@ gl_context::gl_context(int width, int height, float aaFactor) :
 
    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
 
-   initVAO();
 }
 
 gl_context::~gl_context() {

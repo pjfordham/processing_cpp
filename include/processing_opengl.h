@@ -367,6 +367,7 @@ public:
 
    void shader(PShader shader, int kind = TRIANGLES) {
       if ( currentShader != shader ) {
+         cleanupVAO();
          currentShader = shader;
          vertex_attrib_id = shader.getAttribLocation("position");
          normal_attrib_id = shader.getAttribLocation("normal");
@@ -385,6 +386,7 @@ public:
          PointLightFalloff = shader.getUniformLocation("pointLightFalloff");
          uSampler = shader.getUniformLocation("myTextures");
          shader.useProgram();
+         initVAO();
       }
       shader.set_uniforms();
    }
