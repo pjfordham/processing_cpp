@@ -371,8 +371,8 @@ public:
          currentShader = shader;
          vertex_attrib_id = shader.getAttribLocation("position");
          normal_attrib_id = shader.getAttribLocation("normal");
-         coords_attrib_id = shader.getAttribLocation("coords");
-         colors_attrib_id = shader.getAttribLocation("colors");
+         coords_attrib_id = shader.getAttribLocation("coord");
+         colors_attrib_id = shader.getAttribLocation("color");
          tindex_attrib_id = shader.getAttribLocation("mindex");
          tunit_attrib_id = shader.getAttribLocation("tunit");
          Mmatrix = shader.getUniformLocation("Mmatrix");

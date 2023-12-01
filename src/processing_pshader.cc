@@ -17,9 +17,9 @@ static const char *defaultVertexShader = R"glsl(
       #version 400
       in vec3 position;
       in vec3 normal;
-      in vec2 coords;
+      in vec2 coord;
       in int tunit;
-      in vec4 colors;
+      in vec4 color;
       in int mindex;
       uniform mat4 PVmatrix;
       uniform mat4 Mmatrix[16];
@@ -34,9 +34,9 @@ static const char *defaultVertexShader = R"glsl(
           mat4 M = Mmatrix[mindex];
           vPosition = M * vec4(position,1.0);
           vNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vPosition).xyz;
-          vTexture = coords;
+          vTexture = coord;
           vTindex = tunit;
-          vColor = colors;
+          vColor = color;
 
           gl_Position = PVmatrix * vPosition;
        }
