@@ -3,8 +3,9 @@
 
 #include <memory>
 #include <vector>
-#include "processing_math.h"
-#include "processing_color.h"
+#include <array>
+#include <unordered_map>
+
 #include "processing_pshader.h"
 #include "processing_enum.h"
 #include "processing_opengl_framebuffer.h"
