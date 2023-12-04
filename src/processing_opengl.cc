@@ -96,7 +96,7 @@ void gl_context::drawGeometry( const geometry_t &geometry ) {
    glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
 
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.iCount * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.ibuffer.size() * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
 
    localFrame.bind();
 
@@ -109,13 +109,13 @@ void gl_context::drawGeometry( const geometry_t &geometry ) {
    for ( int i = 0; i < geometry.vCount; ++i ) {
    }
    fmt::print("Triangles: ");
-   for ( int i = 0; i < geometry.iCount; i+=3 ) {
+   for ( int i = 0; i < geometry.ibuffer.size(); i+=3 ) {
       fmt::print("{},{},{} ", geometry.ibuffer[i],geometry.ibuffer[i+1],geometry.ibuffer[i+2]);
    }
    fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
 
-   glDrawElements(GL_TRIANGLES, geometry.iCount, GL_UNSIGNED_SHORT, 0);
+   glDrawElements(GL_TRIANGLES, geometry.ibuffer.size(), GL_UNSIGNED_SHORT, 0);
 
    glBindBuffer(GL_ARRAY_BUFFER, 0);
 

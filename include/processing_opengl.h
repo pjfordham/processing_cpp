@@ -42,8 +42,7 @@ public:
       std::array<vertex, CAPACITY> vbuffer;
       std::array<int, CAPACITY> tbuffer;
       unsigned int vCount = 0;
-      std::array<unsigned short, CAPACITY> ibuffer;
-      unsigned int iCount = 0;
+      std::vector<unsigned short> ibuffer;
       std::array<PMatrix,16> move;
       unsigned int mCount = 0;
    };
@@ -93,10 +92,6 @@ public:
             return false;
          }
 
-         if ((indices.size() + geometry->iCount) > geometry->CAPACITY) {
-            return false;
-         }
-
          if ( geometry->mCount == 0 || !(move_matrix == geometry->move[geometry->mCount - 1]) ) {
             if (geometry->mCount == geometry->move.size()) {
                return false;
@@ -121,11 +116,9 @@ public:
          }
          geometry->vCount += vertices.size();
 
-         int i_offset = geometry->iCount;
          for (auto index : indices) {
-            geometry->ibuffer[i_offset++] = offset + index;
+            geometry->ibuffer.push_back( offset + index );
          }
-         geometry->iCount += indices.size();
 
          return true;
       }
@@ -134,7 +127,7 @@ public:
       void reset() {
          geometry->vCount = 0;
          geometry->mCount = 0;
-         geometry->iCount = 0;
+         geometry->ibuffer.clear();
          currentM = 0;
          unit = INTERNAL_TEXTURE_UNIT + 1;
          textures.clear();
