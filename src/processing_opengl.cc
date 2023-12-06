@@ -87,7 +87,6 @@ void gl_context::blendMode(int b ) {
 }
 
 void gl_context::drawGeometry( const geometry_t &geometry ) {
-   glBindVertexArray(VAO);
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(vertex), geometry.vbuffer.data(), GL_STREAM_DRAW );
@@ -95,8 +94,14 @@ void gl_context::drawGeometry( const geometry_t &geometry ) {
    glBindBuffer(GL_ARRAY_BUFFER, tindex_buffer_id);
    glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
 
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
    glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.ibuffer.size() * sizeof(unsigned short), geometry.ibuffer.data(), GL_STREAM_DRAW);
+
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
 
    localFrame.bind();
 
@@ -115,10 +120,8 @@ void gl_context::drawGeometry( const geometry_t &geometry ) {
    fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
 
+   glBindVertexArray(VAO);
    glDrawElements(GL_TRIANGLES, geometry.ibuffer.size(), GL_UNSIGNED_SHORT, 0);
-
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
    glBindVertexArray(0);
 }
 
@@ -331,7 +334,6 @@ void gl_context::initVAO() {
    glBindVertexArray(VAO);
 
    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   glBufferData(GL_ARRAY_BUFFER, geometry_t::CAPACITY * sizeof(vertex), nullptr, GL_STREAM_DRAW);
 
    glVertexAttribPointer( vertex_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,position) );
    glVertexAttribPointer( normal_attrib_id, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)offsetof(vertex,normal) );
@@ -350,7 +352,20 @@ void gl_context::initVAO() {
    glVertexAttribIPointer( tindex_attrib_id, 1, GL_INT, 0, 0 );
 
    glEnableVertexAttribArray(tindex_attrib_id);
+
+   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
    glBindVertexArray(0);
+}
+
+void gl_context::cleanupVAO() {
+   if (VAO) {
+      glBindVertexArray(VAO);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+      glBindVertexArray(0);
+      glDeleteVertexArrays(1, &VAO);
+      VAO = 0;
+   }
 }
 
 void gl_context::drawTriangles( const std::vector<vertex> &vertices,
@@ -362,13 +377,4 @@ void gl_context::drawTriangles( const std::vector<vertex> &vertices,
 
    while (!batch.enqueue( this, vertices, indices, texture, move_matrix ) )
       flush();
-}
-
-void gl_context::cleanupVAO() {
-   if (VAO) {
-      glBindVertexArray(VAO);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glBindVertexArray(0);
-      glDeleteVertexArrays(1, &VAO);
-   }
 }
