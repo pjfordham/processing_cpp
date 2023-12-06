@@ -49,7 +49,6 @@ public:
 
    struct batch_t {
    private:
-      int width, height;
       int currentM;
    public:
       int unit;
@@ -65,16 +64,13 @@ public:
       };
       std::unordered_map<PImage, int, PImageHash> textures;
 
-      batch_t(int width, int height) :
+      batch_t() :
          geometry( std::make_unique<geometry_t>() ) {
-
-         this->width = width;
-         this->height = height;
       }
 
       batch_t(const batch_t &x) = delete;
 
-      batch_t(batch_t &&x) noexcept : batch_t(x.width,x.height) {
+      batch_t(batch_t &&x) noexcept : batch_t() {
          *this = std::move(x);
       }
 
@@ -156,8 +152,6 @@ public:
 
       batch_t& operator=(batch_t&&x) noexcept {
          std::swap(currentM,x.currentM);
-         std::swap(width,x.width);
-         std::swap(height,x.height);
          std::swap(scene,x.scene);
          std::swap(geometry,x.geometry);
          std::swap(textures,x.textures);
@@ -215,7 +209,7 @@ private:
 public:
    MAKE_GLOBAL(getColorBufferID, localFrame);
 
-   gl_context() : width(0), height(0), batch(0,0) {
+   gl_context() : width(0), height(0), batch() {
       index_buffer_id = 0;
       vertex_buffer_id = 0;
       tindex_buffer_id = 0;

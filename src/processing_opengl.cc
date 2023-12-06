@@ -169,7 +169,7 @@ void gl_context::hint(int type) {
 }
 
 gl_context::gl_context(int width, int height, float aaFactor) :
-   batch( width, height ),
+   batch(),
    defaultShader( loadShader() ) {
    this->aaFactor = aaFactor;
    this->width = width;
