@@ -83,6 +83,7 @@ target_link_libraries(Processing
     ${CURL_LIBRARIES}
     LibXml2::LibXml2
     fmt::fmt
+    box2d
     )
 
 # Define the array of filenames
