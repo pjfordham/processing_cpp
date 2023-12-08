@@ -23,8 +23,9 @@ public:
       glm::vec3 position;
       glm::vec3 normal;
       glm::vec2 coord;
-      int tunit;
       color fill;
+      int tunit;
+      int mindex;
    };
    struct scene_t {
       bool lights = false;;
@@ -39,9 +40,7 @@ public:
    };
    struct geometry_t {
       static const int CAPACITY = 65536;
-      std::array<vertex, CAPACITY> vbuffer;
-      std::array<int, CAPACITY> tbuffer;
-      unsigned int vCount = 0;
+      std::vector<vertex> vbuffer;
       std::vector<unsigned short> ibuffer;
       std::vector<glm::mat4> move;
    };
@@ -52,7 +51,7 @@ public:
    public:
       int unit;
       scene_t scene;
-      std::unique_ptr<geometry_t> geometry;
+      geometry_t geometry;
       struct PImageHash {
          std::size_t operator()(const PImage& obj) const {
             std::size_t hash = std::hash<int>()(obj.width);
@@ -63,8 +62,7 @@ public:
       };
       std::unordered_map<PImage, int, PImageHash> textures;
 
-      batch_t() :
-         geometry( std::make_unique<geometry_t>() ) {
+      batch_t() {
       }
 
       batch_t(const batch_t &x) = delete;
@@ -79,7 +77,7 @@ public:
                     PImage texture,
                     const glm::mat4 &move_matrix ) {
 
-         if (vertices.size() > geometry->CAPACITY) {
+         if (vertices.size() > geometry.CAPACITY) {
             abort();
          }
 
@@ -87,16 +85,16 @@ public:
             return false;
          }
 
-         if ((vertices.size() + geometry->vCount) > geometry->CAPACITY) {
+         if ((vertices.size() + geometry.vbuffer.size()) > geometry.CAPACITY) {
             return false;
          }
 
-         if ( geometry->move.size() == 0 || !(move_matrix == geometry->move[geometry->move.size() - 1]) ) {
-            if (geometry->move.size() == 16) {
+         if ( geometry.move.size() == 0 || !(move_matrix == geometry.move.back()) ) {
+            if (geometry.move.size() == 16) {
                return false;
             }
-            currentM = geometry->move.size();
-            geometry->move.push_back(move_matrix) ;
+            currentM = geometry.move.size();
+            geometry.move.push_back(move_matrix) ;
          }
 
          int tunit;
@@ -106,16 +104,15 @@ public:
             tunit = glc->bindNextTextureUnit( texture );
          }
 
-         int offset = geometry->vCount;
+         int offset = geometry.vbuffer.size();
          for (int i = 0; i < vertices.size(); ++i) {
-            geometry->vbuffer[offset + i] = vertices[i];
-            geometry->vbuffer[offset + i].tunit = tunit;
-            geometry->tbuffer[offset + i] = currentM;
+            geometry.vbuffer.push_back( vertices[i] );
+            geometry.vbuffer.back().tunit = tunit;
+            geometry.vbuffer.back().mindex = currentM;
          }
-         geometry->vCount += vertices.size();
 
          for (auto index : indices) {
-            geometry->ibuffer.push_back( offset + index );
+            geometry.ibuffer.push_back( offset + index );
          }
 
          return true;
@@ -123,21 +120,21 @@ public:
 
       static const int INTERNAL_TEXTURE_UNIT = 0;
       void reset() {
-         geometry->vCount = 0;
-         geometry->ibuffer.clear();
-         geometry->move.clear();
+         geometry.vbuffer.clear();
+         geometry.ibuffer.clear();
+         geometry.move.clear();
          currentM = 0;
          unit = INTERNAL_TEXTURE_UNIT + 1;
          textures.clear();
      }
 
       void draw( gl_context *glc ) {
-         if (geometry->vCount != 0 ) {
-            glc->loadMoveMatrix( geometry->move );
+         if (geometry.vbuffer.size() != 0 ) {
+            glc->loadMoveMatrix( geometry.move );
             glc->setScene( scene );
-            glc->TransformMatrix.set(scene.projection_matrix * scene.view_matrix * geometry->move[0]);
+            glc->TransformMatrix.set(scene.projection_matrix * scene.view_matrix * geometry.move[0]);
 
-            glc->drawGeometry( *geometry );
+            glc->drawGeometry( geometry );
          }
          reset();
       }
@@ -174,7 +171,6 @@ private:
 
    GLuint index_buffer_id;
    GLuint vertex_buffer_id;
-   GLuint mindex_buffer_id;
 
    PShader defaultShader;
    PShader currentShader;
@@ -193,7 +189,6 @@ public:
    gl_context() : width(0), height(0), batch() {
       index_buffer_id = 0;
       vertex_buffer_id = 0;
-      mindex_buffer_id = 0;
       VAO = 0;
    }
 
@@ -222,7 +217,6 @@ public:
 
       std::swap(index_buffer_id,x.index_buffer_id);
       std::swap(vertex_buffer_id,x.vertex_buffer_id);
-      std::swap(mindex_buffer_id,x.mindex_buffer_id);
 
       std::swap(Position,x.Position);
       std::swap(Normal,x.Normal);

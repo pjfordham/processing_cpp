@@ -95,14 +95,7 @@ static void loadBufferData(GLenum target, GLint bufferId, const std::vector<T> &
 
 void gl_context::drawGeometry( const geometry_t &geometry ) {
 
-   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-   glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(vertex), geometry.vbuffer.data(), GL_STREAM_DRAW );
-
-   glBindBuffer(GL_ARRAY_BUFFER, mindex_buffer_id);
-   glBufferData(GL_ARRAY_BUFFER, geometry.vCount * sizeof(int), geometry.tbuffer.data(), GL_STREAM_DRAW);
-
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
+   loadBufferData(GL_ARRAY_BUFFER, vertex_buffer_id, geometry.vbuffer, GL_STREAM_DRAW);
    loadBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id, geometry.ibuffer, GL_STREAM_DRAW);
 
    localFrame.bind();
@@ -187,7 +180,6 @@ gl_context::gl_context(int width, int height, float aaFactor) :
 
    glGenBuffers(1, &index_buffer_id);
    glGenBuffers(1, &vertex_buffer_id);
-   glGenBuffers(1, &mindex_buffer_id);
 
    shader( defaultShader );
 
@@ -207,8 +199,6 @@ gl_context::~gl_context() {
       glDeleteBuffers(1, &index_buffer_id);
    if (vertex_buffer_id)
       glDeleteBuffers(1, &vertex_buffer_id);
-   if (mindex_buffer_id)
-      glDeleteBuffers(1, &mindex_buffer_id);
 }
 
 PShader gl_context::loadShader(const char *fragShader) {
@@ -333,11 +323,8 @@ void gl_context::initVAO() {
    Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
    Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
    TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
+   MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
    Color.bind_vec4( sizeof(vertex), (void*)offsetof(vertex,fill));
-
-   glBindBuffer(GL_ARRAY_BUFFER, mindex_buffer_id);
-
-   MIndex.bind_int( 0,0 );
 
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
    glBindVertexArray(0);

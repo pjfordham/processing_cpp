@@ -254,7 +254,7 @@ public:
          t.x /= texture_.width;
          t.y /= texture_.height;
       }
-      vertices.push_back( { p, n, t, 0, gl_fill_color } );
+      vertices.push_back( { p, n, t, gl_fill_color } );
       extras.push_back( {stroke_color, stroke_weight } );
    }
 
