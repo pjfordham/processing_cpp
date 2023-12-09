@@ -9,6 +9,7 @@ float depth = 400;
 color boxFill;
 
 PShape grid;
+gl_context::VAO x;
 
 int fcount, lastm;
 float frate;
@@ -36,6 +37,7 @@ void setup() {
       }
     }
   }
+  grid.flattenTransforms(PMatrix::Identity());
 }
 
 void draw() {
@@ -50,6 +52,7 @@ void draw() {
   rotateX(frameCount * 0.01);
 
   shape(grid);
+
   popMatrix();
 
   hint(ENABLE_DEPTH_TEST);

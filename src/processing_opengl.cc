@@ -86,39 +86,53 @@ void gl_context::blendMode(int b ) {
    }
 }
 
-template <typename T>
-static void loadBufferData(GLenum target, GLint bufferId, const std::vector<T> &data, GLenum usage) {
-   glBindBuffer(target, bufferId);
-   glBufferData(target, data.size() * sizeof(T), data.data(), usage);
-   glBindBuffer(target, 0);
+void gl_context::drawVAO(std::vector<VAO> &vaos, const glm::mat4 &currentTransform) {
+   for (auto &draw: vaos ) {
+      loadMoveMatrix( draw.transforms );
+      auto scenex = scene;
+      scenex.view_matrix = scenex.view_matrix * currentTransform;
+      //PMatrix(currentTransform).print();
+      setScene( scenex );
+      //  TransformMatrix.set(scene.projection_matrix * scene.view_matrix * draw.transforms[0]);
+
+      for ( int i = 0; i < draw.textures.size() ; ++i ) {
+         PImage &img = draw.textures[i];
+         if (img != PImage::circle()) {
+            if (img.isDirty()) {
+               img.updatePixels();
+            }
+            glActiveTexture(GL_TEXTURE0 + i);
+            auto textureID = img.getTextureID();
+            glBindTexture(GL_TEXTURE_2D, img.getTextureID());
+         }
+      }
+      localFrame.bind();
+
+      draw.draw();
+   }
 }
 
-void gl_context::drawGeometry( const geometry_t &geometry ) {
+void gl_context::compile(std::vector<VAO> &vaos) {
+   for (auto &draw: vaos ) {
+      draw.alloc( Position, Normal, Color, Coord, TUnit, MIndex );
+      draw.loadBuffers();
+   }
+}
 
-   loadBufferData(GL_ARRAY_BUFFER, vertex_buffer_id, geometry.vbuffer, GL_STREAM_DRAW);
-   loadBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id, geometry.ibuffer, GL_STREAM_DRAW);
-
-   localFrame.bind();
 
 #if 0
    fmt::print("### GEOMETRY DUMP START ###\n");
-   for ( int i = 0; i < geometry.vCount; ++i ) {
-      fmt::print("{:3}: {}", i, geometry.vbuffer[i]);
-      fmt::print(" Tr {:3}\n", geometry.tbuffer[i]);
+   fmt::print("Vertices: {}", geometry.vbuffer.size() );
+   for ( int i = 0; i < geometry.vbuffer.size(); ++i ) {
+      fmt::print("{:3}: {}\n", i, geometry.vbuffer[i]);
    }
-   for ( int i = 0; i < geometry.vCount; ++i ) {
-   }
-   fmt::print("Triangles: ");
+   fmt::print("Triangles: {}\n", geometry.ibuffer.size() );
    for ( int i = 0; i < geometry.ibuffer.size(); i+=3 ) {
       fmt::print("{},{},{} ", geometry.ibuffer[i],geometry.ibuffer[i+1],geometry.ibuffer[i+2]);
    }
    fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
 
-   glBindVertexArray(VAO);
-   glDrawElements(GL_TRIANGLES, geometry.ibuffer.size(), GL_UNSIGNED_SHORT, 0);
-   glBindVertexArray(0);
-}
 
 void gl_context::setScene( const scene_t &scene ) {
    loadProjectionViewMatrix( scene.projection_matrix * scene.view_matrix );
@@ -167,7 +181,6 @@ void gl_context::hint(int type) {
 }
 
 gl_context::gl_context(int width, int height, float aaFactor) :
-   batch(),
    defaultShader( loadShader() ) {
    this->aaFactor = aaFactor;
    this->width = width;
@@ -194,7 +207,6 @@ gl_context::gl_context(int width, int height, float aaFactor) :
 }
 
 gl_context::~gl_context() {
-   cleanupVAO();
    if (index_buffer_id)
       glDeleteBuffers(1, &index_buffer_id);
    if (vertex_buffer_id)
@@ -252,7 +264,7 @@ PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
 
 void gl_context::flush() {
    flushes++;
-   batch.draw( this );
+   //batch.draw( this );
    return;
 }
 
@@ -271,25 +283,26 @@ struct fmt::formatter<gl_context> {
 };
 
 int gl_context::bindNextTextureUnit( PImage img ) {
-   DEBUG_METHOD();
-   if (img.isDirty()) {
-      img.updatePixels();
-   }
-   if (batch.textures.count(img) != 1) {
-      glActiveTexture(GL_TEXTURE0 + batch.unit);
-      auto textureID = img.getTextureID();
-      glBindTexture(GL_TEXTURE_2D, img.getTextureID());
-      // This map serves two purposes, first to keep the PImage alive by holding
-      // a copy of it until the batch is flushed and secondly mapping from an already
-      // used texture to its texture unit in case we see it again. This is paritculaly
-      // important for the blankTexture.
-      batch.textures[img] = batch.unit;
-      DEBUG_METHOD_MESSAGE(fmt::format("cache miss unit={} texID={}", batch.textures[img], img.getTextureID()));
-      return batch.unit++;
-   } else {
-      DEBUG_METHOD_MESSAGE(fmt::format("cache hit! unit={} texID={}", batch.textures[img], img.getTextureID()));
-      return batch.textures[img];
-   }
+   // DEBUG_METHOD();
+   // if (img.isDirty()) {
+   //    img.updatePixels();
+   // }
+   // if (batch.textures.count(img) != 1) {
+   //    glActiveTexture(GL_TEXTURE0 + batch.unit);
+   //    auto textureID = img.getTextureID();
+   //    glBindTexture(GL_TEXTURE_2D, img.getTextureID());
+   //    // This map serves two purposes, first to keep the PImage alive by holding
+   //    // a copy of it until the batch is flushed and secondly mapping from an already
+   //    // used texture to its texture unit in case we see it again. This is paritculaly
+   //    // important for the blankTexture.
+   //    batch.textures[img] = batch.unit;
+   //    DEBUG_METHOD_MESSAGE(fmt::format("cache miss unit={} texID={}", batch.textures[img], img.getTextureID()))
+   //    return batch.unit++;
+   // } else {
+   //    DEBUG_METHOD_MESSAGE(fmt::format("cache hit! unit={} texID={}", batch.textures[img], img.getTextureID()))
+   //    return batch.textures[img];
+   // }
+   return 0;
 }
 
 void gl_context::clear(gl_framebuffer &fb, float r, float g, float b, float a) {
@@ -313,41 +326,3 @@ void gl_context::loadProjectionViewMatrix( const glm::mat4 &data ) {
    PVmatrix.set( data );
 }
 
-void gl_context::initVAO() {
-   glGenVertexArrays(1, &VAO);
-   glBindVertexArray(VAO);
-
-   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-
-   Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
-   Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
-   Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
-   TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
-   MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
-   Color.bind_vec4( sizeof(vertex), (void*)offsetof(vertex,fill));
-
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-   glBindVertexArray(0);
-}
-
-void gl_context::cleanupVAO() {
-   if (VAO) {
-      glBindVertexArray(VAO);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-      glBindVertexArray(0);
-      glDeleteVertexArrays(1, &VAO);
-      VAO = 0;
-   }
-}
-
-void gl_context::drawTriangles( const std::vector<vertex> &vertices,
-                                const std::vector<unsigned short> &indices,
-                                PImage texture,
-                                const glm::mat4 &move_matrix ){
-
-   if (indices.size() == 0) abort();
-
-   while (!batch.enqueue( this, vertices, indices, texture, move_matrix ) )
-      flush();
-}

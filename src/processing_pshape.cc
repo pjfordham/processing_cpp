@@ -417,7 +417,7 @@ PShape drawTriangleNormal(int points, const gl_context::vertex *p,
    return shape;
 }
 
-void PShape::draw_normals(gl_context &glc, const PMatrix &transform) const {
+void PShape::draw_normals(std::vector<gl_context::VAO> &glc, const PMatrix &transform) const {
    switch( style ) {
    case TRIANGLES_NOSTROKE:
    case TRIANGLES:
@@ -448,7 +448,7 @@ void PShape::draw_normals(gl_context &glc, const PMatrix &transform) const {
    }
 }
 
-void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
+void PShape::draw_stroke(std::vector<gl_context::VAO> &glc, const PMatrix& transform) const {
    switch( style ) {
    case POINTS:
    {
@@ -551,9 +551,50 @@ void PShape::draw_stroke(gl_context &glc, const PMatrix& transform) const {
    }
 }
 
-void PShape::draw_fill(gl_context &glc, const PMatrix& transform) const {
+void PShape::draw_fill(std::vector<gl_context::VAO> &vaos, const PMatrix& transform) const {
+
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
-      glc.drawTriangles( vertices, indices, texture_, (transform * shape_matrix).glm_data() );
+      auto currentTransform = transform * shape_matrix;
+      if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
+         vaos.emplace_back();
+         vaos.back().transforms.push_back( currentTransform.glm_data() );
+         vaos.back().textures.push_back(texture_);
+      }
+      // At this point vaos has a back and that back has a transform and a texture.
+      // It also has enough capacity for these triangles.
+
+      if ( currentTransform != vaos.back().transforms.back()) {
+         if (vaos.back().transforms.size() == 16) {
+            vaos.emplace_back();
+            vaos.back().textures.push_back(texture_);
+         }
+         vaos.back().transforms.push_back(currentTransform.glm_data());
+      }
+
+      if ( texture_ != vaos.back().textures.back()) {
+         if (vaos.back().textures.size() == 16) {
+            vaos.emplace_back();
+            vaos.back().transforms.push_back( currentTransform.glm_data() );
+         }
+         vaos.back().textures.push_back(texture_);
+      }
+
+      auto &vao = vaos.back();
+      int currentM = vao.transforms.size() - 1;
+      int tunit = vao.textures.size() - 1;
+      int offset = vao.vertices.size();
+      if(texture_ == PImage::circle()) {
+         tunit = -1;
+      }
+      for (int i = 0; i < vertices.size(); ++i) {
+         vao.vertices.push_back( vertices[i] );
+         vao.vertices.back().tunit = tunit;
+         vao.vertices.back().mindex = currentM;
+      }
+
+      for (auto index : indices) {
+         vao.indices.push_back( offset + index );
+      }
    }
 }
 

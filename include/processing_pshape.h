@@ -30,6 +30,7 @@ private:
    std::vector<vInfoExtra> extras;
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
+   std::vector<gl_context::VAO> vaos;
 
    int type = OPEN;
    int mode = IMAGE;
@@ -89,6 +90,7 @@ public:
       std::swap(height, other.height);
       std::swap(tightness, other.tightness);
       std::swap(contour, other.contour);
+      std::swap(vaos, other.vaos);
       return *this;
    }
 
@@ -127,6 +129,7 @@ public:
    }
 
    void clear() {
+      vaos.clear();
       vertices.clear();
       extras.clear();
       indices.clear();
@@ -578,23 +581,49 @@ public:
       }
    }
 
-   void draw(gl_context &glc, const PMatrix& transform) {
+   void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const {
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.draw(glc, transform * shape_matrix);
+            child.flatten(parent_vao, transform * shape_matrix);
          }
       } else {
          if ( fill_color.a != 0 )
-            draw_fill(glc, transform);
-         // draw_normals(glc,transform);
+            draw_fill(parent_vao, transform);
+         // draw_normals(parent_vao, transform);
          if ( stroke_color.a != 0 )
-            draw_stroke(glc, transform);
+            draw_stroke(parent_vao, transform);
+      }
+      return;
+   }
+
+   void flattenTransforms(const PMatrix& transform) {
+      auto current = transform * shape_matrix;
+      if ( style == GROUP ) {
+         for (auto &&child : children) {
+            child.flattenTransforms(current);
+         }
+      } else {
+         for ( auto &x : vertices ) {
+            x.position = current * x.position;
+         }
+         shape_matrix = PMatrix::Identity();
       }
    }
 
-   void draw_normals(gl_context &glc, const PMatrix& transform) const;
-   void draw_stroke(gl_context &glc, const PMatrix& transform) const;
-   void draw_fill(gl_context &gl, const PMatrix& transform) const;
+   void compile(gl_context &glc) {
+      flatten(vaos, PMatrix::Identity() );
+      glc.compile( vaos );
+   }
+
+   void draw(gl_context &glc, const PMatrix& transform) {
+      if ( vaos.size() == 0 )
+         compile(glc);
+      glc.drawVAO( vaos, transform.glm_data() );
+   }
+
+   void draw_normals(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_stroke(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_fill(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
 
    int getChildCount() const {
       return children.size();

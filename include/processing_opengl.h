@@ -14,6 +14,13 @@
 
 #include <fmt/core.h>
 
+template <typename T>
+static void loadBufferData(GLenum target, GLint bufferId, const std::vector<T> &data, GLenum usage) {
+   glBindBuffer(target, bufferId);
+   glBufferData(target, data.size() * sizeof(T), data.data(), usage);
+   glBindBuffer(target, 0);
+}
+
 class gl_context {
 public:
    struct color {
@@ -27,6 +34,58 @@ public:
       int tunit;
       int mindex;
    };
+   struct VAO {
+      GLuint vao = 0;
+      GLuint indexId = 0;
+      GLuint vertexId = 0;
+      void alloc(  PShader::Attribute Position,  PShader::Attribute Normal,  PShader::Attribute Color,
+                   PShader::Attribute Coord,  PShader::Attribute TUnit,  PShader::Attribute MIndex) {
+         glGenVertexArrays(1, &vao);
+         glGenBuffers(1, &indexId);
+         glGenBuffers(1, &vertexId);
+         glBindVertexArray(vao);
+         glBindVertexArray(vao);
+
+         glBindBuffer(GL_ARRAY_BUFFER, vertexId);
+
+         Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
+         Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
+         Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
+         Color.bind_vec4( sizeof(vertex), (void*)offsetof(vertex,fill));
+         TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
+         MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
+
+         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
+         glBindVertexArray(0);
+      }
+      void loadBuffers() {
+         loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
+         loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
+      }
+      void draw() {
+         glBindVertexArray(vao);
+         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
+         glBindVertexArray(0);
+      }
+
+      ~VAO() {
+         if (vao) {
+            glBindVertexArray(vao);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &vao);
+            vao = 0;
+            glDeleteBuffers(1, &indexId);
+            glDeleteBuffers(1, &vertexId);
+         }
+    }
+      std::vector<gl_context::vertex> vertices;
+      std::vector<unsigned short> indices;
+      std::vector<PImage> textures;
+      std::vector<glm::mat4> transforms;
+   };
+
    struct scene_t {
       bool lights = false;;
       glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
@@ -38,134 +97,18 @@ public:
       glm::mat4 projection_matrix;
       glm::mat4 view_matrix;
    };
-   struct geometry_t {
-      static const int CAPACITY = 65536;
-      std::vector<vertex> vbuffer;
-      std::vector<unsigned short> ibuffer;
-      std::vector<glm::mat4> move;
-   };
-
-   struct batch_t {
-   private:
-      int currentM;
-   public:
-      int unit;
-      scene_t scene;
-      geometry_t geometry;
-      struct PImageHash {
-         std::size_t operator()(const PImage& obj) const {
-            std::size_t hash = std::hash<int>()(obj.width);
-            hash ^= std::hash<int>()(obj.height) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-            hash ^= std::hash<void*>()(obj.pixels);
-            return hash;
-         }
-      };
-      std::unordered_map<PImage, int, PImageHash> textures;
-
-      batch_t() {
-      }
-
-      batch_t(const batch_t &x) = delete;
-
-      batch_t(batch_t &&x) noexcept : batch_t() {
-         *this = std::move(x);
-      }
-
-      bool enqueue( gl_context *glc,
-                    const std::vector<vertex> &vertices,
-                    const std::vector<unsigned short> &indices,
-                    PImage texture,
-                    const glm::mat4 &move_matrix ) {
-
-         if (vertices.size() > geometry.CAPACITY) {
-            abort();
-         }
-
-         if (unit == glc->MaxTextureImageUnits ) {
-            return false;
-         }
-
-         if ((vertices.size() + geometry.vbuffer.size()) > geometry.CAPACITY) {
-            return false;
-         }
-
-         if ( geometry.move.size() == 0 || !(move_matrix == geometry.move.back()) ) {
-            if (geometry.move.size() == 16) {
-               return false;
-            }
-            currentM = geometry.move.size();
-            geometry.move.push_back(move_matrix) ;
-         }
-
-         int tunit;
-         if (texture == PImage::circle()) {
-            tunit = -1;
-         } else {
-            tunit = glc->bindNextTextureUnit( texture );
-         }
-
-         int offset = geometry.vbuffer.size();
-         for (int i = 0; i < vertices.size(); ++i) {
-            geometry.vbuffer.push_back( vertices[i] );
-            geometry.vbuffer.back().tunit = tunit;
-            geometry.vbuffer.back().mindex = currentM;
-         }
-
-         for (auto index : indices) {
-            geometry.ibuffer.push_back( offset + index );
-         }
-
-         return true;
-      }
-
-      static const int INTERNAL_TEXTURE_UNIT = 0;
-      void reset() {
-         geometry.vbuffer.clear();
-         geometry.ibuffer.clear();
-         geometry.move.clear();
-         currentM = 0;
-         unit = INTERNAL_TEXTURE_UNIT + 1;
-         textures.clear();
-     }
-
-      void draw( gl_context *glc ) {
-         if (geometry.vbuffer.size() != 0 ) {
-            glc->loadMoveMatrix( geometry.move );
-            glc->setScene( scene );
-            glc->TransformMatrix.set(scene.projection_matrix * scene.view_matrix * geometry.move[0]);
-
-            glc->drawGeometry( geometry );
-         }
-         reset();
-      }
-
-      batch_t& operator=(const batch_t&) = delete;
-
-      batch_t& operator=(batch_t&&x) noexcept {
-         std::swap(currentM,x.currentM);
-         std::swap(scene,x.scene);
-         std::swap(geometry,x.geometry);
-         std::swap(textures,x.textures);
-         std::swap(unit,x.unit);
-
-         return *this;
-      }
-
-      ~batch_t(){
-      }
-
-   };
 
 private:
    int flushes = 0;
 
+   scene_t scene;
    int width;
    int height;
    int window_width;
    int window_height;
    gl_framebuffer localFrame;
 
-   batch_t batch;
+ public:
 
    float aaFactor;
 
@@ -179,17 +122,14 @@ private:
    PShader::Uniform AmbientLight, DirectionLightColor, DirectionLightVector, NumberOfPointLights,
       PointLightColor,PointLightPosition,PointLightFalloff, uSampler, Mmatrix, PVmatrix, TransformMatrix;
 
-   GLuint VAO;
-
    int MaxTextureImageUnits;
 
 public:
    MAKE_GLOBAL(getColorBufferID, localFrame);
 
-   gl_context() : width(0), height(0), batch() {
+   gl_context() : width(0), height(0) {
       index_buffer_id = 0;
       vertex_buffer_id = 0;
-      VAO = 0;
    }
 
    gl_context(int width, int height, float aaFactor);
@@ -203,8 +143,7 @@ public:
    gl_context& operator=(const gl_context&) = delete;
 
    gl_context& operator=(gl_context&&x) noexcept {
-      std::swap(batch,x.batch);
-
+      std::swap(scene,x.scene);
       std::swap(flushes,x.flushes);
       std::swap(localFrame,x.localFrame);
 
@@ -239,8 +178,6 @@ public:
       std::swap(NumberOfPointLights,x.NumberOfPointLights);
       std::swap(PointLightFalloff,x.PointLightFalloff);
 
-      std::swap(VAO,x.VAO);
-
       std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);
 
       return *this;
@@ -252,62 +189,60 @@ public:
 
    float screenX(float x, float y, float z) {
       PVector in = { x, y, z };
-      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).x;
+      return (scene.projection_matrix * (scene.view_matrix * in)).x;
    }
    float screenY(float x, float y, float z) {
       PVector in = { x, y, z };
-      return (batch.scene.projection_matrix * (batch.scene.view_matrix * in)).y;
+      return (scene.projection_matrix * (scene.view_matrix * in)).y;
    }
-
-   void drawGeometry( const geometry_t &geometry );
 
    void setScene( const scene_t &scene );
 
    void setProjectionMatrix( const glm::mat4 &PV ) {
-      batch.scene.projection_matrix = PV;
+      scene.projection_matrix = PV;
    }
 
    void setViewMatrix( const glm::mat4 &PV ) {
-      batch.scene.view_matrix = PMatrix::FlipY().glm_data() * PV ;
+      scene.view_matrix = PMatrix::FlipY().glm_data() * PV ;
    }
 
    void setDirectionLightColor(const glm::vec3 &color ){
-      batch.scene.directionLightColor = color;
+      scene.directionLightColor = color;
    }
 
    void setDirectionLightVector(const glm::vec3 &dir  ){
-      batch.scene.directionLightVector = dir;
+      scene.directionLightVector = dir;
    }
 
    void setAmbientLight(const glm::vec3  &color ){
-      batch.scene.ambientLight = color;
+      scene.ambientLight = color;
    }
 
    void pushPointLightColor( const glm::vec3  &color ) {
-      if (batch.scene.pointLightColors.size() < 8) {
-         batch.scene.pointLightColors.push_back( color );
+      if (scene.pointLightColors.size() < 8) {
+         scene.pointLightColors.push_back( color );
       } else {
          fmt::print("Ignoring >8 point lights\n.");
       }
    }
 
    void pushPointLightPosition( const glm::vec3 &pos  ) {
-      if (batch.scene.pointLightColors.size() < 8) {
-         batch.scene.pointLightPoss.push_back( pos );
+      if (scene.pointLightColors.size() < 8) {
+         scene.pointLightPoss.push_back( pos );
       }
    }
 
    void clearPointLights() {
-      batch.scene.pointLightColors.clear();
-      batch.scene.pointLightPoss.clear();
+      scene.pointLightColors.clear();
+      scene.pointLightPoss.clear();
    }
 
    void setPointLightFalloff( const glm::vec3 &data){
-      batch.scene.pointLightFalloff = data;
+      scene.pointLightFalloff = data;
    }
 
    void setLights( bool data ) {
-      batch.scene.lights = data;
+      scene.lights = data;
    }
 
    ~gl_context();
@@ -344,7 +279,6 @@ public:
 
    void shader(PShader shader, int kind = TRIANGLES) {
       if ( currentShader != shader ) {
-         cleanupVAO();
          currentShader = shader;
          shader.useProgram();
 
@@ -368,8 +302,6 @@ public:
          Coord = shader.get_attribute("coord");
          TUnit = shader.get_attribute("tunit");
          MIndex = shader.get_attribute("mindex");
-
-         initVAO();
       }
       shader.set_uniforms();
    }
@@ -379,6 +311,9 @@ public:
    void loadProjectionViewMatrix( const glm::mat4 &data );
 
    void flush();
+
+   void drawVAO(std::vector<VAO> &vao, const glm::mat4 &currentTransform);
+   void compile(std::vector<VAO> &vao);
 
    void drawTriangles( const std::vector<vertex> &vertices,
                        const std::vector<unsigned short> &indices,
@@ -407,8 +342,6 @@ public:
       shader( defaultShader );
    }
 
-   void initVAO();
-   void cleanupVAO();
 };
 
 gl_context::color flatten_color_mode(color c);
