@@ -55,7 +55,7 @@ void setup() {
 
 void draw() {
   // We can access them individually via the group PShape
-  PShape &rectangle = group.getChild(2);
+  PShape rectangle = group.getChild(2);
   // Shapes can be rotated
   rectangle.rotate(0.1);
 

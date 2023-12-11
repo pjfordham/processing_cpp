@@ -11,8 +11,8 @@ boolean wiggling = false;
 
 void createCube();
 void restoreCube();
-void createFaceWithHole(PShape &face);
-void restoreFaceWithHole(PShape &face);
+void createFaceWithHole(PShape face);
+void restoreFaceWithHole(PShape face);
 
 void setup() {
   size(1024, 768, P3D);
@@ -32,7 +32,7 @@ void draw() {
   if (wiggling) {
     PVector pos;
     for (int i = 0; i < cube.getChildCount(); i++) {
-      PShape &face = cube.getChild(i);
+      PShape face = cube.getChild(i);
       for (int j = 0; j < face.getVertexCount(); j++) {
         pos = face.getVertex(j, pos);
         pos.x += random(-noiseMag/2, +noiseMag/2);
@@ -91,7 +91,7 @@ void createCube() {
   cube.getChild(5).rotateX(radians(-90));
 }
 
-void createFaceWithHole(PShape &face) {
+void createFaceWithHole(PShape face) {
   face.beginShape(POLYGON);
   face.stroke(255, 0, 0);
   face.fill(255);
@@ -121,12 +121,12 @@ void restoreCube() {
   // the same way as the "front" face and they will stay
   // rotated correctly
   for (int i = 0; i < 6; i++) {
-    PShape &face = cube.getChild(i);
+    PShape face = cube.getChild(i);
     restoreFaceWithHole(face);
   }
 }
 
-void restoreFaceWithHole(PShape &face) {
+void restoreFaceWithHole(PShape face) {
   face.setVertex(0, -cubeSize/2, -cubeSize/2, +cubeSize/2);
   face.setVertex(1, +cubeSize/2, -cubeSize/2, +cubeSize/2);
   face.setVertex(2, +cubeSize/2, +cubeSize/2, +cubeSize/2);

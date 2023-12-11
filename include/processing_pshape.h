@@ -6,648 +6,228 @@
 #include "processing_enum.h"
 #include "processing_opengl.h"
 #include "processing_pimage.h"
-#include "processing_pmaterial.h"
+#include "processing_java_compatability.h"
+
+#include <vector>
+#include <string_view>
+#include <memory>
+
+struct PMaterial;
+class PShapeImpl;
 
 class PShape {
+   std::shared_ptr<PShapeImpl> impl;
 public:
+   static void init();
+
+   static void close();
+
+   float width=0, height=0;
    static const PImage getBlankTexture() {
       static PImage blankTexture = createBlankImage();
       return blankTexture;
    }
+
+   PShape();
+   PShape( std::shared_ptr<PShapeImpl> impl_ );
+
+   bool operator==(const PShape &x) const {
+      return impl == x.impl;
+   };
+
+   bool operator!=(const PShape &x) const {
+      return !(x==*this);
+   };
 
    struct vInfoExtra {
       color stroke;
       float weight;
    };
 
-private:
-
-   bool setNormals = false;
-   PVector n = { 0.0, 0.0, 0.0 };
-
-   std::vector<int> contour;
-   std::vector<gl_context::vertex> vertices;
-   std::vector<vInfoExtra> extras;
-   std::vector<PShape> children;
-   std::vector<unsigned short> indices;
-   std::vector<gl_context::VAO> vaos;
-
-   int type = OPEN;
-   int mode = IMAGE;
-   float stroke_weight = 1.0f;
-   int line_end_cap = ROUND;
-   float tightness = 0.0f;
-   std::vector<PVector> curve_vertices;
-   PMatrix shape_matrix = PMatrix::Identity();
-   color stroke_color = BLACK;
-   PImage texture_ = getBlankTexture();
-   gl_context::color gl_fill_color = flatten_color_mode(WHITE);
-   color fill_color = WHITE;
-   color tint_color = WHITE;
-   int style = POLYGON;
-
-public:
-
-   float width = 1.0;
-   float height = 1.0;
-
-   const PMatrix& getShapeMatrix() const {
-      return shape_matrix;
-   }
-
-   PShape(const PShape& other) = default;
-   PShape& operator=(const PShape& other) = default;
-
-   PShape() {
-      vertices.reserve(4);
-      extras.reserve(4);
-      indices.reserve(6);
-   }
-
-   PShape(PShape&& other) noexcept {
-      *this = std::move(other);
-   }
-
-   PShape& operator=(PShape&& other) noexcept {
-      std::swap(texture_, other.texture_);
-      std::swap(n, other.n);
-      std::swap(setNormals, other.setNormals);
-      std::swap(vertices, other.vertices);
-      std::swap(extras, other.extras);
-      std::swap(indices, other.indices);
-      std::swap(children, other.children);
-      std::swap(style, other.style);
-      std::swap(type, other.type);
-      std::swap(mode, other.mode);
-      std::swap(shape_matrix, other.shape_matrix);
-      std::swap(stroke_color, other.stroke_color);
-      std::swap(gl_fill_color, other.gl_fill_color);
-      std::swap(fill_color, other.fill_color);
-      std::swap(tint_color, other.tint_color);
-      std::swap(stroke_weight, other.stroke_weight);
-      std::swap(line_end_cap, other.line_end_cap);
-      std::swap(width, other.width);
-      std::swap(height, other.height);
-      std::swap(tightness, other.tightness);
-      std::swap(contour, other.contour);
-      std::swap(vaos, other.vaos);
-      return *this;
-   }
-
-   ~PShape() {
-   }
-
-   void addChild( const PShape &shape ) {
-      children.push_back( shape );
-   }
-
-   PShape &getChild( int i ) {
-      return children[i];
-   }
-
-   color getFillColor() const {
-      return fill_color;
-   }
-
-   color getTintColor() const {
-      return tint_color;
-   }
-
-   bool isGroup() const {
-      return style == GROUP;
-   }
-
-   void copyStyle( const PShape &other ) {
-      texture_= other.texture_;
-      n = other.n;
-      stroke_color = other.stroke_color;
-      fill_color = other.fill_color;
-      gl_fill_color = other.gl_fill_color;
-      tint_color = other.tint_color;
-      stroke_weight = other.stroke_weight;
-      line_end_cap = other.line_end_cap;
-   }
-
-   void clear() {
-      vaos.clear();
-      vertices.clear();
-      extras.clear();
-      indices.clear();
-      children.clear();
-   }
-
-   void rotate(float angle) {
-      rotateZ(angle);
-   }
-
-   void rotateZ(float angle) {
-      rotate(angle ,PVector{0,0,1});
-   }
-
-   void rotateY(float angle) {
-      rotate(angle, PVector{0,1,0});
-   }
-
-   void rotateX(float angle) {
-      rotate(angle, PVector{1,0,0});
-   }
-
-   void rotate(float angle, PVector axis) {
-      shape_matrix = shape_matrix * RotateMatrix(angle,axis);
-   }
-
-   void translate(float x, float y, float z=0) {
-      shape_matrix = shape_matrix * TranslateMatrix(PVector{x,y,z});
-   }
-
-   void scale(float x, float y,float z = 1) {
-      shape_matrix = shape_matrix * ScaleMatrix(PVector{x,y,z});
-   }
-
-   void scale(float x) {
-      scale(x,x,x);
-   }
-
-   void transform(const PMatrix &transform) {
-      shape_matrix = shape_matrix * transform;
-   }
-
-   void resetMatrix() {
-      shape_matrix = PMatrix::Identity();
-   }
-
-   void beginShape(int style_ = POLYGON) {
-      // Supported types, POLYGON, POINTS, TRIANGLES, TRINALGE_STRIP, GROUP
-      style = style_;
-      clear();
-   }
-
-   void beginContour() {
-      contour.push_back(vertices.size());
-   }
-
-   void endContour() {
-   }
-
-   void textureMode( int mode_ ) {
-      mode = mode_;
-   }
-
-   bool isTextureSet() const {
-      return texture_ != getBlankTexture();
-   }
-
-   void material(PMaterial &mat) {
-      noStroke();
-      textureMode( NORMAL );
-      texture( mat.texture );
-   }
-
-   void texture(PImage img) {
-      texture_ = img;
-   }
-
-   void circleTexture() {
-      mode = NORMAL;
-      texture_ = PImage::circle();
-   }
-
-   void noTexture() {
-      texture_ = getBlankTexture();
-   }
-
-   void noNormal() {
-      setNormals = false;
-   }
-
-   void normal(PVector p) {
-      setNormals = true;
-      n = p;
-   }
-
-   void normal(float x, float y, float z) {
-      setNormals = true;
-      n.x = x;
-      n.y = y;
-      n.z = z;
-   }
-
-   void vertex(float x, float y, float z) {
-      vertex({x, y, z}, {0.0f,0.0f});
-   }
-
-   void vertex(float x, float y) {
-      vertex({x, y, 0}, {0.0f,0.0f});
-   }
-
-   void vertex(PVector p) {
-      vertex(p, {0.0f,0.0f});
-   }
-
-   void vertex(float x, float y, float z, float u, float v) {
-      vertex({x, y, z}, {u, v});
-   }
-
-   void vertex(float x, float y, float u, float v) {
-      vertex({x, y, 0.0f}, { u , v });
-   }
-
-   void vertex(PVector p, PVector2 t) {
-      if (mode == IMAGE) {
-         t.x /= texture_.width;
-         t.y /= texture_.height;
-      }
-      vertices.push_back( { p, n, t, gl_fill_color } );
-      extras.push_back( {stroke_color, stroke_weight } );
-   }
-
-   void index(unsigned short i) {
-      indices.push_back(i);
-   }
-
-   void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
-      bezierVertex( x2, y2, 0, x3, y3, 0, x4, y4, 0);
-   }
-
-   void bezierVertex(PVector v2, PVector v3, PVector v4) {
-      bezierVertex( v2.x, v2.y, v2.z, v3.x, v3.y, v3.z, v4.x, v4.y, v4.z);
-   }
-
-   void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4) {
-      float x1 = vertices.back().position.x;
-      float y1 = vertices.back().position.y;
-      for (float t = 0.01; t <= 1; t += 0.01) {
-         // Compute the Bezier curve points
-         float x = bezierPointCubic( x1, x2, x3, x4, t );
-         float y = bezierPointCubic( y1, y2, y3, y4, t );
-         vertex(x, y);
-      }
-   }
-
-   void bezierVertexQuadratic(PVector control, PVector anchor2) {
-      float anchor1_x = vertices.back().position.x;
-      float anchor1_y = vertices.back().position.y;
-      for (float t = 0.01; t <= 1; t += 0.01) {
-         // Compute the Bezier curve points
-         float x = bezierPointQuadratic( anchor1_x, control.x, anchor2.x, t );
-         float y = bezierPointQuadratic( anchor1_y, control.y, anchor2.y, t );
-         vertex(x, y);
-      }
-   }
-
-   void curveTightness(float alpha) {
-      tightness = alpha;
-   }
-
-   void curveVertex(PVector c) {
-      curve_vertices.push_back(c);
-   }
-
-   void drawCurve() {
-      constexpr int segments = 50;
-      constexpr float dt = (1.0 / segments);
-      constexpr float hdt = 0.5f * dt;
-      constexpr float hdt2x2 = 0.5f * 2.0f * dt * dt;
-      constexpr float hdt3x6 = 0.5f * 6.0f * dt * dt * dt;
-
-      size_t size = curve_vertices.size();
-      float s = tightness;
-
-      for (int i = 0; i < size; i++) {
-         auto p0 = curve_vertices[i];
-         auto p1 = curve_vertices[(i+1)%size];
-         auto p2 = curve_vertices[(i+2)%size];
-         auto p3 = curve_vertices[(i+3)%size];
-
-         float xt3 = ( p0.x * (s-1)   + p1.x * (s+3)  + p2.x * (-3-s)  + p3.x * (1-s));
-         float xt2 = ( p0.x * (1-s)*2 + p1.x * (-5-s) + p2.x * (s+2)*2 + p3.x * (s-1));
-         float xt1 = ( p0.x * (s-1) /*+ p1.x * 0*/    + p2.x * (1-s) /*+ p3.x * 0*/);
-         float xt0 = ( p0.x * 0       + p1.x * 2      + p2.x * 0       + p3.x * 0);
-
-         float yt3 = ( p0.y * (s-1)   + p1.y * (s+3)  + p2.y * (-3-s)  + p3.y * (1-s));
-         float yt2 = ( p0.y * (1-s)*2 + p1.y * (-5-s) + p2.y * (s+2)*2 + p3.y * (s-1));
-         float yt1 = ( p0.y * (s-1) + /*p1.y * 0*/    + p2.y * (1-s) /*+ p3.y * 0*/);
-         float yt0 = ( p0.y * 0       + p1.y * 2      + p2.y * 0       + p3.y * 0);
-
-         float zt3 = ( p0.z * (s-1)   + p1.z * (s+3)  + p2.z * (-3-s)  + p3.z * (1-s));
-         float zt2 = ( p0.z * (1-s)*2 + p1.z * (-5-s) + p2.z * (s+2)*2 + p3.z * (s-1));
-         float zt1 = ( p0.z * (s-1) /*+ p1.z * 0 */   + p2.z * (1-s) /*+ p3.z * 0*/);
-         float zt0 = ( p0.z * 0       + p1.z * 2      + p2.z * 0       + p3.z * 0);
-
-         PVector pos = p1; // {xt0, yt0, zt0};
-         PVector vel = PVector{xt1, yt1, zt1} * hdt;
-         PVector acc = PVector{xt2, yt2, zt2} * hdt2x2;
-         PVector jer = PVector{xt3, yt3, zt3} * hdt3x6;
-
-         // Just draw the control points
-         // vertex(p1);
-
-         for (int i = 0; i < segments - 1; ++i) {
-            // Use the full quadtraic queation
-            float t1 = i * dt;
-            float t2 = t1 * t1;
-            float t3 = t2 * t1;
-            vertex( 0.5f * PVector{
-                  xt3 * t3 + xt2 * t2 + xt1 * t1 + xt0,
-                  yt3 * t3 + yt2 * t2 + yt1 * t1 + yt0,
-                  zt3 * t3 + zt2 * t2 + zt1 * t1 + zt0
-               });
-            // Use add differential in discrete steps
-            // vertex(pos);
-            // pos += vel;
-            // vel += acc;
-            // acc += jer;
-         }
-      }
-   }
-
-   void curveVertex(float x, float y, float z) {
-      curveVertex({x,y,z});
-   }
-
-   void curveVertex(float x, float y) {
-      curveVertex(x,y,0);
-   }
+   const PMatrix& getShapeMatrix();
+
+   void addChild( const PShape shape );
+
+   PShape getChild( int i );
+
+   color getFillColor() const;
+
+   color getTintColor() const;
+
+   bool isGroup() const;
+
+   void copyStyle( const PShape other );
+
+   void clear();
+
+   void rotate(float angle);
+
+   void rotateZ(float angle);
+
+   void rotateY(float angle);
+
+   void rotateX(float angle);
+
+   void rotate(float angle, PVector axis);
+
+   void translate(float x, float y, float z=0);
+
+   void scale(float x, float y,float z = 1);
+
+   void scale(float x);
+
+   void transform(const PMatrix &transform);
+
+   void resetMatrix();
+
+   void beginShape(int style_ = POLYGON);
+
+   void beginContour();
+
+   void endContour();
+
+   void textureMode( int mode_ );
+
+   bool isTextureSet() const;
+
+   void material(PMaterial &mat);
+
+   void texture(PImage img);
+
+   void circleTexture();
+
+   void noTexture();
+
+   void noNormal();
+
+   void normal(PVector p);
+
+   void normal(float x, float y, float z);
+
+   void vertex(float x, float y, float z);
+
+   void vertex(float x, float y);
+
+   void vertex(PVector p);
+
+   void vertex(float x, float y, float z, float u, float v);
+
+   void vertex(float x, float y, float u, float v);
+
+   void vertex(PVector p, PVector2 t);
+
+   void index(unsigned short i);
+
+   void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4);
+
+   void bezierVertex(PVector v2, PVector v3, PVector v4);
+
+   void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4);
+
+   void bezierVertexQuadratic(PVector control, PVector anchor2);
+
+   void curveTightness(float alpha);
+
+   void curveVertex(PVector c);
+
+   void drawCurve();
+
+   void curveVertex(float x, float y, float z);
+   void curveVertex(float x, float y);
 
    bool isClockwise() const;
 
-   void endShape(int type_ = OPEN) {
-      // OPEN or CLOSE
-      if (curve_vertices.size() > 0) {
-         drawCurve();
-         curve_vertices.clear();
-      }
+   void endShape(int type_ = OPEN);
 
-      if (style == POLYGON || style == LINES)
-         type = type_;
-      else
-         type = CLOSE;
-      populateIndices();
-      if (!setNormals) {
-         // Iterate over all triangles
-         for (int i = 0; i < indices.size()/3; i++) {
-            // Get the vertices of the current triangle
-            PVector v1 = vertices[indices[i * 3]].position;
-            PVector v2 = vertices[indices[i * 3 + 1]].position;
-            PVector v3 = vertices[indices[i * 3 + 2]].position;
-
-            // Calculate the normal vector of the current triangle
-            PVector edge1 = v2 - v1;
-            PVector edge2 = v3 - v1;
-            glm::vec3 normal = (edge1.cross(edge2)).normalize();
-
-            // Add the normal to the normals list for each vertex of the triangle
-            vertices[indices[i * 3]].normal = vertices[indices[i * 3]].normal + normal;
-            vertices[indices[i * 3 + 1]].normal = vertices[indices[i * 3 + 1]].normal + normal;
-            vertices[indices[i * 3 + 2]].normal = vertices[indices[i * 3 + 2]].normal + normal;
-         }
-      }
-   }
-
-   unsigned short getCurrentIndex() {
-      return vertices.size();
-   }
+   unsigned short getCurrentIndex();
 
    void populateIndices();
 
-   void populateIndices( std::vector<unsigned short> &&i ) {
-      indices = i;
-   }
+   void populateIndices( std::vector<unsigned short> &&i );
 
-   void addChild(PShape &&shape) {
-      children.emplace_back( std::move(shape) );
-   }
+   void fill(float r,float g,  float b, float a);
 
-   void fill(float r,float g,  float b, float a) {
-      fill_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( fill_color );
-    }
+   void fill(float r,float g, float b);
 
-   void fill(float r,float g, float b) {
-      fill(r,g,b,color::scaleA);
-   }
+   void fill(float r,float a);
 
-   void fill(float r,float a) {
-      if (color::mode == HSB) {
-         fill(0,0,r,a);
-      } else {
-         fill(r,r,r,a);
-      }
-   }
+   void fill(float r);
 
-   void fill(float r) {
-      if (color::mode == HSB) {
-         fill(0,0,r,color::scaleA);
-      } else {
-         fill(r,r,r,color::scaleA);
-      }
-   }
+   void fill(class color color);
 
-   void fill(class color color) {
-      fill(color.r,color.g,color.b,color.a);
-   }
+   void fill(class color color, float a);
 
-   void fill(class color color, float a) {
-      fill(color.r,color.g,color.b,a);
-   }
+   void stroke(float r,float g,  float b, float a);
 
-   void stroke(float r,float g,  float b, float a) {
-      stroke_color = {r,g,b,a};
-   }
+   void stroke(float r,float g, float b);
 
-   void stroke(float r,float g, float b) {
-      stroke(r,g,b,color::scaleA);
-   }
+   void stroke(float r,float a);
 
-   void stroke(float r,float a) {
-      if (color::mode == HSB) {
-         stroke(0,0,r,a);
-      } else {
-         stroke(r,r,r,a);
-      }
-   }
+   void stroke(float r);
 
-   void stroke(float r) {
-      if (color::mode == HSB) {
-         stroke(r,0,0,color::scaleA);
-      } else {
-         stroke(r,r,r,color::scaleA);
-      }
-   }
+   void stroke(color c);
 
-   void stroke(color c) {
-      stroke(c.r,c.g,c.b,c.a);
-   }
+   void strokeWeight(float x);
 
-   void strokeWeight(float x) {
-      stroke_weight = x;
-   }
+   void noStroke();
 
-   void noStroke() {
-      stroke_color = {0,0,0,0};
-   }
+   void noFill();
 
-   void noFill() {
-      fill_color = {0,0,0,0};
-      gl_fill_color = flatten_color_mode( fill_color );
-   }
+   bool isStroked() const;
 
-   bool isStroked() const {
-      return stroke_color.a != 0.0;
-   }
+   bool isFilled() const;
 
-   bool isFilled() const {
-      return fill_color.a != 0;
-   }
+   void tint(float r,float g,  float b, float a);
 
-   void tint(float r,float g,  float b, float a) {
-      tint_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( tint_color );
-   }
+   void tint(float r,float g, float b);
 
-   void tint(float r,float g, float b) {
-      tint(r,g,b,color::scaleA);
-   }
+   void tint(float r,float a);
 
-   void tint(float r,float a) {
-      if (color::mode == HSB) {
-         tint(0,0,r,a);
-      } else {
-         tint(r,r,r,a);
-      }
-   }
+   void tint(float r);
 
-   void tint(float r) {
-      if (color::mode == HSB) {
-         tint(r,0,0,color::scaleA);
-      } else {
-         tint(r,r,r,color::scaleA);
-      }
-   }
+   void tint(color c);
 
-   void tint(color c) {
-      tint(c.r,c.g,c.b,c.a);
-   }
+   void noTint();
 
-   void noTint() {
-      tint_color = WHITE;
-      gl_fill_color = flatten_color_mode( tint_color );
-   }
+   void strokeCap(int cap);
 
-   void strokeCap(int cap) {
-      line_end_cap = cap;
-   }
+   void setStroke(bool c);
 
-   void setStroke(bool c) {
-      setStroke( color( 0.0f, 0.0f, 0.0f, 0.0f ) );
-   }
+   void setStroke(color c);
 
-   void setStroke(color c) {
-      for ( auto&&v : extras ) {
-         v.stroke = c;
-      }
-   }
+   void setStrokeWeight(float w);
 
-   void setStrokeWeight(float w) {
-      for ( auto&&v : extras ) {
-         v.weight = w;
-      }
-   }
+   void setTexture( PImage img );
 
-   void setTexture( PImage img ) {
-      texture( img );
-   }
+   void setFill(bool z);
 
-   void setFill(bool z) {
-      if (!z )
-         for ( auto&&v : vertices ) {
-            v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
-         }
-   }
+   void setFill(color c);
 
-   void setFill(color c) {
-      fill_color = c;
-      gl_context::color clr = flatten_color_mode(fill_color);
-         for ( auto&&v : vertices ) {
-            v.fill = clr;
-      }
-   }
+   void setTint(color c);
 
-   void setTint(color c) {
-      tint_color = c;
-      gl_context::color clr = flatten_color_mode(tint_color);
-         for ( auto&&v : vertices ) {
-            v.fill = clr;
-      }
-   }
+   void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
 
-   void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const {
-      if ( style == GROUP ) {
-         for (auto &&child : children) {
-            child.flatten(parent_vao, transform * shape_matrix);
-         }
-      } else {
-         if ( fill_color.a != 0 )
-            draw_fill(parent_vao, transform);
-         // draw_normals(parent_vao, transform);
-         if ( stroke_color.a != 0 )
-            draw_stroke(parent_vao, transform);
-      }
-      return;
-   }
+   void flattenTransforms(const PMatrix& transform);
 
-   void flattenTransforms(const PMatrix& transform) {
-      auto current = transform * shape_matrix;
-      if ( style == GROUP ) {
-         for (auto &&child : children) {
-            child.flattenTransforms(current);
-         }
-      } else {
-         for ( auto &x : vertices ) {
-            x.position = current * x.position;
-         }
-         shape_matrix = PMatrix::Identity();
-      }
-   }
-
-   void compile(gl_context &glc) {
-      flatten(vaos, PMatrix::Identity() );
-      glc.compile( vaos );
-   }
-
-   void draw(gl_context &glc, const PMatrix& transform) {
-      if ( vaos.size() == 0 )
-         compile(glc);
-      glc.drawVAO( vaos, transform.glm_data() );
-   }
+   void draw(gl_context &glc, const PMatrix& transform);
 
    void draw_normals(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+
    void draw_stroke(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+
    void draw_fill(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
 
-   int getChildCount() const {
-      return children.size();
-   }
+   int getChildCount() const;
 
-   int getVertexCount() const {
-      return vertices.size();
-   }
+   int getVertexCount() const;
 
-   PVector getVertex(int i) const {
-      return vertices[i].position;
-   }
+   PVector getVertex(int i) const;
 
-   void setVertex(int i, PVector v) {
-      vertices[i].position = v;
-   }
+   void setVertex(int i, PVector v);
 
-   void setVertex(int i, float x, float y , float z = 0) {
-      vertices[i].position = {x,y,z};
-   }
+   void setVertex(int i, float x, float y , float z = 0);
 
-   PVector getVertex(int i, PVector &x) const {
-      return x = getVertex(i);
-   }
+   PVector getVertex(int i, PVector &x) const;
 };
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);

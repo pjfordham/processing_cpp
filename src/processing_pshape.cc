@@ -5,7 +5,717 @@
 #include <tesselator_cpp.h>
 #include <unordered_map>
 
-bool PShape::isClockwise() const {
+#include "processing_math.h"
+#include "processing_color.h"
+#include "processing_enum.h"
+#include "processing_opengl.h"
+#include "processing_pimage.h"
+#include "processing_pmaterial.h"
+
+#include "processing_debug.h"
+
+#undef DEBUG_METHOD
+#define DEBUG_METHOD() do {} while (false)
+
+template <> struct fmt::formatter<PShapeImpl>;
+
+class PShapeImpl {
+   friend struct fmt::formatter<PShapeImpl>;
+public:
+   static const PImage getBlankTexture() {
+      static PImage blankTexture = createBlankImage();
+      return blankTexture;
+   }
+
+   struct vInfoExtra {
+      color stroke;
+      float weight;
+   };
+
+private:
+
+   bool setNormals = false;
+   PVector n = { 0.0, 0.0, 0.0 };
+
+   std::vector<int> contour;
+   std::vector<gl_context::vertex> vertices;
+   std::vector<vInfoExtra> extras;
+   std::vector<PShape> children;
+   std::vector<unsigned short> indices;
+   std::vector<gl_context::VAO> vaos;
+
+   int type = OPEN;
+   int mode = IMAGE;
+   float stroke_weight = 1.0f;
+   int line_end_cap = ROUND;
+   float tightness = 0.0f;
+   std::vector<PVector> curve_vertices;
+   PMatrix shape_matrix = PMatrix::Identity();
+   color stroke_color = BLACK;
+   PImage texture_ = getBlankTexture();
+   gl_context::color gl_fill_color = flatten_color_mode(WHITE);
+   color fill_color = WHITE;
+   color tint_color = WHITE;
+   int style = POLYGON;
+
+public:
+
+   float width = 1.0;
+   float height = 1.0;
+
+   const PMatrix& getShapeMatrix() const {
+      DEBUG_METHOD();
+      return shape_matrix;
+   }
+
+   PShapeImpl() {
+      DEBUG_METHOD();
+      vertices.reserve(4);
+      extras.reserve(4);
+      indices.reserve(6);
+   }
+
+   ~PShapeImpl() {
+      DEBUG_METHOD();
+   }
+
+   void addChild( const PShape shape ) {
+      DEBUG_METHOD();
+      children.push_back( shape );
+   }
+
+   PShape getChild( int i ) {
+      DEBUG_METHOD();
+      return children[i];
+   }
+
+   color getFillColor() const {
+      DEBUG_METHOD();
+      return fill_color;
+   }
+
+   color getTintColor() const {
+      DEBUG_METHOD();
+      return tint_color;
+   }
+
+   bool isGroup() const {
+      DEBUG_METHOD();
+      return style == GROUP;
+   }
+
+   void copyStyle( const PShapeImpl &other ) {
+      DEBUG_METHOD();
+      texture_= other.texture_;
+      n = other.n;
+      stroke_color = other.stroke_color;
+      fill_color = other.fill_color;
+      gl_fill_color = other.gl_fill_color;
+      tint_color = other.tint_color;
+      stroke_weight = other.stroke_weight;
+      line_end_cap = other.line_end_cap;
+   }
+
+   void clear() {
+      DEBUG_METHOD();
+      vaos.clear();
+      vertices.clear();
+      extras.clear();
+      indices.clear();
+      children.clear();
+   }
+
+   void rotate(float angle) {
+      DEBUG_METHOD();
+      rotateZ(angle);
+   }
+
+   void rotateZ(float angle) {
+      DEBUG_METHOD();
+      rotate(angle ,PVector{0,0,1});
+   }
+
+   void rotateY(float angle) {
+      DEBUG_METHOD();
+      rotate(angle, PVector{0,1,0});
+   }
+
+   void rotateX(float angle) {
+      DEBUG_METHOD();
+      rotate(angle, PVector{1,0,0});
+   }
+
+   void rotate(float angle, PVector axis) {
+      DEBUG_METHOD();
+      shape_matrix = shape_matrix * RotateMatrix(angle,axis);
+   }
+
+   void translate(float x, float y, float z=0) {
+      DEBUG_METHOD();
+      shape_matrix = shape_matrix * TranslateMatrix(PVector{x,y,z});
+   }
+
+   void scale(float x, float y,float z = 1) {
+      DEBUG_METHOD();
+      shape_matrix = shape_matrix * ScaleMatrix(PVector{x,y,z});
+   }
+
+   void scale(float x) {
+      DEBUG_METHOD();
+      scale(x,x,x);
+   }
+
+   void transform(const PMatrix &transform) {
+      DEBUG_METHOD();
+      shape_matrix = shape_matrix * transform;
+   }
+
+   void resetMatrix() {
+      DEBUG_METHOD();
+      shape_matrix = PMatrix::Identity();
+   }
+
+   void beginShape(int style_ = POLYGON) {
+      DEBUG_METHOD();
+      // Supported types, POLYGON, POINTS, TRIANGLES, TRINALGE_STRIP, GROUP
+      style = style_;
+      clear();
+   }
+
+   void beginContour() {
+      DEBUG_METHOD();
+      contour.push_back(vertices.size());
+   }
+
+   void endContour() {
+      DEBUG_METHOD();
+   }
+
+   void textureMode( int mode_ ) {
+      DEBUG_METHOD();
+      mode = mode_;
+   }
+
+   bool isTextureSet() const {
+      DEBUG_METHOD();
+      return texture_ != getBlankTexture();
+   }
+
+   void material(PMaterial &mat) {
+      DEBUG_METHOD();
+      noStroke();
+      textureMode( NORMAL );
+      texture( mat.texture );
+   }
+
+   void texture(PImage img) {
+      DEBUG_METHOD();
+      texture_ = img;
+   }
+
+   void circleTexture() {
+      DEBUG_METHOD();
+      mode = NORMAL;
+      texture_ = PImage::circle();
+   }
+
+   void noTexture() {
+      DEBUG_METHOD();
+      texture_ = getBlankTexture();
+   }
+
+   void noNormal() {
+      DEBUG_METHOD();
+      setNormals = false;
+   }
+
+   void normal(PVector p) {
+      DEBUG_METHOD();
+      setNormals = true;
+      n = p;
+   }
+
+   void normal(float x, float y, float z) {
+      DEBUG_METHOD();
+      setNormals = true;
+      n.x = x;
+      n.y = y;
+      n.z = z;
+   }
+
+   void vertex(float x, float y, float z) {
+      DEBUG_METHOD();
+      vertex({x, y, z}, {0.0f,0.0f});
+   }
+
+   void vertex(float x, float y) {
+      DEBUG_METHOD();
+      vertex({x, y, 0}, {0.0f,0.0f});
+   }
+
+   void vertex(PVector p) {
+      DEBUG_METHOD();
+      vertex(p, {0.0f,0.0f});
+   }
+
+   void vertex(float x, float y, float z, float u, float v) {
+      DEBUG_METHOD();
+      vertex({x, y, z}, {u, v});
+   }
+
+   void vertex(float x, float y, float u, float v) {
+      DEBUG_METHOD();
+      vertex({x, y, 0.0f}, { u , v });
+   }
+
+   void vertex(PVector p, PVector2 t) {
+      DEBUG_METHOD();
+      if (mode == IMAGE) {
+         t.x /= texture_.width;
+         t.y /= texture_.height;
+      }
+      vertices.push_back( { p, n, t, gl_fill_color } );
+      extras.push_back( {stroke_color, stroke_weight } );
+   }
+
+   void index(unsigned short i) {
+      DEBUG_METHOD();
+      indices.push_back(i);
+   }
+
+   void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
+      DEBUG_METHOD();
+      bezierVertex( x2, y2, 0, x3, y3, 0, x4, y4, 0);
+   }
+
+   void bezierVertex(PVector v2, PVector v3, PVector v4) {
+      DEBUG_METHOD();
+      bezierVertex( v2.x, v2.y, v2.z, v3.x, v3.y, v3.z, v4.x, v4.y, v4.z);
+   }
+
+   void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4) {
+      DEBUG_METHOD();
+      float x1 = vertices.back().position.x;
+      float y1 = vertices.back().position.y;
+      for (float t = 0.01; t <= 1; t += 0.01) {
+         // Compute the Bezier curve points
+         float x = bezierPointCubic( x1, x2, x3, x4, t );
+         float y = bezierPointCubic( y1, y2, y3, y4, t );
+         vertex(x, y);
+      }
+   }
+
+   void bezierVertexQuadratic(PVector control, PVector anchor2) {
+      DEBUG_METHOD();
+      float anchor1_x = vertices.back().position.x;
+      float anchor1_y = vertices.back().position.y;
+      for (float t = 0.01; t <= 1; t += 0.01) {
+         // Compute the Bezier curve points
+         float x = bezierPointQuadratic( anchor1_x, control.x, anchor2.x, t );
+         float y = bezierPointQuadratic( anchor1_y, control.y, anchor2.y, t );
+         vertex(x, y);
+      }
+   }
+
+   void curveTightness(float alpha) {
+      DEBUG_METHOD();
+      tightness = alpha;
+   }
+
+   void curveVertex(PVector c) {
+      DEBUG_METHOD();
+      curve_vertices.push_back(c);
+   }
+
+   void drawCurve() {
+      DEBUG_METHOD();
+      constexpr int segments = 50;
+      constexpr float dt = (1.0 / segments);
+      constexpr float hdt = 0.5f * dt;
+      constexpr float hdt2x2 = 0.5f * 2.0f * dt * dt;
+      constexpr float hdt3x6 = 0.5f * 6.0f * dt * dt * dt;
+
+      size_t size = curve_vertices.size();
+      float s = tightness;
+
+      for (int i = 0; i < size; i++) {
+         auto p0 = curve_vertices[i];
+         auto p1 = curve_vertices[(i+1)%size];
+         auto p2 = curve_vertices[(i+2)%size];
+         auto p3 = curve_vertices[(i+3)%size];
+
+         float xt3 = ( p0.x * (s-1)   + p1.x * (s+3)  + p2.x * (-3-s)  + p3.x * (1-s));
+         float xt2 = ( p0.x * (1-s)*2 + p1.x * (-5-s) + p2.x * (s+2)*2 + p3.x * (s-1));
+         float xt1 = ( p0.x * (s-1) /*+ p1.x * 0*/    + p2.x * (1-s) /*+ p3.x * 0*/);
+         float xt0 = ( p0.x * 0       + p1.x * 2      + p2.x * 0       + p3.x * 0);
+
+         float yt3 = ( p0.y * (s-1)   + p1.y * (s+3)  + p2.y * (-3-s)  + p3.y * (1-s));
+         float yt2 = ( p0.y * (1-s)*2 + p1.y * (-5-s) + p2.y * (s+2)*2 + p3.y * (s-1));
+         float yt1 = ( p0.y * (s-1) + /*p1.y * 0*/    + p2.y * (1-s) /*+ p3.y * 0*/);
+         float yt0 = ( p0.y * 0       + p1.y * 2      + p2.y * 0       + p3.y * 0);
+
+         float zt3 = ( p0.z * (s-1)   + p1.z * (s+3)  + p2.z * (-3-s)  + p3.z * (1-s));
+         float zt2 = ( p0.z * (1-s)*2 + p1.z * (-5-s) + p2.z * (s+2)*2 + p3.z * (s-1));
+         float zt1 = ( p0.z * (s-1) /*+ p1.z * 0 */   + p2.z * (1-s) /*+ p3.z * 0*/);
+         float zt0 = ( p0.z * 0       + p1.z * 2      + p2.z * 0       + p3.z * 0);
+
+         PVector pos = p1; // {xt0, yt0, zt0};
+         PVector vel = PVector{xt1, yt1, zt1} * hdt;
+         PVector acc = PVector{xt2, yt2, zt2} * hdt2x2;
+         PVector jer = PVector{xt3, yt3, zt3} * hdt3x6;
+
+         // Just draw the control points
+         // vertex(p1);
+
+         for (int i = 0; i < segments - 1; ++i) {
+            // Use the full quadtraic queation
+            float t1 = i * dt;
+            float t2 = t1 * t1;
+            float t3 = t2 * t1;
+            vertex( 0.5f * PVector{
+                  xt3 * t3 + xt2 * t2 + xt1 * t1 + xt0,
+                  yt3 * t3 + yt2 * t2 + yt1 * t1 + yt0,
+                  zt3 * t3 + zt2 * t2 + zt1 * t1 + zt0
+               });
+            // Use add differential in discrete steps
+            // vertex(pos);
+            // pos += vel;
+            // vel += acc;
+            // acc += jer;
+         }
+      }
+   }
+
+   void curveVertex(float x, float y, float z) {
+      DEBUG_METHOD();
+      curveVertex({x,y,z});
+   }
+
+   void curveVertex(float x, float y) {
+      DEBUG_METHOD();
+      curveVertex(x,y,0);
+   }
+
+   bool isClockwise() const;
+
+   void endShape(int type_ = OPEN) {
+      const char *typeToTxt(int type);
+      DEBUG_METHOD();
+      // OPEN or CLOSE
+      if (curve_vertices.size() > 0) {
+         drawCurve();
+         curve_vertices.clear();
+      }
+
+      if (style == POLYGON || style == LINES)
+         type = type_;
+      else
+         type = CLOSE;
+      populateIndices();
+      if (!setNormals) {
+         // Iterate over all triangles
+         for (int i = 0; i < indices.size()/3; i++) {
+            // Get the vertices of the current triangle
+            PVector v1 = vertices[indices[i * 3]].position;
+            PVector v2 = vertices[indices[i * 3 + 1]].position;
+            PVector v3 = vertices[indices[i * 3 + 2]].position;
+
+            // Calculate the normal vector of the current triangle
+            PVector edge1 = v2 - v1;
+            PVector edge2 = v3 - v1;
+            glm::vec3 normal = (edge1.cross(edge2)).normalize();
+
+            // Add the normal to the normals list for each vertex of the triangle
+            vertices[indices[i * 3]].normal = vertices[indices[i * 3]].normal + normal;
+            vertices[indices[i * 3 + 1]].normal = vertices[indices[i * 3 + 1]].normal + normal;
+            vertices[indices[i * 3 + 2]].normal = vertices[indices[i * 3 + 2]].normal + normal;
+         }
+      }
+   }
+
+   unsigned short getCurrentIndex() {
+      DEBUG_METHOD();
+      return vertices.size();
+   }
+
+   void populateIndices();
+
+   void populateIndices( std::vector<unsigned short> &&i ) {
+      DEBUG_METHOD();
+      indices = i;
+   }
+
+   void fill(float r,float g,  float b, float a) {
+      DEBUG_METHOD();
+      fill_color = {r,g,b,a};
+      gl_fill_color = flatten_color_mode( fill_color );
+   }
+
+   void fill(float r,float g, float b) {
+      DEBUG_METHOD();
+      fill(r,g,b,color::scaleA);
+   }
+
+   void fill(float r,float a) {
+      DEBUG_METHOD();
+      if (color::mode == HSB) {
+         fill(0,0,r,a);
+      } else {
+         fill(r,r,r,a);
+      }
+   }
+
+   void fill(float r) {
+      DEBUG_METHOD();
+      if (color::mode == HSB) {
+         fill(0,0,r,color::scaleA);
+      } else {
+         fill(r,r,r,color::scaleA);
+      }
+   }
+
+   void fill(class color color) {
+      DEBUG_METHOD();
+      fill(color.r,color.g,color.b,color.a);
+   }
+
+   void fill(class color color, float a) {
+      DEBUG_METHOD();
+      fill(color.r,color.g,color.b,a);
+   }
+
+   void stroke(float r,float g,  float b, float a) {
+      DEBUG_METHOD();
+      stroke_color = {r,g,b,a};
+   }
+
+   void stroke(float r,float g, float b) {
+      DEBUG_METHOD();
+      stroke(r,g,b,color::scaleA);
+   }
+
+   void stroke(float r,float a) {
+      DEBUG_METHOD();
+      if (color::mode == HSB) {
+         stroke(0,0,r,a);
+      } else {
+         stroke(r,r,r,a);
+      }
+   }
+
+   void stroke(float r) {
+      DEBUG_METHOD();
+      if (color::mode == HSB) {
+         stroke(r,0,0,color::scaleA);
+      } else {
+         stroke(r,r,r,color::scaleA);
+      }
+   }
+
+   void stroke(color c) {
+      DEBUG_METHOD();
+      stroke(c.r,c.g,c.b,c.a);
+   }
+
+   void strokeWeight(float x) {
+      DEBUG_METHOD();
+      stroke_weight = x;
+   }
+
+   void noStroke() {
+      DEBUG_METHOD();
+      stroke_color = {0,0,0,0};
+   }
+
+   void noFill() {
+      DEBUG_METHOD();
+      fill_color = {0,0,0,0};
+      gl_fill_color = flatten_color_mode( fill_color );
+   }
+
+   bool isStroked() const {
+      DEBUG_METHOD();
+      return stroke_color.a != 0.0;
+   }
+
+   bool isFilled() const {
+      DEBUG_METHOD();
+      return fill_color.a != 0;
+   }
+
+   void tint(float r,float g,  float b, float a) {
+      DEBUG_METHOD();
+      tint_color = {r,g,b,a};
+      gl_fill_color = flatten_color_mode( tint_color );
+   }
+
+   void tint(float r,float g, float b) {
+      DEBUG_METHOD();
+      tint(r,g,b,color::scaleA);
+   }
+
+   void tint(float r,float a) {
+      DEBUG_METHOD();
+      if (color::mode == HSB) {
+         tint(0,0,r,a);
+      } else {
+         tint(r,r,r,a);
+      }
+   }
+
+   void tint(float r) {
+      DEBUG_METHOD();
+      if (color::mode == HSB) {
+         tint(r,0,0,color::scaleA);
+      } else {
+         tint(r,r,r,color::scaleA);
+      }
+   }
+
+   void tint(color c) {
+      DEBUG_METHOD();
+      tint(c.r,c.g,c.b,c.a);
+   }
+
+   void noTint() {
+      DEBUG_METHOD();
+      tint_color = WHITE;
+      gl_fill_color = flatten_color_mode( tint_color );
+   }
+
+   void strokeCap(int cap) {
+      DEBUG_METHOD();
+      line_end_cap = cap;
+   }
+
+   void setStroke(bool c) {
+      DEBUG_METHOD();
+      setStroke( color( 0.0f, 0.0f, 0.0f, 0.0f ) );
+   }
+
+   void setStroke(color c) {
+      DEBUG_METHOD();
+      for ( auto&&v : extras ) {
+         v.stroke = c;
+      }
+   }
+
+   void setStrokeWeight(float w) {
+      DEBUG_METHOD();
+      for ( auto&&v : extras ) {
+         v.weight = w;
+      }
+   }
+
+   void setTexture( PImage img ) {
+      DEBUG_METHOD();
+      texture( img );
+   }
+
+   void setFill(bool z) {
+      DEBUG_METHOD();
+      if (!z )
+         for ( auto&&v : vertices ) {
+            v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
+         }
+   }
+
+   void setFill(color c) {
+      DEBUG_METHOD();
+      fill_color = c;
+      gl_context::color clr = flatten_color_mode(fill_color);
+      for ( auto&&v : vertices ) {
+         v.fill = clr;
+      }
+   }
+
+   void setTint(color c) {
+      DEBUG_METHOD();
+      tint_color = c;
+      gl_context::color clr = flatten_color_mode(tint_color);
+      for ( auto&&v : vertices ) {
+         v.fill = clr;
+      }
+   }
+
+   void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const {
+      DEBUG_METHOD();
+      if ( style == GROUP ) {
+         for (auto &&child : children) {
+            child.flatten(parent_vao, transform * shape_matrix);
+         }
+      } else {
+         if ( fill_color.a != 0 )
+            draw_fill(parent_vao, transform);
+         // draw_normals(parent_vao, transform);
+         if ( stroke_color.a != 0 )
+            draw_stroke(parent_vao, transform);
+      }
+      return;
+   }
+
+   void flattenTransforms(const PMatrix& transform) {
+      DEBUG_METHOD();
+      auto current = transform * shape_matrix;
+      if ( style == GROUP ) {
+         for (auto &&child : children) {
+            child.flattenTransforms(current);
+         }
+      } else {
+         for ( auto &x : vertices ) {
+            x.position = current * x.position;
+         }
+         shape_matrix = PMatrix::Identity();
+      }
+   }
+
+   void draw(gl_context &glc, const PMatrix& transform) {
+      DEBUG_METHOD();
+      if ( vaos.size() == 0 ) {
+         vaos.clear();
+         flatten(vaos, PMatrix::Identity() );
+         glc.compile( vaos );
+      }
+      glc.drawVAO( vaos, transform.glm_data() );
+   }
+
+   void draw_normals(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_stroke(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_fill(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+
+   int getChildCount() const {
+      DEBUG_METHOD();
+      return children.size();
+   }
+
+   int getVertexCount() const {
+      DEBUG_METHOD();
+      return vertices.size();
+   }
+
+   PVector getVertex(int i) const {
+      DEBUG_METHOD();
+      return vertices[i].position;
+   }
+
+   void setVertex(int i, PVector v) {
+      DEBUG_METHOD();
+      vertices[i].position = v;
+   }
+
+   void setVertex(int i, float x, float y , float z = 0) {
+      DEBUG_METHOD();
+      vertices[i].position = {x,y,z};
+   }
+
+   PVector getVertex(int i, PVector &x) const {
+      DEBUG_METHOD();
+      return x = getVertex(i);
+   }
+};
+
+bool PShapeImpl::isClockwise() const {
+   DEBUG_METHOD();
    if ( style != POLYGON && style != QUADS )
       return false;
    if (vertices.size() < 3)
@@ -96,7 +806,8 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_conte
    return triangles;
 }
 
-void PShape::populateIndices() {
+void PShapeImpl::populateIndices() {
+   DEBUG_METHOD();
    if (indices.size() != 0)
       return;
 
@@ -196,7 +907,7 @@ PVector fast_ellipse_point(const PVector &center, int index, float xradius, floa
 }
 
 bool anglesWithinTolerance(float angle1, float angle2, float tolerance) {
-    return angularDifference(angle1, angle2)  <= tolerance;
+   return angularDifference(angle1, angle2)  <= tolerance;
 }
 
 PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
@@ -212,13 +923,13 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { p2 + bisect * w, p2 - bisect * w };
 }
 
-PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
+PShapeImpl drawLinePoly(int points, const gl_context::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
    PLine start;
    PLine end;
 
-   PShape triangle_strip;
-   triangle_strip.transform( transform );
+   PShapeImpl triangle_strip;
    triangle_strip.beginShape(TRIANGLE_STRIP);
+   triangle_strip.transform( transform );
    triangle_strip.noStroke();
    triangle_strip.fill(extras[0].stroke);
    float half_weight = extras[0].weight / 2.0;
@@ -257,9 +968,9 @@ PShape drawLinePoly(int points, const gl_context::vertex *p, const PShape::vInfo
    return triangle_strip;
 }
 
-PShape drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
-   PShape shape;
+   PShapeImpl shape;
    shape.beginShape(CONVEX_POLYGON);
    shape.transform( transform );
 
@@ -283,9 +994,9 @@ PShape drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color
    return shape;
 }
 
-PShape drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
-   PShape shape;
+   PShapeImpl shape;
    shape.beginShape(CONVEX_POLYGON);
    shape.transform( transform );
    PVector normal1 = (p2 - p1).normal();
@@ -309,9 +1020,9 @@ PShape drawLine(PVector p1, PVector p2, float weight1, float weight2, color colo
    return shape;
 }
 
-PShape drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
-   PShape shape;
+   PShapeImpl shape;
    shape.beginShape(CONVEX_POLYGON);
    shape.transform( transform );
    PVector normal1 = (p2 - p1).normal();
@@ -344,12 +1055,12 @@ PShape drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, colo
 }
 
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform) {
-   PShape shape;
+   PShapeImpl shape;
+   shape.beginShape(TRIANGLES);
    shape.circleTexture();
    shape.noStroke();
    shape.fill(color);
    shape.transform( transform );
-   shape.beginShape(TRIANGLES);
    x = x - width / 2.0;
    y = y - height / 2.0;
    shape.vertex(x,y,0,0);
@@ -358,10 +1069,10 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.vertex(x,y+height,0,1.0);
    shape.populateIndices( { 0,1,2,0,2,3 } );
    shape.endShape(CLOSE);
-   return shape;
+   return  { std::make_shared<PShapeImpl>(shape) };
 }
 
-void _line(PShape &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
+void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
 
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
@@ -388,10 +1099,10 @@ void _line(PShape &triangles, PVector p1, PVector p2, float weight1, float weigh
    triangles.index( i + 3 );
 }
 
-PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::vInfoExtra *extras, const PMatrix &transform ) {
-   PShape triangles;
-   triangles.transform( transform );
+PShapeImpl drawTriangleStrip(int points, const gl_context::vertex *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
+   PShapeImpl triangles;
    triangles.beginShape(TRIANGLES);
+   triangles.transform( transform );
    _line(triangles, p[0].position, p[1].position,
          extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
    for (int i=2;i<points;++i) {
@@ -402,10 +1113,10 @@ PShape drawTriangleStrip(int points, const gl_context::vertex *p, const PShape::
    return triangles;
 }
 
-PShape drawTriangleNormal(int points, const gl_context::vertex *p,
-                          const PShape::vInfoExtra *extras, bool closed,
-                          const PMatrix &transform) {
-   PShape shape;
+PShapeImpl drawTriangleNormal(int points, const gl_context::vertex *p,
+                              const PShapeImpl::vInfoExtra *extras, bool closed,
+                              const PMatrix &transform) {
+   PShapeImpl shape;
    shape.beginShape(TRIANGLES);
    shape.fill(RED);
    shape.transform( transform );
@@ -417,7 +1128,8 @@ PShape drawTriangleNormal(int points, const gl_context::vertex *p,
    return shape;
 }
 
-void PShape::draw_normals(std::vector<gl_context::VAO> &glc, const PMatrix &transform) const {
+void PShapeImpl::draw_normals(std::vector<gl_context::VAO> &glc, const PMatrix &transform) const {
+   DEBUG_METHOD();
    switch( style ) {
    case TRIANGLES_NOSTROKE:
    case TRIANGLES:
@@ -448,7 +1160,8 @@ void PShape::draw_normals(std::vector<gl_context::VAO> &glc, const PMatrix &tran
    }
 }
 
-void PShape::draw_stroke(std::vector<gl_context::VAO> &glc, const PMatrix& transform) const {
+void PShapeImpl::draw_stroke(std::vector<gl_context::VAO> &glc, const PMatrix& transform) const {
+   DEBUG_METHOD();
    switch( style ) {
    case POINTS:
    {
@@ -465,7 +1178,7 @@ void PShape::draw_stroke(std::vector<gl_context::VAO> &glc, const PMatrix& trans
    case TRIANGLES:
    {
       // TODO: Fix mitred lines to somehow work in 3D
-      PShape shape;
+      PShapeImpl shape;
       shape.beginShape(TRIANGLES);
       for (int i = 0; i < indices.size(); i+=3 ) {
          PVector p0 = vertices[indices[i]].position;
@@ -551,7 +1264,8 @@ void PShape::draw_stroke(std::vector<gl_context::VAO> &glc, const PMatrix& trans
    }
 }
 
-void PShape::draw_fill(std::vector<gl_context::VAO> &vaos, const PMatrix& transform) const {
+void PShapeImpl::draw_fill(std::vector<gl_context::VAO> &vaos, const PMatrix& transform) const {
+   DEBUG_METHOD();
 
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
       auto currentTransform = transform * shape_matrix;
@@ -598,6 +1312,488 @@ void PShape::draw_fill(std::vector<gl_context::VAO> &vaos, const PMatrix& transf
    }
 }
 
+static std::vector<std::weak_ptr<PShapeImpl>> &shapeHandles() {
+   static std::vector<std::weak_ptr<PShapeImpl>> handles;
+   return handles;
+}
+
+static void PShape_releaseAllVAOs() {
+   for (auto i : shapeHandles()) {
+      if (auto p = i.lock()) {
+        p->clear();
+      }
+   }
+}
+
+void PShape::init() {
+}
+
+void PShape::close() {
+   PShape_releaseAllVAOs();
+}
+
+PShape::PShape( std::shared_ptr<PShapeImpl> impl_ ) : impl(impl_) {
+   shapeHandles().push_back(impl_);
+}
+
+const PMatrix &PShape::getShapeMatrix() {
+   return impl->getShapeMatrix();
+}
+
+void PShape::addChild( const PShape shape ) {
+   return impl->addChild( shape );
+}
+
+PShape PShape::getChild( int i ) {
+   return impl->getChild(i);
+}
+
+color PShape::getFillColor() const {
+   return impl->getFillColor();
+}
+
+color PShape::getTintColor() const {
+   return impl->getTintColor();
+}
+
+bool PShape::isGroup() const {
+   return impl->isGroup();
+}
+
+void PShape::copyStyle( const PShape other ) {
+   return impl->copyStyle( *other.impl );
+}
+
+void PShape::clear() {
+   return impl->clear();
+}
+
+void PShape::rotate(float angle) {
+   return impl->rotate(angle);
+}
+
+void PShape::rotateZ(float angle) {
+   return impl->rotateZ(angle);
+}
+
+void PShape::rotateY(float angle){
+   return impl->rotateY(angle);
+}
+
+
+void PShape::rotateX(float angle){
+   return impl->rotateX(angle);
+}
+
+
+void PShape::rotate(float angle, PVector axis){
+   return impl->rotate(angle,axis);
+}
+
+
+void PShape::translate(float x, float y, float z){
+   return impl->translate(x,y,z);
+}
+
+
+void PShape::scale(float x, float y,float z){
+   return impl->scale(x,y,z);
+}
+
+
+void PShape::scale(float x){
+   return impl->scale(x);
+}
+
+
+void PShape::transform(const PMatrix &transform){
+   return impl->transform(transform);
+}
+
+
+void PShape::resetMatrix(){
+   return impl->resetMatrix();
+}
+
+
+void PShape::beginShape(int style_){
+   if ( impl == nullptr) {
+      impl = std::make_shared<PShapeImpl>();
+      shapeHandles().push_back(impl);
+   }
+   return impl->beginShape(style_);
+}
+
+
+void PShape::beginContour(){
+   return impl->beginContour();
+}
+
+
+void PShape::endContour(){
+   return impl->endContour();
+}
+
+
+void PShape::textureMode( int mode_ ){
+   return impl->textureMode(mode_);
+}
+
+
+bool PShape::isTextureSet() const{
+   return impl->isTextureSet();
+}
+
+
+void PShape::material(PMaterial &mat){
+   return impl->material(mat);
+}
+
+
+void PShape::texture(PImage img){
+   return impl->texture(img);
+}
+
+
+void PShape::circleTexture(){
+   return impl->circleTexture();
+}
+
+
+void PShape::noTexture(){
+   return impl->noTexture();
+}
+
+
+void PShape::noNormal(){
+   return impl->noNormal();
+}
+
+
+void PShape::normal(PVector p){
+   return impl->normal(p);
+}
+
+
+void PShape::normal(float x, float y, float z){
+   return impl->normal(x,y,z);
+}
+
+
+void PShape::vertex(float x, float y, float z){
+   return impl->vertex(x,y,z);
+}
+
+
+void PShape::vertex(float x, float y){
+   return impl->vertex(x,y);
+}
+
+
+void PShape::vertex(PVector p){
+   return impl->vertex(p);
+}
+
+
+void PShape::vertex(float x, float y, float z, float u, float v){
+   return impl->vertex(x,y,z,u,v);
+}
+
+
+void PShape::vertex(float x, float y, float u, float v){
+   return impl->vertex(x,y,u,v);
+}
+
+
+void PShape::vertex(PVector p, PVector2 t){
+   return impl->vertex(p,t);
+}
+
+
+void PShape::index(unsigned short i){
+   return impl->index(i);
+}
+
+
+void PShape::bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4){
+   return impl->bezierVertex(x2,y2,x3,y3,x4,y4);
+}
+
+
+void PShape::bezierVertex(PVector v2, PVector v3, PVector v4){
+   return impl->bezierVertex(v2,v3,v4);
+}
+
+
+void PShape::bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4){
+   return impl->bezierVertex(x2,y2,z2,x3,y3,z3,x4,y4,z4);
+}
+
+
+void PShape::bezierVertexQuadratic(PVector control, PVector anchor2){
+   return impl->bezierVertexQuadratic(control,anchor2);
+}
+
+
+void PShape::curveTightness(float alpha){
+   return impl->curveTightness(alpha);
+}
+
+
+void PShape::curveVertex(PVector c){
+   return impl->curveVertex(c);
+}
+
+
+void PShape::drawCurve(){
+   return impl->drawCurve();
+}
+
+
+void PShape::curveVertex(float x, float y, float z){
+   return impl->curveVertex(x,y,z);
+}
+
+void PShape::curveVertex(float x, float y){
+   return impl->curveVertex(x,y);
+}
+
+
+bool PShape::isClockwise() const{
+   return impl->isClockwise();
+}
+
+
+void PShape::endShape(int type_){
+   return impl->endShape( type_ );
+}
+
+
+unsigned short PShape::getCurrentIndex(){
+   return impl->getCurrentIndex();
+}
+
+
+void PShape::populateIndices(){
+   return impl->populateIndices();
+}
+
+
+void PShape::populateIndices( std::vector<unsigned short> &&i ){
+   return impl->populateIndices(std::move(i));
+}
+
+
+void PShape::fill(float r,float g,  float b, float a){
+   return impl->fill(r,g,b,a);
+}
+
+
+void PShape::fill(float r,float g, float b){
+   return impl->fill(r,g,b);
+}
+
+
+void PShape::fill(float r,float a){
+   return impl->fill(r,a);
+}
+
+
+void PShape::fill(float r){
+   return impl->fill(r);
+}
+
+
+void PShape::fill(class color color){
+   return impl->fill(color);
+}
+
+
+void PShape::fill(class color color, float a){
+   return impl->fill(color,a);
+}
+
+
+void PShape::stroke(float r,float g,  float b, float a){
+   return impl->stroke(r,g,b,a);
+}
+
+
+void PShape::stroke(float r,float g, float b){
+   return impl->stroke(r,g,b);
+}
+
+
+void PShape::stroke(float r,float a){
+   return impl->stroke(r,a);
+}
+
+
+void PShape::stroke(float r){
+   return impl->stroke(r);
+}
+
+
+void PShape::stroke(color c){
+   return impl->stroke(c);
+}
+
+
+void PShape::strokeWeight(float x){
+   return impl->strokeWeight(x);
+}
+
+
+void PShape::noStroke(){
+   return impl->noStroke();
+}
+
+
+void PShape::noFill(){
+   return impl->noFill();
+}
+
+
+bool PShape::isStroked() const{
+   return impl->isStroked();
+}
+
+
+bool PShape::isFilled() const{
+   return impl->isFilled();
+}
+
+
+void PShape::tint(float r,float g,  float b, float a){
+   return impl->tint(r,g,b,a);
+}
+
+
+void PShape::tint(float r,float g, float b){
+   return impl->tint(r,g,b);
+}
+
+
+void PShape::tint(float r,float a){
+   return impl->tint(r,a);
+}
+
+
+void PShape::tint(float r){
+   return impl->tint(r);
+}
+
+
+void PShape::tint(color c){
+   return impl->tint(c);
+}
+
+
+void PShape::noTint(){
+   return impl->noTint();
+}
+
+
+void PShape::strokeCap(int cap){
+   return impl->strokeCap(cap);
+}
+
+
+void PShape::setStroke(bool c){
+   return impl->setStroke(c);
+}
+
+
+void PShape::setStroke(color c){
+   return impl->setStroke(c);
+}
+
+
+void PShape::setStrokeWeight(float w){
+   return impl->setStrokeWeight(w);
+}
+
+
+void PShape::setTexture( PImage img ){
+   return impl->setTexture(img);
+}
+
+
+void PShape::setFill(bool z){
+   return impl->setFill(z);
+}
+
+
+void PShape::setFill(color c){
+   return impl->setFill(c);
+}
+
+
+void PShape::setTint(color c){
+   return impl->setTint(c);
+}
+
+
+void PShape::flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+   return impl->flatten(parent_vao, transform);
+}
+
+
+void PShape::flattenTransforms(const PMatrix& transform){
+   return impl->flattenTransforms(transform);
+}
+
+
+void PShape::draw(gl_context &glc, const PMatrix& transform){
+   return impl->draw(glc,transform);
+}
+
+
+void PShape::draw_normals(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+   return impl->draw_normals(parent_vao,transform);
+}
+
+
+void PShape::draw_stroke(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+   return impl->draw_stroke(parent_vao,transform);
+}
+
+
+void PShape::draw_fill(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+   return impl->draw_fill(parent_vao,transform);
+}
+
+
+int PShape::getChildCount() const{
+   return impl->getChildCount();
+}
+
+
+int PShape::getVertexCount() const{
+   return impl->getVertexCount();
+}
+
+
+PVector PShape::getVertex(int i) const{
+   return impl->getVertex(i);
+}
+
+
+void PShape::setVertex(int i, PVector v){
+   return impl->setVertex(i,v);
+}
+
+
+void PShape::setVertex(int i, float x, float y , float z){
+   return impl->setVertex(i,x,y,z);
+}
+
+
+PVector PShape::getVertex(int i, PVector &x) const{
+   return impl->getVertex(i,x);
+}
+
+
 PShape loadShape( std::string_view filename ) {
    if ( endsWith( toLowerCase( filename ) , ".obj" ) ) {
       return loadShapeOBJ( filename );
@@ -620,7 +1816,7 @@ PShape loadShapeOBJ( std::string_view objPath ) {
       abort();
    }
 
-   PShape obj_shape;
+   PShapeImpl obj_shape;
    obj_shape.beginShape( TRIANGLES );
 
    std::vector< glm::vec4 > positions( 1, glm::vec4( 0, 0, 0, 0 ) );
@@ -695,5 +1891,67 @@ PShape loadShapeOBJ( std::string_view objPath ) {
       }
    }
    obj_shape.endShape();
-   return obj_shape;;
+   return { std::make_shared<PShapeImpl>(obj_shape) };
 }
+
+PShape::PShape() : impl( nullptr ) {}
+
+const char *typeToTxt(int type) {
+   switch (type) {
+   case OPEN:
+      return "OPEN";
+   case CLOSE:
+      return "CLOSE";
+   default:
+      return "INVALID";
+   }
+}
+
+const char *styleToTxt(int style) {
+   switch (style) {
+   case POINTS:
+      return "POINTS";
+   case POLYGON:
+      return "POLYGON";
+   case OPEN_SKIP_FIRST_VERTEX_FOR_STROKE:
+      return "OPEN_SKIP_FIRST_VERTEX_FOR_STROKE";
+   case LINES:
+      return "LINES";
+   case GROUP:
+      return "GROUP";
+   case QUADS:
+      return "QUADS";
+   case QUAD_STRIP:
+      return "QUAD_STRIP";
+   case TRIANGLE_STRIP:
+      return "TRIANGLE_STRIP";
+   case TRIANGLE_FAN:
+      return "TRIANGLE_FAN";
+   case CONVEX_POLYGON:
+      return "CONVEX_POLYGON";
+   case TRIANGLES:
+      return "TRIANGLES";
+   case TRIANGLES_NOSTROKE:
+      return "TRIANGLES_NOSTROKE";
+   default:
+      return "INVALID!";
+   }
+}
+
+template <>
+struct fmt::formatter<PShapeImpl> {
+   // Format the MyClass object
+   template <typename ParseContext>
+   constexpr auto parse(ParseContext& ctx) {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const PShapeImpl& v, FormatContext& ctx) {
+      return format_to(ctx.out(), "vertices={:<4} indices={:<4} style={:20} type={:6}",
+                       v.vertices.size(), v.indices.size(),
+                       styleToTxt(v.style),
+                       typeToTxt(v.type)
+         );
+   }
+};

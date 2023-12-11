@@ -103,6 +103,8 @@ public:
       camera();
       perspective();
 
+      _shape.beginShape();
+
       background(DEFAULT_GRAY);
    }
 
@@ -425,8 +427,8 @@ public:
       d = d / 2;
 
       PShape cube;
-      cube.copyStyle( _shape );
       cube.beginShape(TRIANGLES);
+      cube.copyStyle( _shape );
       cube.textureMode(NORMAL);
 
       // Front face
@@ -501,8 +503,8 @@ public:
 
    PShape createSphere( float radius ) {
       PShape sphere;
-      sphere.copyStyle( _shape );
       sphere.beginShape(TRIANGLES);
+      sphere.copyStyle( _shape );
       sphere.textureMode(NORMAL);
 
       float latStep = M_PI / xsphere_ures;
@@ -640,7 +642,7 @@ public:
    void rect(float x, float y, float _width, float _height) {
       PShape rect = createRect(x,y,_width,_height);
       shape( rect );
-      rect_opt = std::move( rect );
+//      rect_opt = std::move( rect );
    }
 
    void ellipseMode(int mode) {
@@ -650,10 +652,10 @@ public:
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
                          PImage texture, color tint ) {
       PShape quad;
+      quad.beginShape(TRIANGLES_NOSTROKE);
       quad.tint( tint );
       quad.textureMode(NORMAL);
       quad.texture(texture);
-      quad.beginShape(TRIANGLES_NOSTROKE);
       quad.vertex( p0, {0.0, 0.0} );
       quad.vertex( p1, {1.0, 0.0} );
       quad.vertex( p2, {1.0, 1.0} );
@@ -762,15 +764,15 @@ public:
 
    PShape createBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
       PShape bezier;
-      bezier.copyStyle( _shape );
       bezier.beginShape(POLYGON);
+      bezier.copyStyle( _shape );
       bezier.vertex(x1, y1);
       bezier.bezierVertex(x2, y2, x3, y3, x4, y4);
       bezier.endShape(OPEN);
       return bezier;
    }
 
-   PShape rect_opt;
+//   PShape rect_opt;
    PShape createRect(float x, float y, float width, float height) {
       if (rect_mode == CORNERS) {
          width = width - x;
@@ -784,9 +786,9 @@ public:
          x = x - width / 2;
          y = y - height / 2;
       }
-      PShape shape( std::move(rect_opt) );
-      shape.copyStyle( _shape );
+      PShape shape;//( std::move(rect_opt) );
       shape.beginShape(CONVEX_POLYGON);
+      shape.copyStyle( _shape );
       shape.normal(0,0,1);
       shape.vertex(x,y);
       shape.vertex(x+width,y);
@@ -799,8 +801,8 @@ public:
 
    PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
       PShape shape;
-      shape.copyStyle( _shape );
       shape.beginShape(POLYGON);
+      shape.copyStyle( _shape );
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
@@ -811,8 +813,8 @@ public:
 
    PShape createLine(float x1, float y1, float z1, float x2, float y2, float z2) {
       PShape shape;
-      shape.copyStyle( _shape );
       shape.beginShape(POLYGON);
+      shape.copyStyle( _shape );
       shape.vertex(x1,y1,z1);
       shape.vertex(x2,y2,z2);
       shape.endShape(OPEN);
@@ -821,8 +823,8 @@ public:
 
    PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
       PShape shape;
-      shape.copyStyle( _shape );
       shape.beginShape(TRIANGLES);
+      shape.copyStyle( _shape );
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
@@ -864,8 +866,8 @@ public:
       } else {
          int NUMBER_OF_VERTICES=32;
          PShape shape;
-         shape.copyStyle( _shape );
          shape.beginShape(CONVEX_POLYGON);
+         shape.copyStyle( _shape );
          shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
          for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
             shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0, height /2.0) );
@@ -933,8 +935,6 @@ public:
          // If there's no stroke and no texture use circle optimization here
 
          PShape shape;
-         shape.copyStyle( _shape );
-         shape.circleTexture();
          if (fillMode == PIE) {
             // This isn't really a CONVEX_POLYGON but I know
             // it will fill ok with a traingle fan
@@ -945,6 +945,8 @@ public:
             // triangulation pass but this works.
             shape.beginShape(POLYGON);
          }
+         shape.copyStyle( _shape );
+         shape.circleTexture();
          for(float i = start; i < stop; i = i + (TWO_PI / 8) ) {
             PVector pos = posOnUnitSquare( i );
             shape.vertex(
@@ -975,8 +977,8 @@ public:
          return shape;
       } else {
          PShape shape;
-         shape.copyStyle( _shape );
          shape.beginShape(CONVEX_POLYGON);
+         shape.copyStyle( _shape );
          int NUMBER_OF_VERTICES=32;
          if ( fillMode == PIE ) {
             shape.vertex(x,y);
@@ -992,8 +994,8 @@ public:
 
    PShape createPoint(float x, float y) {
       PShape shape;
-      shape.copyStyle( _shape );
       shape.beginShape(POINTS);
+      shape.copyStyle( _shape );
       shape.vertex(x,y);
       shape.endShape();
       return shape;

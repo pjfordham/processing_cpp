@@ -53,7 +53,7 @@ void draw () {
   background(0);
 
   for (int n = 0; n < particles.getChildCount(); n++) {
-    PShape &part = particles.getChild(n);
+    PShape part = particles.getChild(n);
 
     lifetimes[n]++;
     if (lifetimes[n] == partLifetime) {

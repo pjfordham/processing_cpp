@@ -219,6 +219,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    PShader::init();
    PFont::init();
    PImage::init();
+   PShape::init();
 
    {
       PROFILE_SCOPE("setup");
@@ -273,6 +274,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       }
    }
 
+   PShape::close();
    PFont::close();
    PImage::close();
    PShader::close();
