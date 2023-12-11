@@ -7,6 +7,31 @@
 
 #include "processing_enum.h"
 #include "processing_opengl_framebuffer.h"
+#include "processing_debug.h"
+#undef DEBUG_METHOD
+#define DEBUG_METHOD() do {} while (false)
+
+gl_framebuffer& gl_framebuffer::operator=(gl_framebuffer&&x) noexcept {
+   DEBUG_METHOD();
+   std::swap(aaFactor,x.aaFactor);
+   std::swap(aaMode,x.aaMode);
+   std::swap(id,x.id);
+   std::swap(width,x.width);
+   std::swap(height,x.height);
+   std::swap(depthBufferID,x.depthBufferID);
+   std::swap(colorBufferID,x.colorBufferID);
+   std::swap(textureBufferID,x.textureBufferID);
+   return *this;
+}
+
+gl_framebuffer::gl_framebuffer() {
+   DEBUG_METHOD();
+}
+
+gl_framebuffer::gl_framebuffer(gl_framebuffer &&x) noexcept : gl_framebuffer() {
+   DEBUG_METHOD();
+   *this = std::move(x);
+}
 
 gl_framebuffer::gl_framebuffer(int width_, int height_, int aaFactor_, int aaMode_)  {
    DEBUG_METHOD();

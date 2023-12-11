@@ -7,9 +7,6 @@
 #include <fmt/core.h>
 
 #include "processing_enum.h"
-#include "processing_debug.h"
-#undef DEBUG_METHOD
-#define DEBUG_METHOD() do {} while (false)
 
 typedef unsigned int GLuint;
 
@@ -31,17 +28,14 @@ public:
    GLuint getColorBufferID();
 
    auto getWidth() const {
-      DEBUG_METHOD();
       return width;
    }
 
    auto getHeight() const {
-      DEBUG_METHOD();
       return height;
    }
 
    bool isMainFrame() const {
-      DEBUG_METHOD();
       return id == 0;
    }
 
@@ -52,35 +46,19 @@ public:
       return frame;
    }
 
-   gl_framebuffer() {
-      DEBUG_METHOD();
-   }
+   gl_framebuffer();
 
    gl_framebuffer(int width_, int height_, int aaFactor_, int aaMode_ );
 
    gl_framebuffer(const gl_framebuffer &x) = delete;
 
-   gl_framebuffer(gl_framebuffer &&x) noexcept : gl_framebuffer() {
-      DEBUG_METHOD();
-      *this = std::move(x);
-   }
+   gl_framebuffer(gl_framebuffer &&x) noexcept;
 
    ~gl_framebuffer();
 
    gl_framebuffer& operator=(const gl_framebuffer&) = delete;
 
-   gl_framebuffer& operator=(gl_framebuffer&&x) noexcept {
-      DEBUG_METHOD();
-      std::swap(aaFactor,x.aaFactor);
-      std::swap(aaMode,x.aaMode);
-      std::swap(id,x.id);
-      std::swap(width,x.width);
-      std::swap(height,x.height);
-      std::swap(depthBufferID,x.depthBufferID);
-      std::swap(colorBufferID,x.colorBufferID);
-      std::swap(textureBufferID,x.textureBufferID);
-      return *this;
-   }
+   gl_framebuffer& operator=(gl_framebuffer&&x) noexcept;
 
    void updatePixels( const std::vector<unsigned int> &pixels );
 
