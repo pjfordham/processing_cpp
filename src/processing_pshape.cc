@@ -640,30 +640,31 @@ public:
 
    void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const {
       DEBUG_METHOD();
+      auto currentTransform = transform * shape_matrix;
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.flatten(parent_vao, transform * shape_matrix);
+            child.flatten(parent_vao, currentTransform);
          }
       } else {
          if ( fill_color.a != 0 )
-            draw_fill(parent_vao, transform);
-         // draw_normals(parent_vao, transform);
+            draw_fill(parent_vao, currentTransform);
+         // draw_normals(parent_vao, currentTransform);
          if ( stroke_color.a != 0 )
-            draw_stroke(parent_vao, transform);
+            draw_stroke(parent_vao, currentTransform);
       }
       return;
    }
 
    void flattenTransforms(const PMatrix& transform) {
       DEBUG_METHOD();
-      auto current = transform * shape_matrix;
+      auto currentTransform = transform * shape_matrix;
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.flattenTransforms(current);
+            child.flattenTransforms(currentTransform);
          }
       } else {
          for ( auto &x : vertices ) {
-            x.position = current * x.position;
+            x.position = currentTransform * x.position;
          }
          shape_matrix = PMatrix::Identity();
       }
@@ -1268,27 +1269,26 @@ void PShapeImpl::draw_fill(std::vector<gl_context::VAO> &vaos, const PMatrix& tr
    DEBUG_METHOD();
 
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
-      auto currentTransform = transform * shape_matrix;
       if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
          vaos.emplace_back();
-         vaos.back().transforms.push_back( currentTransform.glm_data() );
+         vaos.back().transforms.push_back( transform.glm_data() );
          vaos.back().textures.push_back(texture_);
       }
       // At this point vaos has a back and that back has a transform and a texture.
       // It also has enough capacity for these triangles.
 
-      if ( currentTransform != vaos.back().transforms.back()) {
+      if ( transform != vaos.back().transforms.back()) {
          if (vaos.back().transforms.size() == 16) {
             vaos.emplace_back();
             vaos.back().textures.push_back(texture_);
          }
-         vaos.back().transforms.push_back(currentTransform.glm_data());
+         vaos.back().transforms.push_back(transform.glm_data());
       }
 
       if ( texture_ != vaos.back().textures.back()) {
          if (vaos.back().textures.size() == 16) {
             vaos.emplace_back();
-            vaos.back().transforms.push_back( currentTransform.glm_data() );
+            vaos.back().transforms.push_back( transform.glm_data() );
          }
          vaos.back().textures.push_back(texture_);
       }
