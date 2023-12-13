@@ -751,7 +751,7 @@ public:
 
    void endShape(int type = OPEN) {
       _shape.endShape(type);
-      _shape.draw( glc, PMatrix::Identity() );
+      shape( _shape );
    }
 
    void rectMode(int mode){
