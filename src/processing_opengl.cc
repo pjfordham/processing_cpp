@@ -1,6 +1,7 @@
 #include "glad/glad.h"
 
 #include "processing_opengl.h"
+#include "processing_debug.h"
 
 #undef DEBUG_METHOD
 #undef DEBUG_METHOD_MESSAGE
@@ -87,11 +88,32 @@ void gl_context::blendMode(int b ) {
 }
 
 void gl_context::drawVAO(std::vector<VAO> &vaos, const glm::mat4 &currentTransform) {
+#if 0
+   fmt::print("### GEOMETRY DUMP START ###\n");
+   int i = 0;
+   for (auto &vao : vaos) {
+      fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
+      PMatrix(scene.view_matrix).print();
+      for (auto &m : vao.transforms) {
+         PMatrix(m).print();
+      }
+      fmt::print("Vertices: {}\n", vao.vertices.size() );
+      for ( int i = 0; i < vao.vertices.size(); ++i ) {
+         fmt::print("{:3}: {}\n", i, vao.vertices[i]);
+      }
+      fmt::print("Triangles: {}\n", vao.indices.size() );
+      for ( int i = 0; i < vao.indices.size(); i+=3 ) {
+         fmt::print("{},{},{} ", vao.indices[i],vao.indices[i+1],vao.indices[i+2]);
+      }
+   }
+   fmt::print("\n### GEOMETRY DUMP END   ###\n");
+#endif
+
+
    for (auto &draw: vaos ) {
       loadMoveMatrix( draw.transforms );
       auto scenex = scene;
       scenex.view_matrix = scenex.view_matrix * currentTransform;
-      //PMatrix(currentTransform).print();
       setScene( scenex );
       //  TransformMatrix.set(scene.projection_matrix * scene.view_matrix * draw.transforms[0]);
 
@@ -118,20 +140,6 @@ void gl_context::compile(std::vector<VAO> &vaos) {
       draw.loadBuffers();
    }
 }
-
-
-#if 0
-   fmt::print("### GEOMETRY DUMP START ###\n");
-   fmt::print("Vertices: {}", geometry.vbuffer.size() );
-   for ( int i = 0; i < geometry.vbuffer.size(); ++i ) {
-      fmt::print("{:3}: {}\n", i, geometry.vbuffer[i]);
-   }
-   fmt::print("Triangles: {}\n", geometry.ibuffer.size() );
-   for ( int i = 0; i < geometry.ibuffer.size(); i+=3 ) {
-      fmt::print("{},{},{} ", geometry.ibuffer[i],geometry.ibuffer[i+1],geometry.ibuffer[i+2]);
-   }
-   fmt::print("\n### GEOMETRY DUMP END   ###\n");
-#endif
 
 
 void gl_context::setScene( const scene_t &scene ) {
@@ -267,13 +275,27 @@ PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
 
 
 void gl_context::flush() {
+   DEBUG_METHOD();
    flushes++;
    // This is where we can batch the disaprate shapes into a single VAO
    // VAO optimizations happen here.
+#if 1
+   std::vector<VAO> vaos;
    for ( auto &element : scene.elements) {
       // Flatten will call drawVAOs
-      element.shape.flatten(*this, element.transform);
+      element.shape.flatten(vaos, element.transform);
    }
+   compile(vaos);
+   drawVAO( vaos, PMatrix::Identity().glm_data() );
+#else
+   for ( auto &element : scene.elements) {
+      std::vector<VAO> vaos;
+      // Flatten will call drawVAOs
+      element.shape.flatten(vaos, element.transform);
+      compile(vaos);
+      drawVAO( vaos, PMatrix::Identity().glm_data() );
+   }
+#endif
    scene.elements.clear();
    return;
 }
