@@ -21,6 +21,8 @@ template <> struct fmt::formatter<PShapeImpl>;
 
 class PShapeImpl {
    friend struct fmt::formatter<PShapeImpl>;
+   friend struct std::hash<PShapeImpl>;
+
 public:
    static const PImage getBlankTexture() {
       static PImage blankTexture = createBlankImage();
@@ -42,7 +44,9 @@ private:
    std::vector<vInfoExtra> extras;
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
-   std::vector<gl_context::VAO> vaos;
+
+   mutable bool dirty = true;
+   mutable std::vector<gl_context::VAO> vaos;
 
    int type = OPEN;
    int mode = IMAGE;
@@ -81,6 +85,7 @@ public:
 
    void addChild( const PShape shape ) {
       DEBUG_METHOD();
+      dirty=true;
       children.push_back( shape );
    }
 
@@ -106,6 +111,7 @@ public:
 
    void copyStyle( const PShapeImpl &other ) {
       DEBUG_METHOD();
+      dirty=true;
       texture_= other.texture_;
       n = other.n;
       stroke_color = other.stroke_color;
@@ -118,6 +124,7 @@ public:
 
    void clear() {
       DEBUG_METHOD();
+      dirty = true;
       vaos.clear();
       vertices.clear();
       extras.clear();
@@ -147,36 +154,43 @@ public:
 
    void rotate(float angle, PVector axis) {
       DEBUG_METHOD();
+      dirty=true;
       shape_matrix = shape_matrix * RotateMatrix(angle,axis);
    }
 
    void translate(float x, float y, float z=0) {
       DEBUG_METHOD();
+      dirty=true;
       shape_matrix = shape_matrix * TranslateMatrix(PVector{x,y,z});
    }
 
    void scale(float x, float y,float z = 1) {
       DEBUG_METHOD();
+      dirty=true;
       shape_matrix = shape_matrix * ScaleMatrix(PVector{x,y,z});
    }
 
    void scale(float x) {
       DEBUG_METHOD();
+      dirty=true;
       scale(x,x,x);
    }
 
    void transform(const PMatrix &transform) {
       DEBUG_METHOD();
+      dirty=true;
       shape_matrix = shape_matrix * transform;
    }
 
    void resetMatrix() {
       DEBUG_METHOD();
+      dirty=true;
       shape_matrix = PMatrix::Identity();
    }
 
    void beginShape(int style_ = POLYGON) {
       DEBUG_METHOD();
+      dirty=true;
       // Supported types, POLYGON, POINTS, TRIANGLES, TRINALGE_STRIP, GROUP
       style = style_;
       clear();
@@ -184,6 +198,7 @@ public:
 
    void beginContour() {
       DEBUG_METHOD();
+      dirty=true;
       contour.push_back(vertices.size());
    }
 
@@ -193,6 +208,7 @@ public:
 
    void textureMode( int mode_ ) {
       DEBUG_METHOD();
+      dirty=true;
       mode = mode_;
    }
 
@@ -203,6 +219,7 @@ public:
 
    void material(PMaterial &mat) {
       DEBUG_METHOD();
+      dirty=true;
       noStroke();
       textureMode( NORMAL );
       texture( mat.texture );
@@ -210,33 +227,39 @@ public:
 
    void texture(PImage img) {
       DEBUG_METHOD();
+      dirty=true;
       texture_ = img;
    }
 
    void circleTexture() {
       DEBUG_METHOD();
+      dirty=true;
       mode = NORMAL;
       texture_ = PImage::circle();
    }
 
    void noTexture() {
       DEBUG_METHOD();
+      dirty=true;
       texture_ = getBlankTexture();
    }
 
    void noNormal() {
       DEBUG_METHOD();
+      dirty=true;
       setNormals = false;
    }
 
    void normal(PVector p) {
       DEBUG_METHOD();
+      dirty=true;
       setNormals = true;
       n = p;
    }
 
    void normal(float x, float y, float z) {
       DEBUG_METHOD();
+      dirty=true;
       setNormals = true;
       n.x = x;
       n.y = y;
@@ -270,6 +293,7 @@ public:
 
    void vertex(PVector p, PVector2 t) {
       DEBUG_METHOD();
+      dirty=true;
       if (mode == IMAGE) {
          t.x /= texture_.width;
          t.y /= texture_.height;
@@ -280,6 +304,7 @@ public:
 
    void index(unsigned short i) {
       DEBUG_METHOD();
+      dirty=true;
       indices.push_back(i);
    }
 
@@ -319,11 +344,13 @@ public:
 
    void curveTightness(float alpha) {
       DEBUG_METHOD();
+      dirty=true;
       tightness = alpha;
    }
 
    void curveVertex(PVector c) {
       DEBUG_METHOD();
+      dirty=true;
       curve_vertices.push_back(c);
    }
 
@@ -401,6 +428,7 @@ public:
    void endShape(int type_ = OPEN) {
       const char *typeToTxt(int type);
       DEBUG_METHOD();
+      dirty=true;
       // OPEN or CLOSE
       if (curve_vertices.size() > 0) {
          drawCurve();
@@ -442,11 +470,13 @@ public:
 
    void populateIndices( std::vector<unsigned short> &&i ) {
       DEBUG_METHOD();
+      dirty=true;
       indices = i;
    }
 
    void fill(float r,float g,  float b, float a) {
       DEBUG_METHOD();
+      dirty=true;
       fill_color = {r,g,b,a};
       gl_fill_color = flatten_color_mode( fill_color );
    }
@@ -486,6 +516,7 @@ public:
 
    void stroke(float r,float g,  float b, float a) {
       DEBUG_METHOD();
+      dirty=true;
       stroke_color = {r,g,b,a};
    }
 
@@ -519,16 +550,19 @@ public:
 
    void strokeWeight(float x) {
       DEBUG_METHOD();
+      dirty=true;
       stroke_weight = x;
    }
 
    void noStroke() {
       DEBUG_METHOD();
+      dirty=true;
       stroke_color = {0,0,0,0};
    }
 
    void noFill() {
       DEBUG_METHOD();
+      dirty=true;
       fill_color = {0,0,0,0};
       gl_fill_color = flatten_color_mode( fill_color );
    }
@@ -545,6 +579,7 @@ public:
 
    void tint(float r,float g,  float b, float a) {
       DEBUG_METHOD();
+      dirty=true;
       tint_color = {r,g,b,a};
       gl_fill_color = flatten_color_mode( tint_color );
    }
@@ -579,22 +614,26 @@ public:
 
    void noTint() {
       DEBUG_METHOD();
+      dirty=true;
       tint_color = WHITE;
       gl_fill_color = flatten_color_mode( tint_color );
    }
 
    void strokeCap(int cap) {
       DEBUG_METHOD();
+      dirty=true;
       line_end_cap = cap;
    }
 
    void setStroke(bool c) {
       DEBUG_METHOD();
+      dirty=true;
       setStroke( color( 0.0f, 0.0f, 0.0f, 0.0f ) );
    }
 
    void setStroke(color c) {
       DEBUG_METHOD();
+      dirty=true;
       for ( auto&&v : extras ) {
          v.stroke = c;
       }
@@ -602,6 +641,7 @@ public:
 
    void setStrokeWeight(float w) {
       DEBUG_METHOD();
+      dirty=true;
       for ( auto&&v : extras ) {
          v.weight = w;
       }
@@ -609,11 +649,13 @@ public:
 
    void setTexture( PImage img ) {
       DEBUG_METHOD();
+      dirty=true;
       texture( img );
    }
 
    void setFill(bool z) {
       DEBUG_METHOD();
+      dirty=true;
       if (!z )
          for ( auto&&v : vertices ) {
             v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
@@ -622,6 +664,7 @@ public:
 
    void setFill(color c) {
       DEBUG_METHOD();
+      dirty=true;
       fill_color = c;
       gl_context::color clr = flatten_color_mode(fill_color);
       for ( auto&&v : vertices ) {
@@ -631,11 +674,25 @@ public:
 
    void setTint(color c) {
       DEBUG_METHOD();
+      dirty=true;
       tint_color = c;
       gl_context::color clr = flatten_color_mode(tint_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
+   }
+
+   bool is_dirty() const {
+      DEBUG_METHOD();
+      if ( dirty ) {
+         return true;
+      } else if ( style == GROUP ) {
+         for (auto &&child : children) {
+            if (child.impl->is_dirty())
+               return true;
+         }
+      }
+      return false;
    }
 
    void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const {
@@ -652,11 +709,13 @@ public:
          if ( stroke_color.a != 0 )
             draw_stroke(parent_vao, currentTransform);
       }
+      dirty = false;
       return;
    }
 
    void flattenTransforms(const PMatrix& transform) {
       DEBUG_METHOD();
+      dirty=true;
       auto currentTransform = transform * shape_matrix;
       if ( style == GROUP ) {
          for (auto &&child : children) {
@@ -672,7 +731,7 @@ public:
 
    void draw(gl_context &glc, const PMatrix& transform) {
       DEBUG_METHOD();
-      if ( vaos.size() == 0 ) {
+      if ( is_dirty() ) {
          vaos.clear();
          flatten(vaos, PMatrix::Identity() );
          glc.compile( vaos );
@@ -701,11 +760,13 @@ public:
 
    void setVertex(int i, PVector v) {
       DEBUG_METHOD();
+      dirty=true;
       vertices[i].position = v;
    }
 
    void setVertex(int i, float x, float y , float z = 0) {
       DEBUG_METHOD();
+      dirty=true;
       vertices[i].position = {x,y,z};
    }
 
@@ -815,6 +876,7 @@ void PShapeImpl::populateIndices() {
    if (style == GROUP) return;
 
    if (vertices.size() == 0) return;
+   dirty=true;
 
    if (style == QUADS) {
       if (vertices.size() % 4 != 0) abort();
@@ -1955,3 +2017,35 @@ struct fmt::formatter<PShapeImpl> {
          );
    }
 };
+
+namespace std {
+    template <>
+    struct hash<PShapeImpl> {
+       std::size_t operator()(const PShapeImpl& p) const {
+          std::size_t hash_val = 0;
+          hash_combine(hash_val, p.setNormals);
+          //hash_combine(hash_val, p.n);
+          //hash_combine(hash_val, p.contour);
+          //hash_combine(hash_val, p.vertices);
+          //hash_combine(hash_val, p.extras);
+          //hash_combine(hash_val, p.children);
+          //hash_combine(hash_val, p.indices);
+          //hash_combine(hash_val, p.vaos);
+          hash_combine(hash_val, p.type);
+          hash_combine(hash_val, p.type);
+          hash_combine(hash_val, p.mode);
+          hash_combine(hash_val, p.stroke_weight);
+          hash_combine(hash_val, p.line_end_cap);
+          hash_combine(hash_val, p.tightness);
+          //hash_combine(hash_val, p.curve_vertices);
+          //hash_combine(hash_val, p.shape_matrix);
+          //hash_combine(hash_val, p.stroke_color);
+          //hash_combine(hash_val, p.texture_);
+          //hash_combine(hash_val, p.gl_fill_color);
+          //hash_combine(hash_val, p.fill_color);
+          //hash_combine(hash_val, p.tint_color);
+          hash_combine(hash_val, p.style);
+          return hash_val;
+       }
+    };
+}

@@ -20,6 +20,11 @@ using namespace std::literals;
 
 const char TAB = '\t';
 
+template <typename T>
+void hash_combine(std::size_t& seed, const T& val) {
+   seed ^= std::hash<T>{}(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
 void link(std::string_view link);
 std::vector<std::string> split(std::string_view str, char delimiter);
 std::vector<std::string> loadStrings(std::string_view fileName);

@@ -16,6 +16,7 @@ struct PMaterial;
 class PShapeImpl;
 
 class PShape {
+   friend PShapeImpl;
    std::shared_ptr<PShapeImpl> impl;
 public:
    static void init();
