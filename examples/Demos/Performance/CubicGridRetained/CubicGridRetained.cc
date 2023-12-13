@@ -9,7 +9,6 @@ float depth = 400;
 color boxFill;
 
 PShape grid;
-gl_context::VAO x;
 
 int fcount, lastm;
 float frate;

@@ -4,7 +4,6 @@
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_enum.h"
-#include "processing_opengl.h"
 #include "processing_pimage.h"
 #include "processing_java_compatability.h"
 
@@ -14,6 +13,8 @@
 
 struct PMaterial;
 class PShapeImpl;
+struct gl_context;
+struct VAO;
 
 class PShape {
    friend PShapeImpl;
@@ -206,17 +207,18 @@ public:
 
    void setTint(color c);
 
-   void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void flatten(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
 
    void flattenTransforms(const PMatrix& transform);
 
    void draw(gl_context &glc, const PMatrix& transform);
+   void flatten(gl_context &glc, const PMatrix& transform);
 
-   void draw_normals(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_normals(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
 
-   void draw_stroke(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_stroke(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
 
-   void draw_fill(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_fill(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
 
    int getChildCount() const;
 

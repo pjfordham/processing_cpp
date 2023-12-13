@@ -213,6 +213,10 @@ gl_context::~gl_context() {
       glDeleteBuffers(1, &vertex_buffer_id);
 }
 
+void gl_context::draw(PShape shape, const PMatrix &transform) {
+   scene.elements.emplace_back( shape, transform );
+}
+
 PShader gl_context::loadShader(const char *fragShader) {
    using namespace std::literals;
 
@@ -264,7 +268,13 @@ PShader gl_context::loadShader(const char *fragShader, const char *vertShader) {
 
 void gl_context::flush() {
    flushes++;
-   //batch.draw( this );
+   // This is where we can batch the disaprate shapes into a single VAO
+   // VAO optimizations happen here.
+   for ( auto &element : scene.elements) {
+      // Flatten will call drawVAOs
+      element.shape.flatten(*this, element.transform);
+   }
+   scene.elements.clear();
    return;
 }
 

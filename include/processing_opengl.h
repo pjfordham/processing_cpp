@@ -11,8 +11,10 @@
 #include "processing_opengl_framebuffer.h"
 #include "processing_utils.h"
 #include "processing_pimage.h"
+#include "processing_pshape.h"
 
 #include <fmt/core.h>
+struct VAO;
 
 template <typename T>
 static void loadBufferData(GLenum target, GLint bufferId, const std::vector<T> &data, GLenum usage) {
@@ -34,59 +36,13 @@ public:
       int tunit;
       int mindex;
    };
-   struct VAO {
-      GLuint vao = 0;
-      GLuint indexId = 0;
-      GLuint vertexId = 0;
-      void alloc(  PShader::Attribute Position,  PShader::Attribute Normal,  PShader::Attribute Color,
-                   PShader::Attribute Coord,  PShader::Attribute TUnit,  PShader::Attribute MIndex) {
-         glGenVertexArrays(1, &vao);
-         glGenBuffers(1, &indexId);
-         glGenBuffers(1, &vertexId);
-         glBindVertexArray(vao);
-         glBindVertexArray(vao);
-
-         glBindBuffer(GL_ARRAY_BUFFER, vertexId);
-
-         Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
-         Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
-         Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
-         Color.bind_vec4( sizeof(vertex), (void*)offsetof(vertex,fill));
-         TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
-         MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
-
-         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
-         glBindVertexArray(0);
-      }
-      void loadBuffers() {
-         loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
-         loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
-      }
-      void draw() {
-         glBindVertexArray(vao);
-         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
-         glBindVertexArray(0);
-      }
-
-      ~VAO() {
-         if (vao) {
-            glBindVertexArray(vao);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            glBindVertexArray(0);
-            glDeleteVertexArrays(1, &vao);
-            vao = 0;
-            glDeleteBuffers(1, &indexId);
-            glDeleteBuffers(1, &vertexId);
-         }
-    }
-      std::vector<gl_context::vertex> vertices;
-      std::vector<unsigned short> indices;
-      std::vector<PImage> textures;
-      std::vector<glm::mat4> transforms;
-   };
 
    struct scene_t {
+      struct element_t {
+         PShape shape;
+         PMatrix transform;
+      };
+      std::vector<element_t> elements;
       bool lights = false;;
       glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
       glm::vec3 directionLightVector = { 0.0, 0.0, 0.0 };
@@ -308,6 +264,8 @@ public:
 
    void loadMoveMatrix(  const std::vector<glm::mat4> &transforms );
 
+   void draw(PShape shape, const PMatrix &transform);
+
    void loadProjectionViewMatrix( const glm::mat4 &data );
 
    void flush();
@@ -344,7 +302,59 @@ public:
 
 };
 
-gl_context::color flatten_color_mode(color c);
+   struct VAO {
+      GLuint vao = 0;
+      GLuint indexId = 0;
+      GLuint vertexId = 0;
+      void alloc(  PShader::Attribute Position,  PShader::Attribute Normal,  PShader::Attribute Color,
+                   PShader::Attribute Coord,  PShader::Attribute TUnit,  PShader::Attribute MIndex) {
+         glGenVertexArrays(1, &vao);
+         glGenBuffers(1, &indexId);
+         glGenBuffers(1, &vertexId);
+         glBindVertexArray(vao);
+         glBindVertexArray(vao);
+
+         glBindBuffer(GL_ARRAY_BUFFER, vertexId);
+
+         Position.bind_vec3( sizeof(gl_context::vertex), (void*)offsetof(gl_context::vertex,position) );
+         Normal.bind_vec3( sizeof(gl_context::vertex),  (void*)offsetof(gl_context::vertex,normal));
+         Coord.bind_vec2( sizeof(gl_context::vertex), (void*)offsetof(gl_context::vertex,coord));
+         Color.bind_vec4( sizeof(gl_context::vertex), (void*)offsetof(gl_context::vertex,fill));
+         TUnit.bind_int( sizeof(gl_context::vertex), (void*)offsetof(gl_context::vertex,tunit));
+         MIndex.bind_int( sizeof(gl_context::vertex), (void*)offsetof(gl_context::vertex,mindex));
+
+         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
+         glBindVertexArray(0);
+      }
+      void loadBuffers() {
+         loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
+         loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
+      }
+      void draw() {
+         glBindVertexArray(vao);
+         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
+         glBindVertexArray(0);
+      }
+
+      ~VAO() {
+         if (vao) {
+            glBindVertexArray(vao);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &vao);
+            vao = 0;
+            glDeleteBuffers(1, &indexId);
+            glDeleteBuffers(1, &vertexId);
+         }
+    }
+      std::vector<gl_context::vertex> vertices;
+      std::vector<unsigned short> indices;
+      std::vector<PImage> textures;
+      std::vector<glm::mat4> transforms;
+   };
+
+   gl_context::color flatten_color_mode(color c);
 
 template <>
 struct fmt::formatter<gl_context::color> {

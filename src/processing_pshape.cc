@@ -46,7 +46,7 @@ private:
    std::vector<unsigned short> indices;
 
    mutable bool dirty = true;
-   mutable std::vector<gl_context::VAO> vaos;
+   mutable std::vector<VAO> vaos;
 
    int type = OPEN;
    int mode = IMAGE;
@@ -695,7 +695,7 @@ public:
       return false;
    }
 
-   void flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const {
+   void flatten(std::vector<VAO> &parent_vao, const PMatrix& transform) const {
       DEBUG_METHOD();
       auto currentTransform = transform * shape_matrix;
       if ( style == GROUP ) {
@@ -729,7 +729,8 @@ public:
       }
    }
 
-   void draw(gl_context &glc, const PMatrix& transform) {
+
+   void flatten(gl_context &glc, const PMatrix& transform) {
       DEBUG_METHOD();
       if ( is_dirty() ) {
          vaos.clear();
@@ -739,9 +740,9 @@ public:
       glc.drawVAO( vaos, transform.glm_data() );
    }
 
-   void draw_normals(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
-   void draw_stroke(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
-   void draw_fill(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_normals(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_stroke(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_fill(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
 
    int getChildCount() const {
       DEBUG_METHOD();
@@ -1191,7 +1192,7 @@ PShapeImpl drawTriangleNormal(int points, const gl_context::vertex *p,
    return shape;
 }
 
-void PShapeImpl::draw_normals(std::vector<gl_context::VAO> &glc, const PMatrix &transform) const {
+void PShapeImpl::draw_normals(std::vector<VAO> &glc, const PMatrix &transform) const {
    DEBUG_METHOD();
    switch( style ) {
    case TRIANGLES_NOSTROKE:
@@ -1223,7 +1224,7 @@ void PShapeImpl::draw_normals(std::vector<gl_context::VAO> &glc, const PMatrix &
    }
 }
 
-void PShapeImpl::draw_stroke(std::vector<gl_context::VAO> &glc, const PMatrix& transform) const {
+void PShapeImpl::draw_stroke(std::vector<VAO> &glc, const PMatrix& transform) const {
    DEBUG_METHOD();
    switch( style ) {
    case POINTS:
@@ -1327,7 +1328,7 @@ void PShapeImpl::draw_stroke(std::vector<gl_context::VAO> &glc, const PMatrix& t
    }
 }
 
-void PShapeImpl::draw_fill(std::vector<gl_context::VAO> &vaos, const PMatrix& transform) const {
+void PShapeImpl::draw_fill(std::vector<VAO> &vaos, const PMatrix& transform) const {
    DEBUG_METHOD();
 
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
@@ -1796,7 +1797,7 @@ void PShape::setTint(color c){
 }
 
 
-void PShape::flatten(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::flatten(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
    return impl->flatten(parent_vao, transform);
 }
 
@@ -1807,21 +1808,24 @@ void PShape::flattenTransforms(const PMatrix& transform){
 
 
 void PShape::draw(gl_context &glc, const PMatrix& transform){
-   return impl->draw(glc,transform);
+   glc.draw( *this, transform );
+}
+void PShape::flatten(gl_context &glc, const PMatrix& transform){
+   return impl->flatten(glc, transform);
 }
 
 
-void PShape::draw_normals(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::draw_normals(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
    return impl->draw_normals(parent_vao,transform);
 }
 
 
-void PShape::draw_stroke(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::draw_stroke(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
    return impl->draw_stroke(parent_vao,transform);
 }
 
 
-void PShape::draw_fill(std::vector<gl_context::VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::draw_fill(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
    return impl->draw_fill(parent_vao,transform);
 }
 
