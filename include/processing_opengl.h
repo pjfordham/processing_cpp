@@ -6,12 +6,16 @@
 #include <array>
 #include <unordered_map>
 
-#include "processing_pshader.h"
 #include "processing_enum.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_utils.h"
 #include "processing_pimage.h"
 #include "processing_pshape.h"
+#include "processing_pshader.h"
+
+typedef int GLint;
+typedef unsigned int GLuint;
+class PShader;
 
 #include <fmt/core.h>
 
@@ -48,6 +52,34 @@ namespace gl {
       glm::mat4 view_matrix;
    };
 
+   class attribute {
+      GLint id = -1;
+      GLint shaderId = -1;
+   public:
+      attribute() {}
+      attribute(const PShader &pshader, const std::string &attribute);
+      void bind_vec2(std::size_t stride, void *offset);
+      void bind_vec3(std::size_t stride, void *offset);
+      void bind_vec4(std::size_t stride, void *offset);
+      void bind_int(std::size_t stride, void *offset);
+   };
+
+   class uniform {
+      GLint id = -1;
+   public:
+      uniform() {}
+      uniform(const PShader &pshader, const std::string &uniform);
+      void set(float value) const;
+      void set(int value) const;
+      void set(const glm::vec2 &value) const;
+      void set(const glm::vec3 &value) const;
+      void set(const glm::vec4 &value) const;
+      void set(const std::vector<int> &value) const;
+      void set(const std::vector<glm::vec3> &value) const;
+      void set(const std::vector<glm::mat4> &value) const;
+      void set(const glm::mat4 &value) const;
+   };
+
    class VAO {
       GLuint vao = 0;
       GLuint indexId = 0;
@@ -59,8 +91,8 @@ namespace gl {
       std::vector<PImage> textures;
       std::vector<glm::mat4> transforms;
 
-      void alloc( PShader::Attribute Position, PShader::Attribute Normal, PShader::Attribute Color,
-                  PShader::Attribute Coord,    PShader::Attribute TUnit,  PShader::Attribute MIndex);
+      void alloc( attribute Position, attribute Normal, attribute Color,
+                  attribute Coord,    attribute TUnit,  attribute MIndex);
       int hasTexture(PImage texture);
       void loadBuffers();
       void draw();
@@ -83,8 +115,8 @@ namespace gl {
       PShader defaultShader;
       PShader currentShader;
 
-      PShader::Attribute Position, Normal, Color, Coord, TUnit, MIndex;
-      PShader::Uniform AmbientLight, DirectionLightColor, DirectionLightVector, NumberOfPointLights,
+      attribute Position, Normal, Color, Coord, TUnit, MIndex;
+      uniform AmbientLight, DirectionLightColor, DirectionLightVector, NumberOfPointLights,
          PointLightColor,PointLightPosition,PointLightFalloff, uSampler, Mmatrix, PVmatrix, TransformMatrix;
 
       int MaxTextureImageUnits;
@@ -148,6 +180,7 @@ namespace gl {
          PVector in = { x, y, z };
          return (scene.projection_matrix * (scene.view_matrix * in)).x;
       }
+
       float screenY(float x, float y, float z) {
          PVector in = { x, y, z };
          return (scene.projection_matrix * (scene.view_matrix * in)).y;

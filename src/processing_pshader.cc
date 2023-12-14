@@ -7,6 +7,7 @@
 #include <fmt/core.h>
 
 #include "glad/glad.h"
+#include "processing_opengl.h"
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
@@ -68,7 +69,7 @@ static const char *defaultFragmentShader = R"glsl(
               float pointLight = max(dot(vNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
               totalPointLight += pointLightColor[i] * pointLight;
          }
-        
+
           float directional = max(dot(vNormal, -directionLightVector), 0.0);
           vec3 vLighting = ambientLight + (directionLightColor * directional) + totalPointLight;
 
@@ -382,4 +383,12 @@ void PShader::init() {
 
 void PShader::close() {
    PShader_releaseAllShaders();
+}
+
+gl::uniform PShader::get_uniform(const std::string &uniform_name) const {
+   return {*this, uniform_name};
+}
+
+gl::attribute PShader::get_attribute(const std::string &attribute_name) const {
+   return {*this, attribute_name};
 }

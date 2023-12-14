@@ -316,8 +316,8 @@ namespace gl {
       PVmatrix.set( data );
    }
 
-   void VAO::alloc(  PShader::Attribute Position,  PShader::Attribute Normal,  PShader::Attribute Color,
-                     PShader::Attribute Coord,  PShader::Attribute TUnit,  PShader::Attribute MIndex) {
+   void VAO::alloc(  attribute Position, attribute Normal, attribute Color,
+                     attribute Coord,  attribute TUnit, attribute MIndex) {
       glGenVertexArrays(1, &vao);
       glGenBuffers(1, &indexId);
       glGenBuffers(1, &vertexId);
@@ -374,6 +374,88 @@ namespace gl {
          return -1;
       else
          return std::distance(textures.begin(), it) ;
+   }
+
+   attribute::attribute(const PShader &pshader, const std::string &attribute) {
+      id = pshader.getAttribLocation( attribute.c_str() );
+      shaderId = pshader.getProgramID();
+   }
+
+   void attribute::bind_vec2(std::size_t stride, void *offset) {
+      if ( id != -1 ) {
+         glVertexAttribPointer( id, 2, GL_FLOAT, GL_FALSE, stride, (void*)offset );
+         glEnableVertexAttribArray(id);
+      }
+   }
+
+   void attribute::bind_vec3(std::size_t stride, void *offset) {
+      if ( id != -1 ) {
+         glVertexAttribPointer( id, 3, GL_FLOAT, GL_FALSE, stride, (void*)offset );
+         glEnableVertexAttribArray(id);
+      }
+   }
+
+   void attribute::bind_vec4(std::size_t stride, void *offset) {
+      if ( id != -1 ) {
+         glVertexAttribPointer( id, 4, GL_FLOAT, GL_FALSE, stride, (void*)offset );
+         glEnableVertexAttribArray(id);
+      }
+   }
+
+   void attribute::bind_int(std::size_t stride, void *offset) {
+      if ( id != -1 ) {
+         glVertexAttribIPointer( id, 1, GL_INT, stride, (void*)offset );
+         glEnableVertexAttribArray(id);
+      }
+   }
+
+   uniform::uniform(const PShader &pshader, const std::string &uniform) {
+      id = pshader.getUniformLocation( uniform.c_str() );
+   }
+
+   void uniform::set(float value) const {
+      if ( id != -1 )
+         glUniform1f(id,value);
+   }
+
+   void uniform::set(int value) const {
+      if ( id != -1 )
+         glUniform1i(id,value);
+   }
+
+   void uniform::set(const glm::vec2 &value) const {
+      if ( id != -1 )
+         glUniform2fv(id, 1, glm::value_ptr(value) );
+   }
+
+   void uniform::set(const glm::vec3 &value) const {
+      if ( id != -1 )
+         glUniform3fv(id, 1, glm::value_ptr(value) );
+   }
+
+   void uniform::set(const glm::vec4 &value) const {
+      if ( id != -1 )
+         glUniform4fv(id, 1, glm::value_ptr(value) );
+   }
+
+   void uniform::set(const std::vector<int> &value) const {
+      if ( id != -1 )
+         glUniform1iv(id,value.size(),value.data());
+   }
+
+   void uniform::set(const std::vector<glm::vec3> &value) const {
+      if ( id != -1 )
+         glUniform3fv(id, value.size(), glm::value_ptr(value[0]) );
+   }
+
+   void uniform::set(const std::vector<glm::mat4> &value) const {
+      if ( id != -1 )
+         glUniformMatrix4fv(id, value.size(), false, glm::value_ptr(value[0]) );
+   }
+
+   void uniform::set(const glm::mat4 &value) const {
+      if ( id != -1 )
+         glUniformMatrix4fv(id, 1, false, glm::value_ptr(value) );
    }
 
 } // namespace gl
