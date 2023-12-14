@@ -72,6 +72,41 @@ public:
       return shape_matrix;
    }
 
+   PShapeImpl(const PShapeImpl&) = delete;
+   PShapeImpl& operator=(const PShapeImpl&) = delete;
+
+   PShapeImpl(PShapeImpl&& x) {
+      *this = std::move(x);
+   }
+
+   PShapeImpl& operator=(PShapeImpl&& other) noexcept {
+      std::swap(n,other.n);
+      std::swap(setNormals,other.setNormals);
+      std::swap(contour,other.contour);
+      std::swap(vertices,other.vertices);
+      std::swap(extras,other.extras);
+      std::swap(children,other.children);
+      std::swap(indices,other.indices);
+      std::swap(dirty,other.dirty);
+      std::swap(vaos,other.vaos);
+      std::swap(type,other.type);
+      std::swap(mode,other.mode);
+      std::swap(stroke_weight,other.stroke_weight);
+      std::swap(line_end_cap,other.line_end_cap);
+      std::swap(tightness,other.tightness);
+      std::swap(curve_vertices,other.curve_vertices);
+      std::swap(shape_matrix,other.shape_matrix);
+      std::swap(stroke_color,other.stroke_color);
+      std::swap(texture_,other.texture_);
+      std::swap(gl_fill_color,other.gl_fill_color);
+      std::swap(fill_color,other.fill_color);
+      std::swap(tint_color,other.tint_color);
+      std::swap(style,other.style);
+      std::swap(width,other.width);
+      std::swap(height,other.height);
+      return *this;
+   }
+
    PShapeImpl() {
       DEBUG_METHOD();
       vertices.reserve(4);
@@ -1119,7 +1154,7 @@ PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, 
 }
 
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform) {
-   PShapeImpl shape;
+   PShape shape;
    shape.beginShape(TRIANGLES);
    shape.circleTexture();
    shape.noStroke();
@@ -1133,7 +1168,7 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.vertex(x,y+height,0,1.0);
    shape.populateIndices( { 0,1,2,0,2,3 } );
    shape.endShape(CLOSE);
-   return  { std::make_shared<PShapeImpl>(shape) };
+   return shape;
 }
 
 void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
@@ -1331,6 +1366,9 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
 void PShapeImpl::draw_fill(std::vector<gl::VAO> &vaos, const PMatrix& transform) const {
    DEBUG_METHOD();
 
+   if (vertices.size() > 65536)
+     abort();
+
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
       if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
          vaos.emplace_back();
@@ -1360,13 +1398,19 @@ void PShapeImpl::draw_fill(std::vector<gl::VAO> &vaos, const PMatrix& transform)
       int currentM = vao.transforms.size() - 1;
       int tunit = vao.textures.size() - 1;
       int offset = vao.vertices.size();
+
       if(texture_ == PImage::circle()) {
          tunit = -1;
       }
-      for (int i = 0; i < vertices.size(); ++i) {
-         vao.vertices.push_back( vertices[i] );
-         vao.vertices.back().tunit = tunit;
-         vao.vertices.back().mindex = currentM;
+
+      for (auto &v : vertices) {
+         vao.vertices.emplace_back(
+            v.position,
+            v.normal,
+            v.coord,
+            v.fill,
+            tunit,
+            currentM);
       }
 
       for (auto index : indices) {
@@ -1383,7 +1427,7 @@ static std::vector<std::weak_ptr<PShapeImpl>> &shapeHandles() {
 static void PShape_releaseAllVAOs() {
    for (auto i : shapeHandles()) {
       if (auto p = i.lock()) {
-        p->clear();
+         p->clear();
       }
    }
 }
@@ -1882,7 +1926,7 @@ PShape loadShapeOBJ( std::string_view objPath ) {
       abort();
    }
 
-   PShapeImpl obj_shape;
+   PShape obj_shape;
    obj_shape.beginShape( TRIANGLES );
 
    std::vector< glm::vec4 > positions( 1, glm::vec4( 0, 0, 0, 0 ) );
@@ -1957,7 +2001,7 @@ PShape loadShapeOBJ( std::string_view objPath ) {
       }
    }
    obj_shape.endShape();
-   return { std::make_shared<PShapeImpl>(obj_shape) };
+   return obj_shape;
 }
 
 PShape::PShape() : impl( nullptr ) {}

@@ -83,18 +83,29 @@ namespace gl {
       GLuint vao = 0;
       GLuint indexId = 0;
       GLuint vertexId = 0;
+   public:
+      friend struct fmt::formatter<gl::vertex>;
 
-    public:
       std::vector<vertex> vertices;
       std::vector<unsigned short> indices;
       std::vector<PImage> textures;
       std::vector<glm::mat4> transforms;
 
+      VAO() noexcept;
+
+      VAO(const VAO& x) noexcept = delete;
+
+      VAO(VAO&& x) noexcept;
+
+      VAO& operator=(const VAO&) = delete;
+
+      VAO& operator=(VAO&& other) noexcept;
+
       void alloc( attribute Position, attribute Normal, attribute Color,
                   attribute Coord,    attribute TUnit,  attribute MIndex);
       int hasTexture(PImage texture);
-      void loadBuffers();
-      void draw();
+      void loadBuffers() const;
+      void draw() const;
       ~VAO();
    };
 
@@ -106,6 +117,7 @@ namespace gl {
       int window_width;
       int window_height;
       framebuffer localFrame;
+      std::vector<VAO> vaos;
 
    public:
 
@@ -137,6 +149,7 @@ namespace gl {
 
       context& operator=(context&&x) noexcept {
          std::swap(scene,x.scene);
+         std::swap(vaos,x.vaos);
          std::swap(flushes,x.flushes);
          std::swap(localFrame,x.localFrame);
 

@@ -217,10 +217,6 @@ namespace gl {
    context::~context() {
    }
 
-   void context::draw(PShape shape, const glm::mat4 &transform) {
-      scene.elements.emplace_back( shape, transform );
-   }
-
    PShader context::loadShader(const char *fragShader) {
       using namespace std::literals;
 
@@ -270,29 +266,15 @@ namespace gl {
    }
 
 
+   void context::draw(PShape shape, const glm::mat4 &transform) {
+      shape.flatten(vaos, transform);
+   }
+
    void context::flush() {
-      DEBUG_METHOD();
       flushes++;
-      // This is where we can batch the disaprate shapes into a single VAO
-      // VAO optimizations happen here.
-#if 1
-      std::vector<VAO> vaos;
-      for ( auto &element : scene.elements) {
-         // Flatten will call drawVAOs
-         element.shape.flatten(vaos, element.transform);
-      }
       compile(vaos);
       drawVAO( vaos, PMatrix::Identity().glm_data() );
-#else
-      for ( auto &element : scene.elements) {
-         std::vector<VAO> vaos;
-         // Flatten will call drawVAOs
-         element.shape.flatten(vaos, element.transform);
-         compile(vaos);
-         drawVAO( vaos, PMatrix::Identity().glm_data() );
-      }
-#endif
-      scene.elements.clear();
+      vaos.clear();
       return;
    }
 
@@ -317,8 +299,35 @@ namespace gl {
       PVmatrix.set( data );
    }
 
+   VAO::VAO() noexcept {
+      DEBUG_METHOD();
+   }
+
+   VAO::VAO(VAO&& x) noexcept : VAO() {
+      DEBUG_METHOD();
+      *this = std::move(x);
+   }
+
+   VAO& VAO::operator=(VAO&& other) noexcept {
+      DEBUG_METHOD();
+      std::swap(vao, other.vao);
+      std::swap(indexId, other.indexId);
+      std::swap(vertexId, other.vertexId);
+      std::swap(vertices, other.vertices);
+      std::swap(indices, other.indices);
+      std::swap(textures, other.textures);
+      std::swap(transforms, other.transforms);
+      return *this;
+   }
+
    void VAO::alloc(  attribute Position, attribute Normal, attribute Color,
                      attribute Coord,  attribute TUnit, attribute MIndex) {
+      DEBUG_METHOD();
+      vertices.reserve(65536);
+      indices.reserve(65536);
+      textures.reserve(16);
+      transforms.reserve(16);
+
       glGenVertexArrays(1, &vao);
       glGenBuffers(1, &indexId);
       glGenBuffers(1, &vertexId);
@@ -344,25 +353,27 @@ namespace gl {
       glBindBuffer(target, 0);
    }
 
-   void VAO::loadBuffers() {
+   void VAO::loadBuffers() const {
+      DEBUG_METHOD();
       loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
       loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
    }
 
-   void VAO::draw() {
+   void VAO::draw() const {
+      DEBUG_METHOD();
       glBindVertexArray(vao);
       glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
       glBindVertexArray(0);
    }
 
    VAO::~VAO() {
+      DEBUG_METHOD();
       if (vao) {
          glBindVertexArray(vao);
          glBindBuffer(GL_ARRAY_BUFFER, 0);
          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
          glBindVertexArray(0);
          glDeleteVertexArrays(1, &vao);
-         vao = 0;
          glDeleteBuffers(1, &indexId);
          glDeleteBuffers(1, &vertexId);
       }
@@ -474,3 +485,18 @@ struct fmt::formatter<gl::context> {
    }
 };
 
+template <>
+struct fmt::formatter<gl::VAO> {
+   // Format the MyClass object
+   template <typename ParseContext>
+   constexpr auto parse(ParseContext& ctx) {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const gl::VAO& v, FormatContext& ctx) {
+      return format_to(ctx.out(), "VAO:{:2} VID:{:2} IID:{:2} V{:8} I{:8} Tx{:2} Tr{:2}",
+                       v.vao, v.vertexId, v.indexId,
+                       v.vertices.size(), v.indices.size(), v.textures.size(), v.transforms.size());
+   }
+};

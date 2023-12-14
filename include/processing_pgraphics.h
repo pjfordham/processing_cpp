@@ -668,7 +668,11 @@ public:
 
    void shape(PShape &pshape) {
       pixels_current = false;
-      pshape.draw( glc, _shape.getShapeMatrix() );
+      if (pshape == _shape) {
+         pshape.draw( glc, PMatrix::Identity() );
+      } else {
+         pshape.draw( glc, _shape.getShapeMatrix() );
+      }
    }
 
    void ellipse(float x, float y, float width, float height) {

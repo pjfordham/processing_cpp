@@ -15,8 +15,8 @@ struct PMaterial;
 class PShapeImpl;
 
 namespace gl {
-   struct context;
-   struct VAO;
+   class context;
+   class VAO;
 }
 
 class PShape {
