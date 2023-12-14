@@ -45,6 +45,7 @@ namespace gl {
    }
 
    void context::blendMode(int b ) {
+      flush();
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       switch (b) {
