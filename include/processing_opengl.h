@@ -318,12 +318,8 @@ namespace gl {
       void flush();
 
       void drawVAO(std::vector<VAO> &vao, const glm::mat4 &currentTransform);
-      void compile(std::vector<VAO> &vao);
 
-      void drawTriangles( const std::vector<vertex> &vertices,
-                          const std::vector<unsigned short> &indices,
-                          PImage texture,
-                          const glm::mat4 &move_matrix );
+      void compile(std::vector<VAO> &vao);
 
       int getFlushCount() const {
          return flushes;
