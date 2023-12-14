@@ -176,12 +176,12 @@ namespace gl {
       void blendMode( int b );
 
       float screenX(float x, float y, float z) {
-         PVector in = { x, y, z };
+         glm::vec3 in = { x, y, z };
          return (scene.projection_matrix * (scene.view_matrix * in)).x;
       }
 
       float screenY(float x, float y, float z) {
-         PVector in = { x, y, z };
+         glm::vec3 in = { x, y, z };
          return (scene.projection_matrix * (scene.view_matrix * in)).y;
       }
 
@@ -310,7 +310,7 @@ namespace gl {
 
       void loadMoveMatrix(  const std::vector<glm::mat4> &transforms );
 
-      void draw(PShape shape, const PMatrix &transform);
+      void draw(PShape shape, const glm::mat4 &transform);
 
       void loadProjectionViewMatrix( const glm::mat4 &data );
 
