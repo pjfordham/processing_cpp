@@ -155,27 +155,33 @@ public:
    void setScene( const scene_t &scene );
 
    void setProjectionMatrix( const glm::mat4 &PV ) {
+      flush();
       scene.projection_matrix = PV;
    }
 
    void setViewMatrix( const glm::mat4 &PV ) {
+      flush();
       scene.view_matrix = PMatrix::FlipY().glm_data() * PV ;
    }
 
    void setDirectionLightColor(const glm::vec3 &color ){
+      flush();
       scene.directionLightColor = color;
    }
 
    void setDirectionLightVector(const glm::vec3 &dir  ){
+      flush();
       scene.directionLightVector = dir;
    }
 
    void setAmbientLight(const glm::vec3  &color ){
+      flush();
       scene.ambientLight = color;
    }
 
    void pushPointLightColor( const glm::vec3  &color ) {
       if (scene.pointLightColors.size() < 8) {
+         flush();
          scene.pointLightColors.push_back( color );
       } else {
          fmt::print("Ignoring >8 point lights\n.");
@@ -184,20 +190,24 @@ public:
 
    void pushPointLightPosition( const glm::vec3 &pos  ) {
       if (scene.pointLightColors.size() < 8) {
+         flush();
          scene.pointLightPoss.push_back( pos );
       }
    }
 
    void clearPointLights() {
+      flush();
       scene.pointLightColors.clear();
       scene.pointLightPoss.clear();
    }
 
    void setPointLightFalloff( const glm::vec3 &data){
+      flush();
       scene.pointLightFalloff = data;
    }
 
    void setLights( bool data ) {
+      flush();
       scene.lights = data;
    }
 
@@ -206,16 +216,19 @@ public:
    void hint(int type);
 
    void blit( gl_framebuffer &target ) {
+      flush();
       localFrame.blit( target );
    }
 
    void loadPixels( std::vector<unsigned int> &pixels ) {
+      flush();
       gl_framebuffer frame(window_width, window_height, 1, SSAA);
       localFrame.blit( frame );
       frame.loadPixels( pixels );
    };
 
    void updatePixels( const std::vector<unsigned int> &pixels) {
+      flush();
       gl_framebuffer frame(window_width, window_height, 1, SSAA);
       frame.updatePixels( pixels );
       frame.blit( localFrame );

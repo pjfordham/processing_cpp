@@ -122,7 +122,6 @@ public:
    }
 
    void save( const std::string &fileName ) {
-      glc.flush();
       gl_framebuffer frame(width, height, 1, SSAA);
       glc.blit( frame );
       PImage image = createImage(width, height, 0);
@@ -221,7 +220,6 @@ public:
       float ty = -(top + bottom) / (top - bottom);
       float tz = -(far + near) / (far - near);
 
-      glc.flush();
       glm::mat4 projection =  {
             { 2/(right-left),               0,              0,  tx},
             {             0,  2/(top-bottom),              0,  ty},
@@ -240,7 +238,6 @@ public:
    }
 
    void perspective(float angle, float aspect, float minZ, float maxZ) {
-      glc.flush();
       glc.setProjectionMatrix( get_projection_matrix(angle, aspect, minZ, maxZ));
    }
 
@@ -276,7 +273,6 @@ public:
          {0.0f, 0.0f,  0.0f,    1.0f} };
       translate = glm::transpose(translate);
 
-      glc.flush();
       // Translate the camera to the origin
       glc.setViewMatrix( view * translate );
    }
@@ -287,7 +283,6 @@ public:
    }
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
-      glc.flush();
       glc.setLights( true );
       glc.setDirectionLightColor( {r/255.0f, g/255.0f, b/255.0f} );
       PVector worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
@@ -295,7 +290,6 @@ public:
    }
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
-      glc.flush();
       glc.setLights( true );
       PVector worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
       glc.pushPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
@@ -303,18 +297,15 @@ public:
    }
 
    void lightFalloff(float r, float g, float b) {
-      glc.flush();
       glc.setPointLightFalloff( { r, g, b } );
    }
 
    void ambientLight(float r, float g, float b) {
-      glc.flush();
       glc.setLights( true );
       glc.setAmbientLight( { r/255.0f, g/255.0f, b/255.0f } );
    }
 
    void lights() {
-      glc.flush();
       glc.setLights( true );
       glc.setAmbientLight(    { 0.5, 0.5, 0.5 } );
       glc.setDirectionLightColor(  { 0.5, 0.5, 0.5 } );
@@ -325,7 +316,6 @@ public:
    };
 
    void noLights() {
-      glc.flush();
       glc.setLights( false );
       glc.clearPointLights();
    }
@@ -614,13 +604,11 @@ public:
    }
 
    void loadPixels() {
-      glc.flush();
       glc.loadPixels( pixels );
       pixels_current = true;
    }
 
    void updatePixels() {
-      glc.flush();
       glc.updatePixels( pixels );
     }
 
@@ -1016,9 +1004,7 @@ public:
    }
 
    void beginDraw() {}
-   void endDraw() {
-      glc.flush();
-   }
+   void endDraw() {}
 
    void commit_draw() {
       endDraw();
