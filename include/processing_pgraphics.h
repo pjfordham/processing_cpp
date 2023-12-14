@@ -20,9 +20,9 @@ public:
    static void close();
 
    bool pixels_current = false;
-   gl_framebuffer windowFrame;
+   gl::framebuffer windowFrame;
    int textureMode_ = IMAGE;
-   gl_context glc;
+   gl::context glc;
 
    int ellipse_mode = CENTER;
    int rect_mode = CORNER;
@@ -96,7 +96,7 @@ public:
       this->height = height;
       this->aaFactor = aaFactor;
 
-      windowFrame = gl_framebuffer::constructMainFrame( width, height );
+      windowFrame = gl::framebuffer::constructMainFrame( width, height );
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -122,7 +122,7 @@ public:
    }
 
    void save( const std::string &fileName ) {
-      gl_framebuffer frame(width, height, 1, SSAA);
+      gl::framebuffer frame(width, height, 1, SSAA);
       glc.blit( frame );
       PImage image = createImage(width, height, 0);
       frame.saveFrame( image.pixels );
@@ -391,7 +391,7 @@ public:
    }
 
    void background(float r, float g, float b) {
-      auto color = flatten_color_mode({r,g,b,color::scaleA});
+      auto color = gl::flatten_color_mode({r,g,b,color::scaleA});
       glc.clear( color.r, color.g, color.b, color.a );
    }
 

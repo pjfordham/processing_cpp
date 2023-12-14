@@ -40,13 +40,13 @@ private:
    PVector n = { 0.0, 0.0, 0.0 };
 
    std::vector<int> contour;
-   std::vector<gl_context::vertex> vertices;
+   std::vector<gl::vertex> vertices;
    std::vector<vInfoExtra> extras;
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
 
    mutable bool dirty = true;
-   mutable std::vector<VAO> vaos;
+   mutable std::vector<gl::VAO> vaos;
 
    int type = OPEN;
    int mode = IMAGE;
@@ -57,7 +57,7 @@ private:
    PMatrix shape_matrix = PMatrix::Identity();
    color stroke_color = BLACK;
    PImage texture_ = getBlankTexture();
-   gl_context::color gl_fill_color = flatten_color_mode(WHITE);
+   gl::color gl_fill_color = gl::flatten_color_mode(WHITE);
    color fill_color = WHITE;
    color tint_color = WHITE;
    int style = POLYGON;
@@ -478,7 +478,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       fill_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( fill_color );
+      gl_fill_color = gl::flatten_color_mode( fill_color );
    }
 
    void fill(float r,float g, float b) {
@@ -564,7 +564,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       fill_color = {0,0,0,0};
-      gl_fill_color = flatten_color_mode( fill_color );
+      gl_fill_color = gl::flatten_color_mode( fill_color );
    }
 
    bool isStroked() const {
@@ -581,7 +581,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       tint_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( tint_color );
+      gl_fill_color = gl::flatten_color_mode( tint_color );
    }
 
    void tint(float r,float g, float b) {
@@ -616,7 +616,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       tint_color = WHITE;
-      gl_fill_color = flatten_color_mode( tint_color );
+      gl_fill_color = gl::flatten_color_mode( tint_color );
    }
 
    void strokeCap(int cap) {
@@ -658,7 +658,7 @@ public:
       dirty=true;
       if (!z )
          for ( auto&&v : vertices ) {
-            v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
+            v.fill = gl::flatten_color_mode({0.0,0.0,0.0,0.0});
          }
    }
 
@@ -666,7 +666,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       fill_color = c;
-      gl_context::color clr = flatten_color_mode(fill_color);
+      gl::color clr = gl::flatten_color_mode(fill_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
@@ -676,7 +676,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       tint_color = c;
-      gl_context::color clr = flatten_color_mode(tint_color);
+      gl::color clr = gl::flatten_color_mode(tint_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
@@ -695,7 +695,7 @@ public:
       return false;
    }
 
-   void flatten(std::vector<VAO> &parent_vao, const PMatrix& transform) const {
+   void flatten(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const {
       DEBUG_METHOD();
       auto currentTransform = transform * shape_matrix;
       if ( style == GROUP ) {
@@ -730,7 +730,7 @@ public:
    }
 
 
-   void flatten(gl_context &glc, const PMatrix& transform) {
+   void flatten(gl::context &glc, const PMatrix& transform) {
       DEBUG_METHOD();
       if ( is_dirty() ) {
          vaos.clear();
@@ -740,9 +740,9 @@ public:
       glc.drawVAO( vaos, transform.glm_data() );
    }
 
-   void draw_normals(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
-   void draw_stroke(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
-   void draw_fill(std::vector<VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_normals(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_stroke(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_fill(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
 
    int getChildCount() const {
       DEBUG_METHOD();
@@ -795,7 +795,7 @@ bool PShapeImpl::isClockwise() const {
    return sum < 0;
 }
 
-static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_context::vertex> &vertices,  std::vector<int> contour) {
+static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vertex> &vertices,  std::vector<int> contour) {
 
    if (vertices.size() < 3) {
       return {}; // empty vector
@@ -825,15 +825,15 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl_conte
    const int nvp = 3;
 
    if ( contour.empty() ) {
-      tess.addContour(3, vertices.data(), sizeof(gl_context::vertex), vertices.size(), offsetof(gl_context::vertex,position));
+      tess.addContour(3, vertices.data(), sizeof(gl::vertex), vertices.size(), offsetof(gl::vertex,position));
    } else {
-      tess.addContour(3, vertices.data(), sizeof(gl_context::vertex), contour[0],      offsetof(gl_context::vertex,position));
+      tess.addContour(3, vertices.data(), sizeof(gl::vertex), contour[0],      offsetof(gl::vertex,position));
       contour.push_back(vertices.size());
       for ( int i = 0; i < contour.size() - 1; ++i ) {
          auto &c = contour[i];
          auto start = vertices.data() + c;
          auto size = contour[i+1] - contour[i];
-         tess.addContour(3, start, sizeof(gl_context::vertex), size, offsetof(gl_context::vertex,position));
+         tess.addContour(3, start, sizeof(gl::vertex), size, offsetof(gl::vertex,position));
       }
    }
 
@@ -987,7 +987,7 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { p2 + bisect * w, p2 - bisect * w };
 }
 
-PShapeImpl drawLinePoly(int points, const gl_context::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
+PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
    PLine start;
    PLine end;
 
@@ -1163,7 +1163,7 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    triangles.index( i + 3 );
 }
 
-PShapeImpl drawTriangleStrip(int points, const gl_context::vertex *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
+PShapeImpl drawTriangleStrip(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
    PShapeImpl triangles;
    triangles.beginShape(TRIANGLES);
    triangles.transform( transform );
@@ -1177,7 +1177,7 @@ PShapeImpl drawTriangleStrip(int points, const gl_context::vertex *p, const PSha
    return triangles;
 }
 
-PShapeImpl drawTriangleNormal(int points, const gl_context::vertex *p,
+PShapeImpl drawTriangleNormal(int points, const gl::vertex *p,
                               const PShapeImpl::vInfoExtra *extras, bool closed,
                               const PMatrix &transform) {
    PShapeImpl shape;
@@ -1192,7 +1192,7 @@ PShapeImpl drawTriangleNormal(int points, const gl_context::vertex *p,
    return shape;
 }
 
-void PShapeImpl::draw_normals(std::vector<VAO> &glc, const PMatrix &transform) const {
+void PShapeImpl::draw_normals(std::vector<gl::VAO> &glc, const PMatrix &transform) const {
    DEBUG_METHOD();
    switch( style ) {
    case TRIANGLES_NOSTROKE:
@@ -1204,7 +1204,7 @@ void PShapeImpl::draw_normals(std::vector<VAO> &glc, const PMatrix &transform) c
    case TRIANGLE_FAN:
       // All of these should have just been flattened to triangles
       for (int i = 0; i < indices.size(); i+=3 ) {
-         std::vector<gl_context::vertex> triangle;
+         std::vector<gl::vertex> triangle;
          std::vector<vInfoExtra> xtras;
          triangle.push_back( vertices[indices[i]] );
          triangle.push_back( vertices[indices[i+1]] );
@@ -1224,7 +1224,7 @@ void PShapeImpl::draw_normals(std::vector<VAO> &glc, const PMatrix &transform) c
    }
 }
 
-void PShapeImpl::draw_stroke(std::vector<VAO> &glc, const PMatrix& transform) const {
+void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform) const {
    DEBUG_METHOD();
    switch( style ) {
    case POINTS:
@@ -1328,7 +1328,7 @@ void PShapeImpl::draw_stroke(std::vector<VAO> &glc, const PMatrix& transform) co
    }
 }
 
-void PShapeImpl::draw_fill(std::vector<VAO> &vaos, const PMatrix& transform) const {
+void PShapeImpl::draw_fill(std::vector<gl::VAO> &vaos, const PMatrix& transform) const {
    DEBUG_METHOD();
 
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
@@ -1797,7 +1797,7 @@ void PShape::setTint(color c){
 }
 
 
-void PShape::flatten(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::flatten(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
    return impl->flatten(parent_vao, transform);
 }
 
@@ -1807,25 +1807,25 @@ void PShape::flattenTransforms(const PMatrix& transform){
 }
 
 
-void PShape::draw(gl_context &glc, const PMatrix& transform){
+void PShape::draw(gl::context &glc, const PMatrix& transform){
    glc.draw( *this, transform );
 }
-void PShape::flatten(gl_context &glc, const PMatrix& transform){
+void PShape::flatten(gl::context &glc, const PMatrix& transform){
    return impl->flatten(glc, transform);
 }
 
 
-void PShape::draw_normals(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::draw_normals(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
    return impl->draw_normals(parent_vao,transform);
 }
 
 
-void PShape::draw_stroke(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::draw_stroke(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
    return impl->draw_stroke(parent_vao,transform);
 }
 
 
-void PShape::draw_fill(std::vector<VAO> &parent_vao, const PMatrix& transform) const{
+void PShape::draw_fill(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
    return impl->draw_fill(parent_vao,transform);
 }
 
