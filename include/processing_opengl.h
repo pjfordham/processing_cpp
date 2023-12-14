@@ -372,11 +372,11 @@ struct fmt::formatter<gl::vertex> {
 
    template <typename FormatContext>
    auto format(const gl::vertex& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "T{} Tu{} N{} P{} C{}",
-                       v.coord,
-                       v.tunit,
-                       v.normal,
+      return format_to(ctx.out(), "P{} N{} Tu{} Tc{} C{}",
                        v.position,
+                       v.normal,
+                       v.tunit,
+                       v.coord,
                        v.fill);
    }
 };
