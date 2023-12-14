@@ -323,7 +323,6 @@ namespace gl {
       glGenBuffers(1, &indexId);
       glGenBuffers(1, &vertexId);
       glBindVertexArray(vao);
-      glBindVertexArray(vao);
 
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
 
