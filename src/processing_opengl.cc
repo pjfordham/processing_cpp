@@ -376,7 +376,7 @@ namespace gl {
          return std::distance(textures.begin(), it) ;
    }
 
-   attribute::attribute(const PShader &pshader, const std::string &attribute) {
+   attribute::attribute(PShader pshader, const std::string &attribute) {
       id = pshader.getAttribLocation( attribute.c_str() );
       shaderId = pshader.getProgramID();
    }
@@ -409,7 +409,7 @@ namespace gl {
       }
    }
 
-   uniform::uniform(const PShader &pshader, const std::string &uniform) {
+   uniform::uniform(PShader pshader, const std::string &uniform) {
       id = pshader.getUniformLocation( uniform.c_str() );
    }
 

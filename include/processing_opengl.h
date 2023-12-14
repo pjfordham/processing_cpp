@@ -56,7 +56,7 @@ namespace gl {
       GLint shaderId = -1;
    public:
       attribute() {}
-      attribute(const PShader &pshader, const std::string &attribute);
+      attribute(PShader pshader, const std::string &attribute);
       void bind_vec2(std::size_t stride, void *offset);
       void bind_vec3(std::size_t stride, void *offset);
       void bind_vec4(std::size_t stride, void *offset);
@@ -67,7 +67,7 @@ namespace gl {
       GLint id = -1;
    public:
       uniform() {}
-      uniform(const PShader &pshader, const std::string &uniform);
+      uniform(PShader pshader, const std::string &uniform);
       void set(float value) const;
       void set(int value) const;
       void set(const glm::vec2 &value) const;
