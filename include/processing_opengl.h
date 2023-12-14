@@ -68,9 +68,6 @@ private:
 
    float aaFactor;
 
-   GLuint index_buffer_id;
-   GLuint vertex_buffer_id;
-
    PShader defaultShader;
    PShader currentShader;
 
@@ -83,10 +80,7 @@ private:
 public:
    MAKE_GLOBAL(getColorBufferID, localFrame);
 
-   gl_context() : width(0), height(0) {
-      index_buffer_id = 0;
-      vertex_buffer_id = 0;
-   }
+   gl_context() : width(0), height(0) {}
 
    gl_context(int width, int height, float aaFactor);
 
@@ -109,9 +103,6 @@ public:
       std::swap(window_height,x.window_height);
 
       std::swap(aaFactor,x.aaFactor);
-
-      std::swap(index_buffer_id,x.index_buffer_id);
-      std::swap(vertex_buffer_id,x.vertex_buffer_id);
 
       std::swap(Position,x.Position);
       std::swap(Normal,x.Normal);

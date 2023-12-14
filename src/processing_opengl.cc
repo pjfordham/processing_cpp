@@ -199,9 +199,6 @@ gl_context::gl_context(int width, int height, float aaFactor) :
    // localFrame = gl_framebuffer::constructMainFrame(width, height);
    localFrame = gl_framebuffer( this->width, this->height, aaFactor, MSAA );
 
-   glGenBuffers(1, &index_buffer_id);
-   glGenBuffers(1, &vertex_buffer_id);
-
    shader( defaultShader );
 
    glEnable(GL_BLEND);
@@ -215,10 +212,6 @@ gl_context::gl_context(int width, int height, float aaFactor) :
 }
 
 gl_context::~gl_context() {
-   if (index_buffer_id)
-      glDeleteBuffers(1, &index_buffer_id);
-   if (vertex_buffer_id)
-      glDeleteBuffers(1, &vertex_buffer_id);
 }
 
 void gl_context::draw(PShape shape, const PMatrix &transform) {
