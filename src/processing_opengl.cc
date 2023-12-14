@@ -307,29 +307,6 @@ struct fmt::formatter<gl_context> {
     }
 };
 
-int gl_context::bindNextTextureUnit( PImage img ) {
-   // DEBUG_METHOD();
-   // if (img.isDirty()) {
-   //    img.updatePixels();
-   // }
-   // if (batch.textures.count(img) != 1) {
-   //    glActiveTexture(GL_TEXTURE0 + batch.unit);
-   //    auto textureID = img.getTextureID();
-   //    glBindTexture(GL_TEXTURE_2D, img.getTextureID());
-   //    // This map serves two purposes, first to keep the PImage alive by holding
-   //    // a copy of it until the batch is flushed and secondly mapping from an already
-   //    // used texture to its texture unit in case we see it again. This is paritculaly
-   //    // important for the blankTexture.
-   //    batch.textures[img] = batch.unit;
-   //    DEBUG_METHOD_MESSAGE(fmt::format("cache miss unit={} texID={}", batch.textures[img], img.getTextureID()))
-   //    return batch.unit++;
-   // } else {
-   //    DEBUG_METHOD_MESSAGE(fmt::format("cache hit! unit={} texID={}", batch.textures[img], img.getTextureID()))
-   //    return batch.textures[img];
-   // }
-   return 0;
-}
-
 void gl_context::clear(gl_framebuffer &fb, float r, float g, float b, float a) {
    fb.bind();
    glClearColor(r, g, b, a);

@@ -130,8 +130,6 @@ public:
       return *this;
    }
 
-   int bindNextTextureUnit( PImage img );
-
    void blendMode( int b );
 
    float screenX(float x, float y, float z) {
@@ -352,10 +350,19 @@ public:
             glDeleteBuffers(1, &vertexId);
          }
     }
+
       std::vector<gl_context::vertex> vertices;
       std::vector<unsigned short> indices;
       std::vector<PImage> textures;
       std::vector<glm::mat4> transforms;
+
+      int hasTexture(PImage texture) {
+         auto it = std::find(textures.begin(), textures.end(), texture);
+         if (it == textures.end())
+            return -1;
+         else
+            return std::distance(textures.begin(), it) ;
+      }
    };
 
    gl_context::color flatten_color_mode(color c);
