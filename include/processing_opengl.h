@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <unordered_map>
+#include <fmt/core.h>
 
 #include "processing_enum.h"
 #include "processing_opengl_framebuffer.h"
@@ -15,9 +16,7 @@
 
 typedef int GLint;
 typedef unsigned int GLuint;
-class PShader;
 
-#include <fmt/core.h>
 
 namespace gl {
 
@@ -36,7 +35,7 @@ namespace gl {
 
    struct element_t {
       PShape shape;
-      PMatrix transform;
+      glm::mat4 transform;
    };
 
    struct scene_t {

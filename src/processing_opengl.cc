@@ -217,7 +217,7 @@ namespace gl {
    }
 
    void context::draw(PShape shape, const PMatrix &transform) {
-      scene.elements.emplace_back( shape, transform );
+      scene.elements.emplace_back( shape, transform.glm_data() );
    }
 
    PShader context::loadShader(const char *fragShader) {
