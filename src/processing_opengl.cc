@@ -301,6 +301,10 @@ namespace gl {
 
    VAO::VAO() noexcept {
       DEBUG_METHOD();
+      vertices.reserve(65536);
+      indices.reserve(65536);
+      textures.reserve(16);
+      transforms.reserve(16);
    }
 
    VAO::VAO(VAO&& x) noexcept : VAO() {
@@ -323,10 +327,6 @@ namespace gl {
    void VAO::alloc(  attribute Position, attribute Normal, attribute Color,
                      attribute Coord,  attribute TUnit, attribute MIndex) {
       DEBUG_METHOD();
-      vertices.reserve(65536);
-      indices.reserve(65536);
-      textures.reserve(16);
-      transforms.reserve(16);
 
       glGenVertexArrays(1, &vao);
       glGenBuffers(1, &indexId);

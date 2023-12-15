@@ -107,11 +107,16 @@ public:
       return *this;
    }
 
+   void reserve(int v, int i) {
+      DEBUG_METHOD();
+      vertices.reserve(v);
+      extras.reserve(v);
+      indices.reserve(i);
+   }
+
    PShapeImpl() {
       DEBUG_METHOD();
-      vertices.reserve(4);
-      extras.reserve(4);
-      indices.reserve(6);
+      reserve(4,6);
    }
 
    ~PShapeImpl() {
@@ -1070,10 +1075,13 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
 PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShapeImpl shape;
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
 
    int NUMBER_OF_VERTICES=16;
+
+   shape.reserve(NUMBER_OF_VERTICES * 2, NUMBER_OF_VERTICES * 4);
+
+   shape.beginShape(CONVEX_POLYGON);
+   shape.transform( transform );
 
    float start_angle = (p2 - p1).heading() + HALF_PI;
 
