@@ -33,14 +33,8 @@ namespace gl {
       int mindex;
    };
 
-   struct element_t {
-      PShape shape;
-      glm::mat4 transform;
-   };
-
    struct scene_t {
-      std::vector<element_t> elements;
-      bool lights = false;;
+      bool lights = false;
       glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
       glm::vec3 directionLightVector = { 0.0, 0.0, 0.0 };
       glm::vec3 ambientLight =         { 0.0, 0.0, 0.0 };
