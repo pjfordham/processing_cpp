@@ -36,7 +36,7 @@ void setup() {
 
   num = 150;
   pt.resize(6*num); // rotx, roty, deg, rad, w, speed
-  style.resize(num); // render style
+  style.resize(2*num); // render style
   c.resize(num); // color
 
   // Set up arc shapes
