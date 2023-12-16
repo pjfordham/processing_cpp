@@ -1286,6 +1286,7 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
    {
       // TODO: Fix mitred lines to somehow work in 3D
       PShapeImpl shape;
+      shape.reserve(4*vertices.size(), 6 * vertices.size());
       shape.beginShape(TRIANGLES);
       for (int i = 0; i < indices.size(); i+=3 ) {
          PVector p0 = vertices[indices[i]].position;
@@ -1306,9 +1307,27 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
       shape.draw_fill( glc, transform );
       break;
    }
+   case LINES:
+   {
+      // TODO: Fix mitred lines to somehow work in 3D
+      PShapeImpl shape;
+      shape.reserve(2*vertices.size(), 3 * vertices.size());
+      shape.beginShape(TRIANGLES);
+      for (int i = 0; i < vertices.size(); i+=2 ) {
+         PVector p0 = vertices[i].position;
+         PVector p1 = vertices[i+1].position;
+         float w0 = extras[i].weight;
+         float w1 = extras[i+1].weight;
+         color c0 =  extras[i].stroke;
+         color c1 =  extras[i+1].stroke;
+         _line(shape, p0, p1, w0, w1, c0, c1 );
+      }
+      shape.endShape();
+      shape.draw_fill( glc, transform );
+      break;
+   }
    case POLYGON:
    case CONVEX_POLYGON:
-   case LINES:
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
