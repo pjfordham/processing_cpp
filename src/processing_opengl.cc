@@ -90,11 +90,11 @@ namespace gl {
       }
    }
 
-   void context::drawVAO(std::vector<VAO> &vaos, const glm::mat4 &currentTransform) {
+   void batch_t::draw() {
 #if 0
       fmt::print("### GEOMETRY DUMP START ###\n");
       int i = 0;
-      for (auto &vao : vaos) {
+      for (auto &vao : batch.vaos) {
          fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
          PMatrix(scene.view_matrix).print();
          for (auto &m : vao.transforms) {
@@ -114,11 +114,7 @@ namespace gl {
 
 
       for (auto &draw: vaos ) {
-         loadMoveMatrix( draw.transforms );
-         auto scenex = scene;
-         scenex.view_matrix = scenex.view_matrix * currentTransform;
-         setScene( scenex );
-         //  TransformMatrix.set(scene.projection_matrix * scene.view_matrix * draw.transforms[0]);
+         Mmatrix.set( draw.transforms );
 
          for ( int i = 0; i < draw.textures.size() ; ++i ) {
             PImage &img = draw.textures[i];
@@ -131,13 +127,11 @@ namespace gl {
                glBindTexture(GL_TEXTURE_2D, img.getTextureID());
             }
          }
-         localFrame.bind();
-
          draw.draw();
       }
    }
 
-   void context::compile(std::vector<VAO> &vaos) {
+   void batch_t::compile() {
       for (auto &draw: vaos ) {
          draw.alloc( Position, Normal, Color, Coord, TUnit, MIndex );
          draw.loadBuffers();
@@ -145,19 +139,17 @@ namespace gl {
    }
 
 
-   void context::setScene( const scene_t &scene ) {
-      loadProjectionViewMatrix( scene.projection_matrix * scene.view_matrix );
-      auto id = currentShader.getProgramID();
-
-      if (scene.lights) {
-         int numPointLights = (int)scene.pointLightColors.size();
-         DirectionLightColor.set( scene.directionLightColor);
-         DirectionLightVector.set( scene.directionLightVector );
-         AmbientLight.set( scene.ambientLight );
+   void scene_t::set() {
+      PVmatrix.set( projection_matrix * view_matrix  );
+      if (lights) {
+         int numPointLights = (int)pointLightColors.size();
+         DirectionLightColor.set( directionLightColor);
+         DirectionLightVector.set( directionLightVector );
+         AmbientLight.set( ambientLight );
          NumberOfPointLights.set( numPointLights);
-         PointLightColor.set( scene.pointLightColors );
-         PointLightPosition.set( scene.pointLightPoss );
-         PointLightFalloff.set( scene.pointLightFalloff );
+         PointLightColor.set( pointLightColors );
+         PointLightPosition.set( pointLightPoss );
+         PointLightFalloff.set( pointLightFalloff );
       } else {
          int numPointLights = 0;
          glm::vec3 on {1.0, 1.0, 1.0};
@@ -267,14 +259,16 @@ namespace gl {
 
 
    void context::draw(PShape shape, const glm::mat4 &transform) {
-      shape.flatten(vaos, transform);
+      shape.flatten(batch, transform);
    }
 
    void context::flush() {
       flushes++;
-      compile(vaos);
-      drawVAO( vaos, PMatrix::Identity().glm_data() );
-      vaos.clear();
+      localFrame.bind();
+      scene.set();
+      batch.compile();
+      batch.draw();
+      batch.vaos.clear();
       return;
    }
 

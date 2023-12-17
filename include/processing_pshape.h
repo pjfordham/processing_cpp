@@ -17,6 +17,7 @@ class PShapeImpl;
 namespace gl {
    class context;
    class VAO;
+   class batch_t;
 }
 
 class PShape {
@@ -210,18 +211,17 @@ public:
 
    void setTint(color c);
 
-   void flatten(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
+   void flatten(gl::batch_t &parent_batch, const PMatrix& transform) const;
 
    void flattenTransforms(const PMatrix& transform);
 
    void draw(gl::context &glc, const PMatrix& transform);
-   void flatten(gl::context &glc, const PMatrix& transform);
 
-   void draw_normals(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_normals(gl::batch_t &parent_batch, const PMatrix& transform) const;
 
-   void draw_stroke(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_stroke(gl::batch_t &parent_batch, const PMatrix& transform) const;
 
-   void draw_fill(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_fill(gl::batch_t &parent_batch, const PMatrix& transform) const;
 
    int getChildCount() const;
 

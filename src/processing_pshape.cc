@@ -46,7 +46,6 @@ private:
    std::vector<unsigned short> indices;
 
    mutable bool dirty = true;
-   mutable std::vector<gl::VAO> vaos;
 
    int type = OPEN;
    int mode = IMAGE;
@@ -88,7 +87,6 @@ public:
       std::swap(children,other.children);
       std::swap(indices,other.indices);
       std::swap(dirty,other.dirty);
-      std::swap(vaos,other.vaos);
       std::swap(type,other.type);
       std::swap(mode,other.mode);
       std::swap(stroke_weight,other.stroke_weight);
@@ -165,7 +163,6 @@ public:
    void clear() {
       DEBUG_METHOD();
       dirty = true;
-      vaos.clear();
       vertices.clear();
       extras.clear();
       indices.clear();
@@ -735,19 +732,19 @@ public:
       return false;
    }
 
-   void flatten(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const {
+   void flatten(gl::batch_t &batch, const PMatrix& transform) const {
       DEBUG_METHOD();
       auto currentTransform = transform * shape_matrix;
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.flatten(parent_vao, currentTransform);
+            child.flatten(batch, currentTransform);
          }
       } else {
          if ( fill_color.a != 0 )
-            draw_fill(parent_vao, currentTransform);
-         // draw_normals(parent_vao, currentTransform);
+            draw_fill(batch, currentTransform);
+         // draw_normals(batch, currentTransform);
          if ( stroke_color.a != 0 )
-            draw_stroke(parent_vao, currentTransform);
+            draw_stroke(batch, currentTransform);
       }
       dirty = false;
       return;
@@ -769,20 +766,9 @@ public:
       }
    }
 
-
-   void flatten(gl::context &glc, const PMatrix& transform) {
-      DEBUG_METHOD();
-      if ( is_dirty() ) {
-         vaos.clear();
-         flatten(vaos, PMatrix::Identity() );
-         glc.compile( vaos );
-      }
-      glc.drawVAO( vaos, transform.glm_data() );
-   }
-
-   void draw_normals(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
-   void draw_stroke(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
-   void draw_fill(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const;
+   void draw_normals(gl::batch_t &batch, const PMatrix& transform) const;
+   void draw_stroke(gl::batch_t &batch, const PMatrix& transform) const;
+   void draw_fill(gl::batch_t &batch, const PMatrix& transform) const;
 
    int getChildCount() const {
       DEBUG_METHOD();
@@ -1235,7 +1221,7 @@ PShapeImpl drawTriangleNormal(int points, const gl::vertex *p,
    return shape;
 }
 
-void PShapeImpl::draw_normals(std::vector<gl::VAO> &glc, const PMatrix &transform) const {
+void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform) const {
    DEBUG_METHOD();
    switch( style ) {
    case TRIANGLES_NOSTROKE:
@@ -1255,7 +1241,7 @@ void PShapeImpl::draw_normals(std::vector<gl::VAO> &glc, const PMatrix &transfor
          xtras.push_back( extras[indices[i]] );
          xtras.push_back( extras[indices[i+1]] );
          xtras.push_back( extras[indices[i+2]] );
-         drawTriangleNormal( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( glc, transform );
+         drawTriangleNormal( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( batch, transform );
       }
       break;
    case POINTS:
@@ -1267,7 +1253,7 @@ void PShapeImpl::draw_normals(std::vector<gl::VAO> &glc, const PMatrix &transfor
    }
 }
 
-void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform) const {
+void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const {
    DEBUG_METHOD();
    switch( style ) {
    case POINTS:
@@ -1276,7 +1262,7 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
          drawUntexturedFilledEllipse(
             vertices[i].position.x, vertices[i].position.y,
             extras[i].weight, extras[i].weight,
-            extras[i].stroke, shape_matrix ).draw_fill( glc, transform );
+            extras[i].stroke, shape_matrix ).draw_fill( batch, transform );
       }
       break;
    }
@@ -1304,7 +1290,7 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
          _line(shape, p2, p0, w2, w0, c2, c0 );
       }
       shape.endShape();
-      shape.draw_fill( glc, transform );
+      shape.draw_fill( batch, transform );
       break;
    }
    case LINES:
@@ -1323,7 +1309,7 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
          _line(shape, p0, p1, w0, w1, c0, c1 );
       }
       shape.endShape();
-      shape.draw_fill( glc, transform );
+      shape.draw_fill( batch, transform );
       break;
    }
    case POLYGON:
@@ -1331,19 +1317,19 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( glc, transform );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( batch, transform );
          } else {
             if ( contour.empty() ) {
-               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc, transform );
+               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform );
             } else {
-               drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( glc, transform );
+               drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform );
                auto q = contour;
                q.push_back(vertices.size());
                for ( int i = 0; i < q.size() - 1; ++i ) {
                   drawLinePoly( q[i+1] - q[i],
                                 vertices.data() + q[i],
                                 extras.data() + q[i],
-                                type == CLOSE, shape_matrix).draw_fill( glc, transform );
+                                type == CLOSE, shape_matrix).draw_fill( batch, transform );
                }
             }
          }
@@ -1352,17 +1338,17 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
          case ROUND:
             drawRoundLine( vertices[0].position, vertices[1].position,
                            extras[0].weight, extras[1].weight,
-                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc, transform );
+                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform );
             break;
          case PROJECT:
             drawCappedLine( vertices[0].position, vertices[1].position,
                             extras[0].weight, extras[1].weight,
-                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc, transform );
+                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform );
             break;
          case SQUARE:
             drawLine( vertices[0].position, vertices[1].position,
                       extras[0].weight, extras[1].weight,
-                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( glc, transform );
+                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform );
             break;
          default:
             abort();
@@ -1371,7 +1357,7 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
          drawUntexturedFilledEllipse(
             vertices[0].position.x, vertices[0].position.y,
             extras[0].weight, extras[0].weight,
-            extras[0].stroke, shape_matrix ).draw_fill( glc, transform );
+            extras[0].stroke, shape_matrix ).draw_fill( batch, transform );
       }
       break;
    }
@@ -1379,7 +1365,7 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
       // This isn't exactly right since we draw an extra line for every quad,
       // but it's close enought for now.
    case TRIANGLE_STRIP:
-      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( glc, transform );
+      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform );
       break;
    case TRIANGLE_FAN:
       abort();
@@ -1390,9 +1376,10 @@ void PShapeImpl::draw_stroke(std::vector<gl::VAO> &glc, const PMatrix& transform
    }
 }
 
-void PShapeImpl::draw_fill(std::vector<gl::VAO> &vaos, const PMatrix& transform) const {
+void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform) const {
    DEBUG_METHOD();
 
+   auto &vaos = batch.vaos;
    if (vertices.size() > 65536)
      abort();
 
@@ -1868,8 +1855,8 @@ void PShape::setTint(color c){
 }
 
 
-void PShape::flatten(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
-   return impl->flatten(parent_vao, transform);
+void PShape::flatten(gl::batch_t &batch, const PMatrix& transform) const{
+   return impl->flatten(batch, transform);
 }
 
 
@@ -1881,23 +1868,19 @@ void PShape::flattenTransforms(const PMatrix& transform){
 void PShape::draw(gl::context &glc, const PMatrix& transform){
    glc.draw( *this, transform.glm_data() );
 }
-void PShape::flatten(gl::context &glc, const PMatrix& transform){
-   return impl->flatten(glc, transform);
+
+void PShape::draw_normals(gl::batch_t &batch, const PMatrix& transform) const{
+   return impl->draw_normals(batch,transform);
 }
 
 
-void PShape::draw_normals(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
-   return impl->draw_normals(parent_vao,transform);
+void PShape::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const{
+   return impl->draw_stroke(batch,transform);
 }
 
 
-void PShape::draw_stroke(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
-   return impl->draw_stroke(parent_vao,transform);
-}
-
-
-void PShape::draw_fill(std::vector<gl::VAO> &parent_vao, const PMatrix& transform) const{
-   return impl->draw_fill(parent_vao,transform);
+void PShape::draw_fill(gl::batch_t &batch, const PMatrix& transform) const{
+   return impl->draw_fill(batch,transform);
 }
 
 

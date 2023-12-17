@@ -33,18 +33,6 @@ namespace gl {
       int mindex;
    };
 
-   struct scene_t {
-      bool lights = false;
-      glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
-      glm::vec3 directionLightVector = { 0.0, 0.0, 0.0 };
-      glm::vec3 ambientLight =         { 0.0, 0.0, 0.0 };
-      std::vector<glm::vec3> pointLightColors;
-      std::vector<glm::vec3> pointLightPoss;
-      glm::vec3 pointLightFalloff =    { 1.0, 0.0, 0.0 };
-      glm::mat4 projection_matrix;
-      glm::mat4 view_matrix;
-   };
-
    class attribute {
       GLint id = -1;
       GLint shaderId = -1;
@@ -71,6 +59,45 @@ namespace gl {
       void set(const std::vector<glm::vec3> &value) const;
       void set(const std::vector<glm::mat4> &value) const;
       void set(const glm::mat4 &value) const;
+   };
+
+   class scene_t {
+      uniform AmbientLight;
+      uniform DirectionLightColor;
+      uniform DirectionLightVector;
+      uniform NumberOfPointLights;
+      uniform PointLightColor;
+      uniform PointLightPosition;
+      uniform PointLightFalloff;
+      uniform PVmatrix;
+   public:
+      scene_t() {}
+      void setup(uniform AmbientLight_, uniform DirectionLightColor_, uniform DirectionLightVector_,
+                 uniform NumberOfPointLights_,
+                 uniform PointLightColor_,
+                 uniform PointLightPosition_,
+                 uniform PointLightFalloff_,
+                 uniform PVmatrix_) {
+         AmbientLight = AmbientLight_;
+         DirectionLightColor = DirectionLightColor_;
+         DirectionLightVector = DirectionLightVector_;
+         NumberOfPointLights = NumberOfPointLights_;
+         PointLightColor = PointLightColor_;
+         PointLightPosition = PointLightPosition_;
+         PointLightFalloff = PointLightFalloff_;
+         PVmatrix = PVmatrix_;
+      }
+
+      bool lights = false;
+      glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
+      glm::vec3 directionLightVector = { 0.0, 0.0, 0.0 };
+      glm::vec3 ambientLight =         { 0.0, 0.0, 0.0 };
+      std::vector<glm::vec3> pointLightColors;
+      std::vector<glm::vec3> pointLightPoss;
+      glm::vec3 pointLightFalloff =    { 1.0, 0.0, 0.0 };
+      glm::mat4 projection_matrix;
+      glm::mat4 view_matrix;
+      void set();
    };
 
    class VAO {
@@ -103,6 +130,32 @@ namespace gl {
       ~VAO();
    };
 
+   class batch_t {
+      attribute Position;
+      attribute Normal;
+      attribute Color;
+      attribute Coord;
+      attribute TUnit;
+      attribute MIndex;
+      uniform Mmatrix;
+   public:
+      std::vector<VAO> vaos;
+      batch_t() {}
+      void setup( attribute Position_, attribute Normal_, attribute Color_,
+                  attribute Coord_,    attribute TUnit_,  attribute MIndex_,
+                  uniform Mmatrix_ ) {
+         Position = Position_;
+         Normal = Normal_;
+         Color = Color_;
+         Coord = Coord_;
+         TUnit = TUnit_;
+         MIndex = MIndex_;
+         Mmatrix = Mmatrix_;
+      }
+      void compile();
+      void draw();
+   };
+
    class context {
       int flushes = 0;
       scene_t scene;
@@ -111,7 +164,7 @@ namespace gl {
       int window_width;
       int window_height;
       framebuffer localFrame;
-      std::vector<VAO> vaos;
+      batch_t batch;
 
    public:
 
@@ -143,7 +196,7 @@ namespace gl {
 
       context& operator=(context&&x) noexcept {
          std::swap(scene,x.scene);
-         std::swap(vaos,x.vaos);
+         std::swap(batch,x.batch);
          std::swap(flushes,x.flushes);
          std::swap(localFrame,x.localFrame);
 
@@ -192,7 +245,6 @@ namespace gl {
          return (scene.projection_matrix * (scene.view_matrix * in)).y;
       }
 
-      void setScene( const scene_t &scene );
 
       void setProjectionMatrix( const glm::mat4 &PV ) {
          flush();
@@ -287,6 +339,7 @@ namespace gl {
       }
 
       void shader(PShader shader, int kind = TRIANGLES) {
+         flush();
          if ( currentShader != shader ) {
             currentShader = shader;
             shader.useProgram();
@@ -311,6 +364,9 @@ namespace gl {
             Coord = shader.get_attribute("coord");
             TUnit = shader.get_attribute("tunit");
             MIndex = shader.get_attribute("mindex");
+            scene.setup( AmbientLight, DirectionLightColor, DirectionLightVector,NumberOfPointLights,
+                         PointLightColor, PointLightPosition, PointLightFalloff, PVmatrix );
+            batch.setup( Position, Normal, Color, Coord, TUnit, MIndex, Mmatrix );
          }
          shader.set_uniforms();
       }
@@ -322,10 +378,6 @@ namespace gl {
       void loadProjectionViewMatrix( const glm::mat4 &data );
 
       void flush();
-
-      void drawVAO(std::vector<VAO> &vao, const glm::mat4 &currentTransform);
-
-      void compile(std::vector<VAO> &vao);
 
       int getFlushCount() const {
          return flushes;
