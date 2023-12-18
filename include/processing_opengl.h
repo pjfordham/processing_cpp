@@ -162,17 +162,12 @@ namespace gl {
       scene_t scene;
       int width;
       int height;
+      float aaFactor;
       framebuffer localFrame;
       framebuffer windowFrame;
       batch_t batch;
-
-   public:
-
-      float aaFactor;
-
       PShader defaultShader;
       PShader currentShader;
-
       int MaxTextureImageUnits;
 
    public:
@@ -195,10 +190,10 @@ namespace gl {
          std::swap(scene,x.scene);
          std::swap(width,x.width);
          std::swap(height,x.height);
+         std::swap(aaFactor,x.aaFactor);
          std::swap(localFrame,x.localFrame);
          std::swap(windowFrame,x.windowFrame);
          std::swap(batch,x.batch);
-         std::swap(aaFactor,x.aaFactor);
          std::swap(defaultShader,x.defaultShader);
          std::swap(currentShader,x.currentShader);
          std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);

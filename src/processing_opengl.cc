@@ -187,19 +187,17 @@ namespace gl {
       }
    }
 
-   context::context(int width, int height, float aaFactor) :
+   context::context(int width_, int height_, float aaFactor_) :
+      aaFactor(aaFactor_),
+      width(width_),
+      height(height_),
+      windowFrame(framebuffer::constructMainFrame( width, height )),
+      localFrame(framebuffer( width, height, aaFactor, MSAA )),
       defaultShader( loadShader() ) {
-      this->aaFactor = aaFactor;
-      this->width = width;
-      this->height = height;
-
-      windowFrame = framebuffer::constructMainFrame( this->width, this->height );
-      localFrame = framebuffer( this->width, this->height, aaFactor, MSAA );
 
       shader( defaultShader );
 
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      blendMode( BLEND );
 
       glDepthFunc(GL_LEQUAL);
       glEnable(GL_DEPTH_TEST);
