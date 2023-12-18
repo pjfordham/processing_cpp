@@ -154,6 +154,7 @@ namespace gl {
       }
       void compile();
       void draw();
+      void clear();
    };
 
    class context {
@@ -173,9 +174,8 @@ namespace gl {
       PShader defaultShader;
       PShader currentShader;
 
-      attribute Position, Normal, Color, Coord, TUnit, MIndex;
       uniform AmbientLight, DirectionLightColor, DirectionLightVector, NumberOfPointLights,
-         PointLightColor,PointLightPosition,PointLightFalloff, uSampler, Mmatrix, PVmatrix, TransformMatrix;
+         PointLightColor,PointLightPosition,PointLightFalloff, uSampler, TransformMatrix;
 
       int MaxTextureImageUnits;
 
@@ -207,26 +207,8 @@ namespace gl {
 
          std::swap(aaFactor,x.aaFactor);
 
-         std::swap(Position,x.Position);
-         std::swap(Normal,x.Normal);
-         std::swap(Color,x.Color);
-         std::swap(Coord,x.Coord);
-         std::swap(TUnit, x.TUnit);
-         std::swap(MIndex,x.MIndex);
-
          std::swap(defaultShader,x.defaultShader);
          std::swap(currentShader,x.currentShader);
-
-         std::swap(Mmatrix,x.Mmatrix);
-         std::swap(PVmatrix,x.PVmatrix);
-         std::swap(uSampler,x.uSampler);
-         std::swap(AmbientLight,x.AmbientLight);
-         std::swap(DirectionLightColor,x.DirectionLightColor);
-         std::swap(DirectionLightVector,x.DirectionLightVector);
-         std::swap(PointLightPosition,x.PointLightPosition);
-         std::swap(PointLightColor,x.PointLightColor);
-         std::swap(NumberOfPointLights,x.NumberOfPointLights);
-         std::swap(PointLightFalloff,x.PointLightFalloff);
 
          std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);
 
@@ -347,35 +329,31 @@ namespace gl {
             uSampler = shader.get_uniform("myTextures");
             uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
-            Mmatrix = shader.get_uniform("Mmatrix");
-            PVmatrix = shader.get_uniform( "PVmatrix");
             TransformMatrix = shader.get_uniform("transformMatrix");
-            DirectionLightColor = shader.get_uniform("directionLightColor");
-            DirectionLightVector = shader.get_uniform("directionLightVector");
-            AmbientLight = shader.get_uniform("ambientLight");
-            NumberOfPointLights = shader.get_uniform("numberOfPointLights");
-            PointLightColor = shader.get_uniform("pointLightColor");
-            PointLightPosition = shader.get_uniform("pointLightPosition");
-            PointLightFalloff = shader.get_uniform("pointLightFalloff");
 
-            Position = shader.get_attribute("position");
-            Normal = shader.get_attribute("normal");
-            Color = shader.get_attribute("color");
-            Coord = shader.get_attribute("coord");
-            TUnit = shader.get_attribute("tunit");
-            MIndex = shader.get_attribute("mindex");
-            scene.setup( AmbientLight, DirectionLightColor, DirectionLightVector,NumberOfPointLights,
-                         PointLightColor, PointLightPosition, PointLightFalloff, PVmatrix );
-            batch.setup( Position, Normal, Color, Coord, TUnit, MIndex, Mmatrix );
+            scene.setup(
+               shader.get_uniform("ambientLight"),
+               shader.get_uniform("directionLightColor"),
+               shader.get_uniform("directionLightVector"),
+               shader.get_uniform("numberOfPointLights"),
+               shader.get_uniform("pointLightColor"),
+               shader.get_uniform("pointLightPosition"),
+               shader.get_uniform("pointLightFalloff"),
+               shader.get_uniform("PVmatrix"));
+
+            batch.setup(
+               shader.get_attribute("position"),
+               shader.get_attribute("normal"),
+               shader.get_attribute("color"),
+               shader.get_attribute("coord"),
+               shader.get_attribute("tunit"),
+               shader.get_attribute("mindex"),
+               shader.get_uniform("Mmatrix"));
          }
          shader.set_uniforms();
       }
 
-      void loadMoveMatrix(  const std::vector<glm::mat4> &transforms );
-
       void draw(PShape shape, const glm::mat4 &transform);
-
-      void loadProjectionViewMatrix( const glm::mat4 &data );
 
       void flush();
 

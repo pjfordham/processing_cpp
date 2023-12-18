@@ -138,6 +138,10 @@ namespace gl {
       }
    }
 
+   void batch_t::clear() {
+      vaos.clear();
+   }
+
 
    void scene_t::set() {
       PVmatrix.set( projection_matrix * view_matrix  );
@@ -268,7 +272,7 @@ namespace gl {
       scene.set();
       batch.compile();
       batch.draw();
-      batch.vaos.clear();
+      batch.clear();
       return;
    }
 
@@ -281,16 +285,6 @@ namespace gl {
    void context::clearDepthBuffer(framebuffer &fb) {
       fb.bind();
       glClear(GL_DEPTH_BUFFER_BIT);
-   }
-
-   void context::loadMoveMatrix( const std::vector<glm::mat4> &transforms ) {
-      if (transforms.size() > 16 || transforms.size() < 1)
-         abort();
-      Mmatrix.set( transforms );
-   }
-
-   void context::loadProjectionViewMatrix( const glm::mat4 &data ) {
-      PVmatrix.set( data );
    }
 
    VAO::VAO() noexcept {
