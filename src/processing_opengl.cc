@@ -192,10 +192,8 @@ namespace gl {
       this->aaFactor = aaFactor;
       this->width = width;
       this->height = height;
-      this->window_width = width;
-      this->window_height = height;
 
-      // localFrame = framebuffer::constructMainFrame(width, height);
+      windowFrame = framebuffer::constructMainFrame( this->width, this->height );
       localFrame = framebuffer( this->width, this->height, aaFactor, MSAA );
 
       shader( defaultShader );
@@ -274,17 +272,6 @@ namespace gl {
       batch.draw();
       batch.clear();
       return;
-   }
-
-   void context::clear(framebuffer &fb, float r, float g, float b, float a) {
-      fb.bind();
-      glClearColor(r, g, b, a);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   }
-
-   void context::clearDepthBuffer(framebuffer &fb) {
-      fb.bind();
-      glClear(GL_DEPTH_BUFFER_BIT);
    }
 
    VAO::VAO() noexcept {

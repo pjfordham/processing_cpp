@@ -20,7 +20,6 @@ public:
    static void close();
 
    bool pixels_current = false;
-   gl::framebuffer windowFrame;
    int textureMode_ = IMAGE;
    gl::context glc;
 
@@ -59,7 +58,6 @@ public:
       std::swap(glc, x.glc);
 
       std::swap(pixels_current, x.pixels_current);
-      std::swap(windowFrame, x.windowFrame);
       std::swap(ellipse_mode, x.ellipse_mode);
       std::swap(rect_mode, x.rect_mode);
       std::swap(image_mode, x.image_mode);
@@ -95,8 +93,6 @@ public:
       this->width = width;
       this->height = height;
       this->aaFactor = aaFactor;
-
-      windowFrame = gl::framebuffer::constructMainFrame( width, height );
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -1012,7 +1008,7 @@ public:
 
    void commit_draw() {
       endDraw();
-      glc.blit( windowFrame );
+      glc.commit();
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {

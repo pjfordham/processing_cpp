@@ -162,9 +162,8 @@ namespace gl {
       scene_t scene;
       int width;
       int height;
-      int window_width;
-      int window_height;
       framebuffer localFrame;
+      framebuffer windowFrame;
       batch_t batch;
 
    public:
@@ -173,9 +172,6 @@ namespace gl {
 
       PShader defaultShader;
       PShader currentShader;
-
-      uniform AmbientLight, DirectionLightColor, DirectionLightVector, NumberOfPointLights,
-         PointLightColor,PointLightPosition,PointLightFalloff, uSampler, TransformMatrix;
 
       int MaxTextureImageUnits;
 
@@ -195,23 +191,17 @@ namespace gl {
       context& operator=(const context&) = delete;
 
       context& operator=(context&&x) noexcept {
-         std::swap(scene,x.scene);
-         std::swap(batch,x.batch);
          std::swap(flushes,x.flushes);
-         std::swap(localFrame,x.localFrame);
-
+         std::swap(scene,x.scene);
          std::swap(width,x.width);
          std::swap(height,x.height);
-         std::swap(window_width,x.window_width);
-         std::swap(window_height,x.window_height);
-
+         std::swap(localFrame,x.localFrame);
+         std::swap(windowFrame,x.windowFrame);
+         std::swap(batch,x.batch);
          std::swap(aaFactor,x.aaFactor);
-
          std::swap(defaultShader,x.defaultShader);
          std::swap(currentShader,x.currentShader);
-
          std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);
-
          return *this;
       }
 
@@ -294,30 +284,28 @@ namespace gl {
          localFrame.blit( target );
       }
 
+      void commit() {
+         flush();
+         localFrame.blit( windowFrame );
+      }
+
       void loadPixels( std::vector<unsigned int> &pixels ) {
          flush();
-         framebuffer frame(window_width, window_height, 1, SSAA);
+         framebuffer frame(width, height, 1, SSAA);
          localFrame.blit( frame );
          frame.loadPixels( pixels );
       };
 
       void updatePixels( const std::vector<unsigned int> &pixels) {
          flush();
-         framebuffer frame(window_width, window_height, 1, SSAA);
+         framebuffer frame(width, height, 1, SSAA);
          frame.updatePixels( pixels );
          frame.blit( localFrame );
       }
 
-      void clear(framebuffer &fb, float r, float g, float b, float a);
-
       void clear( float r, float g, float b, float a) {
-         clear( localFrame, r, g, b, a);
-      }
-
-      void clearDepthBuffer(framebuffer &fb);
-
-      void clearDepthBuffer() {
-         clearDepthBuffer( localFrame );
+         flush();
+         localFrame.clear(r, g, b, a);
       }
 
       void shader(PShader shader, int kind = TRIANGLES) {
@@ -326,10 +314,10 @@ namespace gl {
             currentShader = shader;
             shader.useProgram();
 
-            uSampler = shader.get_uniform("myTextures");
+            uniform uSampler = shader.get_uniform("myTextures");
             uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
-            TransformMatrix = shader.get_uniform("transformMatrix");
+            // TransformMatrix = shader.get_uniform("transformMatrix");
 
             scene.setup(
                shader.get_uniform("ambientLight"),

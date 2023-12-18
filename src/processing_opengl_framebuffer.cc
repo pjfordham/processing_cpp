@@ -162,5 +162,18 @@ namespace gl {
       glViewport(0, 0, width, height);
    }
 
+   void framebuffer::clear( float r, float g, float b, float a ) {
+      DEBUG_METHOD();
+      bind();
+      glClearColor(r, g, b, a);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   }
+
+   void framebuffer::clearDepthBuffer() {
+      DEBUG_METHOD();
+      bind();
+      glClear(GL_DEPTH_BUFFER_BIT);
+   }
+
 } // namespace gl
 
