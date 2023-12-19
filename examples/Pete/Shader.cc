@@ -35,7 +35,6 @@ void setup() {
 
    fmt::print("Vertex Shader:\n\n{}\n\n\nFragment Shader:\n\n{}\n", basicVertexShader, basicFragmentShader);
    basic = PShader(0, basicVertexShader.c_str(), basicFragmentShader.c_str());
-   basic.compileShaders();
    noStroke();
    fill(0, 1);
    shader(basic);

@@ -12,6 +12,7 @@
 #include "processing_pfont.h"
 #include "processing_enum.h"
 #include "processing_opengl.h"
+#include "processing_pshader.h"
 
 class PGraphics {
 public:
@@ -45,6 +46,9 @@ public:
    std::vector<PMatrix> matrix_stack;
 
    std::unordered_map<std::string, PImage> words;
+
+   PShader defaultShader;
+   PShader currentShader;
 
    PGraphics(const PGraphics &x) = delete;
 
@@ -80,6 +84,9 @@ public:
       std::swap(matrix_stack, x.matrix_stack);
       std::swap(words, x.words);
 
+      std::swap(defaultShader, x.defaultShader);
+      std::swap(currentShader, x.currentShader);
+
       return *this;
    }
 
@@ -93,6 +100,12 @@ public:
       this->width = width;
       this->height = height;
       this->aaFactor = aaFactor;
+
+      defaultShader = loadShader();
+      currentShader = defaultShader;
+
+      glc.setShader( currentShader.getShader() );
+      currentShader.bind();
 
       textFont( createFont("DejaVuSans.ttf",12));
       noLights();
@@ -1013,6 +1026,17 @@ public:
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
       return { width, height, mode, aaFactor };
+   }
+
+   void shader(PShader pshader, int kind = TRIANGLES) {
+      currentShader = pshader;
+      glc.setShader( currentShader.getShader() );
+      currentShader.set_uniforms();
+      currentShader.bind();
+   }
+
+   void resetShader() {
+      defaultShader = currentShader;
    }
 
 };

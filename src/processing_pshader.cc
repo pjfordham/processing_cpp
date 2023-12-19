@@ -94,23 +94,19 @@ class PShaderImpl {
    std::map<std::string, glm::vec2> uniforms2fv;
    std::map<std::string, float>     uniforms1f;
 
-   std::map<std::string, GLuint> attribLocation;
-   std::map<std::string, GLuint> uniformLocation;
-
-   std::string vertexShader;
-   std::string fragmentShader;
-
+   gl::shader_t shader;
 public:
-   GLuint programID;
 
    ~PShaderImpl();
-
-   void compileShaders();
-
-public:
    PShaderImpl(GLuint parent, const char *vertSource, const char *fragSource);
 
+   const gl::shader_t &getShader() {
+      return shader;
+   }
+
    void releaseShaders();
+
+   void bind();
 
    void set_uniforms();
 
@@ -120,15 +116,7 @@ public:
 
    void set(const char *uniform, float v1, float v2, float v3);
 
-   GLuint getAttribLocation(const char *attribute) const;
-
-   GLuint getUniformLocation(const char *uniform) const;
-
-   void useProgram();
    friend struct fmt::formatter<PShaderImpl>;
-
-   void enumerateAttributes();
-   void enumerateUniforms();
 
 };
 
@@ -147,33 +135,32 @@ static void PShader_releaseAllShaders() {
 
 PShaderImpl::PShaderImpl(GLuint parent, const char *vertSource,
                          const char *fragSource)
-   : vertexShader(vertSource), fragmentShader(fragSource), programID(0) {
+   : shader(vertSource, fragSource) {
    DEBUG_METHOD();
 }
 
 PShaderImpl::~PShaderImpl() {
    DEBUG_METHOD();
-   if (programID) {
-      glDeleteProgram(programID);
-   }
+}
+
+void PShaderImpl::bind() {
+   DEBUG_METHOD();
+   shader.bind();
 }
 
 void PShaderImpl::set_uniforms() {
    DEBUG_METHOD();
    for (const auto& [id, value] : uniforms1f) {
-      GLint loc = getUniformLocation( id.c_str() );
-      if ( loc != -1 )
-         glUniform1f(loc,value);
+      gl::uniform loc = shader.get_uniform( id.c_str() );
+      loc.set( value );
    }
    for (const auto& [id, value] : uniforms2fv) {
-      GLint loc = getUniformLocation( id.c_str() );
-      if ( loc != -1 )
-         glUniform2fv(loc, 1, glm::value_ptr(value) );
+      gl::uniform loc = shader.get_uniform( id.c_str() );
+      loc.set( value );
    }
    for (const auto& [id, value] : uniforms3fv) {
-      GLint loc = getUniformLocation( id.c_str() );
-      if ( loc != -1 )
-         glUniform3fv(loc, 1, glm::value_ptr(value) );
+      gl::uniform loc = shader.get_uniform( id.c_str() );
+      loc.set( value );
    }
 }
 
@@ -192,125 +179,11 @@ void PShaderImpl::set(const char *id, float v1, float v2, float v3) {
    uniforms3fv[id] = {v1, v2, v3};
 }
 
-GLuint PShaderImpl::getAttribLocation(const char *attribute) const {
-   DEBUG_METHOD();
-   return glGetAttribLocation(programID, attribute);
-}
 
-GLuint PShaderImpl::getUniformLocation(const char *uniform) const {
-   DEBUG_METHOD();
-   return glGetUniformLocation(programID, uniform);
-}
-
-void PShaderImpl::useProgram() {
-   DEBUG_METHOD();
-   glUseProgram(programID);
-}
-
-void PShaderImpl::compileShaders() {
-   DEBUG_METHOD();
-   // Create the shaders
-   GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-   GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-   const char * vertex = vertexShader.c_str();
-   const char * fragment = fragmentShader.c_str();
-
-   glShaderSource(VertexShaderID, 1, &vertex , NULL);
-   glCompileShader(VertexShaderID);
-
-   glShaderSource(FragmentShaderID, 1, &fragment , NULL);
-   glCompileShader(FragmentShaderID);
-
-   GLint Result = GL_FALSE;
-   int InfoLogLength;
-
-   // Check Vertex Shader
-   glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-   glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-   if ( InfoLogLength > 0 ){
-      std::vector<char> VertexShaderErrorMessage(InfoLogLength+1);
-      glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-      fmt::print("{}\n", &VertexShaderErrorMessage[0]);
-   }
-
-   // Check Fragment Shader
-   glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-   glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-   if ( InfoLogLength > 0 ){
-      std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
-      glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
-      fmt::print("{}\n", &FragmentShaderErrorMessage[0]);
-   }
-
-   // Link the program
-   programID = glCreateProgram();
-   glAttachShader(programID, VertexShaderID);
-   glAttachShader(programID, FragmentShaderID);
-   glLinkProgram(programID);
-
-   // Check the program
-   glGetProgramiv(programID, GL_LINK_STATUS, &Result);
-   glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-   if ( InfoLogLength > 0 ){
-      std::vector<char> ProgramErrorMessage(InfoLogLength+1);
-      glGetProgramInfoLog(programID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-      fmt::print("{}\n", &ProgramErrorMessage[0]);
-   }
-
-   glDetachShader(programID, VertexShaderID);
-   glDetachShader(programID, FragmentShaderID);
-
-   glDeleteShader(VertexShaderID);
-   glDeleteShader(FragmentShaderID);
-
-   enumerateUniforms();
-   enumerateAttributes();
-}
-
-void PShaderImpl::enumerateUniforms() {
-   DEBUG_METHOD();
-   GLint size; // size of the variable
-   GLenum type; // type of the variable (float, vec3 or mat4, etc)
-
-   const GLsizei bufSize = 64; // maximum name length
-   GLchar name[bufSize]; // variable name in GLSL
-   GLsizei length; // name length
-
-   GLint count;
-   glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &count);
-
-   for (int i = 0; i < count; i++) {
-      glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name);
-      uniformLocation[name] = glGetUniformLocation(programID, name);
-   }
-}
-
-void PShaderImpl::enumerateAttributes() {
-   DEBUG_METHOD();
-   GLint size; // size of the variable
-   GLenum type; // type of the variable (float, vec3 or mat4, etc)
-
-   const GLsizei bufSize = 64; // maximum name length
-   GLchar name[bufSize]; // variable name in GLSL
-   GLsizei length; // name length
-
-   GLint count;
-   glGetProgramiv(programID, GL_ACTIVE_ATTRIBUTES, &count);
-
-   for (int i = 0; i < count; i++) {
-      glGetActiveAttrib(programID, (GLuint)i, bufSize, &length, &size, &type, name);
-      attribLocation[name] = glGetAttribLocation(programID, name);
-   }
-
-}
 
 void PShaderImpl::releaseShaders() {
    DEBUG_METHOD();
-   if ( programID ) {
-      glDeleteProgram( programID );
-      programID = 0;
-   }
+   shader = {};
 }
 
 template <>
@@ -322,8 +195,7 @@ struct fmt::formatter<PShaderImpl> {
 
     template <typename FormatContext>
     auto format(const PShaderImpl& v, FormatContext& ctx) {
-       return format_to(ctx.out(), "programID={:<4} vertexShader={:<25} fragmentShader={:<25} numUniforms={:4} numAttributes={:4}",
-                        v.programID, (void*)&v.vertexShader, (void*)&v.fragmentShader, v.uniformLocation.size(), v.attribLocation.size());
+       return format_to(ctx.out(), "nothing");
     }
 };
 
@@ -342,12 +214,16 @@ PShader::PShader(GLuint parent)
    shaderHandles().push_back( impl );
 }
 
-void PShader::compileShaders() {
-   impl->compileShaders();
+const gl::shader_t &PShader::getShader() const {
+   return impl->getShader();
 }
 
 void PShader::set_uniforms() {
    impl->set_uniforms();
+}
+
+void PShader::bind() {
+   impl->bind();
 }
 
 void PShader::set(const char *uniform, float value) {
@@ -362,22 +238,6 @@ void PShader::set(const char *uniform, float v1, float v2, float v3) {
    impl->set( uniform, v1, v2, v3 );
 }
 
-GLuint PShader::getAttribLocation(const char *attribute) const {
-   return impl->getAttribLocation( attribute );
-}
-
-GLuint PShader::getUniformLocation(const char *uniform) const {
-   return impl->getUniformLocation( uniform );
-}
-
-void PShader::useProgram() {
-   impl->useProgram();
-}
-
-GLuint PShader::getProgramID() const {
-   return impl->programID;
-}
-
 void PShader::init() {
 }
 
@@ -385,10 +245,50 @@ void PShader::close() {
    PShader_releaseAllShaders();
 }
 
-gl::uniform PShader::get_uniform(const std::string &uniform_name) const {
-   return {*this, uniform_name};
+PShader loadShader() {
+   return { 0, defaultVertexShader, defaultFragmentShader };
 }
 
-gl::attribute PShader::get_attribute(const std::string &attribute_name) const {
-   return {*this, attribute_name};
+PShader loadShader(const char *fragShader) {
+   using namespace std::literals;
+
+   std::ifstream inputFile("data/"s + fragShader);
+
+   if (!inputFile.is_open()) {
+      abort();
+   }
+
+   std::stringstream buffer;
+   buffer << inputFile.rdbuf();
+
+   inputFile.close();
+
+   return { 0, defaultVertexShader, buffer.str().c_str() };
+}
+
+PShader loadShader(const char *fragShader, const char *vertShader) {
+   using namespace std::literals;
+
+   std::ifstream inputFile("data/"s + fragShader);
+
+   if (!inputFile.is_open()) {
+      abort();
+   }
+
+   std::stringstream buffer;
+   buffer << inputFile.rdbuf();
+
+   inputFile.close();
+   std::ifstream inputFile2("data/"s + vertShader);
+
+   if (!inputFile2.is_open()) {
+      abort();
+   }
+
+   std::stringstream buffer2;
+   buffer2 << inputFile2.rdbuf();
+
+   inputFile2.close();
+
+   return { 0, buffer2.str().c_str(), buffer.str().c_str() };
 }

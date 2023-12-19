@@ -11,13 +11,13 @@
 #include "processing_pgraphics.h"
 #include "processing_pfont.h"
 #include "processing_time.h"
+#include "processing_pshader.h"
 
 // This is the global PGraphcs object that forms the top level canvas.
 extern PGraphics g;
 
-MAKE_GLOBAL(shader, g.glc);
-MAKE_GLOBAL(loadShader, g.glc);
-MAKE_GLOBAL(resetShader, g.glc);
+MAKE_GLOBAL(shader, g);
+MAKE_GLOBAL(resetShader, g);
 MAKE_GLOBAL(hint, g.glc);
 MAKE_GLOBAL(get, g);
 MAKE_GLOBAL(set, g);

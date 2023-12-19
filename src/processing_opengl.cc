@@ -167,6 +167,67 @@ namespace gl {
       }
    }
 
+   shader_t::shader_t(const char *vertex, const char *fragment) {
+      // Create the shaders
+      GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+      GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+      glShaderSource(VertexShaderID, 1, &vertex , NULL);
+      glCompileShader(VertexShaderID);
+
+      glShaderSource(FragmentShaderID, 1, &fragment , NULL);
+      glCompileShader(FragmentShaderID);
+
+      GLint Result = GL_FALSE;
+      int InfoLogLength;
+
+      // Check Vertex Shader
+      glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+      glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+      if ( InfoLogLength > 0 ){
+         std::vector<char> VertexShaderErrorMessage(InfoLogLength+1);
+         glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+         fmt::print("{}\n", &VertexShaderErrorMessage[0]);
+      }
+
+      // Check Fragment Shader
+      glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
+      glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+      if ( InfoLogLength > 0 ){
+         std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
+         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
+         fmt::print("{}\n", &FragmentShaderErrorMessage[0]);
+      }
+
+      // Link the program
+      programID = glCreateProgram();
+      glAttachShader(programID, VertexShaderID);
+      glAttachShader(programID, FragmentShaderID);
+      glLinkProgram(programID);
+
+      // Check the program
+      glGetProgramiv(programID, GL_LINK_STATUS, &Result);
+      glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+      if ( InfoLogLength > 0 ){
+         std::vector<char> ProgramErrorMessage(InfoLogLength+1);
+         glGetProgramInfoLog(programID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+         fmt::print("{}\n", &ProgramErrorMessage[0]);
+      }
+
+      glDetachShader(programID, VertexShaderID);
+      glDetachShader(programID, FragmentShaderID);
+
+      glDeleteShader(VertexShaderID);
+      glDeleteShader(FragmentShaderID);
+
+   }
+
+   shader_t::~shader_t() {
+      if (programID) {
+         glDeleteProgram(programID);
+      }
+   }
+
    void context::hint(int type) {
       flush();
       switch(type) {
@@ -192,10 +253,7 @@ namespace gl {
       width(width_),
       height(height_),
       windowFrame(framebuffer::constructMainFrame( width, height )),
-      localFrame(framebuffer( width, height, aaFactor, MSAA )),
-      defaultShader( loadShader() ) {
-
-      shader( defaultShader );
+      localFrame(framebuffer( width, height, aaFactor, MSAA )) {
 
       blendMode( BLEND );
 
@@ -209,57 +267,13 @@ namespace gl {
    context::~context() {
    }
 
-   PShader context::loadShader(const char *fragShader) {
-      using namespace std::literals;
-
-      std::ifstream inputFile("data/"s + fragShader);
-
-      if (!inputFile.is_open()) {
-         abort();
-      }
-
-      std::stringstream buffer;
-      buffer << inputFile.rdbuf();
-
-      inputFile.close();
-
-      auto shader = PShader( 0, buffer.str().c_str() );
-      shader.compileShaders();
-      return shader;
-   }
-
-   PShader context::loadShader(const char *fragShader, const char *vertShader) {
-      using namespace std::literals;
-
-      std::ifstream inputFile("data/"s + fragShader);
-
-      if (!inputFile.is_open()) {
-         abort();
-      }
-
-      std::stringstream buffer;
-      buffer << inputFile.rdbuf();
-
-      inputFile.close();
-      std::ifstream inputFile2("data/"s + vertShader);
-
-      if (!inputFile2.is_open()) {
-         abort();
-      }
-
-      std::stringstream buffer2;
-      buffer2 << inputFile2.rdbuf();
-
-      inputFile2.close();
-
-      auto shader = PShader( 0, buffer2.str().c_str(), buffer.str().c_str() );
-      shader.compileShaders();
-      return shader;
-   }
-
 
    void context::draw(PShape shape, const glm::mat4 &transform) {
       shape.flatten(batch, transform);
+   }
+
+   void shader_t::bind() const {
+      glUseProgram(programID);
    }
 
    void context::flush() {
@@ -360,9 +374,9 @@ namespace gl {
          return std::distance(textures.begin(), it) ;
    }
 
-   attribute::attribute(PShader pshader, const std::string &attribute) {
-      id = pshader.getAttribLocation( attribute.c_str() );
-      shaderId = pshader.getProgramID();
+   attribute::attribute(GLuint shaderID, const std::string &attribute) {
+      id = glGetAttribLocation(shaderID, attribute.c_str());
+      shaderId = shaderID;
    }
 
    void attribute::bind_vec2(std::size_t stride, void *offset) {
@@ -393,8 +407,8 @@ namespace gl {
       }
    }
 
-   uniform::uniform(PShader pshader, const std::string &uniform) {
-      id = pshader.getUniformLocation( uniform.c_str() );
+   uniform::uniform(GLuint programID, const std::string &uniform) {
+      id = glGetUniformLocation(programID, uniform.c_str());
    }
 
    void uniform::set(float value) const {
@@ -441,6 +455,42 @@ namespace gl {
       if ( id != -1 )
          glUniformMatrix4fv(id, 1, false, glm::value_ptr(value) );
    }
+
+   void enumerateUniforms(GLuint programID) {
+      GLint size; // size of the variable
+      GLenum type; // type of the variable (float, vec3 or mat4, etc)
+
+      const GLsizei bufSize = 64; // maximum name length
+      GLchar name[bufSize]; // variable name in GLSL
+      GLsizei length; // name length
+
+      GLint count;
+      glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &count);
+
+      for (int i = 0; i < count; i++) {
+         glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name);
+         // uniformLocation[name] = glGetUniformLocation(programID, name);
+      }
+   }
+
+   void enumerateAttributes(GLuint programID) {
+      GLint size; // size of the variable
+      GLenum type; // type of the variable (float, vec3 or mat4, etc)
+
+      const GLsizei bufSize = 64; // maximum name length
+      GLchar name[bufSize]; // variable name in GLSL
+      GLsizei length; // name length
+
+      GLint count;
+      glGetProgramiv(programID, GL_ACTIVE_ATTRIBUTES, &count);
+
+      for (int i = 0; i < count; i++) {
+         glGetActiveAttrib(programID, (GLuint)i, bufSize, &length, &size, &type, name);
+         // attribLocation[name] = glGetAttribLocation(programID, name);
+      }
+
+ }
+
 
 } // namespace gl
 

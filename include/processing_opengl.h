@@ -12,7 +12,6 @@
 #include "processing_utils.h"
 #include "processing_pimage.h"
 #include "processing_pshape.h"
-#include "processing_pshader.h"
 
 typedef int GLint;
 typedef unsigned int GLuint;
@@ -38,7 +37,7 @@ namespace gl {
       GLint shaderId = -1;
    public:
       attribute() {}
-      attribute(PShader pshader, const std::string &attribute);
+      attribute(GLuint shaderID, const std::string &attribute);
       void bind_vec2(std::size_t stride, void *offset);
       void bind_vec3(std::size_t stride, void *offset);
       void bind_vec4(std::size_t stride, void *offset);
@@ -49,7 +48,7 @@ namespace gl {
       GLint id = -1;
    public:
       uniform() {}
-      uniform(PShader pshader, const std::string &uniform);
+      uniform(GLuint shaderID, const std::string &uniform);
       void set(float value) const;
       void set(int value) const;
       void set(const glm::vec2 &value) const;
@@ -130,6 +129,24 @@ namespace gl {
       ~VAO();
    };
 
+   class shader_t {
+   public:
+      bool operator!=(const shader_t &other) {
+         return programID != other.programID;
+      }
+      GLuint programID = 0;
+      shader_t() {}
+      shader_t(const char *vertSource, const char *fragSource);
+      ~shader_t();
+      void bind() const;
+      uniform get_uniform(const std::string &uniform_name) const {
+         return {programID, uniform_name};
+      }
+      attribute get_attribute(const std::string &attribute_name) const {
+         return {programID, attribute_name};
+      }
+   };
+
    class batch_t {
       attribute Position;
       attribute Normal;
@@ -166,8 +183,7 @@ namespace gl {
       framebuffer localFrame;
       framebuffer windowFrame;
       batch_t batch;
-      PShader defaultShader;
-      PShader currentShader;
+
       int MaxTextureImageUnits;
 
    public:
@@ -194,8 +210,6 @@ namespace gl {
          std::swap(localFrame,x.localFrame);
          std::swap(windowFrame,x.windowFrame);
          std::swap(batch,x.batch);
-         std::swap(defaultShader,x.defaultShader);
-         std::swap(currentShader,x.currentShader);
          std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);
          return *this;
       }
@@ -303,37 +317,33 @@ namespace gl {
          localFrame.clear(r, g, b, a);
       }
 
-      void shader(PShader shader, int kind = TRIANGLES) {
+      void setShader(const shader_t &shader) {
          flush();
-         if ( currentShader != shader ) {
-            currentShader = shader;
-            shader.useProgram();
+         shader.bind();
 
-            uniform uSampler = shader.get_uniform("myTextures");
-            uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+         uniform uSampler = shader.get_uniform("myTextures");
+         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
-            // TransformMatrix = shader.get_uniform("transformMatrix");
+         // TransformMatrix = shader.get_uniform("transformMatrix");
 
-            scene.setup(
-               shader.get_uniform("ambientLight"),
-               shader.get_uniform("directionLightColor"),
-               shader.get_uniform("directionLightVector"),
-               shader.get_uniform("numberOfPointLights"),
-               shader.get_uniform("pointLightColor"),
-               shader.get_uniform("pointLightPosition"),
-               shader.get_uniform("pointLightFalloff"),
-               shader.get_uniform("PVmatrix"));
+         scene.setup(
+            shader.get_uniform("ambientLight"),
+            shader.get_uniform("directionLightColor"),
+            shader.get_uniform("directionLightVector"),
+            shader.get_uniform("numberOfPointLights"),
+            shader.get_uniform("pointLightColor"),
+            shader.get_uniform("pointLightPosition"),
+            shader.get_uniform("pointLightFalloff"),
+            shader.get_uniform("PVmatrix"));
 
-            batch.setup(
-               shader.get_attribute("position"),
-               shader.get_attribute("normal"),
-               shader.get_attribute("color"),
-               shader.get_attribute("coord"),
-               shader.get_attribute("tunit"),
-               shader.get_attribute("mindex"),
-               shader.get_uniform("Mmatrix"));
-         }
-         shader.set_uniforms();
+         batch.setup(
+            shader.get_attribute("position"),
+            shader.get_attribute("normal"),
+            shader.get_attribute("color"),
+            shader.get_attribute("coord"),
+            shader.get_attribute("tunit"),
+            shader.get_attribute("mindex"),
+            shader.get_uniform("Mmatrix"));
       }
 
       void draw(PShape shape, const glm::mat4 &transform);
@@ -346,20 +356,6 @@ namespace gl {
 
       void resetFlushCount() {
          flushes = 0;
-      }
-
-      PShader loadShader(const char *fragShader, const char *vertShader);
-
-      PShader loadShader(const char *fragShader);
-
-      PShader loadShader() {
-         auto shader = PShader( 0 );
-         shader.compileShaders();
-         return shader;
-      }
-
-      void resetShader(int kind = TRIANGLES) {
-         shader( defaultShader );
       }
 
    };

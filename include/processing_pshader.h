@@ -15,6 +15,7 @@ class PShaderImpl;
 namespace gl{
    class uniform;
    class attribute;
+   class shader_t;
 }
 
 class PShader {
@@ -37,11 +38,13 @@ public:
       return this->impl != other.impl;
    }
 
-   void compileShaders();
+   const gl::shader_t &getShader() const;
 
    gl::uniform get_uniform(const std::string &uniform_name) const;
 
    gl::attribute get_attribute(const std::string &attribute_name) const;
+
+   void bind();
 
    void set_uniforms();
 
@@ -51,15 +54,10 @@ public:
 
    void set(const char *uniform, float v1, float v2, float v3);
 
-   GLuint getAttribLocation(const char *attribute) const;
-
-   GLuint getUniformLocation(const char *uniform) const;
-
-   void useProgram();
-
-   GLuint getProgramID() const ;
 
 };
-
+PShader loadShader();
+PShader loadShader(const char *fragShader);
+PShader loadShader(const char *fragShader, const char *vertShader);
 
 #endif
