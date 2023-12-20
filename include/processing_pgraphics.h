@@ -24,6 +24,11 @@ public:
    int textureMode_ = IMAGE;
    gl::context glc;
 
+   gl::framebuffer localFrame;
+   gl::framebuffer windowFrame;
+   gl::batch_t batch;
+   gl::scene_t scene;
+
    int ellipse_mode = CENTER;
    int rect_mode = CORNER;
    int image_mode = CORNER;
@@ -50,6 +55,8 @@ public:
    PShader defaultShader;
    PShader currentShader;
 
+   int flushes = 0;
+
    PGraphics(const PGraphics &x) = delete;
 
    PGraphics(PGraphics &&x) noexcept : PGraphics() {
@@ -60,6 +67,10 @@ public:
    PGraphics& operator=(PGraphics&&x) noexcept {
       std::swap(textureMode_, x.textureMode_);
       std::swap(glc, x.glc);
+      std::swap(localFrame, x.localFrame);
+      std::swap(windowFrame, x.windowFrame);
+      std::swap(batch, x.batch);
+      std::swap(scene, x.scene);
 
       std::swap(pixels_current, x.pixels_current);
       std::swap(ellipse_mode, x.ellipse_mode);
@@ -87,6 +98,7 @@ public:
       std::swap(defaultShader, x.defaultShader);
       std::swap(currentShader, x.currentShader);
 
+      std::swap(flushes, x.flushes);
       return *this;
    }
 
@@ -96,15 +108,20 @@ public:
    ~PGraphics() {
    }
 
-   PGraphics(int width, int height, int mode, float aaFactor) : glc( width, height, aaFactor ) {
+   PGraphics(int width, int height, int mode, float aaFactor) :
+      localFrame(width, height, mode, aaFactor),
+      windowFrame( gl::framebuffer::constructMainFrame( width, height ) ) {
+
       this->width = width;
       this->height = height;
       this->aaFactor = aaFactor;
 
+      glc.init();
+
       defaultShader = loadShader();
       currentShader = defaultShader;
 
-      glc.setShader( currentShader.getShader() );
+      glc.setShader( currentShader.getShader(), scene, batch );
       currentShader.bind();
 
       textFont( createFont("DejaVuSans.ttf",12));
@@ -115,6 +132,26 @@ public:
       _shape.beginShape();
 
       background(DEFAULT_GRAY);
+   }
+
+   int getFlushCount() const {
+      return flushes;
+   }
+
+   void resetFlushCount() {
+      flushes = 0;
+   }
+
+   void flush() {
+      if ( batch.size() > 0 ) {
+         flushes++;
+         currentShader.bind();
+         localFrame.bind();
+         scene.set();
+         batch.compile();
+         batch.draw();
+         batch.clear();
+      }
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -132,7 +169,7 @@ public:
 
    void save( const std::string &fileName ) {
       gl::framebuffer frame(width, height, 1, SSAA);
-      glc.blit( frame );
+      localFrame.blit( frame );
       PImage image = createImage(width, height, 0);
       frame.saveFrame( image.pixels );
       image.save_as( fileName );
@@ -202,11 +239,11 @@ public:
    }
 
    float screenX(float x, float y, float z = 0.0) {
-      return glc.screenX(x,y,z);
+      return scene.screenX(x,y,z);
    }
 
    float screenY(float x, float y, float z = 0.0) {
-      return glc.screenY(x,y,z);
+      return scene.screenY(x,y,z);
    }
 
    glm::mat4 get_projection_matrix(float fov, float a, float near, float far) {
@@ -235,7 +272,8 @@ public:
             {           0,               0, -2/(far - near), tz},
             {0,               0,              0,   1}};
       projection = glm::transpose( projection );
-      glc.setProjectionMatrix( projection );
+      flush();
+      scene.setProjectionMatrix( projection );
    }
 
    void ortho(float left, float right, float bottom, float top) {
@@ -247,7 +285,8 @@ public:
    }
 
    void perspective(float angle, float aspect, float minZ, float maxZ) {
-      glc.setProjectionMatrix( get_projection_matrix(angle, aspect, minZ, maxZ));
+      flush();
+      scene.setProjectionMatrix( get_projection_matrix(angle, aspect, minZ, maxZ));
    }
 
    void perspective() {
@@ -283,7 +322,8 @@ public:
       translate = glm::transpose(translate);
 
       // Translate the camera to the origin
-      glc.setViewMatrix( view * translate );
+      flush();
+      scene.setViewMatrix( view * translate );
    }
 
    void camera() {
@@ -292,41 +332,47 @@ public:
    }
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
-      glc.setLights( true );
-      glc.setDirectionLightColor( {r/255.0f, g/255.0f, b/255.0f} );
+      flush();
+      scene.setLights( true );
+      scene.setDirectionLightColor( {r/255.0f, g/255.0f, b/255.0f} );
       PVector worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
-      glc.setDirectionLightVector( worldDir );
+      scene.setDirectionLightVector( worldDir );
    }
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
-      glc.setLights( true );
+      flush();
+      scene.setLights( true );
       PVector worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
-      glc.pushPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
-      glc.pushPointLightPosition( worldPos );
+      scene.pushPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
+      scene.pushPointLightPosition( worldPos );
    }
 
    void lightFalloff(float r, float g, float b) {
-      glc.setPointLightFalloff( { r, g, b } );
+      flush();
+      scene.setPointLightFalloff( { r, g, b } );
    }
 
    void ambientLight(float r, float g, float b) {
-      glc.setLights( true );
-      glc.setAmbientLight( { r/255.0f, g/255.0f, b/255.0f } );
+      flush();
+      scene.setLights( true );
+      scene.setAmbientLight( { r/255.0f, g/255.0f, b/255.0f } );
    }
 
    void lights() {
-      glc.setLights( true );
-      glc.setAmbientLight(    { 0.5, 0.5, 0.5 } );
-      glc.setDirectionLightColor(  { 0.5, 0.5, 0.5 } );
-      glc.setDirectionLightVector( { 0.0, 0.0,-1.0 });
-      glc.clearPointLights();
-      glc.setPointLightFalloff(    { 1.0, 0.0, 0.0 });
+      flush();
+      scene.setLights( true );
+      scene.setAmbientLight(    { 0.5, 0.5, 0.5 } );
+      scene.setDirectionLightColor(  { 0.5, 0.5, 0.5 } );
+      scene.setDirectionLightVector( { 0.0, 0.0,-1.0 });
+      scene.clearPointLights();
+      scene.setPointLightFalloff(    { 1.0, 0.0, 0.0 });
       //lightSpecular(0, 0, 0);
    };
 
    void noLights() {
-      glc.setLights( false );
-      glc.clearPointLights();
+      flush();
+      scene.setLights( false );
+      scene.clearPointLights();
    }
 
    void textFont(PFont font) {
@@ -348,7 +394,15 @@ public:
       currentFont = createFont(currentFont.name, size);
    }
 
-   MAKE_GLOBAL(blendMode, glc);
+   void blendMode(int b) {
+      flush();
+      glc.blendMode(b);
+   }
+
+   void hint(int type) {
+      flush();
+      glc.hint(type);
+   }
 
    MAKE_GLOBAL(textAscent, currentFont);
    MAKE_GLOBAL(textDescent, currentFont);
@@ -401,7 +455,7 @@ public:
 
    void background(float r, float g, float b) {
       auto color = gl::flatten_color_mode({r,g,b,color::scaleA});
-      glc.clear( color.r, color.g, color.b, color.a );
+      localFrame.clear( color.r, color.g, color.b, color.a );
    }
 
    void background(color c) {
@@ -574,7 +628,7 @@ public:
                         {right,bottom},
                         {right, top},
                         {left, top},
-                        createImageFromTexture(gfx.glc.getColorBufferID()),
+                        createImageFromTexture(gfx.localFrame.getColorBufferID()),
                         _shape.getTintColor() );
    }
 
@@ -613,12 +667,17 @@ public:
    }
 
    void loadPixels() {
-      glc.loadPixels( pixels );
+      flush();
+      localFrame.blit( windowFrame );
+      windowFrame.loadPixels( pixels );
       pixels_current = true;
    }
 
    void updatePixels() {
-      glc.updatePixels( pixels );
+      flush();
+      gl::framebuffer frame(width, height, 1, SSAA);
+      frame.updatePixels( pixels );
+      frame.blit( localFrame );
     }
 
    color get(int x, int y) {
@@ -678,9 +737,9 @@ public:
    void shape(PShape &pshape) {
       pixels_current = false;
       if (pshape == _shape) {
-         pshape.draw( glc, PMatrix::Identity() );
+         pshape.flatten( batch, PMatrix::Identity() );
       } else {
-         pshape.draw( glc, _shape.getShapeMatrix() );
+         pshape.flatten( batch, _shape.getShapeMatrix() );
       }
    }
 
@@ -1021,7 +1080,8 @@ public:
 
    void commit_draw() {
       endDraw();
-      glc.commit();
+      flush();
+      localFrame.blit( windowFrame );
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
@@ -1030,7 +1090,7 @@ public:
 
    void shader(PShader pshader, int kind = TRIANGLES) {
       currentShader = pshader;
-      glc.setShader( currentShader.getShader() );
+      glc.setShader( currentShader.getShader(), scene, batch );
       currentShader.set_uniforms();
       currentShader.bind();
    }

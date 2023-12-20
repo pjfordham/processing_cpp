@@ -1865,10 +1865,6 @@ void PShape::flattenTransforms(const PMatrix& transform){
 }
 
 
-void PShape::draw(gl::context &glc, const PMatrix& transform){
-   glc.draw( *this, transform.glm_data() );
-}
-
 void PShape::draw_normals(gl::batch_t &batch, const PMatrix& transform) const{
    return impl->draw_normals(batch,transform);
 }

@@ -87,6 +87,16 @@ namespace gl {
          PVmatrix = PVmatrix_;
       }
 
+      float screenX(float x, float y, float z) {
+         glm::vec3 in = { x, y, z };
+         return (projection_matrix * (view_matrix * in)).x;
+      }
+
+      float screenY(float x, float y, float z) {
+         glm::vec3 in = { x, y, z };
+         return (projection_matrix * (view_matrix * in)).y;
+      }
+
       bool lights = false;
       glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
       glm::vec3 directionLightVector = { 0.0, 0.0, 0.0 };
@@ -97,6 +107,52 @@ namespace gl {
       glm::mat4 projection_matrix;
       glm::mat4 view_matrix;
       void set();
+      void setProjectionMatrix( const glm::mat4 &PV ) {
+         projection_matrix = PV;
+      }
+
+      void setViewMatrix( const glm::mat4 &PV ) {
+         view_matrix = PMatrix::FlipY().glm_data() * PV ;
+      }
+
+      void setDirectionLightColor(const glm::vec3 &color ){
+         directionLightColor = color;
+      }
+
+      void setDirectionLightVector(const glm::vec3 &dir  ){
+         directionLightVector = dir;
+      }
+
+      void setAmbientLight(const glm::vec3  &color ){
+         ambientLight = color;
+      }
+
+      void pushPointLightColor( const glm::vec3  &color ) {
+         if (pointLightColors.size() < 8) {
+            pointLightColors.push_back( color );
+         } else {
+            fmt::print("Ignoring >8 point lights\n.");
+         }
+      }
+
+      void pushPointLightPosition( const glm::vec3 &pos  ) {
+         if (pointLightColors.size() < 8) {
+            pointLightPoss.push_back( pos );
+         }
+      }
+
+      void clearPointLights() {
+         pointLightColors.clear();
+         pointLightPoss.clear();
+      }
+
+      void setPointLightFalloff( const glm::vec3 &data){
+         pointLightFalloff = data;
+      }
+
+      void setLights( bool data ) {
+         lights = data;
+      }
    };
 
    class VAO {
@@ -169,29 +225,17 @@ namespace gl {
          MIndex = MIndex_;
          Mmatrix = Mmatrix_;
       }
+      size_t size();
       void compile();
       void draw();
       void clear();
    };
 
    class context {
-      int flushes = 0;
-      scene_t scene;
-      int width;
-      int height;
-      float aaFactor;
-      framebuffer localFrame;
-      framebuffer windowFrame;
-      batch_t batch;
-
       int MaxTextureImageUnits;
 
    public:
-      MAKE_GLOBAL(getColorBufferID, localFrame);
-
-      context() : width(0), height(0) {}
-
-      context(int width, int height, float aaFactor);
+      context();
 
       context(const context &x) = delete;
 
@@ -202,123 +246,19 @@ namespace gl {
       context& operator=(const context&) = delete;
 
       context& operator=(context&&x) noexcept {
-         std::swap(flushes,x.flushes);
-         std::swap(scene,x.scene);
-         std::swap(width,x.width);
-         std::swap(height,x.height);
-         std::swap(aaFactor,x.aaFactor);
-         std::swap(localFrame,x.localFrame);
-         std::swap(windowFrame,x.windowFrame);
-         std::swap(batch,x.batch);
          std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);
          return *this;
       }
 
       void blendMode( int b );
 
-      float screenX(float x, float y, float z) {
-         glm::vec3 in = { x, y, z };
-         return (scene.projection_matrix * (scene.view_matrix * in)).x;
-      }
-
-      float screenY(float x, float y, float z) {
-         glm::vec3 in = { x, y, z };
-         return (scene.projection_matrix * (scene.view_matrix * in)).y;
-      }
-
-
-      void setProjectionMatrix( const glm::mat4 &PV ) {
-         flush();
-         scene.projection_matrix = PV;
-      }
-
-      void setViewMatrix( const glm::mat4 &PV ) {
-         flush();
-         scene.view_matrix = PMatrix::FlipY().glm_data() * PV ;
-      }
-
-      void setDirectionLightColor(const glm::vec3 &color ){
-         flush();
-         scene.directionLightColor = color;
-      }
-
-      void setDirectionLightVector(const glm::vec3 &dir  ){
-         flush();
-         scene.directionLightVector = dir;
-      }
-
-      void setAmbientLight(const glm::vec3  &color ){
-         flush();
-         scene.ambientLight = color;
-      }
-
-      void pushPointLightColor( const glm::vec3  &color ) {
-         if (scene.pointLightColors.size() < 8) {
-            flush();
-            scene.pointLightColors.push_back( color );
-         } else {
-            fmt::print("Ignoring >8 point lights\n.");
-         }
-      }
-
-      void pushPointLightPosition( const glm::vec3 &pos  ) {
-         if (scene.pointLightColors.size() < 8) {
-            flush();
-            scene.pointLightPoss.push_back( pos );
-         }
-      }
-
-      void clearPointLights() {
-         flush();
-         scene.pointLightColors.clear();
-         scene.pointLightPoss.clear();
-      }
-
-      void setPointLightFalloff( const glm::vec3 &data){
-         flush();
-         scene.pointLightFalloff = data;
-      }
-
-      void setLights( bool data ) {
-         flush();
-         scene.lights = data;
-      }
+      void init();
 
       ~context();
 
       void hint(int type);
 
-      void blit( framebuffer &target ) {
-         flush();
-         localFrame.blit( target );
-      }
-
-      void commit() {
-         flush();
-         localFrame.blit( windowFrame );
-      }
-
-      void loadPixels( std::vector<unsigned int> &pixels ) {
-         flush();
-         framebuffer frame(width, height, 1, SSAA);
-         localFrame.blit( frame );
-         frame.loadPixels( pixels );
-      };
-
-      void updatePixels( const std::vector<unsigned int> &pixels) {
-         flush();
-         framebuffer frame(width, height, 1, SSAA);
-         frame.updatePixels( pixels );
-         frame.blit( localFrame );
-      }
-
-      void clear( float r, float g, float b, float a) {
-         flush();
-         localFrame.clear(r, g, b, a);
-      }
-
-      void setShader(const shader_t &shader) {
-         flush();
+      void setShader(const shader_t &shader, scene_t &scene, batch_t &batch) {
          shader.bind();
 
          uniform uSampler = shader.get_uniform("myTextures");
@@ -346,17 +286,6 @@ namespace gl {
             shader.get_uniform("Mmatrix"));
       }
 
-      void draw(PShape shape, const glm::mat4 &transform);
-
-      void flush();
-
-      int getFlushCount() const {
-         return flushes;
-      }
-
-      void resetFlushCount() {
-         flushes = 0;
-      }
 
    };
 

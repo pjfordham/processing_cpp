@@ -45,7 +45,6 @@ namespace gl {
    }
 
    void context::blendMode(int b ) {
-      flush();
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       switch (b) {
@@ -94,9 +93,8 @@ namespace gl {
 #if 0
       fmt::print("### GEOMETRY DUMP START ###\n");
       int i = 0;
-      for (auto &vao : batch.vaos) {
+      for (auto &vao : vaos) {
          fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-         PMatrix(scene.view_matrix).print();
          for (auto &m : vao.transforms) {
             PMatrix(m).print();
          }
@@ -129,6 +127,14 @@ namespace gl {
          }
          draw.draw();
       }
+   }
+
+   size_t batch_t::size() {
+      size_t s = 0;
+      for (auto &draw: vaos ) {
+         s += vaos.size();
+      }
+      return s;
    }
 
    void batch_t::compile() {
@@ -229,7 +235,6 @@ namespace gl {
    }
 
    void context::hint(int type) {
-      flush();
       switch(type) {
       case DISABLE_DEPTH_TEST:
          glDisable(GL_DEPTH_TEST);
@@ -248,42 +253,20 @@ namespace gl {
       }
    }
 
-   context::context(int width_, int height_, float aaFactor_) :
-      aaFactor(aaFactor_),
-      width(width_),
-      height(height_),
-      windowFrame(framebuffer::constructMainFrame( width, height )),
-      localFrame(framebuffer( width, height, aaFactor, MSAA )) {
+   context::context() {}
 
+   void context::init() {
       blendMode( BLEND );
-
       glDepthFunc(GL_LEQUAL);
       glEnable(GL_DEPTH_TEST);
-
       glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
-
    }
 
    context::~context() {
    }
 
-
-   void context::draw(PShape shape, const glm::mat4 &transform) {
-      shape.flatten(batch, transform);
-   }
-
    void shader_t::bind() const {
       glUseProgram(programID);
-   }
-
-   void context::flush() {
-      flushes++;
-      localFrame.bind();
-      scene.set();
-      batch.compile();
-      batch.draw();
-      batch.clear();
-      return;
    }
 
    VAO::VAO() noexcept {

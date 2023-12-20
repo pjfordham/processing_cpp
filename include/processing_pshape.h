@@ -215,8 +215,6 @@ public:
 
    void flattenTransforms(const PMatrix& transform);
 
-   void draw(gl::context &glc, const PMatrix& transform);
-
    void draw_normals(gl::batch_t &parent_batch, const PMatrix& transform) const;
 
    void draw_stroke(gl::batch_t &parent_batch, const PMatrix& transform) const;

@@ -147,7 +147,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
-   g.glc.resetFlushCount();
+   g.resetFlushCount();
 
    g._shape.resetMatrix();
    g.noLights();
@@ -247,7 +247,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       unsigned int millis = std::chrono::duration_cast<std::chrono::milliseconds>(startTicks - frameRateClock).count();
       if (millis >= 10000) {
          float frameRate = 1000 * (float) zframeCount / millis;
-         printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.glc.getFlushCount());
+         printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.getFlushCount());
          zframeCount = 0;
          frameRateClock = startTicks;
       }
