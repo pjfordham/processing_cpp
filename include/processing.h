@@ -149,7 +149,6 @@ extern bool mousePressedb;
 extern bool keyPressedb;
 
 bool dispatchEvents();
-void drawFrame();
 
 void keyPressed();
 void keyReleased();

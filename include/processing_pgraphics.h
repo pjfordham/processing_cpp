@@ -132,17 +132,9 @@ public:
       background(DEFAULT_GRAY);
    }
 
-   int getFlushCount() const {
-      return flushes;
-   }
-
-   void resetFlushCount() {
-      flushes = 0;
-   }
-
    void flush() {
       if ( batch.size() > 0 ) {
-         flushes++;
+         flushes+=batch.size();
          currentShader.bind();
          localFrame.bind();
          scene.set();
@@ -1079,9 +1071,10 @@ public:
       flush();
    }
 
-   void commit_draw() {
+   int commit_draw() {
       endDraw();
       localFrame.blit( windowFrame );
+      return std::exchange(flushes, 0);
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {

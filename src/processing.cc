@@ -146,19 +146,18 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
    }
 }
 
-void drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
-   g.resetFlushCount();
+int drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
 
    g._shape.resetMatrix();
    g.noLights();
    // Call the sketch's draw()
    draw();
-   g.commit_draw();
+   int flushes = g.commit_draw();
 
    // Only update once per frame so we don't miss positions
    pmouseX = mouseX;
    pmouseY = mouseY;
-
+   return flushes;
 }
 
 int frameCount = 0;
@@ -231,6 +230,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    unsigned int targetFrameTime = 1000 / setFrameRate;
 
    auto frameRateClock = std::chrono::high_resolution_clock::now();
+   int flushes = 0;
 
    // Main rendering loop
    while (window && !glfwWindowShouldClose(window)) {
@@ -247,7 +247,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       unsigned int millis = std::chrono::duration_cast<std::chrono::milliseconds>(startTicks - frameRateClock).count();
       if (millis >= 10000) {
          float frameRate = 1000 * (float) zframeCount / millis;
-         printf("Frame rate: %f fps, %d flush rate\n", frameRate, g.getFlushCount());
+         printf("Frame rate: %f fps, %d flush rate\n", frameRate, flushes);
          zframeCount = 0;
          frameRateClock = startTicks;
       }
@@ -255,7 +255,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       if (window && (xloop || frameCount == 0)) {
          {
             PROFILE_SCOPE("drawFrame");
-            drawFrame();
+            flushes = drawFrame();
          }
          {
             PROFILE_SCOPE("glSwapWindow");
