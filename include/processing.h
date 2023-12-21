@@ -21,7 +21,6 @@ MAKE_GLOBAL(resetShader, g);
 MAKE_GLOBAL(hint, g);
 MAKE_GLOBAL(get, g);
 MAKE_GLOBAL(set, g);
-MAKE_GLOBAL(createGraphics, g);
 MAKE_GLOBAL(saveFrame, g);
 MAKE_GLOBAL(save, g);
 MAKE_GLOBAL(background, g);
@@ -110,6 +109,8 @@ inline void frameRate(int rate) {
 
 extern bool xloop;
 
+PGraphics createGraphics(int width, int height, int mode=P3D);
+
 inline void noLoop() {
    xloop = false;
 }
@@ -129,7 +130,7 @@ extern unsigned int *pixels; // pointer to the texture's pixel data in the desir
 
 inline void loadPixels() {
    g.loadPixels();
-   pixels = g.pixels.data();
+   pixels = g.getPixels();
 }
 
 extern int frameCount;

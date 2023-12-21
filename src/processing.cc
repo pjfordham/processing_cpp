@@ -148,7 +148,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 int drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
 
-   g._shape.resetMatrix();
+   g.resetMatrix();
    g.noLights();
    // Call the sketch's draw()
    draw();
@@ -163,6 +163,10 @@ int drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed si
 int frameCount = 0;
 
 GLFWwindow *window = NULL;
+
+PGraphics createGraphics(int width, int height, int mode) {
+   return { width, height, mode };
+}
 
 void size(int _width, int _height, int mode) {
 
@@ -197,7 +201,7 @@ void size(int _width, int _height, int mode) {
    // Create a window
    width = _width;
    height = _height;
-   g = PGraphics(width, height, mode);
+   g = createGraphics(width, height, mode);
 }
 
 void exit() {
@@ -278,9 +282,6 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    PImage::close();
    PShader::close();
    PGraphics::close();
-
-   // Clean up resources, force g to be destructed before we close down GLFW
-   g = {};
 
    glfwTerminate();
 

@@ -197,8 +197,13 @@ public:
 
    void translate(float x, float y, float z=0) {
       DEBUG_METHOD();
+      translate(PVector{x,y,z});
+   }
+
+   void translate(PVector t) {
+      DEBUG_METHOD();
       dirty=true;
-      shape_matrix = shape_matrix * TranslateMatrix(PVector{x,y,z});
+      shape_matrix = shape_matrix * TranslateMatrix(t);
    }
 
    void scale(float x, float y,float z = 1) {
@@ -1514,6 +1519,10 @@ void PShape::rotate(float angle, PVector axis){
 
 void PShape::translate(float x, float y, float z){
    return impl->translate(x,y,z);
+}
+
+void PShape::translate(PVector t){
+   return impl->translate(t);
 }
 
 

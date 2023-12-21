@@ -76,6 +76,8 @@ public:
 
    void rotate(float angle, PVector axis);
 
+   void translate(PVector t);
+
    void translate(float x, float y, float z=0);
 
    void scale(float x, float y,float z = 1);
