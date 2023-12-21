@@ -37,6 +37,4 @@ void draw() {
   }
   fill(0);
   text("tickle", x, y);
-  auto fimage = g.currentFont.render_as_pimage("tickle");
-  g.drawPImageWithCPU(fimage, 10,10);
 }
