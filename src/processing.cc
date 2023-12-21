@@ -232,14 +232,13 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    auto frameRateClock = std::chrono::high_resolution_clock::now();
    int flushes = 0;
 
-   // Main rendering loop
+   // Main rendering loop, window is always true inside this loop
    while (window && !glfwWindowShouldClose(window)) {
 
       PROFILE_SCOPE("eventLoop");
 
       // Poll for and process events
-      if (window)
-         glfwPollEvents();
+      glfwPollEvents();
 
       auto startTicks = std::chrono::high_resolution_clock::now();
 
@@ -252,7 +251,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          frameRateClock = startTicks;
       }
 
-      if (window && (xloop || frameCount == 0)) {
+      if (xloop || frameCount == 0) {
          {
             PROFILE_SCOPE("drawFrame");
             flushes = drawFrame();
