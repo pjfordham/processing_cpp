@@ -44,7 +44,6 @@ public:
    float xsphere_ures = 30;
    float xsphere_vres = 30;
 
-   int xSmoothing = 1;
    PShape _shape;
    std::vector<unsigned int> pixels;
 
@@ -88,7 +87,6 @@ public:
       std::swap(xsphere_ures, x.xsphere_ures);
       std::swap(xsphere_vres, x.xsphere_vres);
 
-      std::swap(xSmoothing, x.xSmoothing);
       std::swap(_shape, x._shape);
       std::swap(pixels, x.pixels);
 
@@ -108,8 +106,8 @@ public:
    ~PGraphics() {
    }
 
-   PGraphics(int width, int height, int mode, float aaFactor) :
-      localFrame(width, height, mode, aaFactor),
+   PGraphics(int width, int height, int mode, int aaMode = MSAA, int aaFactor = 2) :
+      localFrame(width, height, aaMode, aaFactor),
       windowFrame( gl::framebuffer::constructMainFrame( width, height ) ) {
 
       this->width = width;
@@ -168,10 +166,10 @@ public:
    }
 
    void save( const std::string &fileName ) {
-      gl::framebuffer frame(width, height, 1, SSAA);
-      localFrame.blit( frame );
+      flush();
+      localFrame.blit( windowFrame );
       PImage image = createImage(width, height, 0);
-      frame.saveFrame( image.pixels );
+      windowFrame.saveFrame( image.pixels );
       image.save_as( fileName );
    }
 
@@ -675,7 +673,7 @@ public:
 
    void updatePixels() {
       flush();
-      gl::framebuffer frame(width, height, 1, SSAA);
+      gl::framebuffer frame(width, height, SSAA, 1);
       frame.updatePixels( pixels );
       frame.blit( localFrame );
     }
@@ -1067,25 +1065,27 @@ public:
 // ----
 
 
-   void smooth(int AA=2) {
-      xSmoothing = AA;
+   void smooth(int aaFactor=2, int aaMode=MSAA) {
+      localFrame = gl::framebuffer(width, height, aaMode, aaFactor);
    }
+
    void noSmooth() {
-      // Doesn't yet apply to actual graphics
-      xSmoothing = 1;
+      localFrame = gl::framebuffer(width, height, SSAA, 1);
    }
 
    void beginDraw() {}
-   void endDraw() {}
+
+   void endDraw() {
+      flush();
+   }
 
    void commit_draw() {
       endDraw();
-      flush();
       localFrame.blit( windowFrame );
    }
 
    PGraphics createGraphics(int width, int height, int mode = P2D) {
-      return { width, height, mode, aaFactor };
+      return { width, height, mode };
    }
 
    void shader(PShader pshader, int kind = TRIANGLES) {

@@ -198,7 +198,7 @@ void size(int _width, int _height, int mode) {
    // Create a window
    width = _width;
    height = _height;
-   g = PGraphics(width, height, mode, 2.0);
+   g = PGraphics(width, height, mode);
 }
 
 void exit() {

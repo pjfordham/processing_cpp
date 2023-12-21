@@ -35,21 +35,23 @@ namespace gl {
       *this = std::move(x);
    }
 
-   framebuffer::framebuffer(int width_, int height_, int aaFactor_, int aaMode_)  {
+   framebuffer::framebuffer(int width_, int height_, int aaMode_, int aaFactor_)  {
       DEBUG_METHOD();
+
       aaFactor = aaFactor_;
+      aaMode = aaMode_;
 
       if (aaFactor == 1)
          aaMode = SSAA;
 
-      aaMode = aaMode_;
-
       if (aaMode == SSAA) {
          width = aaFactor * width_;
          height = aaFactor * height_;
-      } else {
+      } else if (aaMode == MSAA) {
          width = width_;
          height = height_;
+      } else {
+         abort();
       }
 
       glGenFramebuffers(1, &id);
@@ -99,7 +101,7 @@ namespace gl {
       if (aaMode == MSAA) {
          if (textureBufferID)
             glDeleteTextures(1, &textureBufferID);
-         framebuffer frame(width, height, 1, SSAA);
+         framebuffer frame(width, height, SSAA, 1);
          blit( frame );
          textureBufferID = frame.colorBufferID;
          frame.colorBufferID = 0;

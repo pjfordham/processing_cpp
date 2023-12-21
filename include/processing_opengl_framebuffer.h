@@ -51,7 +51,7 @@ namespace gl {
 
       framebuffer();
 
-      framebuffer(int width_, int height_, int aaFactor_, int aaMode_ );
+      framebuffer(int width_, int height_, int aaMode_ , int aaFactor);
 
       framebuffer(const framebuffer &x) = delete;
 
