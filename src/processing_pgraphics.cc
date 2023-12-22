@@ -841,19 +841,19 @@ public:
 
       if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
-
          PShape shape;
          if (fillMode == PIE) {
             // This isn't really a CONVEX_POLYGON but I know
             // it will fill ok with a traingle fan
             shape.beginShape(CONVEX_POLYGON);
+            shape.copyStyle( _shape );
             shape.vertex(x,y,0.5,0.5);
          } else {
             // We could probably do better here to avoid the
             // triangulation pass but this works.
             shape.beginShape(POLYGON);
+            shape.copyStyle( _shape );
          }
-         shape.copyStyle( _shape );
          shape.circleTexture();
          for(float i = start; i < stop; i = i + (TWO_PI / 8) ) {
             PVector pos = posOnUnitSquare( i );
