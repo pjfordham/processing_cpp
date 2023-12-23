@@ -144,10 +144,30 @@ namespace gl {
       }
    }
 
+   bool batch_t::usesCircles() const {
+      for (auto &draw: vaos ) {
+         if (std::find(draw.textures.begin(), draw.textures.end(), PImage::circle()) != draw.textures.end())
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   bool batch_t::usesTextures() const {
+      for (auto &draw: vaos ) {
+         // This could be a better test
+         if (!(draw.textures.size() == 1 && draw.textures[0] != PImage::circle() &&
+               draw.textures[0].width == 1 && draw.textures[0].height == 1)) {
+            return true;
+         }
+      }
+      return false;
+   }
+
    void batch_t::clear() {
       vaos.clear();
    }
-
 
    void scene_t::set() {
       PVmatrix.set( projection_matrix * view_matrix  );

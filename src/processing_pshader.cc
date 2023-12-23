@@ -14,6 +14,32 @@
 
 template <> struct fmt::formatter<PShaderImpl>;
 
+static const char *flatVertexShader = R"glsl(
+      #version 400
+      in vec3 position;
+      in vec4 color;
+      in int mindex;
+      uniform mat4 PVmatrix;
+      uniform mat4 Mmatrix[16];
+      out vec4 vColor;
+
+      void main()
+      {
+          gl_Position = PVmatrix * Mmatrix[mindex] * vec4(position,1.0);
+          vColor = color;
+       }
+)glsl";
+
+static const char *flatFragmentShader = R"glsl(
+      #version 400
+      in vec4 vColor;
+      out vec4 fragColor;
+      void main()
+      {
+          fragColor = vColor;
+      }
+)glsl";
+
 static const char *defaultVertexShader = R"glsl(
       #version 400
       in vec3 position;
@@ -244,6 +270,10 @@ void PShader::init() {
 void PShader::close() {
    PShader_releaseAllShaders();
 }
+
+PShader flatShader() {
+   return {0, flatVertexShader, flatFragmentShader };
+};
 
 PShader loadShader() {
    return { 0, defaultVertexShader, defaultFragmentShader };

@@ -120,9 +120,18 @@ public:
    }
 
    void flush() {
+      static PShader flat = flatShader();
       if ( batch.size() > 0 ) {
          flushes+=batch.size();
-         currentShader.bind();
+         if (currentShader == defaultShader && scene.lights == false && batch.usesTextures() == false && batch.usesCircles() == false) {
+            glc.setShader( flat.getShader(), scene, batch );
+            flat.set_uniforms();
+            flat.bind();
+         } else {
+            glc.setShader( currentShader.getShader(), scene, batch );
+            currentShader.set_uniforms();
+            currentShader.bind();
+         }
          localFrame.bind();
          scene.set();
          batch.compile();

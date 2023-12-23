@@ -229,6 +229,8 @@ namespace gl {
       void compile();
       void draw();
       void clear();
+      bool usesCircles() const;
+      bool usesTextures() const;
    };
 
    class context {
