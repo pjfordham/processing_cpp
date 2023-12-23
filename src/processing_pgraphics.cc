@@ -57,7 +57,6 @@ public:
    int height = 0;
    float aaFactor;
 
-   PFont currentFont;
    int xTextAlign = LEFT;
    int yTextAlign = TOP;
 
@@ -68,8 +67,6 @@ public:
    std::vector<unsigned int> pixels;
 
    std::vector<PMatrix> matrix_stack;
-
-   std::unordered_map<std::string, PImage> words;
 
    PShader defaultShader;
    PShader currentShader;
@@ -99,7 +96,6 @@ public:
       defaultShader = loadShader();
       shader( defaultShader );
 
-      textFont( createFont("DejaVuSans.ttf",12));
       noLights();
       camera();
       perspective();
@@ -306,11 +302,6 @@ public:
       scene.clearPointLights();
    }
 
-   void textFont(PFont font) {
-      words.clear();
-      currentFont = font;
-   }
-
    void textAlign(int x, int y) {
       xTextAlign = x;
       yTextAlign = y;
@@ -318,11 +309,6 @@ public:
 
    void textAlign(int x) {
       xTextAlign = x;
-   }
-
-   void textSize(int size) {
-      words.clear();
-      currentFont = createFont(currentFont.name, size);
    }
 
    void blendMode(int b) {
@@ -335,21 +321,9 @@ public:
       glc.hint(type);
    }
 
-   float textWidth(const std::string &text) {
-      auto existing = words.find( text );
-      if ( existing == words.end() ) {
-         words[text] = currentFont.render_as_pimage(text);
-      }
-      return words[text].width;
-   }
-
    void text(const std::string &text, float x, float y, float twidth = -1, float theight = -1) {
-      auto existing = words.find( text );
-      if ( existing == words.end() ) {
-         words[text] = currentFont.render_as_pimage(text);
-      }
 
-      PImage text_image = words[text];
+      PImage text_image = currentFont.render_as_pimage(text);
 
       twidth = text_image.width;
       theight = text_image.height;
@@ -1096,20 +1070,12 @@ void PGraphics::noLights(){
    return impl->noLights();
 }
 
-void PGraphics::textFont(PFont font){
-   return impl->textFont(font);
+void PGraphics::textAlign(int a, int b) {
+   impl->textAlign(a,b);
 }
 
-void PGraphics::textAlign(int x, int y){
-   return impl->textAlign(x,y);
-}
-
-void PGraphics::textAlign(int x){
-   return impl->textAlign(x);
-}
-
-void PGraphics::textSize(int size){
-   return impl->textSize(size);
+void PGraphics::textAlign(int a) {
+   impl->textAlign(a);
 }
 
 void PGraphics::blendMode(int b){
@@ -1118,18 +1084,6 @@ void PGraphics::blendMode(int b){
 
 void PGraphics::hint(int type){
    return impl->hint(type);
-}
-
-float PGraphics::textAscent() {
-  return impl->currentFont.textAscent();
-}
-
-float PGraphics::textDescent() {
-  return impl->currentFont.textDescent();
-}
-
-float PGraphics::textWidth(const std::string &text) {
-   return impl->textWidth(text);
 }
 
 void PGraphics::text(const std::string &text, float x, float y, float twidth, float theight) {

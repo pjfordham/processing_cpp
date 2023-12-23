@@ -212,6 +212,8 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    Profile::Instrumentor::Get().BeginSession("main");
 
+   PFont::init();
+
    // Initialize GLFW
    if (!glfwInit()) {
       fmt::print("Failed to initialize GLFW\n");
@@ -220,9 +222,10 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    PGraphics::init();
    PShader::init();
-   PFont::init();
    PImage::init();
    PShape::init();
+
+   textFont( createFont("DejaVuSans.ttf",12));
 
    {
       PROFILE_SCOPE("setup");
@@ -278,12 +281,13 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    }
 
    PShape::close();
-   PFont::close();
    PImage::close();
    PShader::close();
    PGraphics::close();
 
    glfwTerminate();
+
+   PFont::close();
 
    Profile::Instrumentor::Get().EndSession();
    return 0;

@@ -13,16 +13,13 @@ static FT_Library ft;
 
 static PShape buildPShapeFromFace(FT_Face face, char x);
 
-bool operator<(const PFont&a, const PFont &b) {
-   if (a.name != b.name) {
-      return a.name < b.name;
-   } else {
-      return a.size < b.size;
-   }
-}
+class PFontImpl {
 
-struct Font {
+public:
+   const char *name;
+   int size;
    FT_Face face;
+
    std::map<char,PShape> glyphs;
    std::map<char,float> m_advance;
 
@@ -34,7 +31,7 @@ struct Font {
       return glyphs[x];
    }
 
-   int em_size() {
+   int em_size() const {
       return face->units_per_EM;
    }
 
@@ -51,11 +48,33 @@ struct Font {
       return { (float)kerning.x, (float)kerning.y };
    }
 
+   std::unordered_map<std::string, PImage> words;
+
+   PFontImpl() : name(nullptr), size(0) {}
+
+   PFontImpl(const char *name_, int size_);
+
+   ~PFontImpl() {
+      if (size)
+         releaseFace();
+   }
+
+   void releaseFace() {
+      name = nullptr;
+      size = 0;
+      FT_Done_Face(face);
+   }
+
+   PShape render_as_pshape(std::string_view text);
+   PImage render_as_pimage(std::string_view text);
+
+   float textAscent() const;
+   float textDescent() const;
+   float textWidth(std::string_view text);
 };
 
 
 static std::map<std::string, std::string> fontFileMap;
-static std::map<PFont, Font> fontMap;
 
 static void bezierVertexQuadratic(PVector control, PVector anchor2, std::vector<PVector> &out) {
    float anchor1_x = out.back().x;
@@ -120,24 +139,6 @@ static PShape buildPShapeFromFace(FT_Face face, char c) {
 }
 
 
-void PFont::init() {
-   FT_Error err = FT_Init_FreeType(&ft);
-   if (err != 0) {
-      fmt::print("Failed to initialize FreeType\n");
-      abort();
-   }
-   FT_Int major, minor, patch;
-   FT_Library_Version(ft, &major, &minor, &patch);
-}
-
-
-void PFont::close() {
-   for (auto font : fontMap) {
-      FT_Done_Face(font.second.face);
-   }
-   FT_Done_FreeType(ft);
-}
-
 static void search_directory(const std::string& path, const std::string& suffix) {
    for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
       if (!entry.is_directory() && entry.path().extension() == suffix) {
@@ -163,30 +164,23 @@ std::vector<std::string>  PFont::list() {
 }
 
 
-PFont::PFont(const char *name_, int size_) : name(name_), size(size_) {
+PFontImpl::PFontImpl(const char *name_, int size_) : name(name_), size(size_) {
    if (fontFileMap.size() == 0) {
       PFont::list();
    }
    auto fontPath = fontFileMap[name].c_str();
-   if (fontMap.count(*this) == 0) {
-      FT_Face face;
-      if (FT_New_Face(ft, fontPath, 0, &face) != 0) {
-         fmt::print("Failed to load face\n");
-         fmt::print("FT_New_Face failed: {},{}\n", name, size);
-         abort();
-      }
-      if (FT_Set_Pixel_Sizes(face,0, size)) {
-         fmt::print("Failed to set size\n");
-         abort();
-      }
-      fontMap[*this] = { face };
+   if (FT_New_Face(ft, fontPath, 0, &face) != 0) {
+      fmt::print("Failed to load face\n");
+      fmt::print("FT_New_Face failed: {},{}\n", name, size);
+      abort();
    }
-
-   return;
+   if (FT_Set_Pixel_Sizes(face,0, size)) {
+      fmt::print("Failed to set size\n");
+      abort();
+   }
 }
 
-PShape PFont::render_as_pshape(std::string_view text) const {
-   auto font = fontMap[*this];
+PShape PFontImpl::render_as_pshape(std::string_view text) {
    PShape group;
    group.beginShape(GROUP);
    // TODO: This translate draws the font to the right and underneath
@@ -194,45 +188,44 @@ PShape PFont::render_as_pshape(std::string_view text) const {
    group.translate( 0, size, 0);
    // Font is font.em_size() virtual units tall and
    // we want it to be size units tall.
-   float scale_factor = (0.0 + size) / font.em_size();
+   float scale_factor = (0.0 + size) / em_size();
    group.scale( scale_factor );
    float x = 0;
    float y = 0;
    for ( auto c : text ) {
       if (c == '\n') {
          x = 0;
-         y += font.face->size->metrics.height/64.0 / ( scale_factor );
+         y += face->size->metrics.height/64.0 / ( scale_factor );
       } else {
-         auto shape = font.glyph(c);
+         auto shape = glyph(c);
          shape.translate( x, y, 0 );
          group.addChild( shape );
-         x += font.advance(c);
+         x += advance(c);
       }
    }
    group.endShape();
    return group;
 }
 
-float PFont::textAscent() const {
-   auto font = fontMap[*this];
-   auto face = font.face;
+float PFontImpl::textAscent() const {
    return face->size->metrics.ascender / 64.0;
 }
 
-float PFont::textDescent() const {
-   auto font = fontMap[*this];
-   auto face = font.face;
+float PFontImpl::textDescent() const {
    return face->size->metrics.descender / 64.0;
 }
 
-float PFont::textWidth(std::string_view text) const {
-  auto image = render_as_pimage(text);
-  return image.width;
+float PFontImpl::textWidth(std::string_view text) {
+  return render_as_pimage(text).width;
 }
 
-PImage PFont::render_as_pimage(std::string_view text) const {
-   auto font = fontMap[*this];
-   auto face = font.face;
+PImage PFontImpl::render_as_pimage(std::string_view text_) {
+
+   std::string text = std::string(text_);
+   auto existing = words.find( text );
+   if ( existing != words.end() ) {
+      return existing->second;
+   }
 
    // Get the width and height of the bitmap
    int width = 0;
@@ -299,5 +292,81 @@ PImage PFont::render_as_pimage(std::string_view text) const {
          x += face->glyph->advance.x;
       }
    }
+   words[text] = image;
    return image;
+}
+
+PFont currentFont;
+
+void textFont(PFont font) {
+   currentFont = font;
+}
+
+void textSize(int size) {
+   currentFont = createFont(currentFont.getName(), size);
+}
+
+
+static std::vector<std::weak_ptr<PFontImpl>> &fontHandles() {
+   static std::vector<std::weak_ptr<PFontImpl>> handles;
+   return handles;
+}
+
+static void PFont_releaseAllFonts() {
+   for (auto i : fontHandles()) {
+      if (auto p = i.lock()) {
+         p->releaseFace();
+      }
+   }
+}
+
+void PFont::init() {
+   FT_Error err = FT_Init_FreeType(&ft);
+   if (err != 0) {
+      fmt::print("Failed to initialize FreeType\n");
+      abort();
+   }
+   FT_Int major, minor, patch;
+   FT_Library_Version(ft, &major, &minor, &patch);
+}
+
+
+void PFont::close() {
+   PFont_releaseAllFonts();
+   FT_Done_FreeType(ft);
+}
+
+PFont::PFont(){
+}
+
+PFont::~PFont() {
+}
+
+PFont::PFont(const char *name_, int size_)
+   : impl(std::make_shared<PFontImpl>(name_,size_)) {
+   fontHandles().push_back( impl );
+}
+
+const char *PFont::getName() const {
+   return impl->name;
+}
+
+PShape PFont::render_as_pshape(std::string_view text) const {
+   return impl->render_as_pshape(text);
+}
+
+PImage PFont::render_as_pimage(std::string_view text) {
+   return impl->render_as_pimage(text);
+}
+
+float PFont::textAscent() const {
+   return impl->textAscent();
+}
+
+float PFont::textDescent() const {
+   return impl->textDescent();
+}
+
+float PFont::textWidth(std::string_view text) {
+   return impl->textWidth(text);
 }
