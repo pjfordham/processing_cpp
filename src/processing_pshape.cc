@@ -1454,6 +1454,17 @@ static void PShape_releaseAllVAOs() {
 void PShape::init() {
 }
 
+void PShape::gc() {
+   auto oldHandles = shapeHandles();
+   std::vector<std::weak_ptr<PShapeImpl>> newHandles;
+   for (auto i : oldHandles) {
+      if (auto p = i.lock()) {
+         newHandles.push_back(p);
+      }
+   }
+   shapeHandles() = std::move(newHandles);
+}
+
 void PShape::close() {
    PShape_releaseAllVAOs();
 }

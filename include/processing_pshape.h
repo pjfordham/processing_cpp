@@ -25,7 +25,7 @@ class PShape {
    std::shared_ptr<PShapeImpl> impl;
 public:
    static void init();
-
+   static void gc();
    static void close();
 
    float width=0, height=0;

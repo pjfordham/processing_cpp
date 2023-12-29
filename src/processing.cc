@@ -270,6 +270,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          frameCount++;
          zframeCount++;
       }
+      PShape::gc();
       auto endTicks = std::chrono::high_resolution_clock::now();
       unsigned int actualFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTicks - startTicks).count();
 
