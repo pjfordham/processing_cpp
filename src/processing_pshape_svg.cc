@@ -331,6 +331,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
       type = (char*)node->name;
 
       PShape shape;
+      shape.beginShape();
       shape.fill(BLACK);
       shape.noStroke();
 
