@@ -160,7 +160,7 @@ namespace gl {
       GLuint indexId = 0;
       GLuint vertexId = 0;
    public:
-      friend struct fmt::formatter<gl::vertex>;
+      friend struct fmt::formatter<gl::VAO>;
 
       std::vector<vertex> vertices;
       std::vector<unsigned short> indices;
