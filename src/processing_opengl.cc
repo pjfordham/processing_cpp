@@ -117,10 +117,12 @@ namespace gl {
          for ( int i = 0; i < draw.textures.size() ; ++i ) {
             PImage &img = draw.textures[i];
             if (img != PImage::circle()) {
+               // Set this here so if updatePixels needs to create
+               // a new texture have the correct unit bound already.
+               glActiveTexture(GL_TEXTURE0 + i);
                if (img.isDirty()) {
                   img.updatePixels();
                }
-               glActiveTexture(GL_TEXTURE0 + i);
                auto textureID = img.getTextureID();
                glBindTexture(GL_TEXTURE_2D, img.getTextureID());
             }
