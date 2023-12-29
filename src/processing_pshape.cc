@@ -1022,6 +1022,9 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
    PLine start;
    PLine end;
 
+   if ( points < 3 )
+      abort();
+
    PShapeImpl triangle_strip;
    triangle_strip.beginShape(TRIANGLE_STRIP);
    triangle_strip.transform( transform );
@@ -1327,7 +1330,9 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
             if ( contour.empty() ) {
                drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform );
             } else {
-               drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform );
+               if (contour[0] != 0) {
+                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform );
+               }
                auto q = contour;
                q.push_back(vertices.size());
                for ( int i = 0; i < q.size() - 1; ++i ) {
