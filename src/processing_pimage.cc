@@ -4,9 +4,27 @@
 #include <curl/curl.h>
 #include "glad/glad.h"
 #include <fmt/core.h>
-
+#include <iostream>
+#include <filesystem>
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
+
+void createDirectoriesForFile(const std::string& filename) {
+   namespace fs = std::filesystem;
+
+   fs::path filePath(filename);
+
+   // Remove the filename itself to ensure only directories remain
+   fs::path directoryPath = filePath.parent_path();
+
+   // Create directories along the path if they don't exist
+   if (!fs::exists(directoryPath)) {
+      if (!fs::create_directories(directoryPath)) {
+         std::cerr << "Failed to create directories: " << directoryPath.string() << std::endl;
+         abort();
+      }
+   }
+}
 
 template <> struct fmt::formatter<PImageImpl>;
 
@@ -231,6 +249,7 @@ public:
    void save_as( const std::string &filename ) {
       DEBUG_METHOD();
       loadPixels();
+      createDirectoriesForFile(filename);
       sail::image_output output(filename);
       sail::image image = sail::image( (void*)pixels, SAIL_PIXEL_FORMAT_BPP32_RGBA, width, height );
       if (!image.is_valid())
