@@ -230,6 +230,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    {
       PROFILE_SCOPE("setup");
       setup();
+      PShape::optimize();
    }
 
    int zframeCount = 0;

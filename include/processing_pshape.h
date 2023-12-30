@@ -25,6 +25,7 @@ class PShape {
    std::shared_ptr<PShapeImpl> impl;
 public:
    static void init();
+   static void optimize();
    static void gc();
    static void close();
 
@@ -212,6 +213,12 @@ public:
    void setFill(color c);
 
    void setTint(color c);
+
+   void compile();
+
+   bool isCompiled() const;
+
+   gl::batch_t &getBatch() ;
 
    void flatten(gl::batch_t &parent_batch, const PMatrix& transform) const;
 

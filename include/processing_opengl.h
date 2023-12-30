@@ -177,8 +177,8 @@ namespace gl {
 
       VAO& operator=(VAO&& other) noexcept;
 
-      void alloc( attribute Position, attribute Normal, attribute Color,
-                  attribute Coord,    attribute TUnit,  attribute MIndex);
+      void bind( attribute Position, attribute Normal, attribute Color,
+                 attribute Coord,    attribute TUnit,  attribute MIndex);
       int hasTexture(PImage texture);
       void loadBuffers() const;
       void draw() const;
@@ -228,6 +228,7 @@ namespace gl {
       size_t size();
       void compile();
       void draw();
+      void draw(const glm::mat4& transform);
       void clear();
       bool usesCircles() const;
       bool usesTextures() const;

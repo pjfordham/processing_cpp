@@ -36,7 +36,6 @@ void setup() {
       }
     }
   }
-  grid.flattenTransforms(PMatrix::Identity());
 }
 
 void draw() {

@@ -89,6 +89,30 @@ namespace gl {
       }
    }
 
+   void batch_t::draw( const glm::mat4 &transform ) {
+      std::vector<glm::mat4> transforms;
+      transforms.push_back(transform);
+      for (auto &draw: vaos ) {
+         Mmatrix.set( transforms );
+
+         for ( int i = 0; i < draw.textures.size() ; ++i ) {
+            PImage &img = draw.textures[i];
+            if (img != PImage::circle()) {
+               // Set this here so if updatePixels needs to create
+               // a new texture have the correct unit bound already.
+               glActiveTexture(GL_TEXTURE0 + i);
+               if (img.isDirty()) {
+                  img.updatePixels();
+               }
+               auto textureID = img.getTextureID();
+               glBindTexture(GL_TEXTURE_2D, img.getTextureID());
+            }
+         }
+         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex );
+         draw.draw();
+      }
+   }
+
    void batch_t::draw() {
 #if 0
       fmt::print("### GEOMETRY DUMP START ###\n");
@@ -141,7 +165,7 @@ namespace gl {
 
    void batch_t::compile() {
       for (auto &draw: vaos ) {
-         draw.alloc( Position, Normal, Color, Coord, TUnit, MIndex );
+         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex );
          draw.loadBuffers();
       }
    }
@@ -297,6 +321,9 @@ namespace gl {
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
+      glGenVertexArrays(1, &vao);
+      glGenBuffers(1, &indexId);
+      glGenBuffers(1, &vertexId);
    }
 
    VAO::VAO(VAO&& x) noexcept : VAO() {
@@ -316,16 +343,14 @@ namespace gl {
       return *this;
    }
 
-   void VAO::alloc(  attribute Position, attribute Normal, attribute Color,
-                     attribute Coord,  attribute TUnit, attribute MIndex) {
+   void VAO::bind( attribute Position, attribute Normal, attribute Color,
+                   attribute Coord,  attribute TUnit, attribute MIndex) {
       DEBUG_METHOD();
 
-      glGenVertexArrays(1, &vao);
-      glGenBuffers(1, &indexId);
-      glGenBuffers(1, &vertexId);
       glBindVertexArray(vao);
 
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
 
       Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
       Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
@@ -334,7 +359,6 @@ namespace gl {
       TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
       MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
 
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
       glBindVertexArray(0);
    }
 
@@ -342,7 +366,6 @@ namespace gl {
    static void loadBufferData(GLenum target, GLint bufferId, const std::vector<T> &data, GLenum usage) {
       glBindBuffer(target, bufferId);
       glBufferData(target, data.size() * sizeof(T), data.data(), usage);
-      glBindBuffer(target, 0);
    }
 
    void VAO::loadBuffers() const {

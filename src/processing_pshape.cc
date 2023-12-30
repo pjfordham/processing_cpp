@@ -60,6 +60,8 @@ private:
    color fill_color = WHITE;
    color tint_color = WHITE;
    int style = POLYGON;
+   bool compiled = false;
+   gl::batch_t batch;
 
 public:
 
@@ -167,6 +169,7 @@ public:
       extras.clear();
       indices.clear();
       children.clear();
+      batch.clear();
    }
 
    void rotate(float angle) {
@@ -737,6 +740,23 @@ public:
       return false;
    }
 
+   void compile() {
+      if (!isCompiled()) {
+         batch.clear();
+         compiled = true;
+         flatten( batch, PMatrix::Identity() );
+         batch.compile();
+      }
+   }
+
+   bool isCompiled() const {
+      return compiled && !is_dirty();
+   }
+
+   gl::batch_t &getBatch() {
+      return batch;
+   }
+
    void flatten(gl::batch_t &batch, const PMatrix& transform) const {
       DEBUG_METHOD();
       auto currentTransform = transform * shape_matrix;
@@ -767,8 +787,8 @@ public:
          for ( auto &x : vertices ) {
             x.position = currentTransform * x.position;
          }
-         shape_matrix = PMatrix::Identity();
       }
+      shape_matrix = PMatrix::Identity();
    }
 
    void draw_normals(gl::batch_t &batch, const PMatrix& transform) const;
@@ -1459,15 +1479,32 @@ static void PShape_releaseAllVAOs() {
 void PShape::init() {
 }
 
-void PShape::gc() {
-   auto oldHandles = shapeHandles();
-   std::vector<std::weak_ptr<PShapeImpl>> newHandles;
-   for (auto i : oldHandles) {
+void PShape::optimize() {
+   PShape::gc();
+   auto &handles = shapeHandles();
+   for (auto i : handles) {
       if (auto p = i.lock()) {
-         newHandles.push_back(p);
+         if (p->getChildCount() > 0) {
+            p->flattenTransforms(PMatrix::Identity());
+            p->compile();
+         }
       }
    }
-   shapeHandles() = std::move(newHandles);
+}
+
+void PShape::gc() {
+   static int lastSize = 0;
+   auto &oldHandles = shapeHandles();
+   if (oldHandles.size() > lastSize + 200 ) {
+      std::vector<std::weak_ptr<PShapeImpl>> newHandles;
+      for (auto i : oldHandles) {
+         if (auto p = i.lock()) {
+            newHandles.push_back(p);
+         }
+      }
+      lastSize = newHandles.size();
+      shapeHandles() = std::move(newHandles);
+   }
 }
 
 void PShape::close() {
@@ -1879,6 +1916,18 @@ void PShape::setTint(color c){
    return impl->setTint(c);
 }
 
+
+void PShape::compile() {
+   return impl->compile();
+}
+
+bool PShape::isCompiled() const {
+   return impl->isCompiled();
+}
+
+gl::batch_t &PShape::getBatch() {
+   return impl->getBatch();
+}
 
 void PShape::flatten(gl::batch_t &batch, const PMatrix& transform) const{
    return impl->flatten(batch, transform);

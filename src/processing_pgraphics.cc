@@ -136,6 +136,25 @@ public:
       }
    }
 
+   void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
+      static PShader flat = flatShader();
+      if ( batch.size() > 0 ) {
+         flushes+=batch.size();
+         if (currentShader == defaultShader && scene.lights == false && batch.usesTextures() == false && batch.usesCircles() == false) {
+            glc.setShader( flat.getShader(), scene, batch );
+            flat.set_uniforms();
+            flat.bind();
+         } else {
+            glc.setShader( currentShader.getShader(), scene, batch );
+            currentShader.set_uniforms();
+            currentShader.bind();
+         }
+         localFrame.bind();
+         scene.set();
+         batch.draw(transform.glm_data());
+      }
+   }
+
    void drawPImageWithCPU( PImage img, int x, int y ) {
       img.loadPixels();
       loadPixels();
@@ -626,10 +645,20 @@ public:
 
    void shape(PShape &pshape) {
       pixels_current = false;
-      if (pshape == _shape) {
-         pshape.flatten( batch, PMatrix::Identity() );
+      if( pshape.isCompiled() ) {
+         flush();
+         auto &local = pshape.getBatch();
+         if (pshape == _shape) {
+            directDraw( local, PMatrix::Identity() );
+         } else {
+            directDraw( local, _shape.getShapeMatrix() );
+         }
       } else {
-         pshape.flatten( batch, _shape.getShapeMatrix() );
+         if (pshape == _shape) {
+            pshape.flatten( batch, PMatrix::Identity() );
+         } else {
+            pshape.flatten( batch, _shape.getShapeMatrix() );
+         }
       }
    }
 
