@@ -134,6 +134,16 @@ public:
       return children[i];
    }
 
+   color getStrokeColor() const {
+      DEBUG_METHOD();
+      return stroke_color;
+   }
+
+   float getStrokeWeight() const {
+      DEBUG_METHOD();
+      return stroke_weight;
+   }
+
    color getFillColor() const {
       DEBUG_METHOD();
       return fill_color;
@@ -1529,6 +1539,14 @@ PShape PShape::getChild( int i ) {
 
 color PShape::getFillColor() const {
    return impl->getFillColor();
+}
+
+color PShape::getStrokeColor() const {
+   return impl->getStrokeColor();
+}
+
+float PShape::getStrokeWeight() const {
+   return impl->getStrokeWeight();
 }
 
 color PShape::getTintColor() const {

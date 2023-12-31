@@ -807,6 +807,10 @@ public:
          // If there's no stroke and no texture use circle optimization here
          PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.getFillColor(), PMatrix::Identity() );
          return shape;
+      } else if (_shape.getFillColor() == _shape.getStrokeColor() && !_shape.isTextureSet()) {
+         PShape shape = drawUntexturedFilledEllipse( x, y, width + _shape.getStrokeWeight(), height + _shape.getStrokeWeight(),
+                                                     _shape.getFillColor(), PMatrix::Identity() );
+         return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
          PShape shape;

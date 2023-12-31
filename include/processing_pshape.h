@@ -57,6 +57,10 @@ public:
 
    PShape getChild( int i );
 
+   float getStrokeWeight() const;
+
+   color getStrokeColor() const;
+
    color getFillColor() const;
 
    color getTintColor() const;
