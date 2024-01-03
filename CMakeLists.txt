@@ -15,6 +15,7 @@ find_package(PkgConfig REQUIRED)
 
 add_subdirectory(external/libglfw)
 add_subdirectory(external/fmtlib)
+add_subdirectory(external/libtess2)
 
 add_library(Processing
   src/processing.cc
@@ -65,6 +66,7 @@ target_include_directories(Processing
   PkgConfig::SAIL_CXX
   ${FREETYPE_INCLUDE_DIRS}
   external/libglfw/include
+  external/libtess2/Include
   ${OPENGL_INCLUDE_DIRS}
   ${CURL_INCLUDE_DIRS}
   external/fmtlib/include
@@ -79,7 +81,6 @@ target_link_libraries(Processing
     tess2
     glfw
     ${FREETYPE_LIBRARIES}
-    ${GLEW_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${CURL_LIBRARIES}
     LibXml2::LibXml2
