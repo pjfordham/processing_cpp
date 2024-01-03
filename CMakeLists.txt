@@ -7,12 +7,12 @@ project(libProcessing VERSION 1.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(Freetype REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(CURL REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(PkgConfig REQUIRED)
 
+add_subdirectory(external/freetype)
 add_subdirectory(external/libglfw)
 add_subdirectory(external/fmtlib)
 add_subdirectory(external/libtess2)
@@ -64,12 +64,12 @@ target_include_directories(Processing
   include
   glad/include
   PkgConfig::SAIL_CXX
-  ${FREETYPE_INCLUDE_DIRS}
+  external/freetype/include
   external/libglfw/include
   external/libtess2/Include
+  external/fmtlib/include
   ${OPENGL_INCLUDE_DIRS}
   ${CURL_INCLUDE_DIRS}
-  external/fmtlib/include
   ${LIBXML2_INCLUDE_DIR}
   )
 
@@ -80,7 +80,7 @@ target_link_libraries(Processing
     PkgConfig::SAIL_CXX
     tess2
     glfw
-    ${FREETYPE_LIBRARIES}
+    freetype
     ${OPENGL_LIBRARIES}
     ${CURL_LIBRARIES}
     LibXml2::LibXml2
