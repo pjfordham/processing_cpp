@@ -2,3 +2,7 @@
 	path = external/libglfw
 	url = https://github.com/glfw/glfw.git
 	branch = tags/3.3.9
+[submodule "external/fmtlib"]
+	path = external/fmtlib
+	url = https://github.com/fmtlib/fmt.git
+	branch = tags/10.2.0
