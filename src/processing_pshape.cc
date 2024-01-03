@@ -754,7 +754,7 @@ public:
       if (!isCompiled()) {
          batch.clear();
          compiled = true;
-         flatten( batch, PMatrix::Identity() );
+         flatten( batch, PMatrix::Identity(), true );
          batch.compile();
       }
    }
@@ -767,43 +767,27 @@ public:
       return batch;
    }
 
-   void flatten(gl::batch_t &batch, const PMatrix& transform) const {
+   void flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
       DEBUG_METHOD();
       auto currentTransform = transform * shape_matrix;
       if ( style == GROUP ) {
          for (auto &&child : children) {
-            child.flatten(batch, currentTransform);
+            child.flatten(batch, currentTransform, flatten_transforms);
          }
       } else {
          if ( fill_color.a != 0 )
-            draw_fill(batch, currentTransform);
-         // draw_normals(batch, currentTransform);
+            draw_fill(batch, currentTransform, flatten_transforms);
+         // draw_normals(batch, currentTransform, flatten_transforms);
          if ( stroke_color.a != 0 )
-            draw_stroke(batch, currentTransform);
+            draw_stroke(batch, currentTransform, flatten_transforms);
       }
       dirty = false;
       return;
    }
 
-   void flattenTransforms(const PMatrix& transform) {
-      DEBUG_METHOD();
-      dirty=true;
-      auto currentTransform = transform * shape_matrix;
-      if ( style == GROUP ) {
-         for (auto &&child : children) {
-            child.flattenTransforms(currentTransform);
-         }
-      } else {
-         for ( auto &x : vertices ) {
-            x.position = currentTransform * x.position;
-         }
-      }
-      shape_matrix = PMatrix::Identity();
-   }
-
-   void draw_normals(gl::batch_t &batch, const PMatrix& transform) const;
-   void draw_stroke(gl::batch_t &batch, const PMatrix& transform) const;
-   void draw_fill(gl::batch_t &batch, const PMatrix& transform) const;
+   void draw_normals(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_fill(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const;
 
    int getChildCount() const {
       DEBUG_METHOD();
@@ -1259,7 +1243,7 @@ PShapeImpl drawTriangleNormal(int points, const gl::vertex *p,
    return shape;
 }
 
-void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform) const {
+void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool flatten_transforms) const {
    DEBUG_METHOD();
    switch( style ) {
    case TRIANGLES_NOSTROKE:
@@ -1279,7 +1263,7 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform) cons
          xtras.push_back( extras[indices[i]] );
          xtras.push_back( extras[indices[i+1]] );
          xtras.push_back( extras[indices[i+2]] );
-         drawTriangleNormal( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( batch, transform );
+         drawTriangleNormal( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( batch, transform, flatten_transforms );
       }
       break;
    case POINTS:
@@ -1291,7 +1275,7 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform) cons
    }
 }
 
-void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const {
+void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
    DEBUG_METHOD();
    switch( style ) {
    case POINTS:
@@ -1300,7 +1284,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
          drawUntexturedFilledEllipse(
             vertices[i].position.x, vertices[i].position.y,
             extras[i].weight, extras[i].weight,
-            extras[i].stroke, shape_matrix ).draw_fill( batch, transform );
+            extras[i].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       }
       break;
    }
@@ -1328,7 +1312,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
          _line(shape, p2, p0, w2, w0, c2, c0 );
       }
       shape.endShape();
-      shape.draw_fill( batch, transform );
+      shape.draw_fill( batch, transform, flatten_transforms);
       break;
    }
    case LINES:
@@ -1347,7 +1331,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
          _line(shape, p0, p1, w0, w1, c0, c1 );
       }
       shape.endShape();
-      shape.draw_fill( batch, transform );
+      shape.draw_fill( batch, transform, flatten_transforms );
       break;
    }
    case POLYGON:
@@ -1355,13 +1339,13 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( batch, transform );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( batch, transform, flatten_transforms );
          } else {
             if ( contour.empty() ) {
-               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform );
+               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform, flatten_transforms );
             } else {
                if (contour[0] != 0) {
-                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform );
+                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform, flatten_transforms );
                }
                auto q = contour;
                q.push_back(vertices.size());
@@ -1369,7 +1353,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
                   drawLinePoly( q[i+1] - q[i],
                                 vertices.data() + q[i],
                                 extras.data() + q[i],
-                                type == CLOSE, shape_matrix).draw_fill( batch, transform );
+                                type == CLOSE, shape_matrix).draw_fill( batch, transform, flatten_transforms );
                }
             }
          }
@@ -1378,17 +1362,17 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
          case ROUND:
             drawRoundLine( vertices[0].position, vertices[1].position,
                            extras[0].weight, extras[1].weight,
-                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform );
+                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
             break;
          case PROJECT:
             drawCappedLine( vertices[0].position, vertices[1].position,
                             extras[0].weight, extras[1].weight,
-                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform );
+                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
             break;
          case SQUARE:
             drawLine( vertices[0].position, vertices[1].position,
                       extras[0].weight, extras[1].weight,
-                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform );
+                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
             break;
          default:
             abort();
@@ -1397,7 +1381,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
          drawUntexturedFilledEllipse(
             vertices[0].position.x, vertices[0].position.y,
             extras[0].weight, extras[0].weight,
-            extras[0].stroke, shape_matrix ).draw_fill( batch, transform );
+            extras[0].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       }
       break;
    }
@@ -1405,7 +1389,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
       // This isn't exactly right since we draw an extra line for every quad,
       // but it's close enought for now.
    case TRIANGLE_STRIP:
-      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform );
+      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       break;
    case TRIANGLE_FAN:
       abort();
@@ -1416,7 +1400,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const
    }
 }
 
-void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform) const {
+void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool flatten_transforms) const {
    DEBUG_METHOD();
 
    auto &vaos = batch.vaos;
@@ -1424,6 +1408,9 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform) const {
      abort();
 
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
+      const PMatrix &transform =
+         flatten_transforms ? PMatrix::Identity() : transform_;
+
       if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
          vaos.emplace_back();
          vaos.back().transforms.push_back( transform.glm_data() );
@@ -1459,7 +1446,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform) const {
 
       for (auto &v : vertices) {
          vao.vertices.emplace_back(
-            v.position,
+            flatten_transforms ? transform_ * v.position : v.position,
             v.normal,
             v.coord,
             v.fill,
@@ -1495,7 +1482,6 @@ void PShape::optimize() {
    for (auto i : handles) {
       if (auto p = i.lock()) {
          if (p->getChildCount() > 0) {
-            p->flattenTransforms(PMatrix::Identity());
             p->compile();
          }
       }
@@ -1947,28 +1933,20 @@ gl::batch_t &PShape::getBatch() {
    return impl->getBatch();
 }
 
-void PShape::flatten(gl::batch_t &batch, const PMatrix& transform) const{
-   return impl->flatten(batch, transform);
+void PShape::flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+   return impl->flatten(batch, transform, flatten_transforms);
 }
 
-
-void PShape::flattenTransforms(const PMatrix& transform){
-   return impl->flattenTransforms(transform);
+void PShape::draw_normals(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+   return impl->draw_normals(batch,transform, flatten_transforms);
 }
 
-
-void PShape::draw_normals(gl::batch_t &batch, const PMatrix& transform) const{
-   return impl->draw_normals(batch,transform);
+void PShape::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+   return impl->draw_stroke(batch,transform, flatten_transforms);
 }
 
-
-void PShape::draw_stroke(gl::batch_t &batch, const PMatrix& transform) const{
-   return impl->draw_stroke(batch,transform);
-}
-
-
-void PShape::draw_fill(gl::batch_t &batch, const PMatrix& transform) const{
-   return impl->draw_fill(batch,transform);
+void PShape::draw_fill(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+   return impl->draw_fill(batch,transform, flatten_transforms);
 }
 
 
