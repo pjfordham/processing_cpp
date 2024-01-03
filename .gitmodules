@@ -1,0 +1,4 @@
+[submodule "external/libglfw"]
+	path = external/libglfw
+	url = https://github.com/glfw/glfw.git
+	branch = tags/3.3.9

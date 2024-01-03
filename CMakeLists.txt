@@ -7,14 +7,14 @@ project(libProcessing VERSION 1.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
-find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(CURL REQUIRED)
 find_package(fmt REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(PkgConfig REQUIRED)
+
+add_subdirectory(external/libglfw)
 
 add_library(Processing
   src/processing.cc
@@ -64,7 +64,7 @@ target_include_directories(Processing
   glad/include
   PkgConfig::SAIL_CXX
   ${FREETYPE_INCLUDE_DIRS}
-  ${GLEW_INCLUDE_DIRS}
+  external/libglfw/include
   ${OPENGL_INCLUDE_DIRS}
   ${CURL_INCLUDE_DIRS}
   ${FMT_INCLUDE_DIRS}
