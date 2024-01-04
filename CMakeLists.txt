@@ -7,7 +7,6 @@ project(libProcessing VERSION 1.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(OpenGL REQUIRED)
 find_package(CURL REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -31,8 +30,8 @@ add_library(Processing
   src/processing_opengl_framebuffer.cc
   src/processing_pgraphics.cc
   src/processing_pshader.cc
-  glad/src/glad.c
- )
+  external/glad/src/glad.c
+)
 
 install(TARGETS Processing DESTINATION lib)
 
@@ -62,13 +61,12 @@ install(FILES
 target_include_directories(Processing
   PUBLIC
   include
-  glad/include
   PkgConfig::SAIL_CXX
+  external/glad/include
   external/freetype/include
   external/libglfw/include
   external/libtess2/Include
   external/fmtlib/include
-  ${OPENGL_INCLUDE_DIRS}
   ${CURL_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
   )
@@ -81,11 +79,9 @@ target_link_libraries(Processing
     tess2
     glfw
     freetype
-    ${OPENGL_LIBRARIES}
     ${CURL_LIBRARIES}
     LibXml2::LibXml2
     fmt
-    box2d
     )
 
 # Define the array of filenames

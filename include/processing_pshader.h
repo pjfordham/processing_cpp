@@ -2,7 +2,6 @@
 #define PROCESSING_PSHADER_H
 
 #include <memory>
-#include "glad/glad.h"
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -11,6 +10,8 @@
 #include <fmt/core.h>
 
 class PShaderImpl;
+
+typedef unsigned int GLuint;
 
 namespace gl{
    class uniform;
