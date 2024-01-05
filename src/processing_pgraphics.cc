@@ -77,6 +77,7 @@ public:
    int getHeight() const {return height; }
    unsigned int *getPixels() { return pixels.data(); }
    GLuint getAsTexture() { return localFrame.getColorBufferID(); }
+   PImage getAsPImage() { return createImageFromTexture(localFrame.getColorBufferID()); }
 
    ~PGraphicsImpl() {
       DEBUG_METHOD();
@@ -374,8 +375,8 @@ public:
       text(s,x,y,twidth,theight);
    }
 
-   void background(float r, float g, float b) {
-      auto color = gl::flatten_color_mode({r,g,b,color::scaleA});
+   void background(float r, float g, float b, float a = color::scaleA) {
+      auto color = gl::flatten_color_mode({r,g,b,a});
       localFrame.clear( color.r, color.g, color.b, color.a );
    }
 
@@ -384,6 +385,14 @@ public:
          background(0,0,gray);
       } else {
          background(gray,gray,gray);
+      }
+   }
+
+   void background(float gray, float alpha) {
+      if (color::mode == HSB) {
+         background(0,0,gray, alpha);
+      } else {
+         background(gray,gray,gray,alpha);
       }
    }
 
@@ -981,6 +990,10 @@ GLuint PGraphics::getAsTexture() {
    return impl->getAsTexture();
 }
 
+PImage PGraphics::getAsPImage() {
+   return impl->getAsPImage();
+}
+
 void PGraphics::drawPImageWithCPU( PImage img, int x, int y ) {
    return impl->drawPImageWithCPU(img,x,y);
 }
@@ -1137,6 +1150,10 @@ void PGraphics::background(color c){
 
 void PGraphics::background(float gray){
    return impl->background(gray);
+}
+
+void PGraphics::background(float gray, float alpha){
+   return impl->background(gray, alpha);
 }
 
 void PGraphics::imageMode(int iMode){

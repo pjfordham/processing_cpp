@@ -2,6 +2,8 @@
 // A parametric surface is textured procedurally
 // by drawing on an offscreen PGraphics surface.
 
+#include "Surface.h"
+
 PGraphics pg;
 PShape trefoil;
 
@@ -20,17 +22,18 @@ void setup() {
   pg.endDraw();
 
   // Saving trefoil surface into a PShape3D object
-  trefoil = createTrefoil(350, 60, 15, pg);
+  trefoil = createTrefoil(350, 60, 15, pg.getAsPImage());
 }
 
 void draw() {
   background(0);
 
   pg.beginDraw();
-  pg.ellipse(random(pg.width), random(pg.height), 4, 4);
+  pg.ellipse(random(pg.getWidth()), random(pg.getHeight()), 4, 4);
   pg.endDraw();
 
-  ambient(250, 250, 250);
+  trefoil.texture(pg.getAsPImage());
+  //ambient(250, 250, 250);
   pointLight(255, 255, 255, 0, 0, 200);
 
   pushMatrix();

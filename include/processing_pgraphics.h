@@ -34,6 +34,7 @@ public:
    int getHeight() const;
    unsigned int *getPixels();
    GLuint getAsTexture();
+   PImage getAsPImage();
    void drawPImageWithCPU( PImage img, int x, int y );
 
    void save( const std::string &fileName );
@@ -116,6 +117,8 @@ public:
    void background(color c);
 
    void background(float gray);
+
+   void background(float gray, float alpha);
 
    void imageMode(int iMode);
 

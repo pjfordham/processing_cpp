@@ -96,8 +96,6 @@ set(skip_examples
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"
   "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"
   "examples/Demos/Graphics/MeshTweening/MeshTweening.cc"
-  "examples/Demos/Graphics/Trefoil/Surface.cc"
-  "examples/Demos/Graphics/Trefoil/Trefoil.cc"
   "examples/Demos/Tests/MultipleWindows/Arcball.cc"
   "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
