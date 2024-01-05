@@ -1,17 +1,16 @@
 class Particle {
-
+public:
   PVector velocity;
   float lifespan = 255;
 
   PShape part;
   float partSize;
 
-  PVector gravity = new PVector(0,0.1);
+  PVector gravity{0,0.1};
 
 
-  Particle() {
+  Particle(PImage sprite) {
     partSize = random(10,60);
-    part = createShape();
     part.beginShape(QUAD);
     part.noStroke();
     part.texture(sprite);
@@ -33,7 +32,7 @@ class Particle {
   void rebirth(float x, float y) {
     float a = random(TWO_PI);
     float speed = random(0.5,4);
-    velocity = new PVector(cos(a), sin(a));
+    velocity = PVector(cos(a), sin(a));
     velocity.mult(speed);
     lifespan = 255;
     part.resetMatrix();
@@ -49,11 +48,11 @@ class Particle {
   }
 
 
-  public void update() {
+  void update() {
     lifespan = lifespan - 1;
     velocity.add(gravity);
 
     part.setTint(color(255,lifespan));
     part.translate(velocity.x, velocity.y);
   }
-}
+};

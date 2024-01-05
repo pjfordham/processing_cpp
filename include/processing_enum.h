@@ -5,6 +5,9 @@
 enum {
    CODED = -1,
 
+   LANDSCAPE,
+   PORTRAIT,
+
    DISABLE_DEPTH_TEST,
    ENABLE_DEPTH_TEST,
    DISABLE_DEPTH_MASK,
@@ -52,6 +55,7 @@ enum {
    LINES,
    GROUP,
    QUADS,
+   QUAD,
    QUAD_STRIP,
    TRIANGLE_STRIP,
    TRIANGLE_FAN,

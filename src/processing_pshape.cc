@@ -824,7 +824,7 @@ public:
 
 bool PShapeImpl::isClockwise() const {
    DEBUG_METHOD();
-   if ( style != POLYGON && style != QUADS )
+   if ( style != POLYGON && style != QUADS && style != QUAD )
       return false;
    if (vertices.size() < 3)
       return true;
@@ -924,7 +924,7 @@ void PShapeImpl::populateIndices() {
    if (vertices.size() == 0) return;
    dirty=true;
 
-   if (style == QUADS) {
+   if (style == QUADS || style == QUAD) {
       if (vertices.size() % 4 != 0) abort();
       for (int i= 0; i< vertices.size(); i+=4) {
          auto quad = triangulatePolygon( {vertices.begin() + i, vertices.begin() + i + 4},{});
@@ -2105,6 +2105,8 @@ const char *styleToTxt(int style) {
       return "LINES";
    case GROUP:
       return "GROUP";
+   case QUAD:
+      return "QUAD";
    case QUADS:
       return "QUADS";
    case QUAD_STRIP:

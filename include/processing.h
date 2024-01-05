@@ -102,6 +102,8 @@ inline void frameRate(int rate) {
    setFrameRate = rate;
 }
 
+inline void orientation(int o) {}
+
 extern bool xloop;
 
 PGraphics createGraphics(int width, int height, int mode=P3D);
