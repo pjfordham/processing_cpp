@@ -17,11 +17,13 @@ void createDirectoriesForFile(const std::string& filename) {
    // Remove the filename itself to ensure only directories remain
    fs::path directoryPath = filePath.parent_path();
 
-   // Create directories along the path if they don't exist
-   if (!fs::exists(directoryPath)) {
-      if (!fs::create_directories(directoryPath)) {
-         std::cerr << "Failed to create directories: " << directoryPath.string() << std::endl;
-         abort();
+   if (!directoryPath.empty()) {
+     // Create directories along the path if they don't exist
+      if (!fs::exists(directoryPath)) {
+         if (!fs::create_directories(directoryPath)) {
+            std::cerr << "Failed to create directories: " << directoryPath.string() << std::endl;
+            abort();
+         }
       }
    }
 }
