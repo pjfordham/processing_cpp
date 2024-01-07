@@ -5,7 +5,7 @@
  */
 
 // A PShape object
-PShape path;
+PShape path = createShape();
 
 void setup() {
   size(640, 360, P2D);

@@ -25,10 +25,10 @@ public:
 
    PShape &glyph( char x ) {
       if (glyphs.find(x) == glyphs.end()) {
-         glyphs[x] = buildPShapeFromFace( face, x );
+         glyphs.emplace(x, buildPShapeFromFace( face, x ));
          m_advance[x] = face->glyph->advance.x;
       }
-      return glyphs[x];
+      return glyphs.find(x)->second;
    }
 
    int em_size() const {
@@ -100,7 +100,7 @@ static PShape buildPShapeFromFace(FT_Face face, char c) {
    int numPoints = outline.n_points;
 
    // Create our PShape for this glyph
-   PShape glyph_shape;
+   PShape glyph_shape = createShape();
    glyph_shape.beginShape(POLYGON);
    int vertex_index = 0;
    for (int i = 0 ; i < outline.n_contours ; i ++) {
@@ -181,7 +181,7 @@ PFontImpl::PFontImpl(const char *name_, int size_) : name(name_), size(size_) {
 }
 
 PShape PFontImpl::render_as_pshape(std::string_view text) {
-   PShape group;
+   PShape group = createShape();
    group.beginShape(GROUP);
    // TODO: This translate draws the font to the right and underneath
    // the point requested like other draw commands.

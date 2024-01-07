@@ -32,6 +32,7 @@ public:
    Tank(color _color, PVector _pos, float _rot):
       tcolor(_color), pos(_pos), rotation(_rot), angularVel(0.0f), spin(0.0f) {
 
+      geometry = createShape();
       geometry.beginShape();
       // Construct tank geometry
       geometry.noStroke();

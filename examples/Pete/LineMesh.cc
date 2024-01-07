@@ -51,7 +51,7 @@ void line3D(PShape &mesh, PVector p1, PVector p2, float weight1, float weight2, 
 }
 
 PShape drawLineMesh(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
-   PShape mesh;
+   PShape mesh = createShape();
    mesh.beginShape(TRIANGLES);
    mesh.transform( transform );
    mesh.noStroke();

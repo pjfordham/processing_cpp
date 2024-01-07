@@ -13,6 +13,7 @@ public:
     y = random(100, height-100);
     speed = random(0.5, 3);
     // First create the shape
+    s = createShape();
     s.beginShape();
     // You can set fill and stroke
     s.fill(255, 204);

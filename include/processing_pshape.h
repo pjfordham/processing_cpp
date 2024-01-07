@@ -23,7 +23,9 @@ namespace gl {
 class PShape {
    friend PShapeImpl;
    std::shared_ptr<PShapeImpl> impl;
-public:
+   PShape( std::shared_ptr<PShapeImpl> impl_ );
+   friend PShape createShape();
+ public:
    static void init();
    static void optimize();
    static void gc();
@@ -36,7 +38,6 @@ public:
    }
 
    PShape();
-   PShape( std::shared_ptr<PShapeImpl> impl_ );
 
    bool operator==(const PShape &x) const {
       return impl == x.impl;
@@ -250,5 +251,6 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
 
 PShape loadShapeOBJ(std::string_view objPath);
 PShape loadShape(std::string_view objPath);
+PShape createShape();
 
 #endif

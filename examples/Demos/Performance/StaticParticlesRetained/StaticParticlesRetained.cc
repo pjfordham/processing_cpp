@@ -20,7 +20,7 @@ void setup() {
     float cy = random(-500, +500);
     float cz = random(-500, +500);
 
-    PShape part;
+    PShape part = createShape();
     part.beginShape(QUADS);
     part.noStroke();
     part.tint(255);

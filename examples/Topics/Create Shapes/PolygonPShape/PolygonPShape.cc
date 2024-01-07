@@ -6,7 +6,7 @@
  */
 
 // The PShape object
-PShape star;
+PShape star = createShape();
 
 void setup() {
   size(640, 360, P2D);

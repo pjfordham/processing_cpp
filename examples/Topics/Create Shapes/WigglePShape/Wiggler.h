@@ -3,7 +3,7 @@
 class Wiggler {
 public:
   // The PShape to be "wiggled"
-  PShape s;
+  PShape s = createShape();
   // Its location
   float x, y;
 

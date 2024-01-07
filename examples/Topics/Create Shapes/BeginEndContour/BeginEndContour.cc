@@ -4,7 +4,7 @@
  * How to cut a shape out of another using beginContour() and endContour()
  */
 
-PShape s;
+PShape s = createShape();
 
 void setup() {
   size(640, 360, P2D);

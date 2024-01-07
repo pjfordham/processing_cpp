@@ -65,6 +65,7 @@ void createRibbonModel(const std::vector<HashMap> &residues, PShape model, std::
   }
 
   if (renderMode == 0) {
+    model = createShape();
     model.beginShape();
     model.stroke(ribbonColor);
     model.noFill();
@@ -91,6 +92,7 @@ void createRibbonModel(const std::vector<HashMap> &residues, PShape model, std::
     // The ribbon construction is fairly inneficient here, since
     // it could use triangle strips instead to avoid duplicating
     // shared vertices...
+    model = createShape();
     model.beginShape(TRIANGLES);
     model.noStroke();
     model.fill(ribbonColor);

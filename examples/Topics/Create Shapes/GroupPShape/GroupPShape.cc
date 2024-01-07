@@ -6,7 +6,7 @@
 
 
 // A PShape that will group PShapes
-PShape group;
+PShape group = createShape();
 
 void setup() {
   size(640, 360, P2D);
@@ -15,7 +15,7 @@ void setup() {
   group = createGroup();
 
   // Make a polygon PShape
-  PShape star;
+  PShape star = createShape();
   star.beginShape();
   star.noFill();
   star.stroke(255);
@@ -32,7 +32,7 @@ void setup() {
   star.endShape(CLOSE);
 
   // Make a path PShape
-  PShape path;
+  PShape path = createShape();
   path.beginShape();
   path.noFill();
   path.stroke(255);

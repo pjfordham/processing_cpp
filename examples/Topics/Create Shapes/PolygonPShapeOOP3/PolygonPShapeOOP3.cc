@@ -24,6 +24,7 @@ void setup() {
   shapes[1].setFill(color(255, 127));
   shapes[1].setStroke(false);
 
+  shapes[2] = createShape();
   shapes[2].beginShape();
   shapes[2].fill(0, 127);
   shapes[2].noStroke();

@@ -85,7 +85,8 @@ public:
 
    PGraphicsImpl(int width, int height, int mode, int aaMode = MSAA, int aaFactor = 2) :
       localFrame(width, height, aaMode, aaFactor),
-      windowFrame( gl::framebuffer::constructMainFrame( width, height ) ) {
+      windowFrame( gl::framebuffer::constructMainFrame( width, height ) ),
+      _shape( createShape() ) {
 
       DEBUG_METHOD();
       this->width = width;
@@ -100,8 +101,6 @@ public:
       noLights();
       camera();
       perspective();
-
-      _shape.beginShape();
 
       background(DEFAULT_GRAY);
    }
@@ -405,7 +404,7 @@ public:
       h = h / 2;
       d = d / 2;
 
-      PShape cube;
+      PShape cube = createShape();
       cube.beginShape(TRIANGLES);
       cube.copyStyle( _shape );
       cube.textureMode(NORMAL);
@@ -473,7 +472,7 @@ public:
    }
 
    PShape createSphere( float radius ) {
-      PShape sphere;
+      PShape sphere = createShape();
       sphere.beginShape(TRIANGLES);
       sphere.copyStyle( _shape );
       sphere.textureMode(NORMAL);
@@ -625,7 +624,7 @@ public:
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
                          PImage texture, color tint ) {
-      PShape quad;
+      PShape quad = createShape();
       quad.beginShape(TRIANGLES_NOSTROKE);
       quad.tint( tint );
       quad.textureMode(NORMAL);
@@ -716,7 +715,7 @@ public:
    }
 
    PShape createBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-      PShape bezier;
+      PShape bezier = createShape();
       bezier.beginShape(POLYGON);
       bezier.copyStyle( _shape );
       bezier.vertex(x1, y1);
@@ -739,7 +738,7 @@ public:
          x = x - width / 2;
          y = y - height / 2;
       }
-      PShape shape;//( std::move(rect_opt) );
+      PShape shape = createShape();//( std::move(rect_opt) );
       shape.beginShape(CONVEX_POLYGON);
       shape.copyStyle( _shape );
       shape.normal(0,0,1);
@@ -753,7 +752,7 @@ public:
    }
 
    PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
-      PShape shape;
+      PShape shape = createShape();
       shape.beginShape(POLYGON);
       shape.copyStyle( _shape );
       shape.vertex(x1, y1);
@@ -765,7 +764,7 @@ public:
    }
 
    PShape createLine(float x1, float y1, float z1, float x2, float y2, float z2) {
-      PShape shape;
+      PShape shape = createShape();
       shape.beginShape(POLYGON);
       shape.copyStyle( _shape );
       shape.vertex(x1,y1,z1);
@@ -775,7 +774,7 @@ public:
    }
 
    PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
-      PShape shape;
+      PShape shape = createShape();
       shape.beginShape(TRIANGLES);
       shape.copyStyle( _shape );
       shape.vertex(x1, y1);
@@ -787,7 +786,7 @@ public:
    }
 
    PShape createGroup() {
-      PShape shape;
+      PShape shape = createShape();
       shape.beginShape(GROUP);
       shape.endShape(CLOSE);
       return shape;
@@ -822,7 +821,7 @@ public:
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
-         PShape shape;
+         PShape shape = createShape();
          shape.beginShape(CONVEX_POLYGON);
          shape.copyStyle( _shape );
          shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
@@ -866,7 +865,7 @@ public:
 
       if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape;
+         PShape shape = createShape();
          if (fillMode == PIE) {
             // This isn't really a CONVEX_POLYGON but I know
             // it will fill ok with a traingle fan
@@ -909,7 +908,7 @@ public:
          shape.endShape(strokeMode);
          return shape;
       } else {
-         PShape shape;
+         PShape shape = createShape();
          shape.beginShape(CONVEX_POLYGON);
          shape.copyStyle( _shape );
          int NUMBER_OF_VERTICES=32;
@@ -926,7 +925,7 @@ public:
    }
 
    PShape createPoint(float x, float y) {
-      PShape shape;
+      PShape shape = createShape();
       shape.beginShape(POINTS);
       shape.copyStyle( _shape );
       shape.vertex(x,y);

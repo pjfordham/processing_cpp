@@ -11,7 +11,7 @@
 // A list of objects
 std::vector<Polygon> polygons;
 
-PShape star;
+PShape star = createShape();
 
 void setup() {
   size(640, 360, P2D);

@@ -9,7 +9,7 @@ public:
   float lifespan;
 
   // The particle PShape
-  PShape part;
+  PShape part = createShape();
   // The particle size
   float partSize;
 
