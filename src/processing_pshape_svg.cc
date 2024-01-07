@@ -330,7 +330,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
    if (node->type == XML_ELEMENT_NODE) {
       type = (char*)node->name;
 
-      PShape shape;
+      PShape shape = createShape();;
       shape.beginShape();
       shape.fill(BLACK);
       shape.noStroke();
@@ -510,10 +510,10 @@ PShape loadShapeSVG(std::string_view filename) {
    xmlDoc* doc = xmlReadFile(("data/"s+std::string(filename)).c_str(), nullptr, 0);
    if (doc == nullptr) {
       std::cerr << "Error loading SVG file." << std::endl;
-      return {};
+      return createShape();
    }
 
-   PShape svgShape;
+   PShape svgShape = createShape();
    svgShape.beginShape(GROUP);
    parseNode(xmlDocGetRootElement(doc), svgShape);
    svgShape.endShape();

@@ -66,7 +66,7 @@ void createCube() {
 
   // Create all faces at front position
   for (int i = 0; i < 6; i++) {
-    PShape face = createGroup();
+    PShape face = createShape();
     createFaceWithHole(face);
     cube.addChild(face);
   }

@@ -1170,7 +1170,7 @@ PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, 
 }
 
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform) {
-   PShape shape;
+   PShape shape = createShape();;
    shape.beginShape(TRIANGLES);
    shape.circleTexture();
    shape.noStroke();
@@ -1604,11 +1604,13 @@ void PShape::resetMatrix(){
 
 
 void PShape::beginShape(int style_){
-   if ( impl == nullptr) {
-      impl = std::make_shared<PShapeImpl>();
-      shapeHandles().push_back(impl);
-   }
    return impl->beginShape(style_);
+}
+
+PShape createShape() {
+   auto impl = std::make_shared<PShapeImpl>();
+   shapeHandles().push_back(impl);
+   return impl;
 }
 
 
@@ -2002,7 +2004,7 @@ PShape loadShapeOBJ( std::string_view objPath ) {
       abort();
    }
 
-   PShape obj_shape;
+   PShape obj_shape = createShape();
    obj_shape.beginShape( TRIANGLES );
 
    std::vector< glm::vec4 > positions( 1, glm::vec4( 0, 0, 0, 0 ) );

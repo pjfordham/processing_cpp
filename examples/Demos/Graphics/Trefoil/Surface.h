@@ -13,7 +13,7 @@ inline PShape createTrefoil(float s, int ny, int nx, PImage tex) {
   PVector n0, n1, n2;
   float u0, u1, v0, v1;
 
-  PShape obj;
+  PShape obj = createShape();
   obj.beginShape(TRIANGLES);
   obj.texture(tex);
 

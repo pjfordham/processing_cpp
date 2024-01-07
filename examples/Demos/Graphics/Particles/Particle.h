@@ -11,6 +11,7 @@ public:
 
   Particle(PImage sprite) {
     partSize = random(10,60);
+    part = createShape();
     part.beginShape(QUAD);
     part.noStroke();
     part.texture(sprite);

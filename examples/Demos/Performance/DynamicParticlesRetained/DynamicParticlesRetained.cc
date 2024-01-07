@@ -26,7 +26,7 @@ void setup() {
   sprite = loadImage("sprite.png");
 
   for (int n = 0; n < npartTotal; n++) {
-    PShape part;
+    PShape part = createShape();
     part.beginShape(QUADS);
     part.noStroke();
     part.texture(sprite);
