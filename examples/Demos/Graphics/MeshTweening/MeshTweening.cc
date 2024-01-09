@@ -7,7 +7,7 @@ PShape grid;
 
 void setup() {
   size(640, 360, P3D);
-  sh = loadShader("frag.glsl", "vert.glsl");
+  sh = loadShader("tween_frag.glsl", "tween_vert.glsl");
   shader(sh);
 
   grid = createShape();
