@@ -283,7 +283,7 @@ namespace gl {
             shader.get_attribute("position"),
             shader.get_attribute("normal"),
             shader.get_attribute("color"),
-            shader.get_attribute("coord"),
+            shader.get_attribute("texCoord"),
             shader.get_attribute("tunit"),
             shader.get_attribute("mindex"),
             shader.get_uniform("Mmatrix"));
