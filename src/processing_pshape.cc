@@ -85,6 +85,7 @@ public:
       std::swap(setNormals,other.setNormals);
       std::swap(contour,other.contour);
       std::swap(vertices,other.vertices);
+      std::swap(extraAttributes,other.extraAttributes);
       std::swap(extras,other.extras);
       std::swap(children,other.children);
       std::swap(indices,other.indices);
@@ -481,7 +482,6 @@ public:
    bool isClockwise() const;
 
    void endShape(int type_ = OPEN) {
-      const char *typeToTxt(int type);
       DEBUG_METHOD();
       dirty=true;
       // OPEN or CLOSE
@@ -819,6 +819,17 @@ public:
    PVector getVertex(int i, PVector &x) const {
       DEBUG_METHOD();
       return x = getVertex(i);
+   }
+
+   std::map<std::string,std::vector<glm::vec4>> extraAttributes;
+   void attribPosition(std::string_view name, float x, float y, float z, float w) {
+      extraAttributes[std::string(name)].emplace_back(x,y,z,w);
+      // for (auto &i : extraAttributes) {
+      //   fmt::print("{}\n", i.first);
+      //   for (auto &j : i.second) {
+      //      fmt::print("{} ", j);
+      //   }
+      // }
    }
 };
 
@@ -1981,6 +1992,9 @@ PVector PShape::getVertex(int i, PVector &x) const{
    return impl->getVertex(i,x);
 }
 
+void PShape::attribPosition(std::string_view name, float x, float y, float z, float w) {
+   return impl->attribPosition(name, x, y, z, w);
+}
 
 PShape loadShape( std::string_view filename ) {
    if ( endsWith( toLowerCase( filename ) , ".obj" ) ) {
