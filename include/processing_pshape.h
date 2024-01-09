@@ -244,6 +244,8 @@ class PShape {
    void setVertex(int i, float x, float y , float z = 0);
 
    PVector getVertex(int i, PVector &x) const;
+
+   void attribPosition(std::string_view name, float x, float y, float z=0.0, float w=0.0);
 };
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius);
