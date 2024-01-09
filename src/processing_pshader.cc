@@ -21,22 +21,22 @@ static const char *flatVertexShader = R"glsl(
       in int mindex;
       uniform mat4 PVmatrix;
       uniform mat4 Mmatrix[16];
-      out vec4 vColor;
+      out vec4 vertColor;
 
       void main()
       {
           gl_Position = PVmatrix * Mmatrix[mindex] * vec4(position,1.0);
-          vColor = color;
+          vertColor = color;
        }
 )glsl";
 
 static const char *flatFragmentShader = R"glsl(
       #version 400
-      in vec4 vColor;
+      in vec4 vertColor;
       out vec4 fragColor;
       void main()
       {
-          fragColor = vColor;
+          fragColor = vertColor;
       }
 )glsl";
 
@@ -50,32 +50,32 @@ static const char *defaultVertexShader = R"glsl(
       in int mindex;
       uniform mat4 PVmatrix;
       uniform mat4 Mmatrix[16];
-      flat out int vTindex;
-      out vec2 vTexture;
-      out vec4 vColor;
-      out vec3 vNormal;
-      out vec4 vPosition;
+      flat out int vertTindex;
+      out vec2 vertTexCoord;
+      out vec4 vertColor;
+      out vec3 vertNormal;
+      out vec4 vertPosition;
 
       void main()
       {
           mat4 M = Mmatrix[mindex];
-          vPosition = M * vec4(position,1.0);
-          vNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vPosition).xyz;
-          vTexture = coord;
-          vTindex = tunit;
-          vColor = color;
+          vertPosition = M * vec4(position,1.0);
+          vertNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vertPosition).xyz;
+          vertTexCoord = coord;
+          vertTindex = tunit;
+          vertColor = color;
 
-          gl_Position = PVmatrix * vPosition;
+          gl_Position = PVmatrix * vertPosition;
        }
 )glsl";
 
 static const char *defaultFragmentShader = R"glsl(
       #version 400
-      in vec2 vTexture;
-      in vec3 vNormal;
-      in vec4 vColor;
-      in vec4 vPosition;
-      flat in int vTindex;
+      in vec2 vertTexCoord;
+      in vec3 vertNormal;
+      in vec4 vertColor;
+      in vec4 vertPosition;
+      flat in int vertTindex;
       out vec4 fragColor;
       uniform sampler2D myTextures[16];
       uniform vec3 ambientLight;
@@ -89,28 +89,28 @@ static const char *defaultFragmentShader = R"glsl(
       {
           vec3 totalPointLight = vec3(0.0); // Accumulate point light contribution
           for (int i = 0; i < numberOfPointLights; ++i) {
-              vec3 pointLightDirection = vPosition.xyz - pointLightPosition[i];
+              vec3 pointLightDirection = vertPosition.xyz - pointLightPosition[i];
               float d = length(pointLightDirection);
               float pointLightIntensity = 1.0 / (pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
-              float pointLight = max(dot(vNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
+              float pointLight = max(dot(vertNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
               totalPointLight += pointLightColor[i] * pointLight;
          }
 
-          float directional = max(dot(vNormal, -directionLightVector), 0.0);
+          float directional = max(dot(vertNormal, -directionLightVector), 0.0);
           vec3 vLighting = ambientLight + (directionLightColor * directional) + totalPointLight;
 
           vec4 texelColor;
-          if ( vTindex == -1 ) { // It's a circle
-              vec2 pos = vTexture.xy;
+          if ( vertTindex == -1 ) { // It's a circle
+              vec2 pos = vertTexCoord.xy;
               vec2 centre = vec2(0.5,0.5);
                if (distance(pos,centre) > 0.5)
                    discard;
                else
                    texelColor = vec4(1.0,1.0,1.0,1.0);
           } else {
-              texelColor =  texture(myTextures[vTindex], vTexture.xy);
+              texelColor =  texture(myTextures[vertTindex], vertTexCoord.xy);
           }
-          fragColor = vec4(vLighting,1.0) * vColor * texelColor;
+          fragColor = vec4(vLighting,1.0) * vertColor * texelColor;
       }
 )glsl";
 
