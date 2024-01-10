@@ -116,6 +116,13 @@ namespace gl {
    void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, PImage texture_ ) {
       DEBUG_METHOD();
 
+      // Do this better and share somehow with shader and texture unit init
+      // code.
+      // glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
+
+      const int MaxTextureImageUnits = 16;;
+      const int MaxTransformsPerBatch = 16;
+
       if (vertices.size() > 65536)
          abort();
 
@@ -131,7 +138,7 @@ namespace gl {
       // It also has enough capacity for these triangles.
 
       if ( transform != vaos.back().transforms.back()) {
-         if (vaos.back().transforms.size() == 16) {
+         if (vaos.back().transforms.size() == MaxTransformsPerBatch) {
             vaos.emplace_back();
             vaos.back().textures.push_back(texture_);
          }
@@ -139,7 +146,7 @@ namespace gl {
       }
 
       if ( texture_ != vaos.back().textures.back()) {
-         if (vaos.back().textures.size() == 16) {
+         if (vaos.back().textures.size() == MaxTextureImageUnits) {
             vaos.emplace_back();
             vaos.back().transforms.push_back( transform );
          }
@@ -352,16 +359,10 @@ namespace gl {
       }
    }
 
-   context::context() {}
-
    void context::init() {
       blendMode( BLEND );
       glDepthFunc(GL_LEQUAL);
       glEnable(GL_DEPTH_TEST);
-      glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
-   }
-
-   context::~context() {
    }
 
    void shader_t::bind() const {

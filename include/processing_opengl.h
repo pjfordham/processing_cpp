@@ -212,6 +212,7 @@ namespace gl {
       attribute MIndex;
       uniform Mmatrix;
       std::vector<VAO> vaos;
+
    public:
       batch_t() {}
       void setup( attribute Position_, attribute Normal_, attribute Color_,
@@ -237,29 +238,10 @@ namespace gl {
    };
 
    class context {
-      int MaxTextureImageUnits;
-
    public:
-      context();
-
-      context(const context &x) = delete;
-
-      context(context &&x) noexcept : context() {
-         *this = std::move(x);
-      }
-
-      context& operator=(const context&) = delete;
-
-      context& operator=(context&&x) noexcept {
-         std::swap(MaxTextureImageUnits,x.MaxTextureImageUnits);
-         return *this;
-      }
-
       void blendMode( int b );
 
       void init();
-
-      ~context();
 
       void hint(int type);
 
@@ -290,8 +272,6 @@ namespace gl {
             shader.get_attribute("mindex"),
             shader.get_uniform("Mmatrix"));
       }
-
-
    };
 
    color flatten_color_mode(::color c);
