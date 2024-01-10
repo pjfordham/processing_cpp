@@ -1413,61 +1413,8 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
 
 void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool flatten_transforms) const {
    DEBUG_METHOD();
-
-   auto &vaos = batch.vaos;
-   if (vertices.size() > 65536)
-     abort();
-
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
-      const PMatrix &transform =
-         flatten_transforms ? PMatrix::Identity() : transform_;
-
-      if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
-         vaos.emplace_back();
-         vaos.back().transforms.push_back( transform.glm_data() );
-         vaos.back().textures.push_back(texture_);
-      }
-      // At this point vaos has a back and that back has a transform and a texture.
-      // It also has enough capacity for these triangles.
-
-      if ( transform != vaos.back().transforms.back()) {
-         if (vaos.back().transforms.size() == 16) {
-            vaos.emplace_back();
-            vaos.back().textures.push_back(texture_);
-         }
-         vaos.back().transforms.push_back(transform.glm_data());
-      }
-
-      if ( texture_ != vaos.back().textures.back()) {
-         if (vaos.back().textures.size() == 16) {
-            vaos.emplace_back();
-            vaos.back().transforms.push_back( transform.glm_data() );
-         }
-         vaos.back().textures.push_back(texture_);
-      }
-
-      auto &vao = vaos.back();
-      int currentM = vao.transforms.size() - 1;
-      int tunit = vao.textures.size() - 1;
-      int offset = vao.vertices.size();
-
-      if(texture_ == PImage::circle()) {
-         tunit = -1;
-      }
-
-      for (auto &v : vertices) {
-         vao.vertices.emplace_back(
-            flatten_transforms ? transform_ * v.position : v.position,
-            v.normal,
-            v.coord,
-            v.fill,
-            tunit,
-            currentM);
-      }
-
-      for (auto index : indices) {
-         vao.indices.push_back( offset + index );
-      }
+      batch.vertices( vertices, indices, transform_.glm_data(), flatten_transforms, texture_ );
    }
 }
 
