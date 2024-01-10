@@ -113,6 +113,63 @@ namespace gl {
       }
    }
 
+   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, PImage texture_ ) {
+      DEBUG_METHOD();
+
+      if (vertices.size() > 65536)
+         abort();
+
+      const glm::mat4 &transform =
+         flatten_transforms ? PMatrix::Identity().glm_data() : transform_;
+
+      if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
+         vaos.emplace_back();
+         vaos.back().transforms.push_back( transform );
+         vaos.back().textures.push_back(texture_);
+      }
+      // At this point vaos has a back and that back has a transform and a texture.
+      // It also has enough capacity for these triangles.
+
+      if ( transform != vaos.back().transforms.back()) {
+         if (vaos.back().transforms.size() == 16) {
+            vaos.emplace_back();
+            vaos.back().textures.push_back(texture_);
+         }
+         vaos.back().transforms.push_back(transform);
+      }
+
+      if ( texture_ != vaos.back().textures.back()) {
+         if (vaos.back().textures.size() == 16) {
+            vaos.emplace_back();
+            vaos.back().transforms.push_back( transform );
+         }
+         vaos.back().textures.push_back(texture_);
+      }
+
+      auto &vao = vaos.back();
+      int currentM = vao.transforms.size() - 1;
+      int tunit = vao.textures.size() - 1;
+      int offset = vao.vertices.size();
+
+      if(texture_ == PImage::circle()) {
+         tunit = -1;
+      }
+
+      for (auto &v : vertices) {
+         vao.vertices.emplace_back(
+            flatten_transforms ? transform_ * v.position : v.position,
+            v.normal,
+            v.coord,
+            v.fill,
+            tunit,
+            currentM);
+      }
+
+      for (auto index : indices) {
+         vao.indices.push_back( offset + index );
+      }
+   }
+
    void batch_t::draw() {
 #if 0
       fmt::print("### GEOMETRY DUMP START ###\n");

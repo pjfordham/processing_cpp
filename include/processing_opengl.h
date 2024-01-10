@@ -211,8 +211,8 @@ namespace gl {
       attribute TUnit;
       attribute MIndex;
       uniform Mmatrix;
-   public:
       std::vector<VAO> vaos;
+   public:
       batch_t() {}
       void setup( attribute Position_, attribute Normal_, attribute Color_,
                   attribute Coord_,    attribute TUnit_,  attribute MIndex_,
@@ -232,6 +232,8 @@ namespace gl {
       void clear();
       bool usesCircles() const;
       bool usesTextures() const;
+
+      void vertices( const std::vector<vertex> &vertices, const std::vector<unsigned short> &indices, const glm::mat4 &transform, bool flatten_transform, PImage texture );
    };
 
    class context {
