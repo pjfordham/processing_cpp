@@ -156,11 +156,7 @@ namespace gl {
    }
 
    size_t batch_t::size() {
-      size_t s = 0;
-      for (auto &draw: vaos ) {
-         s += vaos.size();
-      }
-      return s;
+      return vaos.size();
    }
 
    void batch_t::compile() {
