@@ -31,6 +31,10 @@ public:
    PShader(GLuint parent);
    PShader() { }
 
+   operator bool() const {
+      return impl != nullptr;
+   }
+
    bool operator==(const PShader &other) const {
       return this->impl == other.impl;
    }

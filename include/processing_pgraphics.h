@@ -271,6 +271,11 @@ public:
 
    void resetShader();
    void resetMatrix();
+
+   void filter(PShader shader);
+   void filter(int kind);
+   void filter(int kind, float param);
+
 };
 
 
