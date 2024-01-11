@@ -51,7 +51,7 @@ static const char *defaultVertexShader = R"glsl(
       uniform mat4 PVmatrix;
       uniform mat4 Mmatrix[16];
       flat out int vertTindex;
-      out vec2 vertTexCoord;
+      out vec4 vertTexCoord;
       out vec4 vertColor;
       out vec3 vertNormal;
       out vec4 vertPosition;
@@ -61,7 +61,7 @@ static const char *defaultVertexShader = R"glsl(
           mat4 M = Mmatrix[mindex];
           vertPosition = M * vec4(position,1.0);
           vertNormal = normalize((M * (vec4(position,1.0) + vec4(normal,0.0))) - vertPosition).xyz;
-          vertTexCoord = texCoord;
+          vertTexCoord = vec4(texCoord,1.0,1.0);
           vertTindex = tunit;
           vertColor = color;
 
@@ -71,7 +71,7 @@ static const char *defaultVertexShader = R"glsl(
 
 static const char *defaultFragmentShader = R"glsl(
       #version 400
-      in vec2 vertTexCoord;
+      in vec4 vertTexCoord;
       in vec3 vertNormal;
       in vec4 vertColor;
       in vec4 vertPosition;

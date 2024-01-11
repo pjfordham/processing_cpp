@@ -96,6 +96,7 @@ MAKE_GLOBAL(rotateX, g);
 MAKE_GLOBAL(rotateY, g);
 MAKE_GLOBAL(rotateZ, g);
 MAKE_GLOBAL(blendMode, g);
+MAKE_GLOBAL(filter, g);
 
 extern int setFrameRate;
 inline void frameRate(int rate) {

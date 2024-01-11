@@ -966,7 +966,44 @@ public:
       defaultShader = currentShader;
    }
 
+   void filter(PShader pshader) {
+      PShader oldShader = currentShader;
+      shader(pshader);
+      // UPSIDE DOWN!:  image(createImageFromTexture(getAsTexture()),0,0);
+
+      float left = 0;
+      float right = 0 + getWidth();
+      float top = 0;
+      float bottom = 0 + getHeight();
+
+      drawTexturedQuad( {left, bottom},
+                        {right,bottom},
+                        {right, top},
+                        {left, top},
+                        createImageFromTexture(getAsTexture()),
+                        WHITE );
+      shader(oldShader);
+   }
+
+   void filter(int kind) {
+   }
+
+   void filter(int kind, float param) {
+   }
+
 };
+
+void PGraphics::filter(PShader shader) {
+   return impl->filter(shader);
+}
+
+void PGraphics::filter(int kind) {
+   return impl->filter(kind);
+}
+
+void PGraphics::filter(int kind, float param) {
+   return impl->filter(kind,param);
+}
 
 int PGraphics::getWidth() const {
    return impl->getWidth();
