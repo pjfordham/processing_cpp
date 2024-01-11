@@ -77,7 +77,7 @@ static const char *defaultFragmentShader = R"glsl(
       in vec4 vertPosition;
       flat in int vertTindex;
       out vec4 fragColor;
-      uniform sampler2D myTextures[16];
+      uniform sampler2D texture[16];
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
       uniform vec3 directionLightVector;
@@ -108,7 +108,7 @@ static const char *defaultFragmentShader = R"glsl(
                else
                    texelColor = vec4(1.0,1.0,1.0,1.0);
           } else {
-              texelColor =  texture(myTextures[vertTindex], vertTexCoord.xy);
+              texelColor =  texture2D(texture[vertTindex], vertTexCoord.xy);
           }
           fragColor = vec4(vLighting,1.0) * vertColor * texelColor;
       }

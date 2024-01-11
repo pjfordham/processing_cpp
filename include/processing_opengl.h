@@ -248,7 +248,7 @@ namespace gl {
       void setShader(const shader_t &shader, scene_t &scene, batch_t &batch) {
          shader.bind();
 
-         uniform uSampler = shader.get_uniform("myTextures");
+         uniform uSampler = shader.get_uniform("texture");
          uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
          // TransformMatrix = shader.get_uniform("transformMatrix");
