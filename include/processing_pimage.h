@@ -64,6 +64,8 @@ public:
 
    PImage( std::shared_ptr<PImageImpl> impl_ );
 
+   void wrapMode( int wrap );
+
    void mask(const PImage m);
 
    color get(int x, int y) const;

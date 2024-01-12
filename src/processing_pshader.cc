@@ -119,6 +119,7 @@ class PShaderImpl {
    std::map<std::string, glm::vec3> uniforms3fv;
    std::map<std::string, glm::vec2> uniforms2fv;
    std::map<std::string, float>     uniforms1f;
+   std::map<std::string, PImage>    uniformsSampler;
 
    gl::shader_t shader;
 public:
@@ -135,6 +136,8 @@ public:
    void bind();
 
    void set_uniforms();
+
+   void set(const char *uniform, PImage image);
 
    void set(const char *uniform, float value);
 
@@ -188,6 +191,22 @@ void PShaderImpl::set_uniforms() {
       gl::uniform loc = shader.get_uniform( id.c_str() );
       loc.set( value );
    }
+   for (auto& [id, value] : uniformsSampler) {
+      // TODO: Fix hardcoding of unit 15
+      gl::uniform loc = shader.get_uniform( id.c_str() );
+      glActiveTexture(GL_TEXTURE0 + 15);
+      if (value.isDirty()) {
+         value.updatePixels();
+      }
+      auto textureID = value.getTextureID();
+      glBindTexture(GL_TEXTURE_2D, value.getTextureID());
+      loc.set( 15 );
+   }
+}
+
+void PShaderImpl::set(const char *id, PImage img) {
+   DEBUG_METHOD();
+   uniformsSampler[id] = img;
 }
 
 void PShaderImpl::set(const char *id, float value) {
@@ -250,6 +269,10 @@ void PShader::set_uniforms() {
 
 void PShader::bind() {
    impl->bind();
+}
+
+void PShader::set(const char *uniform, PImage image) {
+   impl->set( uniform, image );
 }
 
 void PShader::set(const char *uniform, float value) {

@@ -5,6 +5,9 @@
 enum {
    CODED = -1,
 
+   REPEAT,
+   CLAMP,
+
    LANDSCAPE,
    PORTRAIT,
 

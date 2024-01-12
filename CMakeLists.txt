@@ -113,7 +113,6 @@ set(skip_examples
   "examples/Topics/Shaders/DomeProjection/DomeProjection.cc"
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"
   "examples/Topics/Shaders/ImageMask/ImageMask.cc"
-  "examples/Topics/Shaders/InfiniteTiles/InfiniteTiles.cc"
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"
  )
 
