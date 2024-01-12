@@ -14,7 +14,7 @@ void setup() {
   maskImage = createGraphics(srcImage.width, srcImage.height, P2D);
   maskImage.noSmooth();
   maskShader = loadShader("mask.glsl");
-  maskShader.set("mask", maskImage);
+  maskShader.set("mask", maskImage.getAsPImage());
   background(255);
 }
 
