@@ -111,8 +111,6 @@ set(skip_examples
   "examples/Topics/Shaders/Deform/Deform.cc"
   "examples/Topics/Shaders/DomeProjection/CubeMapUtils.cc"
   "examples/Topics/Shaders/DomeProjection/DomeProjection.cc"
-  "examples/Topics/Shaders/EdgeDetect/EdgeDetect.cc"
-  "examples/Topics/Shaders/EdgeFilter/EdgeFilter.cc"
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"
   "examples/Topics/Shaders/ImageMask/ImageMask.cc"
   "examples/Topics/Shaders/InfiniteTiles/InfiniteTiles.cc"

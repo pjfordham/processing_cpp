@@ -202,11 +202,13 @@ namespace gl {
       for (auto &draw: vaos ) {
          Mmatrix.set( draw.transforms );
 
+         std::vector<glm::vec2> textureOffsets(16);
          for ( int i = 0; i < draw.textures.size() ; ++i ) {
             PImage &img = draw.textures[i];
             if (img != PImage::circle()) {
                // Set this here so if updatePixels needs to create
                // a new texture have the correct unit bound already.
+               textureOffsets[i] = glm::vec2(1.0 / img.width, 1.0 / img.height);
                glActiveTexture(GL_TEXTURE0 + i);
                if (img.isDirty()) {
                   img.updatePixels();
@@ -215,6 +217,7 @@ namespace gl {
                glBindTexture(GL_TEXTURE_2D, img.getTextureID());
             }
          }
+         TexOffset.set(textureOffsets);
          draw.draw();
       }
    }
@@ -521,6 +524,11 @@ namespace gl {
    void uniform::set(const std::vector<int> &value) const {
       if ( id != -1 )
          glUniform1iv(id,value.size(),value.data());
+   }
+
+   void uniform::set(const std::vector<glm::vec2> &value) const {
+      if ( id != -1 )
+         glUniform2fv(id, value.size(), glm::value_ptr(value[0]) );
    }
 
    void uniform::set(const std::vector<glm::vec3> &value) const {
