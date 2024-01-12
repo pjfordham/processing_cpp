@@ -86,32 +86,32 @@ target_link_libraries(Processing
 
 # Define the array of filenames
 set(skip_examples
-  "examples/Basics/Lights/Mixture/Mixture.cc"
-  "examples/Basics/Lights/MixtureGrid/MixtureGrid.cc"
-  "examples/Basics/Lights/Reflection/Reflection.cc"
-  "examples/Basics/Lights/Spot/Spot.cc"
-  "examples/Basics/Shape/DisableStyle/DisableStyle.cc"
-  "examples/Basics/Shape/GetChild/GetChild.cc"
-  "examples/Demos/Graphics/DepthSort/DepthSort.cc"
-  "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"
-  "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"
-  "examples/Demos/Tests/MultipleWindows/Arcball.cc"
-  "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"
-  "examples/Demos/Tests/ResizeTest/ResizeTest.cc"
-  "examples/Demos/Tests/SpecsTest/SpecsTest.cc"
-  "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"
-  "examples/Topics/Advanced Data/LoadSaveTable/LoadSaveTable.cc"
-  "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"
-  "examples/Topics/Advanced Data/Regex/Regex.cc"
-  "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"
-  "examples/Topics/Cellular Automata/Spore1/Spore1.cc"
-  "examples/Topics/Cellular Automata/Spore2/Spore2.cc"
-  "examples/Topics/Shaders/Conway/Conway.cc"
-  "examples/Topics/Shaders/CustomBlend/CustomBlend.cc"
-  "examples/Topics/Shaders/DomeProjection/CubeMapUtils.cc"
-  "examples/Topics/Shaders/DomeProjection/DomeProjection.cc"
-  "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"
-  "examples/Topics/Shaders/SepBlur/SepBlur.cc"
+  "examples/Basics/Lights/Mixture/Mixture.cc"                                          # No spot lights
+  "examples/Basics/Lights/MixtureGrid/MixtureGrid.cc"                                  # No spot lights
+  "examples/Basics/Lights/Reflection/Reflection.cc"                                    # No materials
+  "examples/Basics/Lights/Spot/Spot.cc"                                                # No spot lights
+  "examples/Basics/Shape/DisableStyle/DisableStyle.cc"                                 # No disable style
+  "examples/Basics/Shape/GetChild/GetChild.cc"                                         # No disable style
+  "examples/Demos/Graphics/DepthSort/DepthSort.cc"                                     # No depth sort
+  "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"       # Won't support
+  "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"             # Won't support
+  "examples/Demos/Tests/MultipleWindows/Arcball.cc"                                    # No multiple windows
+  "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"                            # No multiple windows
+  "examples/Demos/Tests/ResizeTest/ResizeTest.cc"                                      # No resize
+  "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
+  "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"                         # No JSON
+  "examples/Topics/Advanced Data/LoadSaveTable/LoadSaveTable.cc"                       # No load/save tables
+  "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"                           # No XML
+  "examples/Topics/Advanced Data/Regex/Regex.cc"                                       # No regex
+  "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"                   # No XML
+  "examples/Topics/Cellular Automata/Spore1/Spore1.cc"                                 # Will fix
+  "examples/Topics/Cellular Automata/Spore2/Spore2.cc"                                 # Will fix
+  "examples/Topics/Shaders/Conway/Conway.cc"                                           # No ppixels uniform
+  "examples/Topics/Shaders/CustomBlend/CustomBlend.cc"                                 # No multiple bound PImages to samplers
+  "examples/Topics/Shaders/DomeProjection/CubeMapUtils.cc"                             # Won't support API
+  "examples/Topics/Shaders/DomeProjection/DomeProjection.cc"                           # Won't support API
+  "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
+  "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )
 
 function(ADD_EXAMPLE file_path)
