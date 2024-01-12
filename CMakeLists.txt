@@ -108,7 +108,6 @@ set(skip_examples
   "examples/Topics/Cellular Automata/Spore2/Spore2.cc"
   "examples/Topics/Shaders/Conway/Conway.cc"
   "examples/Topics/Shaders/CustomBlend/CustomBlend.cc"
-  "examples/Topics/Shaders/Deform/Deform.cc"
   "examples/Topics/Shaders/DomeProjection/CubeMapUtils.cc"
   "examples/Topics/Shaders/DomeProjection/DomeProjection.cc"
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"
