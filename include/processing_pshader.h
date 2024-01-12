@@ -9,6 +9,8 @@
 #include <set>
 #include <fmt/core.h>
 
+#include "processing_pimage.h"
+
 class PShaderImpl;
 
 typedef unsigned int GLuint;
@@ -52,6 +54,8 @@ public:
    void bind();
 
    void set_uniforms();
+
+   void set(const char *uniform, PImage image);
 
    void set(const char *uniform, float value);
 

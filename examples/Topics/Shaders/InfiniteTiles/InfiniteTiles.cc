@@ -6,6 +6,8 @@
 PImage tileTexture;
 PShader tileShader;
 
+void loadTileShader();
+
 void setup() {
   size(640, 480, P2D);
   textureWrap(REPEAT);

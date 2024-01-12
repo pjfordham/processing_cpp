@@ -28,6 +28,8 @@ void createDirectoriesForFile(const std::string& filename) {
    }
 }
 
+int textureWrapMode = CLAMP;
+
 template <> struct fmt::formatter<PImageImpl>;
 
 class PImageImpl {
@@ -36,6 +38,7 @@ public:
    int height = 0;
    unsigned int *pixels = nullptr;
    GLuint textureID = 0;
+   int textureWrap;
    bool dirty = true;
 
    ~PImageImpl() {
@@ -50,18 +53,21 @@ public:
 
    PImageImpl(int w, int h, int mode) : width(w), height(h) {
       DEBUG_METHOD();
+      textureWrap = textureWrapMode;
       pixels = new uint32_t[width*height];
       std::fill(pixels, pixels+width*height, color(BLACK));
    }
 
    PImageImpl(GLuint textureID_) : textureID(textureID_) {
       DEBUG_METHOD();
+      textureWrap = textureWrapMode;
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
    }
 
    PImageImpl(int w, int h, uint32_t *pixels_) : width(w), height(h) {
       DEBUG_METHOD();
+      textureWrap = textureWrapMode;
       pixels = new uint32_t[width*height];
       std::copy(pixels_, pixels_+width*height, pixels);
    }
@@ -116,6 +122,12 @@ public:
       dirty = false;
    }
 
+   void wrapMode( int a ) {
+      DEBUG_METHOD();
+      textureWrap = a;
+      dirty = true;
+   }
+
    int pixels_length() const {
       DEBUG_METHOD();
       return width * height;
@@ -129,12 +141,17 @@ public:
          // set texture parameters
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
       }
       if (dirty) {
          glBindTexture(GL_TEXTURE_2D, textureID);
          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+         if ( textureWrap == CLAMP ) {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+         } else if ( textureWrap == REPEAT ) {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+         }
          dirty = false;
       }
       glBindTexture(GL_TEXTURE_2D, 0);
@@ -322,6 +339,10 @@ void PImage::set(int x, int y, color c) {
 
 void PImage::loadPixels() const {
    impl->loadPixels();
+}
+
+void PImage::wrapMode(int w) {
+   impl->wrapMode(w);
 }
 
 int PImage::pixels_length() const {

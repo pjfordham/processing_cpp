@@ -98,6 +98,12 @@ MAKE_GLOBAL(rotateZ, g);
 MAKE_GLOBAL(blendMode, g);
 MAKE_GLOBAL(filter, g);
 
+extern int textureWrapMode;
+
+inline void textureWrap(int wrap) {
+   textureWrapMode = wrap;
+}
+
 extern int setFrameRate;
 inline void frameRate(int rate) {
    setFrameRate = rate;

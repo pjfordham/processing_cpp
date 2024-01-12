@@ -120,7 +120,7 @@ namespace gl {
       // code.
       // glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
 
-      const int MaxTextureImageUnits = 16;;
+      const int MaxTextureImageUnits = 15; // keep one spare
       const int MaxTransformsPerBatch = 16;
 
       if (vertices.size() > 65536)
