@@ -13,7 +13,7 @@ boolean enabled = true;
 void setup() {
   size(640, 360, P2D);
   img = loadImage("leaves.jpg");
-  edges = loadShader("edges.glsl");
+  edges = loadShader("edge_detect.glsl");
 }
 
 void draw() {
