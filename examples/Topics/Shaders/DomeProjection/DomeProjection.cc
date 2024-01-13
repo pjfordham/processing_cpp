@@ -11,16 +11,7 @@
  *
  */
 
-import java.nio.IntBuffer;
-
-PShader cubemapShader;
-PShape domeSphere;
-
-IntBuffer fbo;
-IntBuffer rbo;
-IntBuffer envMapTextureID;
-
-int envMapSize = 1024;
+#include "CubeMapUtils.h"
 
 void setup() {
   size(640, 640, P3D);
