@@ -22,7 +22,7 @@ void setup() {
   pg.endDraw();
 
   // Saving trefoil surface into a PShape3D object
-  trefoil = createTrefoil(350, 60, 15, pg.getAsPImage());
+  trefoil = createTrefoil(350, 60, 15, pg);
 }
 
 void draw() {
@@ -32,7 +32,7 @@ void draw() {
   pg.ellipse(random(pg.getWidth()), random(pg.getHeight()), 4, 4);
   pg.endDraw();
 
-  trefoil.texture(pg.getAsPImage());
+  trefoil.texture(pg);
   //ambient(250, 250, 250);
   pointLight(255, 255, 255, 0, 0, 200);
 
