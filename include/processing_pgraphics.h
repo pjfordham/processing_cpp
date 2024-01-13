@@ -28,6 +28,10 @@ public:
 
    ~PGraphics() {}
 
+   operator PImage() {
+      return getAsPImage();
+   }
+
    PGraphics(int width, int height, int mode, int aaMode = MSAA, int aaFactor = 2);
 
    int getWidth() const;
