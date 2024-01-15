@@ -58,6 +58,7 @@ namespace gl {
       void set(const std::vector<glm::vec2> &value) const;
       void set(const std::vector<glm::vec3> &value) const;
       void set(const std::vector<glm::mat4> &value) const;
+      void set(const std::vector<glm::mat3> &value) const;
       void set(const glm::mat4 &value) const;
    };
 
@@ -212,6 +213,7 @@ namespace gl {
       attribute TUnit;
       attribute MIndex;
       uniform Mmatrix;
+      uniform Nmatrix;
       uniform TexOffset;
       std::vector<VAO> vaos;
 
@@ -219,7 +221,7 @@ namespace gl {
       batch_t() {}
       void setup( attribute Position_, attribute Normal_, attribute Color_,
                   attribute Coord_,    attribute TUnit_,  attribute MIndex_,
-                  uniform Mmatrix_, uniform TexOffset_ ) {
+                  uniform Mmatrix_, uniform Nmatrix_, uniform TexOffset_ ) {
          Position = Position_;
          Normal = Normal_;
          Color = Color_;
@@ -227,6 +229,7 @@ namespace gl {
          TUnit = TUnit_;
          MIndex = MIndex_;
          Mmatrix = Mmatrix_;
+         Nmatrix = Nmatrix_;
          TexOffset = TexOffset_;
       }
       size_t size();
@@ -274,6 +277,7 @@ namespace gl {
             shader.get_attribute("tunit"),
             shader.get_attribute("mindex"),
             shader.get_uniform("Mmatrix"),
+            shader.get_uniform("Nmatrix"),
             shader.get_uniform("texOffset"));
       }
    };

@@ -91,9 +91,12 @@ namespace gl {
 
    void batch_t::draw( const glm::mat4 &transform ) {
       std::vector<glm::mat4> transforms;
+      std::vector<glm::mat3> normals;
       transforms.push_back(transform);
+      normals.push_back( glm::mat3(glm::transpose(glm::inverse(transform))) );
       for (auto &draw: vaos ) {
          Mmatrix.set( transforms );
+         Nmatrix.set( normals );
 
          for ( int i = 0; i < draw.textures.size() ; ++i ) {
             PImage &img = draw.textures[i];
@@ -200,6 +203,11 @@ namespace gl {
 
 
       for (auto &draw: vaos ) {
+         std::vector<glm::mat3> normals;
+         for ( const auto &transform : draw.transforms ) {
+            normals.push_back( glm::mat3(glm::transpose(glm::inverse(transform))) );
+         }
+
          Mmatrix.set( draw.transforms );
 
          std::vector<glm::vec2> textureOffsets(16);
@@ -539,6 +547,11 @@ namespace gl {
    void uniform::set(const std::vector<glm::mat4> &value) const {
       if ( id != -1 )
          glUniformMatrix4fv(id, value.size(), false, glm::value_ptr(value[0]) );
+   }
+
+   void uniform::set(const std::vector<glm::mat3> &value) const {
+      if ( id != -1 )
+         glUniformMatrix3fv(id, value.size(), false, glm::value_ptr(value[0]) );
    }
 
    void uniform::set(const glm::mat4 &value) const {
