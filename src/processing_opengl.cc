@@ -209,6 +209,7 @@ namespace gl {
          }
 
          Mmatrix.set( draw.transforms );
+         Nmatrix.set(normals);
 
          std::vector<glm::vec2> textureOffsets(16);
          for ( int i = 0; i < draw.textures.size() ; ++i ) {
@@ -268,6 +269,7 @@ namespace gl {
 
    void scene_t::set() {
       PVmatrix.set( projection_matrix * view_matrix  );
+      Eye.set( glm::inverse(view_matrix)[3]);
       if (lights) {
          int numPointLights = (int)pointLightColors.size();
          DirectionLightColor.set( directionLightColor);

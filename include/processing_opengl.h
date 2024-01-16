@@ -63,6 +63,7 @@ namespace gl {
    };
 
    class scene_t {
+      uniform Eye;
       uniform AmbientLight;
       uniform DirectionLightColor;
       uniform DirectionLightVector;
@@ -78,7 +79,7 @@ namespace gl {
                  uniform PointLightColor_,
                  uniform PointLightPosition_,
                  uniform PointLightFalloff_,
-                 uniform PVmatrix_) {
+                 uniform PVmatrix_, uniform Eye_) {
          AmbientLight = AmbientLight_;
          DirectionLightColor = DirectionLightColor_;
          DirectionLightVector = DirectionLightVector_;
@@ -87,6 +88,7 @@ namespace gl {
          PointLightPosition = PointLightPosition_;
          PointLightFalloff = PointLightFalloff_;
          PVmatrix = PVmatrix_;
+         Eye = Eye_;
       }
 
       float screenX(float x, float y, float z) {
@@ -267,7 +269,8 @@ namespace gl {
             shader.get_uniform("pointLightColor"),
             shader.get_uniform("pointLightPosition"),
             shader.get_uniform("pointLightFalloff"),
-            shader.get_uniform("PVmatrix"));
+            shader.get_uniform("PVmatrix"),
+            shader.get_uniform("eye"));
 
          batch.setup(
             shader.get_attribute("position"),
