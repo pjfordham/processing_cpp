@@ -42,20 +42,68 @@ static const char *flatFragmentShader = R"glsl(
 
 static const char *defaultVertexShader = R"glsl(
       #version 400
-      in vec3 position;
-      in vec3 normal;
-      in vec2 texCoord;
-      in int tunit;
-      in vec4 color;
       in int mindex;
       uniform mat4 PVmatrix;
       uniform mat4 Mmatrix[16];
       uniform mat3 Nmatrix[16];
+
+      uniform int lightCount;
+      uniform vec4 lightPosition[8];
+      uniform vec3 lightNormal[8];
+      uniform vec3 lightAmbient[8];
+      uniform vec3 lightDiffuse[8];
+      uniform vec3 lightSpecular[8];
+      uniform vec3 lightFalloff[8];
+      uniform vec2 lightSpot[8];
+
+      in vec3 position;
+      in vec4 color;
+      in vec3 normal;
+      in vec2 texCoord;
+
+      attribute vec4 ambient;
+      attribute vec4 specular;
+      attribute vec4 emissive;
+      attribute float shininess;
+
+      in int tunit;
+
       flat out int vertTindex;
-      out vec4 vertTexCoord;
-      out vec4 vertColor;
       out vec3 vertNormal;
       out vec4 vertPosition;
+
+      out vec4 vertColor;
+      out vec4 backVertColor;
+      out vec4 vertTexCoord;
+
+      const float zero_float = 0.0;
+      const float one_float = 1.0;
+      const vec3 zero_vec3 = vec3(0);
+
+      float falloffFactor(vec3 lightPos, vec3 vertPos, vec3 coeff) {
+         vec3 lpv = lightPos - vertPos;
+         vec3 dist = vec3(one_float);
+         dist.z = dot(lpv, lpv);
+         dist.y = sqrt(dist.z);
+         return one_float / dot(dist, coeff);
+      }
+
+      float spotFactor(vec3 lightPos, vec3 vertPos, vec3 lightNorm, float minCos, float spotExp) {
+         vec3 lpv = normalize(lightPos - vertPos);
+         vec3 nln = -one_float * lightNorm;
+         float spotCos = dot(nln, lpv);
+         return spotCos <= minCos ? zero_float : pow(spotCos, spotExp);
+      }
+
+      float lambertFactor(vec3 lightDir, vec3 vecNormal) {
+         return max(zero_float, dot(lightDir, vecNormal));
+      }
+
+      float blinnPhongFactor(vec3 lightDir, vec3 vertPos, vec3 vecNormal, float shine) {
+         vec3 np = normalize(vertPos);
+         vec3 ldp = normalize(lightDir - np);
+         return pow(max(zero_float, dot(ldp, vecNormal)), shine);
+      }
 
       void main()
       {
@@ -68,53 +116,100 @@ static const char *defaultVertexShader = R"glsl(
           vertColor = color;
 
           gl_Position = PVmatrix * vertPosition;
-       }
+
+          vec3 ecVertex = vertPosition.xyz;
+          vec3 ecNormal = vertNormal;
+          vec3 ecNormalInv = -vertNormal;
+
+          // Light calculations
+          vec3 totalAmbient = vec3(0, 0, 0);
+
+          vec3 totalFrontDiffuse = vec3(0, 0, 0);
+          vec3 totalFrontSpecular = vec3(0, 0, 0);
+
+          vec3 totalBackDiffuse = vec3(0, 0, 0);
+          vec3 totalBackSpecular = vec3(0, 0, 0);
+
+          for (int i = 0; i < 8; i++) {
+             if (lightCount == i) break;
+
+            vec3 lightPos = lightPosition[i].xyz;
+            bool isDir = lightPosition[i].w < one_float;
+            float spotCos = lightSpot[i].x;
+            float spotExp = lightSpot[i].y;
+
+            vec3 lightDir;
+            float falloff;
+            float spotf;
+
+            if (isDir) {
+               falloff = one_float;
+               lightDir = -one_float * lightNormal[i];
+            } else {
+               falloff = 1.0;//falloffFactor(lightPos, ecVertex, lightFalloff[i]);
+               lightDir = normalize(lightPos - ecVertex);
+            }
+
+            spotf = spotExp > zero_float ? spotFactor(lightPos, ecVertex, lightNormal[i],
+                                                      spotCos, spotExp)
+                                 : one_float;
+            if (any(greaterThan(lightAmbient[i], zero_vec3))) {
+               totalAmbient       += lightAmbient[i] * falloff;
+            }
+
+            if (any(greaterThan(lightDiffuse[i], zero_vec3))) {
+               totalFrontDiffuse  += lightDiffuse[i] * falloff * spotf *
+                                     lambertFactor(lightDir, ecNormal);
+               totalBackDiffuse   += lightDiffuse[i] * falloff * spotf *
+                                     lambertFactor(lightDir, ecNormalInv);
+            }
+
+            // if (any(greaterThan(lightSpecular[i], zero_vec3))) {
+            //    totalFrontSpecular += lightSpecular[i] * falloff * spotf *
+            //                          blinnPhongFactor(lightDir, ecVertex, ecNormal, shininess);
+            //    totalBackSpecular  += lightSpecular[i] * falloff * spotf *
+            //                          blinnPhongFactor(lightDir, ecVertex, ecNormalInv, shininess);
+            // }
+         }
+
+         // Calculating final color as result of all lights (plus emissive term).
+         // Transparency is determined exclusively by the diffuse component.
+         vertColor = vec4(totalAmbient, 0) * color + // ambient +
+                     vec4(totalFrontDiffuse, 1) * color +
+                     vec4(totalFrontSpecular, 0) * specular +
+                     vec4(emissive.rgb, 0);
+
+         backVertColor = vec4(totalAmbient, 0) * color + //ambient +
+                         vec4(totalBackDiffuse, 1) * color +
+                         vec4(totalBackSpecular, 0) * specular +
+                         vec4(emissive.rgb, 0);
+}
 )glsl";
 
 static const char *defaultFragmentShader = R"glsl(
       #version 400
-      in vec4 vertTexCoord;
-      in vec3 vertNormal;
-      in vec4 vertColor;
-      in vec4 vertPosition;
-      flat in int vertTindex;
-      out vec4 fragColor;
-      uniform vec3 eye;
+
       uniform sampler2D texture[16];
-      uniform vec3 ambientLight;
-      uniform vec3 directionLightColor;
-      uniform vec3 directionLightVector;
-      uniform int  numberOfPointLights;
-      uniform vec3 pointLightColor[8];
-      uniform vec3 pointLightPosition[8];
-      uniform vec3 pointLightFalloff;
-      void main()
-      {
-          vec3 totalPointLight = vec3(0.0); // Accumulate point light contribution
-          for (int i = 0; i < numberOfPointLights; ++i) {
-              vec3 pointLightDirection = vertPosition.xyz - pointLightPosition[i];
-              float d = length(pointLightDirection);
-              float pointLightIntensity = 1.0 / (pointLightFalloff.x + pointLightFalloff.y * d + pointLightFalloff.z * d * d);
-              float pointLight = max(dot(vertNormal, normalize(-pointLightDirection)), 0.0) * pointLightIntensity;
-              totalPointLight += pointLightColor[i] * pointLight;
+      flat in int vertTindex;
+
+      varying vec4 vertColor;
+      varying vec4 backVertColor;
+      varying vec4 vertTexCoord;
+
+      void main() {
+
+         if ( vertTindex == -1 ) { // It's a circle
+            vec2 pos = vertTexCoord.xy;
+            vec2 centre = vec2(0.5,0.5);
+            if (distance(pos,centre) > 0.5)
+               discard;
+            else
+               gl_FragColor = gl_FrontFacing ? vertColor : backVertColor;
+         } else {
+            gl_FragColor = texture2D(texture[vertTindex], vertTexCoord.st) * (gl_FrontFacing ? vertColor : backVertColor);
          }
-
-          float directional = max(dot(vertNormal, -directionLightVector), 0.0);
-          vec3 vLighting = ambientLight + (directionLightColor * directional) + totalPointLight;
-
-          vec4 texelColor;
-          if ( vertTindex == -1 ) { // It's a circle
-              vec2 pos = vertTexCoord.xy;
-              vec2 centre = vec2(0.5,0.5);
-               if (distance(pos,centre) > 0.5)
-                   discard;
-               else
-                   texelColor = vec4(1.0,1.0,1.0,1.0);
-          } else {
-              texelColor =  texture2D(texture[vertTindex], vertTexCoord.xy);
-          }
-          fragColor = vec4(vLighting,1.0) * vertColor * texelColor;
       }
+
 )glsl";
 
 class PShaderImpl {

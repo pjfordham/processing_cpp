@@ -119,7 +119,7 @@ public:
       static PShader flat = flatShader();
       if ( batch.size() > 0 ) {
          flushes+=batch.size();
-         if (currentShader == defaultShader && scene.lights == false && batch.usesTextures() == false && batch.usesCircles() == false) {
+         if (currentShader == defaultShader && scene.lights.size() == 0 && batch.usesTextures() == false && batch.usesCircles() == false) {
             glc.setShader( flat.getShader(), scene, batch );
             flat.set_uniforms();
             flat.bind();
@@ -140,7 +140,7 @@ public:
       static PShader flat = flatShader();
       if ( batch.size() > 0 ) {
          flushes+=batch.size();
-         if (currentShader == defaultShader && scene.lights == false && batch.usesTextures() == false && batch.usesCircles() == false) {
+         if (currentShader == defaultShader && scene.lights.size() == 0 && batch.usesTextures() == false && batch.usesCircles() == false) {
             glc.setShader( flat.getShader(), scene, batch );
             flat.set_uniforms();
             flat.bind();
@@ -277,48 +277,52 @@ public:
              width / 2.0, height / 2.0, 0, 0, 1, 0);
    }
 
+   glm::vec3 falloff = {1.0,0.0,0.0};
+
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
       flush();
-      scene.setLights( true );
-      scene.setDirectionLightColor( {r/255.0f, g/255.0f, b/255.0f} );
-      PVector worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
-      scene.setDirectionLightVector( worldDir );
+      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
+      glm::vec3 worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
+      scene.pushDirectionalLight( color, worldDir );
    }
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
       flush();
-      scene.setLights( true );
-      PVector worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
-      scene.pushPointLightColor( { r/255.0f, g/255.0f,  b/255.0f } );
-      scene.pushPointLightPosition( worldPos );
+      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
+      glm::vec3 worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
+      glm::vec4 position = { worldPos.x, worldPos.y, worldPos.z , 1};
+      scene.pushPointLight( color, position, falloff );
+   }
+
+   void spotLight( float r, float g, float b, float x, float y, float z, float nx, float ny, float nz, float angle, float concentration) {
+      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
+      glm::vec3 worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
+      glm::vec4 position = { worldPos.x, worldPos.y, worldPos.z , 1};
+      glm::vec3 worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
+      scene.pushSpotLight( color, position, worldDir, falloff, {angle, concentration} );
    }
 
    void lightFalloff(float r, float g, float b) {
-      flush();
-      scene.setPointLightFalloff( { r, g, b } );
+      falloff = { r, g, b };
    }
 
    void ambientLight(float r, float g, float b) {
       flush();
-      scene.setLights( true );
-      scene.setAmbientLight( { r/255.0f, g/255.0f, b/255.0f } );
+      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
+      scene.pushAmbientLight( color );
    }
 
    void lights() {
-      flush();
-      scene.setLights( true );
-      scene.setAmbientLight(    { 0.5, 0.5, 0.5 } );
-      scene.setDirectionLightColor(  { 0.5, 0.5, 0.5 } );
-      scene.setDirectionLightVector( { 0.0, 0.0,-1.0 });
-      scene.clearPointLights();
-      scene.setPointLightFalloff(    { 1.0, 0.0, 0.0 });
+      scene.clearLights();
+      falloff = {1.0, 0.0,0.0};
+      ambientLight( 0.5, 0.5, 0.5 );
+      directionalLight( 0.5, 0.5, 0.5, 0.0, 0.0,-1.0 );
       //lightSpecular(0, 0, 0);
    };
 
    void noLights() {
       flush();
-      scene.setLights( false );
-      scene.clearPointLights();
+      scene.clearLights();
    }
 
    void textAlign(int x, int y) {
