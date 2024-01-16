@@ -79,6 +79,7 @@ static const char *defaultFragmentShader = R"glsl(
       in vec4 vertPosition;
       flat in int vertTindex;
       out vec4 fragColor;
+      uniform vec3 eye;
       uniform sampler2D texture[16];
       uniform vec3 ambientLight;
       uniform vec3 directionLightColor;
