@@ -32,6 +32,23 @@ namespace gl {
       int mindex;
    };
 
+   struct material {
+      glm::vec4 ambient;
+      glm::vec4 specular;
+      glm::vec4 emmisive;
+      float shininess;
+   };
+
+   struct light {
+      glm::vec4 position =  { 0.0, 0.0, 0.0, 0.0 };
+      glm::vec3 normal =  { 0.0, 0.0, 0.0 };;
+      glm::vec3 ambient =  { 1.0, 1.0, 1.0 };;
+      glm::vec3 diffuse =  { 0.0, 0.0, 0.0 };;
+      glm::vec3 specular =  { 0.0, 0.0, 0.0 };;
+      glm::vec3 falloff =  { 1.0, 0.0, 0.0 };;
+      glm::vec2 spot =  { 0.0, 0.0 };;
+   };
+
    class attribute {
       GLint id = -1;
       GLint shaderId = -1;
@@ -42,6 +59,7 @@ namespace gl {
       void bind_vec3(std::size_t stride, void *offset);
       void bind_vec4(std::size_t stride, void *offset);
       void bind_int(std::size_t stride, void *offset);
+      void bind_float(std::size_t stride, void *offset);
    };
 
    class uniform {
@@ -57,36 +75,41 @@ namespace gl {
       void set(const std::vector<int> &value) const;
       void set(const std::vector<glm::vec2> &value) const;
       void set(const std::vector<glm::vec3> &value) const;
+      void set(const std::vector<glm::vec4> &value) const;
       void set(const std::vector<glm::mat4> &value) const;
       void set(const std::vector<glm::mat3> &value) const;
       void set(const glm::mat4 &value) const;
    };
 
    class scene_t {
-      uniform Eye;
-      uniform AmbientLight;
-      uniform DirectionLightColor;
-      uniform DirectionLightVector;
-      uniform NumberOfPointLights;
-      uniform PointLightColor;
-      uniform PointLightPosition;
-      uniform PointLightFalloff;
+      glm::mat4 projection_matrix;
+      glm::mat4 view_matrix;
+
+      uniform LightCount;
+      uniform LightPosition;
+      uniform LightNormal;
+      uniform LightAmbient;
+      uniform LightDiffuse;
+      uniform LightSpecular;
+      uniform LightFalloff;
+      uniform LightSpot;
       uniform PVmatrix;
-   public:
+      uniform Eye;
+
+      public:
+      std::vector<light> lights;
       scene_t() {}
-      void setup(uniform AmbientLight_, uniform DirectionLightColor_, uniform DirectionLightVector_,
-                 uniform NumberOfPointLights_,
-                 uniform PointLightColor_,
-                 uniform PointLightPosition_,
-                 uniform PointLightFalloff_,
-                 uniform PVmatrix_, uniform Eye_) {
-         AmbientLight = AmbientLight_;
-         DirectionLightColor = DirectionLightColor_;
-         DirectionLightVector = DirectionLightVector_;
-         NumberOfPointLights = NumberOfPointLights_;
-         PointLightColor = PointLightColor_;
-         PointLightPosition = PointLightPosition_;
-         PointLightFalloff = PointLightFalloff_;
+      void setup( uniform LightCount_, uniform LightPosition_, uniform LightNormal_, uniform LightAmbient_,
+                  uniform LightDiffuse_, uniform LightSpecular_, uniform LightFalloff_, uniform LightSpot_,
+                  uniform PVmatrix_, uniform Eye_) {
+         LightCount = LightCount_;
+         LightPosition = LightPosition_;
+         LightNormal = LightNormal_;
+         LightAmbient = LightAmbient_;
+         LightDiffuse = LightDiffuse_;
+         LightSpecular = LightSpecular_;
+         LightFalloff = LightFalloff_;
+         LightSpot = LightSpot_;
          PVmatrix = PVmatrix_;
          Eye = Eye_;
       }
@@ -101,15 +124,6 @@ namespace gl {
          return (projection_matrix * (view_matrix * in)).y;
       }
 
-      bool lights = false;
-      glm::vec3 directionLightColor =  { 0.0, 0.0, 0.0 };
-      glm::vec3 directionLightVector = { 0.0, 0.0, 0.0 };
-      glm::vec3 ambientLight =         { 0.0, 0.0, 0.0 };
-      std::vector<glm::vec3> pointLightColors;
-      std::vector<glm::vec3> pointLightPoss;
-      glm::vec3 pointLightFalloff =    { 1.0, 0.0, 0.0 };
-      glm::mat4 projection_matrix;
-      glm::mat4 view_matrix;
       void set();
       void setProjectionMatrix( const glm::mat4 &PV ) {
          projection_matrix = PV;
@@ -119,43 +133,29 @@ namespace gl {
          view_matrix = PMatrix::FlipY().glm_data() * PV ;
       }
 
-      void setDirectionLightColor(const glm::vec3 &color ){
-         directionLightColor = color;
+      void pushAmbientLight( glm::vec3 color ) {
+         lights.emplace_back( light{{0.0f,0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
       }
 
-      void setDirectionLightVector(const glm::vec3 &dir  ){
-         directionLightVector = dir;
+      void pushDirectionalLight( glm::vec3 color, glm::vec3 vector ) {
+         lights.emplace_back( light{{0.0f,0.0f,0.0f,0.0f}, vector, {0,0,0}, color, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
       }
 
-      void setAmbientLight(const glm::vec3  &color ){
-         ambientLight = color;
+      void pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 falloff) {
+         lights.emplace_back( light{position, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, falloff, {0.0f,0.0f}} );
       }
 
-      void pushPointLightColor( const glm::vec3  &color ) {
-         if (pointLightColors.size() < 8) {
-            pointLightColors.push_back( color );
-         } else {
-            fmt::print("Ignoring >8 point lights\n.");
-         }
+      void pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 falloff, glm::vec2 spot) {
+         lights.emplace_back( light{position, direction, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, falloff, spot });
       }
 
-      void pushPointLightPosition( const glm::vec3 &pos  ) {
-         if (pointLightColors.size() < 8) {
-            pointLightPoss.push_back( pos );
-         }
+      void clearLights() {
+         lights.clear();
       }
 
-      void clearPointLights() {
-         pointLightColors.clear();
-         pointLightPoss.clear();
-      }
-
-      void setPointLightFalloff( const glm::vec3 &data){
-         pointLightFalloff = data;
-      }
-
-      void setLights( bool data ) {
-         lights = data;
+      void flatLight() {
+         clearLights();
+         pushAmbientLight(glm::vec3{1.0f,1.0f,1.0f});
       }
    };
 
@@ -163,10 +163,12 @@ namespace gl {
       GLuint vao = 0;
       GLuint indexId = 0;
       GLuint vertexId = 0;
+      GLuint materialId= 0;
    public:
       friend struct fmt::formatter<gl::VAO>;
 
       std::vector<vertex> vertices;
+      std::vector<material> materials;
       std::vector<unsigned short> indices;
       std::vector<PImage> textures;
       std::vector<glm::mat4> transforms;
@@ -182,7 +184,8 @@ namespace gl {
       VAO& operator=(VAO&& other) noexcept;
 
       void bind( attribute Position, attribute Normal, attribute Color,
-                 attribute Coord,    attribute TUnit,  attribute MIndex);
+                 attribute Coord,    attribute TUnit,  attribute MIndex,
+                 attribute Ambient,  attribute Specular, attribute Emmisive, attribute Shininess);
       int hasTexture(PImage texture);
       void loadBuffers() const;
       void draw() const;
@@ -217,13 +220,15 @@ namespace gl {
       uniform Mmatrix;
       uniform Nmatrix;
       uniform TexOffset;
+      attribute Ambient, Specular, Emmisive, Shininess;
       std::vector<VAO> vaos;
 
    public:
       batch_t() {}
       void setup( attribute Position_, attribute Normal_, attribute Color_,
                   attribute Coord_,    attribute TUnit_,  attribute MIndex_,
-                  uniform Mmatrix_, uniform Nmatrix_, uniform TexOffset_ ) {
+                  uniform Mmatrix_, uniform Nmatrix_, uniform TexOffset_,
+                  attribute Ambient_, attribute Specular_, attribute Emmisive_, attribute Shininess_) {
          Position = Position_;
          Normal = Normal_;
          Color = Color_;
@@ -233,6 +238,10 @@ namespace gl {
          Mmatrix = Mmatrix_;
          Nmatrix = Nmatrix_;
          TexOffset = TexOffset_;
+         Ambient = Ambient_;
+         Specular = Specular_;
+         Emmisive = Emmisive_;
+         Shininess = Shininess_;
       }
       size_t size();
       void compile();
@@ -242,7 +251,8 @@ namespace gl {
       bool usesCircles() const;
       bool usesTextures() const;
 
-      void vertices( const std::vector<vertex> &vertices, const std::vector<unsigned short> &indices, const glm::mat4 &transform, bool flatten_transform, PImage texture );
+      void vertices( const std::vector<vertex> &vertices,const std::vector<material> &materials,  const std::vector<unsigned short> &indices,
+                     const glm::mat4 &transform, bool flatten_transform, PImage texture );
    };
 
    class context {
@@ -262,13 +272,14 @@ namespace gl {
          // TransformMatrix = shader.get_uniform("transformMatrix");
 
          scene.setup(
-            shader.get_uniform("ambientLight"),
-            shader.get_uniform("directionLightColor"),
-            shader.get_uniform("directionLightVector"),
-            shader.get_uniform("numberOfPointLights"),
-            shader.get_uniform("pointLightColor"),
-            shader.get_uniform("pointLightPosition"),
-            shader.get_uniform("pointLightFalloff"),
+            shader.get_uniform("lightCount"),
+            shader.get_uniform("lightPosition"),
+            shader.get_uniform("lightNormal"),
+            shader.get_uniform("lightAmbient"),
+            shader.get_uniform("lightDiffuse"),
+            shader.get_uniform("lightSpecular"),
+            shader.get_uniform("lightFalloff"),
+            shader.get_uniform("lightSpot"),
             shader.get_uniform("PVmatrix"),
             shader.get_uniform("eye"));
 
@@ -281,7 +292,11 @@ namespace gl {
             shader.get_attribute("mindex"),
             shader.get_uniform("Mmatrix"),
             shader.get_uniform("Nmatrix"),
-            shader.get_uniform("texOffset"));
+            shader.get_uniform("texOffset"),
+            shader.get_attribute("ambient"),
+            shader.get_attribute("specular"),
+            shader.get_attribute("emisive"),
+            shader.get_attribute("shininess"));
       }
    };
 

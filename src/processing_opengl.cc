@@ -111,12 +111,12 @@ namespace gl {
                glBindTexture(GL_TEXTURE_2D, img.getTextureID());
             }
          }
-         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex );
+         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emmisive, Shininess );
          draw.draw();
       }
    }
 
-   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, PImage texture_ ) {
+   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, PImage texture_ ) {
       DEBUG_METHOD();
 
       // Do this better and share somehow with shader and texture unit init
@@ -173,6 +173,10 @@ namespace gl {
             v.fill,
             tunit,
             currentM);
+      }
+
+      for (auto &m : materials ) {
+         vao.materials.push_back( m );
       }
 
       for (auto index : indices) {
@@ -237,7 +241,7 @@ namespace gl {
 
    void batch_t::compile() {
       for (auto &draw: vaos ) {
-         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex );
+         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emmisive, Shininess );
          draw.loadBuffers();
       }
    }
@@ -270,26 +274,26 @@ namespace gl {
    void scene_t::set() {
       PVmatrix.set( projection_matrix * view_matrix  );
       Eye.set( glm::inverse(view_matrix)[3]);
-      if (lights) {
-         int numPointLights = (int)pointLightColors.size();
-         DirectionLightColor.set( directionLightColor);
-         DirectionLightVector.set( directionLightVector );
-         AmbientLight.set( ambientLight );
-         NumberOfPointLights.set( numPointLights);
-         PointLightColor.set( pointLightColors );
-         PointLightPosition.set( pointLightPoss );
-         PointLightFalloff.set( pointLightFalloff );
+      if ( lights.size() == 0 ) {
+         // setup flat light
+         LightCount.set( 1 );
+         LightPosition.set( glm::vec4{ 0,0,0,0} );
+         LightNormal.set( glm::vec3{ 0,0,0} );
+         LightAmbient.set( glm::vec3{ 1,1,1} );
+         LightDiffuse.set( glm::vec3{0,0,0} );
+         LightSpecular.set( glm::vec3{0,0,0} );
+         LightFalloff.set( glm::vec3{1,0,0} );
+         LightSpot.set( glm::vec2{0,0} );
       } else {
-         int numPointLights = 0;
-         glm::vec3 on {1.0, 1.0, 1.0};
-         glm::vec3 off {0.0, 0.0, 0.0};
-         glm::vec3 unity {1.0, 0.0, 0.0};
-
-         NumberOfPointLights.set( 0 );
-         DirectionLightColor.set( off );
-         AmbientLight.set( on );
-         PointLightFalloff.set( unity );
-      }
+         LightCount.set(1 );
+         LightPosition.set( lights[0].position );
+         LightNormal.set( lights[0].normal );
+         LightAmbient.set( lights[0].ambient );
+         LightDiffuse.set( lights[0].diffuse );
+         LightSpecular.set( lights[0].specular );
+         LightFalloff.set( lights[0].falloff );
+         LightSpot.set( lights[0].spot );
+       }
    }
 
    shader_t::shader_t(const char *vertex, const char *fragment) {
@@ -391,6 +395,7 @@ namespace gl {
       glGenVertexArrays(1, &vao);
       glGenBuffers(1, &indexId);
       glGenBuffers(1, &vertexId);
+      glGenBuffers(1, &materialId);
    }
 
    VAO::VAO(VAO&& x) noexcept : VAO() {
@@ -403,6 +408,7 @@ namespace gl {
       std::swap(vao, other.vao);
       std::swap(indexId, other.indexId);
       std::swap(vertexId, other.vertexId);
+      std::swap(materialId, other.materialId);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
       std::swap(textures, other.textures);
@@ -411,20 +417,27 @@ namespace gl {
    }
 
    void VAO::bind( attribute Position, attribute Normal, attribute Color,
-                   attribute Coord,  attribute TUnit, attribute MIndex) {
+                   attribute Coord,  attribute TUnit, attribute MIndex,
+                   attribute Ambient,  attribute Specular, attribute Emmisive, attribute Shininess) {
       DEBUG_METHOD();
 
       glBindVertexArray(vao);
 
-      glBindBuffer(GL_ARRAY_BUFFER, vertexId);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
 
+      glBindBuffer(GL_ARRAY_BUFFER, vertexId);
       Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
       Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
       Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
       Color.bind_vec4( sizeof(vertex), (void*)offsetof(vertex,fill));
       TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
       MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
+
+      glBindBuffer(GL_ARRAY_BUFFER, materialId);
+      Ambient.bind_vec3( sizeof(material), (void*)offsetof(material, ambient) );
+      Specular.bind_vec3( sizeof(material), (void*)offsetof(material, specular) );
+      Emmisive.bind_vec3( sizeof(material), (void*)offsetof(material, emmisive) );
+      Shininess.bind_float( sizeof(material), (void*)offsetof(material, shininess) );
 
       glBindVertexArray(0);
    }
@@ -438,6 +451,7 @@ namespace gl {
    void VAO::loadBuffers() const {
       DEBUG_METHOD();
       loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
+      loadBufferData(GL_ARRAY_BUFFER, materialId, materials, GL_STREAM_DRAW);
       loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
    }
 
@@ -458,6 +472,7 @@ namespace gl {
          glDeleteVertexArrays(1, &vao);
          glDeleteBuffers(1, &indexId);
          glDeleteBuffers(1, &vertexId);
+         glDeleteBuffers(1, &materialId);
       }
    }
 
@@ -498,6 +513,13 @@ namespace gl {
    void attribute::bind_int(std::size_t stride, void *offset) {
       if ( id != -1 ) {
          glVertexAttribIPointer( id, 1, GL_INT, stride, (void*)offset );
+         glEnableVertexAttribArray(id);
+      }
+   }
+
+   void attribute::bind_float(std::size_t stride, void *offset) {
+      if ( id != -1 ) {
+         glVertexAttribIPointer( id, 1, GL_FLOAT, stride, (void*)offset );
          glEnableVertexAttribArray(id);
       }
    }
@@ -544,6 +566,11 @@ namespace gl {
    void uniform::set(const std::vector<glm::vec3> &value) const {
       if ( id != -1 )
          glUniform3fv(id, value.size(), glm::value_ptr(value[0]) );
+   }
+
+   void uniform::set(const std::vector<glm::vec4> &value) const {
+      if ( id != -1 )
+         glUniform4fv(id, value.size(), glm::value_ptr(value[0]) );
    }
 
    void uniform::set(const std::vector<glm::mat4> &value) const {

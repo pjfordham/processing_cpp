@@ -43,6 +43,7 @@ private:
 
    std::vector<int> contour;
    std::vector<gl::vertex> vertices;
+   std::vector<PMaterial> materials;
    std::vector<vInfoExtra> extras;
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
@@ -368,6 +369,7 @@ public:
          t.y /= texture_.height;
       }
       vertices.push_back( { p, n, t, gl_fill_color } );
+      materials.push_back( {} );
       extras.push_back( {stroke_color, stroke_weight } );
    }
 
@@ -1407,7 +1409,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
 void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool flatten_transforms) const {
    DEBUG_METHOD();
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
-      batch.vertices( vertices, indices, transform_.glm_data(), flatten_transforms, texture_ );
+      batch.vertices( vertices, {}, indices, transform_.glm_data(), flatten_transforms, texture_ );
    }
 }
 
