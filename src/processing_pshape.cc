@@ -1193,7 +1193,7 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.vertex(x+width,y,1.0,0);
    shape.vertex(x+width,y+height,1.0,1.0);
    shape.vertex(x,y+height,0,1.0);
-   shape.populateIndices( { 0,1,2,0,2,3 } );
+   shape.populateIndices( { 0,2,1,0,3,2 } );
    shape.endShape(CLOSE);
    return shape;
 }
