@@ -5,6 +5,7 @@
 #include <fmt/core.h>
 
 #include <cmath>
+#include <glm/vec4.hpp>
 
 // ----
 // Begin color handling.
@@ -71,6 +72,9 @@ public:
    }
    color tint(const color &a) {
       return color(a.r*r,a.g*g, a.b*b, a.a*a);
+   }
+   glm::vec4 gl_color() {
+      return glm::vec4{r / color::scaleR,  g / color::scaleR, b / color::scaleB, a / color::scaleA};
    }
 };
 
