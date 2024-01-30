@@ -86,7 +86,6 @@ target_link_libraries(Processing
 
 # Define the array of filenames
 set(skip_examples
-  "examples/Basics/Shape/DisableStyle/DisableStyle.cc"                                 # No disable style
   "examples/Basics/Shape/GetChild/GetChild.cc"                                         # No disable style
   "examples/Demos/Graphics/DepthSort/DepthSort.cc"                                     # No depth sort
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"       # Won't support

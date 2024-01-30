@@ -36,6 +36,8 @@ public:
 
 private:
 
+   bool useGlobalStyle = false;
+
    bool setNormals = false;
    PVector n = { 0.0, 0.0, 0.0 };
 
@@ -70,6 +72,16 @@ public:
 
    float width = 1.0;
    float height = 1.0;
+
+   void enableStyle() {
+      dirty = true;
+      useGlobalStyle = false;
+   }
+
+   void disableStyle() {
+      dirty = true;
+      useGlobalStyle = true;
+   }
 
    const PMatrix& getShapeMatrix() const {
       DEBUG_METHOD();
@@ -109,6 +121,7 @@ public:
       std::swap(style,other.style);
       std::swap(width,other.width);
       std::swap(height,other.height);
+      std::swap(useGlobalStyle,other.useGlobalStyle);
       return *this;
    }
 
@@ -1960,6 +1973,14 @@ int PShape::getChildCount() const{
 
 int PShape::getVertexCount() const{
    return impl->getVertexCount();
+}
+
+void PShape::enableStyle() {
+   return impl->enableStyle();
+}
+
+void PShape::disableStyle() {
+   return impl->disableStyle();
 }
 
 
