@@ -574,6 +574,7 @@ public:
       dirty=true;
       fill_color = {r,g,b,a};
       gl_fill_color = gl::flatten_color_mode( fill_color );
+      currentMaterial.ambientColor = gl_fill_color;
    }
 
    void fill(float r,float g, float b) {
@@ -751,10 +752,14 @@ public:
    void setFill(bool z) {
       DEBUG_METHOD();
       dirty=true;
-      if (!z )
+      if (!z ) {
          for ( auto&&v : vertices ) {
             v.fill = gl::flatten_color_mode({0.0,0.0,0.0,0.0});
          }
+         for ( auto&&v : materials ) {
+            v.ambientColor = gl::flatten_color_mode({0.0,0.0,0.0,0.0});
+         }
+      }
    }
 
    void setFill(color c) {
@@ -764,6 +769,9 @@ public:
       gl::color clr = gl::flatten_color_mode(fill_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
+      }
+      for ( auto&&v : materials ) {
+         v.ambientColor = clr;
       }
    }
 
