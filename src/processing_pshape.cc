@@ -100,6 +100,7 @@ public:
       std::swap(setNormals,other.setNormals);
       std::swap(contour,other.contour);
       std::swap(vertices,other.vertices);
+      std::swap(materials,other.materials);
       std::swap(extraAttributes,other.extraAttributes);
       std::swap(extras,other.extras);
       std::swap(children,other.children);
@@ -201,6 +202,7 @@ public:
       DEBUG_METHOD();
       dirty = true;
       vertices.clear();
+      materials.clear();
       extras.clear();
       indices.clear();
       children.clear();
