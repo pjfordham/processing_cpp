@@ -193,7 +193,7 @@ namespace gl {
          for (auto &m : vao.transforms) {
             PMatrix(m).print();
          }
-         fmt::print("Vertices: {}\n", vao.vertices.size() );
+         fmt::print("Vertices: {}, Materials: {}\n", vao.vertices.size(), vao.materials.size() );
          for ( int i = 0; i < vao.vertices.size(); ++i ) {
             fmt::print("{:3}: {}\n", i, vao.vertices[i]);
          }
@@ -411,6 +411,7 @@ namespace gl {
    VAO::VAO() noexcept {
       DEBUG_METHOD();
       vertices.reserve(65536);
+      materials.reserve(65536);
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
@@ -433,6 +434,7 @@ namespace gl {
       std::swap(materialId, other.materialId);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
+      std::swap(materials, other.materials);
       std::swap(textures, other.textures);
       std::swap(transforms, other.transforms);
       return *this;
