@@ -48,6 +48,8 @@ private:
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
 
+   PMaterial currentMaterial;
+
    mutable bool dirty = true;
 
    int type = OPEN;
@@ -98,6 +100,7 @@ public:
       std::swap(setNormals,other.setNormals);
       std::swap(contour,other.contour);
       std::swap(vertices,other.vertices);
+      std::swap(materials,other.materials);
       std::swap(extraAttributes,other.extraAttributes);
       std::swap(extras,other.extras);
       std::swap(children,other.children);
@@ -113,6 +116,7 @@ public:
       std::swap(stroke_color,other.stroke_color);
       std::swap(texture_,other.texture_);
       std::swap(gl_fill_color,other.gl_fill_color);
+      std::swap(currentMaterial, other.currentMaterial);
       std::swap(fill_color,other.fill_color);
       std::swap(tint_color,other.tint_color);
       std::swap(style,other.style);
@@ -132,6 +136,12 @@ public:
    PShapeImpl() {
       DEBUG_METHOD();
       reserve(4,6);
+      currentMaterial = {
+         gl::color{1.0f,1.0f,1.0f,1.0f},
+         gl::color{0.0f,0.0f,0.0f,1.0f},
+         gl::color{0.0f,0.0f,0.0f,1.0f},
+         gl::color{0.0f,0.0f,0.0f,1.0f},
+         1.0, 1.0, 4, getBlankTexture() };
    }
 
    ~PShapeImpl() {
@@ -185,12 +195,14 @@ public:
       tint_color = other.tint_color;
       stroke_weight = other.stroke_weight;
       line_end_cap = other.line_end_cap;
+      currentMaterial = other.currentMaterial;
    }
 
    void clear() {
       DEBUG_METHOD();
       dirty = true;
       vertices.clear();
+      materials.clear();
       extras.clear();
       indices.clear();
       children.clear();
@@ -293,6 +305,7 @@ public:
       noStroke();
       textureMode( NORMAL );
       texture( mat.texture );
+      currentMaterial = mat;
    }
 
    void texture(PImage img) {
@@ -369,7 +382,7 @@ public:
          t.y /= texture_.height;
       }
       vertices.push_back( { p, n, t, gl_fill_color } );
-      materials.push_back( {} );
+      materials.push_back( currentMaterial );
       extras.push_back( {stroke_color, stroke_weight } );
    }
 
@@ -542,11 +555,26 @@ public:
       indices = i;
    }
 
+   void specular(float r, float g, float b, float a) {
+      DEBUG_METHOD();
+      dirty=true;
+      color specular_color = {r,g,b,a};
+      auto gl_specular_color = gl::flatten_color_mode( specular_color );
+      currentMaterial.specularColor = gl_specular_color;
+   }
+
+   void shininess(float r) {
+      DEBUG_METHOD();
+      dirty=true;
+      currentMaterial.specularExponent = r;
+   }
+
    void fill(float r,float g,  float b, float a) {
       DEBUG_METHOD();
       dirty=true;
       fill_color = {r,g,b,a};
       gl_fill_color = gl::flatten_color_mode( fill_color );
+      currentMaterial.ambientColor = gl_fill_color;
    }
 
    void fill(float r,float g, float b) {
@@ -650,6 +678,7 @@ public:
       dirty=true;
       tint_color = {r,g,b,a};
       gl_fill_color = gl::flatten_color_mode( tint_color );
+      currentMaterial.ambientColor = gl_fill_color;
    }
 
    void tint(float r,float g, float b) {
@@ -724,10 +753,14 @@ public:
    void setFill(bool z) {
       DEBUG_METHOD();
       dirty=true;
-      if (!z )
+      if (!z ) {
          for ( auto&&v : vertices ) {
             v.fill = gl::flatten_color_mode({0.0,0.0,0.0,0.0});
          }
+         for ( auto&&v : materials ) {
+            v.ambientColor = gl::flatten_color_mode({0.0,0.0,0.0,0.0});
+         }
+      }
    }
 
    void setFill(color c) {
@@ -737,6 +770,9 @@ public:
       gl::color clr = gl::flatten_color_mode(fill_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
+      }
+      for ( auto&&v : materials ) {
+         v.ambientColor = clr;
       }
    }
 
@@ -1409,7 +1445,16 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
 void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool flatten_transforms) const {
    DEBUG_METHOD();
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
-      batch.vertices( vertices, {}, indices, transform_.glm_data(), flatten_transforms, texture_ );
+      std::vector<gl::material> m;
+      for (auto &material : materials ) {
+         m.emplace_back( gl::material{
+               { material.ambientColor.r,  material.ambientColor.g,  material.ambientColor.b,  material.ambientColor.a  },
+               { material.specularColor.r, material.specularColor.g, material.specularColor.b, material.specularColor.a },
+               { material.emissiveColor.r, material.emissiveColor.g, material.emissiveColor.b, material.emissiveColor.a },
+               material.specularExponent
+            } );
+      }
+      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, texture_ );
    }
 }
 
@@ -1721,10 +1766,17 @@ void PShape::populateIndices( std::vector<unsigned short> &&i ){
 }
 
 
+void PShape::shininess(float r) {
+   return impl->shininess(r);
+}
+
+void PShape::specular(float r,float g,  float b, float a){
+   return impl->specular(r,g,b,a);
+}
+
 void PShape::fill(float r,float g,  float b, float a){
    return impl->fill(r,g,b,a);
 }
-
 
 void PShape::fill(float r,float g, float b){
    return impl->fill(r,g,b);

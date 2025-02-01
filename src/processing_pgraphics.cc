@@ -73,6 +73,9 @@ public:
 
    int flushes = 0;
 
+   glm::vec3 falloff = {1.0,0.0,0.0};
+   glm::vec3 specular = {0.0,0.0,0.0};
+
    int getWidth() const { return width; }
    int getHeight() const {return height; }
    unsigned int *getPixels() { return pixels.data(); }
@@ -277,48 +280,51 @@ public:
              width / 2.0, height / 2.0, 0, 0, 1, 0);
    }
 
-   glm::vec3 falloff = {1.0,0.0,0.0};
-
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
       flush();
-      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
-      glm::vec3 worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
-      scene.pushDirectionalLight( color, worldDir );
+      glm::vec3 glcolor = color(r,g,b).gl_color();
+      glm::mat4 transform = _shape.getShapeMatrix().glm_data();
+      glm::mat3 normalMatrix =  glm::mat3(glm::transpose(glm::inverse(transform)));
+      glm::vec3 worldDir = glm::normalize(normalMatrix * glm::vec3{nx,ny,nz});
+      scene.pushDirectionalLight( glcolor, worldDir, specular );
    }
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz) {
       flush();
-      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
+      glm::vec3 glcolor = color(r,g,b).gl_color();
       glm::vec3 worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
       glm::vec4 position = { worldPos.x, worldPos.y, worldPos.z , 1};
-      scene.pushPointLight( color, position, falloff );
+      scene.pushPointLight( glcolor, position, specular, falloff );
    }
 
    void spotLight( float r, float g, float b, float x, float y, float z, float nx, float ny, float nz, float angle, float concentration) {
       flush();
-      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
+      glm::vec3 glcolor = color(r,g,b).gl_color();
       glm::vec3 worldPos = (_shape.getShapeMatrix() * PVector{x,y,z});
       glm::vec4 position = { worldPos.x, worldPos.y, worldPos.z , 1};
       glm::vec3 worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
-      scene.pushSpotLight( color, position, worldDir, falloff, {cosf(angle), concentration} );
+      scene.pushSpotLight( glcolor, position, worldDir, specular, falloff, {cosf(angle), concentration} );
    }
 
    void lightFalloff(float r, float g, float b) {
       falloff = { r, g, b };
    }
 
+   void lightSpecular(float r, float g, float b) {
+      specular = color(r,g,b).gl_color();
+   }
+
    void ambientLight(float r, float g, float b) {
       flush();
-      glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
-      scene.pushAmbientLight( color );
+      scene.pushAmbientLight( color(r,g,b).gl_color() );
    }
 
    void lights() {
       scene.clearLights();
       falloff = {1.0, 0.0,0.0};
-      ambientLight( 0.5, 0.5, 0.5 );
-      directionalLight( 0.5, 0.5, 0.5, 0.0, 0.0,-1.0 );
-      //lightSpecular(0, 0, 0);
+      ambientLight( 127, 127, 127 );
+      directionalLight( 127, 127, 127, 0.0, 0.0,-1.0 );
+      lightSpecular(0, 0, 0);
    };
 
    void noLights() {
@@ -1151,6 +1157,10 @@ void PGraphics::lightFalloff(float r, float g, float b){
    return impl->lightFalloff(r,g,b);
 }
 
+void PGraphics::lightSpecular(float r, float g, float b){
+   return impl->lightSpecular(r,g,b);
+}
+
 void PGraphics::ambientLight(float r, float g, float b){
    return impl->ambientLight(r,g,b);
 }
@@ -1366,6 +1376,14 @@ void PGraphics::tint(color c, float a){
 
 void PGraphics::noTint() {
    return impl->_shape.noTint();
+}
+
+void PGraphics::specular(float r, float g, float b, float a){
+   return impl->_shape.specular(r,g,b,a);
+}
+
+void PGraphics::shininess(float r) {
+   return impl->_shape.shininess(r);
 }
 
 void PGraphics::fill(float r, float g, float b, float a){

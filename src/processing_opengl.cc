@@ -111,7 +111,7 @@ namespace gl {
                glBindTexture(GL_TEXTURE_2D, img.getTextureID());
             }
          }
-         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emmisive, Shininess );
+         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
          draw.draw();
       }
    }
@@ -193,7 +193,7 @@ namespace gl {
          for (auto &m : vao.transforms) {
             PMatrix(m).print();
          }
-         fmt::print("Vertices: {}\n", vao.vertices.size() );
+         fmt::print("Vertices: {}, Materials: {}\n", vao.vertices.size(), vao.materials.size() );
          for ( int i = 0; i < vao.vertices.size(); ++i ) {
             fmt::print("{:3}: {}\n", i, vao.vertices[i]);
          }
@@ -241,7 +241,7 @@ namespace gl {
 
    void batch_t::compile() {
       for (auto &draw: vaos ) {
-         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emmisive, Shininess );
+         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
          draw.loadBuffers();
       }
    }
@@ -273,7 +273,7 @@ namespace gl {
 
    void scene_t::set() {
       PVmatrix.set( projection_matrix * view_matrix  );
-      Eye.set( glm::inverse(view_matrix)[3]);
+      Eye.set( glm::vec3(glm::inverse(view_matrix)[3]));
       if ( lights.size() == 0 ) {
          // setup flat light
          LightCount.set( 1 );
@@ -411,6 +411,7 @@ namespace gl {
    VAO::VAO() noexcept {
       DEBUG_METHOD();
       vertices.reserve(65536);
+      materials.reserve(65536);
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
@@ -433,6 +434,7 @@ namespace gl {
       std::swap(materialId, other.materialId);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
+      std::swap(materials, other.materials);
       std::swap(textures, other.textures);
       std::swap(transforms, other.transforms);
       return *this;
@@ -440,7 +442,7 @@ namespace gl {
 
    void VAO::bind( attribute Position, attribute Normal, attribute Color,
                    attribute Coord,  attribute TUnit, attribute MIndex,
-                   attribute Ambient,  attribute Specular, attribute Emmisive, attribute Shininess) {
+                   attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess) {
       DEBUG_METHOD();
 
       glBindVertexArray(vao);
@@ -456,9 +458,9 @@ namespace gl {
       MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
 
       glBindBuffer(GL_ARRAY_BUFFER, materialId);
-      Ambient.bind_vec3( sizeof(material), (void*)offsetof(material, ambient) );
-      Specular.bind_vec3( sizeof(material), (void*)offsetof(material, specular) );
-      Emmisive.bind_vec3( sizeof(material), (void*)offsetof(material, emmisive) );
+      Ambient.bind_vec4( sizeof(material), (void*)offsetof(material, ambient) );
+      Specular.bind_vec4( sizeof(material), (void*)offsetof(material, specular) );
+      Emissive.bind_vec4( sizeof(material), (void*)offsetof(material, emissive) );
       Shininess.bind_float( sizeof(material), (void*)offsetof(material, shininess) );
 
       glBindVertexArray(0);
@@ -541,7 +543,7 @@ namespace gl {
 
    void attribute::bind_float(std::size_t stride, void *offset) {
       if ( id != -1 ) {
-         glVertexAttribIPointer( id, 1, GL_FLOAT, stride, (void*)offset );
+         glVertexAttribPointer( id, 1, GL_FLOAT, GL_FALSE, stride, (void*)offset );
          glEnableVertexAttribArray(id);
       }
    }

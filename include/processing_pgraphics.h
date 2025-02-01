@@ -89,8 +89,10 @@ public:
    void pointLight(float r, float g, float b, float nx, float ny, float nz);
 
    void spotLight( float r, float g, float b, float x, float y, float z, float nx, float ny, float nz, float angle, float concentration);
-   
+
    void lightFalloff(float r, float g, float b);
+
+   void lightSpecular(float r, float g, float b);
 
    void ambientLight(float r, float g, float b);
 
@@ -200,6 +202,9 @@ public:
    void tint(color c);
    void tint(color c, float a);
    void noTint();
+
+   void specular(float r,float g, float b, float a = 1.0);
+   void shininess(float r);
 
    void fill(float r,float g, float b, float a);
    void fill(float r,float g, float b);

@@ -159,6 +159,7 @@ static const char *defaultVertexShader = R"glsl(
                totalAmbient       += lightAmbient[i] * falloff;
             }
 
+            // need to deal with direction to eye here
             if (any(greaterThan(lightDiffuse[i], zero_vec3))) {
                totalFrontDiffuse  += lightDiffuse[i] * falloff * spotf *
                                      lambertFactor(lightDir, ecNormal);
@@ -166,22 +167,22 @@ static const char *defaultVertexShader = R"glsl(
                                      lambertFactor(lightDir, ecNormalInv);
             }
 
-            // if (any(greaterThan(lightSpecular[i], zero_vec3))) {
-            //    totalFrontSpecular += lightSpecular[i] * falloff * spotf *
-            //                          blinnPhongFactor(lightDir, ecVertex - eye, ecNormal, shininess);
-            //    totalBackSpecular  += lightSpecular[i] * falloff * spotf *
-            //                          blinnPhongFactor(lightDir, ecVertex - eye, ecNormalInv, shininess);
-            // }
+            if (any(greaterThan(lightSpecular[i], zero_vec3))) {
+               totalFrontSpecular += lightSpecular[i] * falloff * spotf *
+                                     blinnPhongFactor(lightDir, ecVertex - eye, ecNormal, shininess);
+               totalBackSpecular  += lightSpecular[i] * falloff * spotf *
+                                     blinnPhongFactor(lightDir, ecVertex - eye, ecNormalInv, shininess);
+            }
          }
 
          // Calculating final color as result of all lights (plus emissive term).
          // Transparency is determined exclusively by the diffuse component.
-         vertColor = vec4(totalAmbient, 0) * color + // ambient +
+         vertColor = vec4(totalAmbient, 0) * ambient +
                      vec4(totalFrontDiffuse, 1) * color +
                      vec4(totalFrontSpecular, 0) * specular +
                      vec4(emissive.rgb, 0);
 
-         backVertColor = vec4(totalAmbient, 0) * color + //ambient +
+         backVertColor = vec4(totalAmbient, 0) * ambient +
                          vec4(totalBackDiffuse, 1) * color +
                          vec4(totalBackSpecular, 0) * specular +
                          vec4(emissive.rgb, 0);
