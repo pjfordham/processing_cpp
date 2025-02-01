@@ -88,6 +88,8 @@ public:
 
    void pointLight(float r, float g, float b, float nx, float ny, float nz);
 
+   void spotLight( float r, float g, float b, float x, float y, float z, float nx, float ny, float nz, float angle, float concentration);
+   
    void lightFalloff(float r, float g, float b);
 
    void ambientLight(float r, float g, float b);
