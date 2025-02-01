@@ -212,6 +212,16 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    Profile::Instrumentor::Get().BeginSession("main");
 
+   int frames = 0; // Default value
+
+   for (int i = 1; i < argc; ++i) {
+      std::string arg = argv[i];
+
+      if (arg == "--frames" && i + 1 < argc) {
+         frames = std::stoi(argv[i + 1]); // Convert to integer
+      }
+   }
+
    PFont::init();
 
    // Initialize GLFW
@@ -279,6 +289,10 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       if ( actualFrameTime < targetFrameTime ) {
          PROFILE_SCOPE("vSync");
          std::this_thread::sleep_for(std::chrono::milliseconds(targetFrameTime - actualFrameTime));
+      }
+      if (frames == 1) break;
+      else {
+         if (frames) frames--;
       }
    }
 
