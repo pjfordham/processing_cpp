@@ -142,11 +142,11 @@ namespace gl {
       }
 
       void pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 falloff) {
-         lights.emplace_back( light{position, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, falloff, {0.0f,0.0f}} );
+         lights.emplace_back( light{position, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, falloff, {0.0f,0.0f}} );
       }
 
       void pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 falloff, glm::vec2 spot) {
-         lights.emplace_back( light{position, direction, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, falloff, spot });
+         lights.emplace_back( light{position, direction, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, falloff, spot });
       }
 
       void clearLights() {

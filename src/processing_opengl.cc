@@ -285,15 +285,37 @@ namespace gl {
          LightFalloff.set( glm::vec3{1,0,0} );
          LightSpot.set( glm::vec2{0,0} );
       } else {
-         LightCount.set(1 );
-         LightPosition.set( lights[0].position );
-         LightNormal.set( lights[0].normal );
-         LightAmbient.set( lights[0].ambient );
-         LightDiffuse.set( lights[0].diffuse );
-         LightSpecular.set( lights[0].specular );
-         LightFalloff.set( lights[0].falloff );
-         LightSpot.set( lights[0].spot );
-       }
+         LightCount.set( (int) lights.size()  );
+         std::vector<glm::vec4> position;
+         std::vector<glm::vec3> normal, ambient, diffuse, specular, falloff;
+         std::vector<glm::vec2> spot;
+         for (auto i = lights.begin() ; i != lights.end() ; ++i) {
+            auto &light = *i;
+            // fmt::print("L{} P{}  N{}  A{}  D{}  S{}  F{}  S{}\n",
+            //            i - lights.begin(),
+            //            light.position,
+            //            light.normal,
+            //            light.ambient,
+            //            light.diffuse,
+            //            light.specular,
+            //            light.falloff,
+            //            light.spot );
+            position.push_back( light.position );
+            normal.push_back( light.normal );
+            ambient.push_back( light.ambient );
+            diffuse.push_back( light.diffuse );
+            specular.push_back( light.specular );
+            falloff.push_back( light.falloff );
+            spot.push_back( light.spot );
+         }
+         LightPosition.set( position );
+         LightNormal.set( normal );
+         LightAmbient.set( ambient );
+         LightDiffuse.set( diffuse );
+         LightSpecular.set( specular );
+         LightFalloff.set( falloff );
+         LightSpot.set( spot );
+      }
    }
 
    shader_t::shader_t(const char *vertex, const char *fragment) {

@@ -86,8 +86,6 @@ target_link_libraries(Processing
 
 # Define the array of filenames
 set(skip_examples
-  "examples/Basics/Lights/Mixture/Mixture.cc"                                          # No spot lights
-  "examples/Basics/Lights/MixtureGrid/MixtureGrid.cc"                                  # No spot lights
   "examples/Basics/Lights/Reflection/Reflection.cc"                                    # No materials
   "examples/Basics/Lights/Spot/Spot.cc"                                                # No spot lights
   "examples/Basics/Shape/GetChild/GetChild.cc"                                         # No disable style

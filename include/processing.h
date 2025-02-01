@@ -78,6 +78,7 @@ MAKE_GLOBAL(text, g);
 MAKE_GLOBAL(directionalLight, g);
 MAKE_GLOBAL(ambientLight, g);
 MAKE_GLOBAL(pointLight, g);
+MAKE_GLOBAL(spotLight, g);
 MAKE_GLOBAL(lightFalloff, g);
 MAKE_GLOBAL(lights, g);
 MAKE_GLOBAL(noLights, g);
