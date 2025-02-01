@@ -68,6 +68,10 @@ class PShape {
 
    bool isGroup() const;
 
+   void enableStyle();
+
+   void disableStyle();
+
    void copyStyle( const PShape other );
 
    void clear();

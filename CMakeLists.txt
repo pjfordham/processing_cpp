@@ -90,7 +90,6 @@ set(skip_examples
   "examples/Basics/Lights/MixtureGrid/MixtureGrid.cc"                                  # No spot lights
   "examples/Basics/Lights/Reflection/Reflection.cc"                                    # No materials
   "examples/Basics/Lights/Spot/Spot.cc"                                                # No spot lights
-  "examples/Basics/Shape/DisableStyle/DisableStyle.cc"                                 # No disable style
   "examples/Basics/Shape/GetChild/GetChild.cc"                                         # No disable style
   "examples/Demos/Graphics/DepthSort/DepthSort.cc"                                     # No depth sort
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"       # Won't support
