@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.26)
 # set the project name
 project(libProcessing VERSION 1.0)
 
+include(CTest)
+
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -157,6 +159,8 @@ function(ADD_EXAMPLE file_path)
       $<TARGET_FILE_DIR:${base_name}>/data
       )
   endif()
+
+  add_test(NAME ${base_name} COMMAND ./${base_name} --frames 5)
 
 endfunction()
 
