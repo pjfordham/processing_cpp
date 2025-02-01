@@ -35,7 +35,7 @@ namespace gl {
    struct material {
       glm::vec4 ambient;
       glm::vec4 specular;
-      glm::vec4 emmisive;
+      glm::vec4 emissive;
       float shininess;
    };
 
@@ -137,16 +137,16 @@ namespace gl {
          lights.emplace_back( light{{0.0f,0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
       }
 
-      void pushDirectionalLight( glm::vec3 color, glm::vec3 vector ) {
-         lights.emplace_back( light{{0.0f,0.0f,0.0f,0.0f}, vector, {0,0,0}, color, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
+      void pushDirectionalLight( glm::vec3 color, glm::vec3 vector, glm::vec3 specular ) {
+         lights.emplace_back( light{{0.0f,0.0f,0.0f,0.0f}, vector, {0,0,0}, color, specular, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
       }
 
-      void pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 falloff) {
-         lights.emplace_back( light{position, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, falloff, {0.0f,0.0f}} );
+      void pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 specular, glm::vec3 falloff) {
+         lights.emplace_back( light{position, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, specular, falloff, {0.0f,0.0f}} );
       }
 
-      void pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 falloff, glm::vec2 spot) {
-         lights.emplace_back( light{position, direction, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, falloff, spot });
+      void pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 specular, glm::vec3 falloff, glm::vec2 spot) {
+         lights.emplace_back( light{position, direction, {0.0f,0.0f,0.0f}, color, specular, falloff, spot });
       }
 
       void clearLights() {
@@ -185,7 +185,7 @@ namespace gl {
 
       void bind( attribute Position, attribute Normal, attribute Color,
                  attribute Coord,    attribute TUnit,  attribute MIndex,
-                 attribute Ambient,  attribute Specular, attribute Emmisive, attribute Shininess);
+                 attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess);
       int hasTexture(PImage texture);
       void loadBuffers() const;
       void draw() const;
@@ -220,7 +220,7 @@ namespace gl {
       uniform Mmatrix;
       uniform Nmatrix;
       uniform TexOffset;
-      attribute Ambient, Specular, Emmisive, Shininess;
+      attribute Ambient, Specular, Emissive, Shininess;
       std::vector<VAO> vaos;
 
    public:
@@ -228,7 +228,7 @@ namespace gl {
       void setup( attribute Position_, attribute Normal_, attribute Color_,
                   attribute Coord_,    attribute TUnit_,  attribute MIndex_,
                   uniform Mmatrix_, uniform Nmatrix_, uniform TexOffset_,
-                  attribute Ambient_, attribute Specular_, attribute Emmisive_, attribute Shininess_) {
+                  attribute Ambient_, attribute Specular_, attribute Emissive_, attribute Shininess_) {
          Position = Position_;
          Normal = Normal_;
          Color = Color_;
@@ -240,7 +240,7 @@ namespace gl {
          TexOffset = TexOffset_;
          Ambient = Ambient_;
          Specular = Specular_;
-         Emmisive = Emmisive_;
+         Emissive = Emissive_;
          Shininess = Shininess_;
       }
       size_t size();
@@ -295,7 +295,7 @@ namespace gl {
             shader.get_uniform("texOffset"),
             shader.get_attribute("ambient"),
             shader.get_attribute("specular"),
-            shader.get_attribute("emisive"),
+            shader.get_attribute("emissive"),
             shader.get_attribute("shininess"));
       }
    };
