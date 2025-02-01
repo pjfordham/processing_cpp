@@ -295,11 +295,12 @@ public:
    }
 
    void spotLight( float r, float g, float b, float x, float y, float z, float nx, float ny, float nz, float angle, float concentration) {
+      flush();
       glm::vec3 color = {r/255.0f, g/255.0f, b/255.0f};
-      glm::vec3 worldPos = (_shape.getShapeMatrix() * PVector{nx,ny,nz});
+      glm::vec3 worldPos = (_shape.getShapeMatrix() * PVector{x,y,z});
       glm::vec4 position = { worldPos.x, worldPos.y, worldPos.z , 1};
       glm::vec3 worldDir = (_shape.getShapeMatrix() * PVector{nx,ny,nz}).normalize();
-      scene.pushSpotLight( color, position, worldDir, falloff, {angle, concentration} );
+      scene.pushSpotLight( color, position, worldDir, falloff, {cosf(angle), concentration} );
    }
 
    void lightFalloff(float r, float g, float b) {
@@ -1138,6 +1139,12 @@ void PGraphics::directionalLight(float r, float g, float b, float nx, float ny, 
 
 void PGraphics::pointLight(float r, float g, float b, float nx, float ny, float nz){
    return impl->pointLight(r,g,b,nx,ny,nz);
+}
+
+void PGraphics::spotLight(float r, float g, float b, float x, float y, float z,
+                          float nx, float ny, float nz, float angle,
+                          float concentration) {
+   return impl->spotLight(r,g,b,x,y,z,nx,ny,nz,angle,concentration);
 }
 
 void PGraphics::lightFalloff(float r, float g, float b){

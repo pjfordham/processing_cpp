@@ -10,6 +10,8 @@ void setup() {
   noStroke();
 }
 
+void defineLights();
+
 void draw() {
   defineLights();
   background(0);

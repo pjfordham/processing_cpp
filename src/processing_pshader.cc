@@ -56,6 +56,8 @@ static const char *defaultVertexShader = R"glsl(
       uniform vec3 lightFalloff[8];
       uniform vec2 lightSpot[8];
 
+      uniform vec3 eye;
+
       in vec3 position;
       in vec4 color;
       in vec3 normal;
@@ -146,12 +148,12 @@ static const char *defaultVertexShader = R"glsl(
                falloff = one_float;
                lightDir = -one_float * lightNormal[i];
             } else {
-               falloff = 1.0;//falloffFactor(lightPos, ecVertex, lightFalloff[i]);
+               falloff = falloffFactor(lightPos, ecVertex, lightFalloff[i]);
                lightDir = normalize(lightPos - ecVertex);
             }
 
             spotf = spotExp > zero_float ? spotFactor(lightPos, ecVertex, lightNormal[i],
-                                                      spotCos, spotExp)
+                                           spotCos, spotExp)
                                  : one_float;
             if (any(greaterThan(lightAmbient[i], zero_vec3))) {
                totalAmbient       += lightAmbient[i] * falloff;
@@ -166,9 +168,9 @@ static const char *defaultVertexShader = R"glsl(
 
             // if (any(greaterThan(lightSpecular[i], zero_vec3))) {
             //    totalFrontSpecular += lightSpecular[i] * falloff * spotf *
-            //                          blinnPhongFactor(lightDir, ecVertex, ecNormal, shininess);
+            //                          blinnPhongFactor(lightDir, ecVertex - eye, ecNormal, shininess);
             //    totalBackSpecular  += lightSpecular[i] * falloff * spotf *
-            //                          blinnPhongFactor(lightDir, ecVertex, ecNormalInv, shininess);
+            //                          blinnPhongFactor(lightDir, ecVertex - eye, ecNormalInv, shininess);
             // }
          }
 
