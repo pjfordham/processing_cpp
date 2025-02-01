@@ -254,6 +254,8 @@ std::time_t to_time_t(TP tp) {
    return system_clock::to_time_t(sctp);
 }
 
+extern bool test_mode;
+
 class File {
    std::filesystem::path path;
 
@@ -285,6 +287,9 @@ public:
    }
 
    std::vector<std::string> list() const {
+      if (test_mode) {
+         return {};
+      }
       try {
          std::vector<std::string> files;
          for (const auto& entry : std::filesystem::directory_iterator(path)) {
@@ -298,6 +303,9 @@ public:
    }
 
    std::vector<File> listFiles() const {
+      if (test_mode) {
+         return {};
+      }
       try {
          std::vector<File> files;
          for (const auto& entry : std::filesystem::directory_iterator(path)) {

@@ -20,8 +20,7 @@ std::deque<int> results;
 std::deque<int> ticket;
 
 // Create a random number generator engine
-std::random_device rd;
-std::mt19937 gen(rd());
+std::mt19937 gen(millis());
 
 void setup() {
   size(640, 360);

@@ -10,7 +10,7 @@ public:
 
   Animation(std::string imagePrefix, int count) {
     imageCount = count;
-
+    frame = 0;
     for (int i = 0; i < imageCount; i++) {
       // Use nf() to number format 'i' into four digits
       std::string filename = imagePrefix + nf(i, 4) + ".gif";
