@@ -1,14 +1,16 @@
 #ifndef PROCESSING_PMATERIAL_H
 #define PROCESSING_PMATERIAL_H
 
+#include "processing_opengl.h"
 #include "processing_pimage.h"
 #include <array>
 #include <unordered_map>
 
 struct PMaterial {
-   std::array<float, 3> ambientColor;
-   std::array<float, 3> diffuseColor;
-   std::array<float, 3> specularColor;
+   gl::color ambientColor;
+   gl::color diffuseColor;
+   gl::color specularColor;
+   gl::color emissiveColor;
    float specularExponent;
    float alpha;
    int illum;
