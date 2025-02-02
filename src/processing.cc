@@ -22,6 +22,7 @@ int mouseY = 0;
 int pmouseX = 0;
 int pmouseY = 0;
 
+bool test_mode = false;
 
 char key = 0;
 int keyCode = 0;
@@ -171,6 +172,9 @@ PGraphics createGraphics(int width, int height, int mode) {
 void size(int _width, int _height, int mode) {
 
    // Create a GLFW window and OpenGL context
+   if (test_mode)
+      glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -184,11 +188,13 @@ void size(int _width, int _height, int mode) {
       abort();
    }
 
-   // Set input callback functions
-   glfwSetKeyCallback(window, key_callback);
-   glfwSetCharCallback(window, character_callback);
-   glfwSetCursorPosCallback(window, mouse_callback);
-   glfwSetMouseButtonCallback(window, mouse_button_callback);
+   if (!test_mode) {
+      // Set input callback functions
+      glfwSetKeyCallback(window, key_callback);
+      glfwSetCharCallback(window, character_callback);
+      glfwSetCursorPosCallback(window, mouse_callback);
+      glfwSetMouseButtonCallback(window, mouse_button_callback);
+   }
 
    glfwMakeContextCurrent(window);
 
@@ -217,8 +223,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    for (int i = 1; i < argc; ++i) {
       std::string arg = argv[i];
 
-      if (arg == "--frames" && i + 1 < argc) {
+      if (arg == "--test" && i + 1 < argc) {
          frames = std::stoi(argv[i + 1]); // Convert to integer
+         test_mode = true;
       }
    }
 
@@ -269,7 +276,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          frameRateClock = startTicks;
       }
 
-      if (xloop || frameCount == 0) {
+      if (xloop || frameCount == 0 || test_mode) {
          {
             PROFILE_SCOPE("drawFrame");
             flushes = drawFrame();
@@ -277,6 +284,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          {
             PROFILE_SCOPE("glSwapWindow");
             glfwSwapBuffers(window);
+         }
+         if (test_mode) {
+            g.saveFrame( std::string(argv[0]) + "-####.png" );
          }
          frameCount++;
          zframeCount++;
@@ -286,7 +296,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       unsigned int actualFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTicks - startTicks).count();
 
       // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
-      if ( actualFrameTime < targetFrameTime ) {
+      if ( !test_mode && actualFrameTime < targetFrameTime ) {
          PROFILE_SCOPE("vSync");
          std::this_thread::sleep_for(std::chrono::milliseconds(targetFrameTime - actualFrameTime));
       }
