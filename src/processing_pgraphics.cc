@@ -322,7 +322,7 @@ public:
    void lights() {
       scene.clearLights();
       falloff = {1.0, 0.0,0.0};
-      ambientLight( 127, 137, 137 );
+      ambientLight( 127, 127, 127 );
       directionalLight( 127, 127, 127, 0.0, 0.0,-1.0 );
       lightSpecular(0, 0, 0);
    };

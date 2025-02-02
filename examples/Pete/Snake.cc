@@ -32,8 +32,7 @@ private:
 
   void spawn_food() {
     static std::uniform_int_distribution<int> randomLocationRange(0, BOARD_SIZE-1);
-    static std::random_device rd;
-    static std::mt19937 randomNumbers(rd());
+    static std::mt19937 randomNumbers(millis());
     do {
       food.x = randomLocationRange( randomNumbers );
       food.y = randomLocationRange( randomNumbers );
