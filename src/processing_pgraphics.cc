@@ -298,6 +298,7 @@ public:
    }
 
    void spotLight( float r, float g, float b, float x, float y, float z, float nx, float ny, float nz, float angle, float concentration) {
+      flush();
       glm::vec3 glcolor = color(r,g,b).gl_color();
       glm::vec3 worldPos = (_shape.getShapeMatrix() * PVector{x,y,z});
       glm::vec4 position = { worldPos.x, worldPos.y, worldPos.z , 1};
