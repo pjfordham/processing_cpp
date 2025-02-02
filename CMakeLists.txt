@@ -156,7 +156,7 @@ function(ADD_EXAMPLE file_path)
       )
   endif()
 
-  add_test(NAME ${base_name} COMMAND ./${base_name} --frames 5)
+  add_test(NAME ${base_name} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/pro_test.sh ./${base_name} ${CMAKE_CURRENT_SOURCE_DIR}/refs )
 
 endfunction()
 
