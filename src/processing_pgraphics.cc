@@ -213,7 +213,7 @@ public:
       float tz = -(far + near) / (far - near);
       glm::mat4 projection =  {
          { 2/(right-left),               0,             0, tx},
-         {              0,  2/(top-bottom),             0, ty},
+         {              0, -2/(top-bottom),             0, ty},
          {              0,               0, -2/(far-near), tz},
          {              0,               0,             0,  1}};
       flush();
@@ -235,7 +235,7 @@ public:
       float B = near * far * rangeInv * 2;
       glm::mat4 projection{
          {f/a, 0,  0,  0} ,
-         {0,   f,  0,  0} ,
+         {0,  -f,  0,  0} ,
          {0,   0,  A,  B} ,
          {0,   0, -1,  0}
       };
@@ -523,12 +523,12 @@ public:
             int idx1 = idx0 + 1;
             int idx2 = (i+1) * (xsphere_vres+1) + j;
             int idx3 = idx2 + 1;
+            sphere.index(idx1);
+            sphere.index(idx2);
             sphere.index(idx0);
-            sphere.index(idx2);
-            sphere.index(idx1);
-            sphere.index(idx1);
-            sphere.index(idx2);
             sphere.index(idx3);
+            sphere.index(idx2);
+            sphere.index(idx1);
          }
       }
       sphere.endShape();
@@ -557,10 +557,10 @@ public:
       float top = y;
       float bottom = y + gfx.getHeight();
 
-      drawTexturedQuad( {left, bottom},
+      drawTexturedQuad( {left, top},
+                        {right,top},
                         {right,bottom},
-                        {right, top},
-                        {left, top},
+                        {left, bottom},
                         createImageFromTexture(gfx.getAsTexture()),
                         _shape.getTintColor() );
    }
@@ -650,16 +650,23 @@ public:
    }
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
-                         PImage texture, color tint ) {
+                         PImage texture, color tint, bool flipY = false ) {
       PShape quad = createShape();
       quad.beginShape(TRIANGLES_NOSTROKE);
       quad.tint( tint );
       quad.textureMode(NORMAL);
       quad.texture(texture);
-      quad.vertex( p0, {0.0, 0.0} );
-      quad.vertex( p1, {1.0, 0.0} );
-      quad.vertex( p2, {1.0, 1.0} );
-      quad.vertex( p3, {0.0, 1.0} );
+      if (flipY) {
+         quad.vertex( p0, {0.0, 1.0} );
+         quad.vertex( p1, {1.0, 1.0} );
+         quad.vertex( p2, {1.0, 0.0} );
+         quad.vertex( p3, {0.0, 0.0} );
+      } else {
+         quad.vertex( p0, {0.0, 0.0} );
+         quad.vertex( p1, {1.0, 0.0} );
+         quad.vertex( p2, {1.0, 1.0} );
+         quad.vertex( p3, {0.0, 1.0} );
+      }
       quad.populateIndices( { 0,1,2, 0,2,3 } );
       quad.endShape();
 
@@ -976,7 +983,24 @@ public:
 
    int commit_draw() {
       endDraw();
-      localFrame.blit( windowFrame );
+      // If we just blit directly everything is drawn upside down
+      // localFrame.blit( windowFrame );
+      windowFrame.bind();
+      windowFrame.clear(0.0,0.0,0.0,1.0);
+
+      pushMatrix();
+      _shape.resetMatrix();
+
+      PImage img = getAsPImage();
+      drawTexturedQuad( {0,0},
+                        {(float)img.width,0},
+                        {(float)img.width,(float)img.height},
+                        {0,(float)img.height},
+                        img, WHITE, true );
+
+      _flush(batch, windowFrame, defaultShader);
+      popMatrix();
+
       return std::exchange(flushes, 0);
    }
 
@@ -996,7 +1020,7 @@ public:
    void filter(PShader pshader) {
       PShader oldShader = currentShader;
       shader(pshader);
-      background( getAsPImage(), true );
+      background( getAsPImage() );
       shader(oldShader);
    }
 
