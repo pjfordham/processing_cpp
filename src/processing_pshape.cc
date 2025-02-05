@@ -967,15 +967,18 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vert
       if( vinds[ p[0] ] == TESS_UNDEF ||
           vinds[ p[1] ] == TESS_UNDEF ||
           vinds[ p[2] ] == TESS_UNDEF ) continue;
-      triangles.push_back( vinds[ p[0] ] );
-      triangles.push_back( vinds[ p[1] ] );
       triangles.push_back( vinds[ p[2] ] );
+      triangles.push_back( vinds[ p[1] ] );
+      triangles.push_back( vinds[ p[0] ] );
    }
 
    return triangles;
 }
 
 void PShapeImpl::populateIndices() {
+   // Becuase we flip the Y-axis to maintain processings coordinate system
+   // we have to reverse the triangle winding direction for any geometry
+   // we don't create and index ourselves.
    DEBUG_METHOD();
    if (indices.size() != 0)
       return;
@@ -995,7 +998,7 @@ void PShapeImpl::populateIndices() {
       }
       style = TRIANGLES;
    } else if (style == TRIANGLE_STRIP || style == QUAD_STRIP) {
-      bool reverse = false;
+      bool reverse = true;
       for (int i = 0; i < vertices.size() - 2; i++ ){
          if (reverse) {
             indices.push_back(i+2);
@@ -1012,16 +1015,16 @@ void PShapeImpl::populateIndices() {
    } else if (style == CONVEX_POLYGON) {
       // Fill with triangle fan
       for (int i = 1; i < vertices.size() - 1 ; i++ ) {
-         indices.push_back( 0 );
-         indices.push_back( i );
          indices.push_back( i+1 );
+         indices.push_back( i );
+         indices.push_back( 0 );
       }
    }  else if (style == TRIANGLE_FAN) {
       // Fill with triangle fan
       for (int i = 1; i < vertices.size() - 1 ; i++ ) {
-         indices.push_back( 0 );
-         indices.push_back( i );
          indices.push_back( i+1 );
+         indices.push_back( i );
+         indices.push_back( 0 );
       }
    } else if (style == POLYGON) {
       indices = triangulatePolygon(vertices, contour);
