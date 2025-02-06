@@ -492,8 +492,6 @@ public:
       curveVertex(x,y,0);
    }
 
-   bool isClockwise() const;
-
    void endShape(int type_ = OPEN) {
       DEBUG_METHOD();
       dirty=true;
@@ -845,24 +843,6 @@ public:
       // }
    }
 };
-
-bool PShapeImpl::isClockwise() const {
-   DEBUG_METHOD();
-   if ( style != POLYGON && style != QUADS && style != QUAD )
-      return false;
-   if (vertices.size() < 3)
-      return true;
-
-   auto current = vertices[0];
-   auto prev = vertices[vertices.size()-1];
-   int sum = (current.position.x - prev.position.x) * (current.position.y + prev.position.y);
-   for( int i = 1 ; i < vertices.size() ; ++i) {
-      auto current = vertices[i];
-      auto prev = vertices[i-1];
-      sum += (current.position.x - prev.position.x) * (current.position.y + prev.position.y);
-   }
-   return sum < 0;
-}
 
 static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vertex> &vertices,  std::vector<int> contour) {
 
@@ -1716,11 +1696,6 @@ void PShape::curveVertex(float x, float y, float z){
 
 void PShape::curveVertex(float x, float y){
    return impl->curveVertex(x,y);
-}
-
-
-bool PShape::isClockwise() const{
-   return impl->isClockwise();
 }
 
 
