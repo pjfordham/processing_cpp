@@ -153,8 +153,6 @@ class PShape {
    void curveVertex(float x, float y, float z);
    void curveVertex(float x, float y);
 
-   bool isClockwise() const;
-
    void endShape(int type_ = OPEN);
 
    unsigned short getCurrentIndex();
