@@ -527,9 +527,9 @@ public:
          // Iterate over all triangles
          for (int i = 0; i < indices.size()/3; i++) {
             // Get the vertices of the current triangle
-            PVector v1 = vertices[indices[i * 3]].position;
+            PVector v3 = vertices[indices[i * 3]].position;
             PVector v2 = vertices[indices[i * 3 + 1]].position;
-            PVector v3 = vertices[indices[i * 3 + 2]].position;
+            PVector v1 = vertices[indices[i * 3 + 2]].position;
 
             // Calculate the normal vector of the current triangle
             PVector edge1 = v2 - v1;
@@ -1330,6 +1330,8 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool
    case TRIANGLES:
    case TRIANGLE_STRIP:
    case QUAD_STRIP:
+   case QUAD:
+   case QUADS:
    case POLYGON:
    case CONVEX_POLYGON:
    case TRIANGLE_FAN:
