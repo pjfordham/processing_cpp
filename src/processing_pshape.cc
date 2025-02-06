@@ -996,8 +996,7 @@ void PShapeImpl::populateIndices() {
             indices.push_back(j + i);
          }
       }
-      style = TRIANGLES;
-   } else if (style == TRIANGLE_STRIP || style == QUAD_STRIP) {
+   } else if (style == TRIANGLE_STRIP) {
       bool reverse = true;
       for (int i = 0; i < vertices.size() - 2; i++ ){
          if (reverse) {
@@ -1011,7 +1010,22 @@ void PShapeImpl::populateIndices() {
          }
          reverse = !reverse;
       }
-      style = TRIANGLE_STRIP;
+   } else if (style == QUAD_STRIP) {
+      for (int i = 0; i < vertices.size() - 2; i+=2 ){
+         std::vector<gl::vertex> quad_verts = {vertices[i], vertices[i+1], vertices[i+3], vertices[i+2]};
+         auto quad = triangulatePolygon( quad_verts, {});
+         auto s = [](int i) {
+            if (i==2)
+               return 3;
+            else if (i==3)
+               return 2;
+            else
+               return i;
+         };
+         for( auto &&j : quad ) {
+            indices.push_back(s(j) + i);
+         }
+      }
    } else if (style == CONVEX_POLYGON) {
       // Fill with triangle fan
       for (int i = 1; i < vertices.size() - 1 ; i++ ) {
@@ -1021,7 +1035,7 @@ void PShapeImpl::populateIndices() {
       }
    }  else if (style == TRIANGLE_FAN) {
       // Fill with triangle fan
-      for (int i = 1; i < vertices.size() - 1 ; i++ ) {
+      for (int i = 1; i < vertices.size() - 2 ; i++ ) {
          indices.push_back( i+1 );
          indices.push_back( i );
          indices.push_back( 0 );
@@ -1029,7 +1043,9 @@ void PShapeImpl::populateIndices() {
    } else if (style == POLYGON) {
       indices = triangulatePolygon(vertices, contour);
    } else if (style == TRIANGLES) {
-      for (int i = 0; i < vertices.size(); i++ ) {
+      for (int i = 0; i < vertices.size(); i+=3 ) {
+         indices.push_back( i+2 );
+         indices.push_back( i+1 );
          indices.push_back( i );
       }
    } else if (style == POINTS || style == LINES) {
@@ -1269,13 +1285,13 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    triangles.vertex( p2 - normal2 );
    triangles.vertex( p2 + normal2 );
 
-   triangles.index( i + 0 );
+   triangles.index( i + 2 );
    triangles.index( i + 1 );
-   triangles.index( i + 2 );
-
    triangles.index( i + 0 );
-   triangles.index( i + 2 );
+
    triangles.index( i + 3 );
+   triangles.index( i + 2 );
+   triangles.index( i + 0 );
 }
 
 PShapeImpl drawTriangleStrip(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
@@ -1449,9 +1465,65 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       }
       break;
    }
+   case QUAD:
+   case QUADS:
+   {
+      // TODO: Fix mitred lines to somehow work in 3D
+      PShapeImpl shape;
+      shape.reserve(4*vertices.size(), 6 * vertices.size());
+      shape.beginShape(TRIANGLES);
+      for (int i = 0; i < vertices.size(); i+=4 ) {
+         PVector p0 = vertices[i].position;
+         PVector p1 = vertices[i+1].position;
+         PVector p2 = vertices[i+2].position;
+         PVector p3 = vertices[i+3].position;
+         float w0 = extras[i].weight;
+         float w1 = extras[i+1].weight;
+         float w2 = extras[i+2].weight;
+         float w3 = extras[i+3].weight;
+         color c0 =  extras[i].stroke;
+         color c1 =  extras[i+1].stroke;
+         color c2 =  extras[i+2].stroke;
+         color c3 =  extras[i+3].stroke;
+
+         _line(shape, p0, p1, w0, w1, c0, c1 );
+         _line(shape, p1, p2, w1, w2, c1, c2 );
+         _line(shape, p2, p3, w2, w3, c2, c3 );
+         _line(shape, p3, p0, w3, w0, c3, c0 );
+      }
+      shape.endShape();
+      shape.draw_fill( batch, transform, flatten_transforms);
+      break;
+   }
    case QUAD_STRIP:
-      // This isn't exactly right since we draw an extra line for every quad,
-      // but it's close enought for now.
+   {
+      // TODO: Fix mitred lines to somehow work in 3D
+      PShapeImpl shape;
+      shape.reserve(4*vertices.size(), 6 * vertices.size());
+      shape.beginShape(TRIANGLES);
+      for (int i = 0; i < vertices.size()-2; i+=2 ) {
+         PVector p0 = vertices[i+0].position;
+         PVector p1 = vertices[i+1].position;
+         PVector p2 = vertices[i+2].position;
+         PVector p3 = vertices[i+3].position;
+         float w0 = extras[i+0].weight;
+         float w1 = extras[i+1].weight;
+         float w2 = extras[i+2].weight;
+         float w3 = extras[i+3].weight;
+         color c0 =  extras[i+0].stroke;
+         color c1 =  extras[i+1].stroke;
+         color c2 =  extras[i+2].stroke;
+         color c3 =  extras[i+3].stroke;
+
+         _line(shape, p0, p1, w0, w1, c0, c1 );
+         _line(shape, p1, p3, w1, w3, c1, c3 );
+         _line(shape, p3, p2, w3, w2, c3, c2 );
+         _line(shape, p2, p0, w2, w0, c2, c0 );
+      }
+      shape.endShape();
+      shape.draw_fill( batch, transform, flatten_transforms);
+      break;
+   }
    case TRIANGLE_STRIP:
       drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       break;
