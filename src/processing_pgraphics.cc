@@ -560,7 +560,7 @@ public:
                         _shape.getTintColor() );
    }
 
-   void image(PImage pimage, float left, float top, float right, float bottom) {
+   void image(PImage pimage, float left, float top, float right, float bottom, bool flip = false) {
       if ( image_mode == CORNER ) {
          float iwidth = right;
          float iheight = bottom;
@@ -574,24 +574,36 @@ public:
          right = left + iwidth;
          bottom = top + iheight;
       }
-      drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
+      if (flip) {
+         drawTexturedQuad({left,bottom},{right,bottom},{right,top}, {left,top},
                        pimage, _shape.getTintColor()  );
+      } else {
+         drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
+                       pimage, _shape.getTintColor()  );
+      }
    }
 
-   void image(PImage pimage, float x, float y) {
+   void image(PImage pimage, float x, float y, bool flip = false) {
       if ( image_mode == CORNER ) {
-         image( pimage, x, y, pimage.width, pimage.height );;
+         image( pimage, x, y, pimage.width, pimage.height, flip );
     } else if ( image_mode == CORNERS ) {
-         image( pimage, x, y, x + pimage.width, y + pimage.height );;
+         image( pimage, x, y, x + pimage.width, y + pimage.height, flip );
       } else   if (image_mode == CENTER) {
-         image( pimage, x, y, pimage.width, pimage.height );
+         image( pimage, x, y, pimage.width, pimage.height,flip );
       } else {
          abort();
       }
    }
 
-   void background(PImage bg) {
-      image(bg,0,0);
+   void background(PImage bg, bool flip = false) {
+      pushMatrix();
+      _shape.resetMatrix();
+      hint(DISABLE_DEPTH_MASK);
+      hint(DISABLE_DEPTH_TEST);
+      image(bg,0,0,flip);
+      hint(ENABLE_DEPTH_TEST);
+      hint(ENABLE_DEPTH_MASK);
+      popMatrix();
    }
 
    void loadPixels() {
@@ -980,19 +992,7 @@ public:
    void filter(PShader pshader) {
       PShader oldShader = currentShader;
       shader(pshader);
-      // UPSIDE DOWN!:  image(createImageFromTexture(getAsTexture()),0,0);
-
-      float left = 0;
-      float right = 0 + getWidth();
-      float top = 0;
-      float bottom = 0 + getHeight();
-
-      drawTexturedQuad( {left, bottom},
-                        {right,bottom},
-                        {right, top},
-                        {left, top},
-                        createImageFromTexture(getAsTexture()),
-                        WHITE );
+      background( createImageFromTexture(getAsTexture()), true );
       shader(oldShader);
    }
 
