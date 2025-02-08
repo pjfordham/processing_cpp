@@ -46,6 +46,7 @@ public:
 
    gl::framebuffer localFrame;
    gl::framebuffer windowFrame;
+   gl::framebuffer pixelsFrame;
    gl::batch_t batch;
    gl::scene_t scene;
 
@@ -88,6 +89,7 @@ public:
 
    PGraphicsImpl(int width, int height, int mode, int aaMode = MSAA, int aaFactor = 2) :
       localFrame(width, height, aaMode, aaFactor),
+      pixelsFrame(width, height, SSAA, 1),
       windowFrame( gl::framebuffer::constructMainFrame( width, height ) ),
       _shape( createShape() ) {
 
@@ -114,28 +116,31 @@ public:
       defaultShader = {};
       currentShader = {};
       localFrame = {};
+      pixelsFrame = {};
       scene = {};
       batch = {};
    }
 
+   void _flush( gl::batch_t &batch, gl::framebuffer &target, PShader shader ) {
+      glc.setShader( shader.getShader(), scene, batch );
+      shader.set_uniforms();
+      shader.bind();
+      target.bind();
+      scene.set();
+      batch.compile();
+      batch.draw();
+      batch.clear();
+   }
+
    void flush() {
-      static PShader flat = flatShader();
       if ( batch.size() > 0 ) {
          flushes+=batch.size();
          if (currentShader == defaultShader && scene.lights.size() == 0 && batch.usesTextures() == false && batch.usesCircles() == false) {
-            glc.setShader( flat.getShader(), scene, batch );
-            flat.set_uniforms();
-            flat.bind();
+            static PShader flat = flatShader();
+            _flush( batch, localFrame, flat );
          } else {
-            glc.setShader( currentShader.getShader(), scene, batch );
-            currentShader.set_uniforms();
-            currentShader.bind();
+            _flush( batch, localFrame, currentShader );
          }
-         localFrame.bind();
-         scene.set();
-         batch.compile();
-         batch.draw();
-         batch.clear();
       }
    }
 
@@ -173,9 +178,9 @@ public:
 
    void save( const std::string &fileName ) {
       flush();
-      localFrame.blit( windowFrame );
+      localFrame.blit( pixelsFrame );
       PImage image = createImage(width, height, 0);
-      windowFrame.saveFrame( image.pixels );
+      pixelsFrame.saveFrame( image.pixels );
       image.save_as( fileName );
    }
 
@@ -229,10 +234,10 @@ public:
       float A = (near + far) * rangeInv;
       float B = near * far * rangeInv * 2;
       glm::mat4 projection{
-         {f/a,  0,  0,  0} ,
-         {0,  f,  0,  0} ,
-         {0,  0,  A,  B} ,
-         {0,  0, -1,  0}
+         {f/a, 0,  0,  0} ,
+         {0,   f,  0,  0} ,
+         {0,   0,  A,  B} ,
+         {0,   0, -1,  0}
       };
       flush();
       scene.setProjectionMatrix( glm::transpose(projection) );
@@ -608,16 +613,15 @@ public:
 
    void loadPixels() {
       flush();
-      localFrame.blit( windowFrame );
-      windowFrame.loadPixels( pixels );
+      localFrame.blit( pixelsFrame );
+      pixelsFrame.loadPixels( pixels );
       pixels_current = true;
    }
 
    void updatePixels() {
       flush();
-      gl::framebuffer frame(width, height, SSAA, 1);
-      frame.updatePixels( pixels );
-      frame.blit( localFrame );
+      pixelsFrame.updatePixels( pixels );
+      pixelsFrame.blit( localFrame );
     }
 
    color get(int x, int y) {
@@ -992,7 +996,7 @@ public:
    void filter(PShader pshader) {
       PShader oldShader = currentShader;
       shader(pshader);
-      background( createImageFromTexture(getAsTexture()), true );
+      background( getAsPImage(), true );
       shader(oldShader);
    }
 
