@@ -67,6 +67,8 @@ namespace gl {
 
       void loadPixels( std::vector<unsigned int> &pixels );
 
+      void invert( framebuffer &src );
+
       void bind();
 
       void clear( float r, float g, float b, float a );

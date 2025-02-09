@@ -1002,21 +1002,7 @@ public:
       endDraw();
       // If we just blit directly everything is drawn upside down
       // localFrame.blit( windowFrame );
-      windowFrame.bind();
-      windowFrame.clear(0.0,0.0,0.0,1.0);
-
-      pushMatrix();
-      _shape.resetMatrix();
-
-      PImage img = getAsPImage();
-      drawTexturedQuad( {0,0},
-                        {(float)img.width,0},
-                        {(float)img.width,(float)img.height},
-                        {0,(float)img.height},
-                        img, WHITE, true );
-
-      _flush(batch, windowFrame, defaultShader);
-      popMatrix();
+      windowFrame.invert( localFrame );
 
       return std::exchange(flushes, 0);
    }
