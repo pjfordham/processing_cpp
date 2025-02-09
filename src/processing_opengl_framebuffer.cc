@@ -6,8 +6,11 @@
 #include <fmt/core.h>
 
 #include "processing_enum.h"
+#include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
+#include "processing_pshader.h"
+
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
 
@@ -158,6 +161,55 @@ namespace gl {
       glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
    }
 
+   void framebuffer::invert( framebuffer &src ) {
+      DEBUG_METHOD();
+
+      bind();
+      clear(0.0,0.0,0.0,1.0);
+
+      PShader direct = directShader();
+      GLuint shaderID = direct.getShader().programID;
+      glUseProgram(shaderID);
+
+      static float quadVertices[] = {
+         // Position (NDC)   // TexCoord (flipped vertically)
+         -1.0f, -1.0f,      0.0f, 1.0f,  // Bottom-left
+          1.0f, -1.0f,      1.0f, 1.0f,  // Bottom-right
+          1.0f,  1.0f,      1.0f, 0.0f,  // Top-right
+
+         -1.0f, -1.0f,      0.0f, 1.0f,  // Bottom-left
+          1.0f,  1.0f,      1.0f, 0.0f,  // Top-right
+         -1.0f,  1.0f,      0.0f, 0.0f   // Top-left
+      };
+      GLuint VAO, VBO;
+      glGenVertexArrays(1, &VAO);
+      glGenBuffers(1, &VBO);
+
+      glBindVertexArray(VAO);
+
+      glBindBuffer(GL_ARRAY_BUFFER, VBO);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+      auto lpos = glGetAttribLocation(shaderID, "position");
+      auto lcrd = glGetAttribLocation(shaderID, "texCoord" );
+      auto ltex = glGetUniformLocation(shaderID, "texture1" );
+
+      glEnableVertexAttribArray(lpos);
+      glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+      glEnableVertexAttribArray(lcrd);
+      glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+      glBindVertexArray(0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
+      glUniform1i(ltex, 0);
+
+      glBindVertexArray(VAO);
+      glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
+      glBindVertexArray(0);
+   }
+
    void framebuffer::bind() {
       DEBUG_METHOD();
       glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -178,4 +230,3 @@ namespace gl {
    }
 
 } // namespace gl
-

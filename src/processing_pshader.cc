@@ -14,6 +14,30 @@
 
 template <> struct fmt::formatter<PShaderImpl>;
 
+static const char *directVertexShader = R"glsl(
+      #version 400
+      in vec3 position;
+      in vec2 texCoord;
+
+      out vec2 vertTexCoord;
+
+      void main() {
+          gl_Position = vec4(position, 1.0); // Directly use NDC
+          vertTexCoord = texCoord;
+      }
+)glsl";
+
+static const char *directFragmentShader = R"glsl(
+      #version 400
+      out vec4 fragColor;
+      in vec2 vertTexCoord;
+      uniform sampler2D texture1;
+
+      void main() {
+          fragColor = texture(texture1, vertTexCoord);
+      }
+)glsl";
+
 static const char *flatVertexShader = R"glsl(
       #version 400
       in vec3 position;
@@ -397,6 +421,10 @@ void PShader::close() {
 
 PShader flatShader() {
    return {0, flatVertexShader, flatFragmentShader };
+};
+
+PShader directShader() {
+   return {0, directVertexShader, directFragmentShader };
 };
 
 PShader loadShader() {
