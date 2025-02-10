@@ -14,30 +14,6 @@
 
 template <> struct fmt::formatter<PShaderImpl>;
 
-static const char *directVertexShader = R"glsl(
-      #version 400
-      in vec3 position;
-      in vec2 texCoord;
-
-      out vec2 vertTexCoord;
-
-      void main() {
-          gl_Position = vec4(position, 1.0); // Directly use NDC
-          vertTexCoord = texCoord;
-      }
-)glsl";
-
-static const char *directFragmentShader = R"glsl(
-      #version 400
-      out vec4 fragColor;
-      in vec2 vertTexCoord;
-      uniform sampler2D texture1;
-
-      void main() {
-          fragColor = texture(texture1, vertTexCoord);
-      }
-)glsl";
-
 static const char *flatVertexShader = R"glsl(
       #version 400
       in vec3 position;
@@ -241,12 +217,9 @@ static const char *defaultFragmentShader = R"glsl(
 
 class PShaderImpl {
 
-   std::map<std::string, glm::vec3> uniforms3fv;
-   std::map<std::string, glm::vec2> uniforms2fv;
-   std::map<std::string, float>     uniforms1f;
-   std::map<std::string, PImage>    uniformsSampler;
-
+   std::map<std::string, PImage> uniformsSampler;
    gl::shader_t shader;
+
 public:
 
    ~PShaderImpl();
@@ -304,29 +277,14 @@ void PShaderImpl::bind() {
 
 void PShaderImpl::set_uniforms() {
    DEBUG_METHOD();
-   for (const auto& [id, value] : uniforms1f) {
-      gl::uniform loc = shader.get_uniform( id.c_str() );
-      loc.set( value );
-   }
-   for (const auto& [id, value] : uniforms2fv) {
-      gl::uniform loc = shader.get_uniform( id.c_str() );
-      loc.set( value );
-   }
-   for (const auto& [id, value] : uniforms3fv) {
-      gl::uniform loc = shader.get_uniform( id.c_str() );
-      loc.set( value );
-   }
    for (auto& [id, value] : uniformsSampler) {
-      // TODO: Fix hardcoding of unit 15
-      gl::uniform loc = shader.get_uniform( id.c_str() );
-      glActiveTexture(GL_TEXTURE0 + 15);
       if (value.isDirty()) {
          value.updatePixels();
       }
       auto textureID = value.getTextureID();
-      glBindTexture(GL_TEXTURE_2D, value.getTextureID());
-      loc.set( 15 );
+      shader.set(id.c_str(), textureID);
    }
+   shader.set_uniforms();
 }
 
 void PShaderImpl::set(const char *id, PImage img) {
@@ -336,20 +294,18 @@ void PShaderImpl::set(const char *id, PImage img) {
 
 void PShaderImpl::set(const char *id, float value) {
    DEBUG_METHOD();
-   uniforms1f[id] = value;
+   shader.set(id, value);
 }
 
 void PShaderImpl::set(const char *id, float v1, float v2) {
    DEBUG_METHOD();
-   uniforms2fv[id] = {v1,v2};
+   shader.set(id,v1,v2);
 }
 
 void PShaderImpl::set(const char *id, float v1, float v2, float v3) {
    DEBUG_METHOD();
-   uniforms3fv[id] = {v1, v2, v3};
+   shader.set(id, v1, v2, v3);
 }
-
-
 
 void PShaderImpl::releaseShaders() {
    DEBUG_METHOD();
@@ -421,10 +377,6 @@ void PShader::close() {
 
 PShader flatShader() {
    return {0, flatVertexShader, flatFragmentShader };
-};
-
-PShader directShader() {
-   return {0, directVertexShader, directFragmentShader };
 };
 
 PShader loadShader() {

@@ -318,65 +318,14 @@ namespace gl {
       }
    }
 
-   shader_t::shader_t(const char *vertex, const char *fragment) {
-      // Create the shaders
-      GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-      GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-      glShaderSource(VertexShaderID, 1, &vertex , NULL);
-      glCompileShader(VertexShaderID);
-
-      glShaderSource(FragmentShaderID, 1, &fragment , NULL);
-      glCompileShader(FragmentShaderID);
-
-      GLint Result = GL_FALSE;
-      int InfoLogLength;
-
-      // Check Vertex Shader
-      glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-      glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-      if ( InfoLogLength > 0 ){
-         std::vector<char> VertexShaderErrorMessage(InfoLogLength+1);
-         glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-         fmt::print("{}\n", &VertexShaderErrorMessage[0]);
-      }
-
-      // Check Fragment Shader
-      glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-      glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-      if ( InfoLogLength > 0 ){
-         std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
-         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
-         fmt::print("{}\n", &FragmentShaderErrorMessage[0]);
-      }
-
-      // Link the program
-      programID = glCreateProgram();
-      glAttachShader(programID, VertexShaderID);
-      glAttachShader(programID, FragmentShaderID);
-      glLinkProgram(programID);
-
-      // Check the program
-      glGetProgramiv(programID, GL_LINK_STATUS, &Result);
-      glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-      if ( InfoLogLength > 0 ){
-         std::vector<char> ProgramErrorMessage(InfoLogLength+1);
-         glGetProgramInfoLog(programID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-         fmt::print("{}\n", &ProgramErrorMessage[0]);
-      }
-
-      glDetachShader(programID, VertexShaderID);
-      glDetachShader(programID, FragmentShaderID);
-
-      glDeleteShader(VertexShaderID);
-      glDeleteShader(FragmentShaderID);
-
+   void context::init() {
+      blendMode( BLEND );
+      glDepthFunc(GL_LEQUAL);
+      glEnable(GL_DEPTH_TEST);
    }
 
-   shader_t::~shader_t() {
-      if (programID) {
-         glDeleteProgram(programID);
-      }
+   void shader_t::bind() const {
+      glUseProgram(programID);
    }
 
    void context::hint(int type) {
@@ -398,17 +347,7 @@ namespace gl {
       }
    }
 
-   void context::init() {
-      blendMode( BLEND );
-      glDepthFunc(GL_LEQUAL);
-      glEnable(GL_DEPTH_TEST);
-   }
-
-   void shader_t::bind() const {
-      glUseProgram(programID);
-   }
-
-   VAO::VAO() noexcept {
+  VAO::VAO() noexcept {
       DEBUG_METHOD();
       vertices.reserve(65536);
       materials.reserve(65536);
