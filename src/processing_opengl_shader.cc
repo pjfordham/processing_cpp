@@ -13,31 +13,6 @@
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
 
-static const char *directVertexShader = R"glsl(
-      #version 400
-      in vec3 position;
-      in vec2 texCoord;
-
-      out vec2 vertTexCoord;
-
-      void main() {
-          gl_Position = vec4(position, 1.0); // Directly use NDC
-          vertTexCoord = texCoord;
-      }
-)glsl";
-
-static const char *directFragmentShader = R"glsl(
-      #version 400
-      out vec4 fragColor;
-      in vec2 vertTexCoord;
-      uniform sampler2D texture1;
-
-      void main() {
-          fragColor = texture(texture1, vertTexCoord);
-      }
-)glsl";
-
-
 namespace gl {
 
    shader_t::shader_t(const char *vertex, const char *fragment) {
@@ -101,10 +76,6 @@ namespace gl {
       }
    }
 
-   shader_t directShader() {
-      return {directVertexShader, directFragmentShader };
-   };
-
    void shader_t::set_uniforms() {
       DEBUG_METHOD();
       for (const auto& [id, value] : uniforms1f) {
@@ -148,4 +119,4 @@ namespace gl {
       uniforms3fv[id] = {v1, v2, v3};
    }
 
-   } // namespace gl
+} // namespace gl

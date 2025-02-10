@@ -14,6 +14,35 @@
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
 
+static const char *directVertexShader = R"glsl(
+      #version 400
+      in vec3 position;
+      in vec2 texCoord;
+
+      out vec2 vertTexCoord;
+
+      void main() {
+          gl_Position = vec4(position, 1.0); // Directly use NDC
+          vertTexCoord = texCoord;
+      }
+)glsl";
+
+static const char *directFragmentShader = R"glsl(
+      #version 400
+      out vec4 fragColor;
+      in vec2 vertTexCoord;
+      uniform sampler2D texture1;
+
+      void main() {
+          fragColor = texture(texture1, vertTexCoord);
+      }
+)glsl";
+
+static gl::shader_t directShader() {
+   return {directVertexShader, directFragmentShader };
+};
+
+
 namespace gl {
 
    framebuffer& framebuffer::operator=(framebuffer&&x) noexcept {
@@ -161,17 +190,8 @@ namespace gl {
       glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
    }
 
-   void framebuffer::invert( framebuffer &src ) {
-      DEBUG_METHOD();
-
-      bind();
-      clear(0.0,0.0,0.0,1.0);
-
-      shader_t direct = directShader();
-      GLuint shaderID = direct.programID;
-      glUseProgram(shaderID);
-
-      static float quadVertices[] = {
+   static GLuint constructDirectVAO() {
+      float quadVertices[] = {
          // Position (NDC)   // TexCoord (flipped vertically)
          -1.0f, -1.0f,      0.0f, 1.0f,  // Bottom-left
           1.0f, -1.0f,      1.0f, 1.0f,  // Bottom-right
@@ -190,22 +210,30 @@ namespace gl {
       glBindBuffer(GL_ARRAY_BUFFER, VBO);
       glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
-      auto lpos = glGetAttribLocation(shaderID, "position");
-      auto lcrd = glGetAttribLocation(shaderID, "texCoord" );
-      auto ltex = glGetUniformLocation(shaderID, "texture1" );
+      shader_t direct = directShader();
+      auto a_pos = direct.get_attribute("position");
+      auto a_crd = direct.get_attribute("texCoord");
+      a_pos.bind_vec2(4*sizeof(float), 0 );
+      a_crd.bind_vec2(4*sizeof(float), (void*)(2*sizeof(float)));
+      return VAO;
+   }
 
-      glEnableVertexAttribArray(lpos);
-      glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+   void framebuffer::invert( framebuffer &src ) {
+      DEBUG_METHOD();
 
-      glEnableVertexAttribArray(lcrd);
-      glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+      static GLuint vao = constructDirectVAO();
+      // If this is static then we segfault when it's destructed.
+      shader_t direct = directShader();
+      static uniform texture1 = direct.get_uniform("texture1");
 
-      glBindVertexArray(0);
+      bind();
+      clear(0.0,0.0,0.0,1.0);
+      direct.bind();
+
+      glBindVertexArray(vao);
+      texture1.set( 0 );
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
-      glUniform1i(ltex, 0);
-
-      glBindVertexArray(VAO);
       glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
       glBindVertexArray(0);
    }
