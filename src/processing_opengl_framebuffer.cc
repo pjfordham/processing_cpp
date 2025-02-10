@@ -9,7 +9,7 @@
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
-#include "processing_pshader.h"
+#include "processing_opengl_shader.h"
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
@@ -167,8 +167,8 @@ namespace gl {
       bind();
       clear(0.0,0.0,0.0,1.0);
 
-      PShader direct = directShader();
-      GLuint shaderID = direct.getShader().programID;
+      shader_t direct = directShader();
+      GLuint shaderID = direct.programID;
       glUseProgram(shaderID);
 
       static float quadVertices[] = {
