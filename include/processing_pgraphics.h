@@ -12,6 +12,7 @@
 #include "processing_pfont.h"
 #include "processing_enum.h"
 #include "processing_opengl.h"
+#include "processing_opengl_framebuffer.h"
 #include "processing_pshader.h"
 
 class PGraphicsImpl;

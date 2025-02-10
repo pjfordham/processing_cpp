@@ -17,7 +17,6 @@ template <> struct fmt::formatter<gl::framebuffer>;
 
 namespace gl {
    class framebuffer {
-   public:
       int aaFactor = 1;
       int aaMode = SSAA;
       GLuint id = 0;
@@ -79,6 +78,7 @@ namespace gl {
 
       void saveFrame(void *surface);
 
+      friend struct fmt::formatter<gl::framebuffer>;
    };
 } // namespace gl
 

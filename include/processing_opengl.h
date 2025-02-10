@@ -1,18 +1,12 @@
 #ifndef PROCESSING_OPENGL_H
 #define PROCESSING_OPENGL_H
 
-#include <memory>
 #include <vector>
-#include <array>
-#include <unordered_map>
 #include <fmt/core.h>
 
-#include "processing_enum.h"
-#include "processing_opengl_framebuffer.h"
 #include "processing_opengl_shader.h"
 #include "processing_utils.h"
 #include "processing_pimage.h"
-#include "processing_pshape.h"
 
 typedef int GLint;
 typedef unsigned int GLuint;

@@ -1,12 +1,9 @@
 #ifndef PROCESSING_OPENGL_SHADER_H
 #define PROCESSING_OPENGL_SHADER_H
 
-#include "processing_debug.h"
 #include <vector>
 #include <map>
 #include <string>
-#include <array>
-#include <fmt/core.h>
 
 #include "glad/glad.h"
 #include <glm/vec2.hpp>
@@ -77,7 +74,6 @@ namespace gl {
       void set(const char *id, float v1, float v2, float v3);
 
   };
-   shader_t directShader();
 
 } // namespace gl
 
