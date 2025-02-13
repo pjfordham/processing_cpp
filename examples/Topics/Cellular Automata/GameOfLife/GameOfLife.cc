@@ -130,7 +130,7 @@ void draw() {
   }
 
   // Create  new cells manually on pauseGame
-  if (pauseGame && mousePressed) {
+  if (pauseGame && mousePressedb) {
     // Map and avoid out of bound errors
     int xCellOver = int(map(mouseX, 0, width, 0, width/cellSize));
     xCellOver = constrain(xCellOver, 0, width/cellSize-1);
@@ -147,7 +147,7 @@ void draw() {
       fill(alive); // Fill alive color
     }
   }
-  else if (pauseGame && !mousePressed) { // And then save to buffer once mouse goes up
+  else if (pauseGame && !mousePressedb) { // And then save to buffer once mouse goes up
     // Save cells to buffer (so we opeate with one array keeping the other intact)
     for (int x=0; x<width/cellSize; x++) {
       for (int y=0; y<height/cellSize; y++) {
