@@ -216,6 +216,15 @@ public:
          {              0, -2/(top-bottom),             0, ty},
          {              0,               0, -2/(far-near), tz},
          {              0,               0,             0,  1}};
+
+      // Compute pixel size in normalized device coordinates (NDC)
+      float pixel_size_x = 2.0f / width;
+      float pixel_size_y = 2.0f / height;
+
+      // Modify the projection matrix to shift rendering right and down by 1 pixel
+      projection[0][3] -= pixel_size_x; // Shift right
+      projection[1][3] -= pixel_size_y; // Shift down
+
       flush();
       scene.setProjectionMatrix( glm::transpose( projection ) );
    }
@@ -239,6 +248,14 @@ public:
          {0,   0,  A,  B} ,
          {0,   0, -1,  0}
       };
+
+      // Compute pixel size in normalized device coordinates (NDC)
+      float pixel_size_x = 2.0f / width;
+      float pixel_size_y = 2.0f / height;
+
+      // Modify the projection matrix to shift rendering right and down by 1 pixel
+      projection[0][3] -= pixel_size_x; // Shift right
+      projection[1][3] -= pixel_size_y; // Shift down
       flush();
       scene.setProjectionMatrix( glm::transpose(projection) );
    }
