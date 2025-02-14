@@ -16,13 +16,13 @@
 
 static const char *directVertexShader = R"glsl(
       #version 400
-      in vec3 position;
+      in vec2 position;
       in vec2 texCoord;
 
       out vec2 vertTexCoord;
 
       void main() {
-          gl_Position = vec4(position, 1.0); // Directly use NDC
+          gl_Position = vec4(position, -1.0, 1.0); // Directly use NDC
           vertTexCoord = texCoord;
       }
 )glsl";
