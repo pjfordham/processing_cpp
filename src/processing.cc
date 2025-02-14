@@ -29,6 +29,7 @@ int keyCode = 0;
 
 bool mousePressedb = false;
 bool keyPressedb = false;
+int frameRateb = 0;
 
 void character_callback(GLFWwindow* window, unsigned int codepoint) {
    // Handle the Unicode character codepoint here
@@ -269,9 +270,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
       // Print the frame rate every 10 seconds
       unsigned int millis = std::chrono::duration_cast<std::chrono::milliseconds>(startTicks - frameRateClock).count();
+      frameRateb = test_mode ? setFrameRate : (1000 * (float) zframeCount / millis);
       if (millis >= 10000) {
-         float frameRate = 1000 * (float) zframeCount / millis;
-         printf("Frame rate: %f fps, %d flush rate\n", frameRate, flushes);
+         fmt::print("Frame rate: {} fps, {} flush rate\n", frameRateb, flushes);
          zframeCount = 0;
          frameRateClock = startTicks;
       }
