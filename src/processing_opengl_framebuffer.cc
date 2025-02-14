@@ -34,7 +34,7 @@ static const char *directFragmentShader = R"glsl(
       uniform sampler2D texture1;
 
       void main() {
-          fragColor = texture(texture1, vertTexCoord);
+          fragColor = vec4(texture(texture1, vertTexCoord).xyz,1.0);
       }
 )glsl";
 
