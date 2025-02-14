@@ -34,9 +34,9 @@ void draw () {
   ps.setEmitter(mouseX,mouseY);
 
   // // Display frame rate
-  // fill(255);
-  // textSize(16);
-  // text("Frame rate: " + int(frameRate),10,20);
+  fill(255);
+  textSize(16);
+  text(fmt::format("Frame rate: {}",int(frameRateb)),10,20);
 
 }
 
