@@ -678,6 +678,7 @@ public:
       dirty=true;
       tint_color = {r,g,b,a};
       gl_fill_color = gl::flatten_color_mode( tint_color );
+      currentMaterial.ambientColor = gl_fill_color;
    }
 
    void tint(float r,float g, float b) {
