@@ -20,16 +20,16 @@ void draw()  {
   pushMatrix();
   translate(width/2, height/2, -30);
 
-  newXmag = mouseX/float(width) * TWO_PI;
-  newYmag = mouseY/float(height) * TWO_PI;
+  newXmag = (float)mouseX/float(width) * TWO_PI;
+  newYmag = (float)mouseY/float(height) * TWO_PI;
 
   float diff = xmag-newXmag;
-  if (abs(diff) >  0.01) {
+  if (fabs(diff) >  0.01) {
     xmag -= diff/4.0;
   }
 
   diff = ymag-newYmag;
-  if (abs(diff) >  0.01) {
+  if (fabs(diff) >  0.01) {
     ymag -= diff/4.0;
   }
 
