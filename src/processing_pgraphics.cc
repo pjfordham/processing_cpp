@@ -438,7 +438,7 @@ public:
       d = d / 2;
 
       PShape cube = createShape();
-      cube.beginShape(TRIANGLES);
+      cube.beginShape(QUADS);
       cube.copyStyle( _shape );
       cube.textureMode(NORMAL);
 
