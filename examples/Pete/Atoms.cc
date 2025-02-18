@@ -8,7 +8,7 @@ float inc = TWO_PI/ 120.0;
 float f = 2.0;
 
 void drawBond(PVector start, PVector end, float noise_amplitude) {
-   beginShape(LINES);
+   beginShape();
    for (float i = 0 ; i<= 1 ; i+=(1.0/20.0)) {
       PVector v = lerp( start, end, i );
       float noise = random(-noise_amplitude,noise_amplitude);
