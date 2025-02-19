@@ -87,7 +87,7 @@ public:
       for(int i = 0; i < (width * height); ++i) {
          unsigned int p = pixels[i];
          unsigned int q = mask.pixels[i];
-         pixels[i] = (p & 0x00FFFFFF) | ( (0xFF - ( q & 0xFF)) << 24 );
+         pixels[i] = (p & 0x00FFFFFF) | ( (q & 0xFF) << 24 );
       }
       dirty = true;
    }
