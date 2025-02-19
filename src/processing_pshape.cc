@@ -824,10 +824,10 @@ public:
             child.flatten(batch, currentTransform, flatten_transforms);
          }
       } else {
-         if ( fill_color.a != 0 )
+         if ( isFilled() )
             draw_fill(batch, currentTransform, flatten_transforms);
          // draw_normals(batch, currentTransform, flatten_transforms);
-         if ( stroke_color.a != 0 )
+         if ( isStroked() )
             draw_stroke(batch, currentTransform, flatten_transforms);
       }
       dirty = false;
@@ -956,6 +956,82 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vert
    return triangles;
 }
 
+// Function to project a 3D quad onto a 2D plane
+static void projectTo2D(const glm::vec3& A, const glm::vec3& B, const glm::vec3& C, const glm::vec3& D,
+                        glm::vec2& A2D, glm::vec2& B2D, glm::vec2& C2D, glm::vec2& D2D) {
+   // Compute normal using cross product
+   glm::vec3 normal = glm::normalize(glm::cross(B - A, D - A));
+
+   // Find the dominant axis to ignore (largest absolute component of normal)
+   int ignoreAxis = 0; // Default to X
+   if (std::abs(normal.y) > std::abs(normal.x) && std::abs(normal.y) > std::abs(normal.z))
+      ignoreAxis = 1; // Ignore Y
+   else if (std::abs(normal.z) > std::abs(normal.x) && std::abs(normal.z) > std::abs(normal.y))
+      ignoreAxis = 2; // Ignore Z
+
+   // Project 3D points onto the best-fit 2D plane
+   switch (ignoreAxis) {
+   case 0: // Ignore X -> Use YZ plane
+      A2D = {A.y, A.z};
+      B2D = {B.y, B.z};
+      C2D = {C.y, C.z};
+      D2D = {D.y, D.z};
+      break;
+   case 1: // Ignore Y -> Use XZ plane
+      A2D = {A.x, A.z};
+      B2D = {B.x, B.z};
+      C2D = {C.x, C.z};
+      D2D = {D.x, D.z};
+      break;
+   case 2: // Ignore Z -> Use XY plane
+      A2D = {A.x, A.y};
+      B2D = {B.x, B.y};
+      C2D = {C.x, C.y};
+      D2D = {D.x, D.y};
+      break;
+   }
+}
+
+// Function to check if a quad is non-convex (arrow-shaped)
+static bool isNonConvex(const glm::vec2& A, const glm::vec2& B, const glm::vec2& C, const glm::vec2& D) {
+   glm::vec2 AB = B - A;
+   glm::vec2 BC = C - B;
+   glm::vec2 CD = D - C;
+   glm::vec2 DA = A - D;
+
+   float cross1 = AB.x * BC.y - AB.y * BC.x;
+   float cross2 = BC.x * CD.y - BC.y * CD.x;
+   float cross3 = CD.x * DA.y - CD.y * DA.x;
+   float cross4 = DA.x * AB.y - DA.y * AB.x;
+
+   bool sign1 = cross1 > 0;
+   bool sign2 = cross2 > 0;
+   bool sign3 = cross3 > 0;
+   bool sign4 = cross4 > 0;
+
+   return (sign1 != sign2) || (sign1 != sign3) || (sign1 != sign4);
+}
+
+// Function to choose a valid diagonal for triangulation
+static std::pair<int, int> chooseValidDiagonal(const glm::vec2& A, const glm::vec2& B,
+                                               const glm::vec2& C, const glm::vec2& D) {
+   if (!isNonConvex(A, B, C, D)) {
+      return {0, 2};  // Default diagonal AC
+   }
+
+   float crossAC1 = glm::cross(glm::vec3(B - A, 0.0f), glm::vec3(C - A, 0.0f)).z;
+   float crossAC2 = glm::cross(glm::vec3(C - A, 0.0f), glm::vec3(D - C, 0.0f)).z;
+   float crossBD1 = glm::cross(glm::vec3(A - B, 0.0f), glm::vec3(D - B, 0.0f)).z;
+   float crossBD2 = glm::cross(glm::vec3(D - B, 0.0f), glm::vec3(C - D, 0.0f)).z;
+
+   bool validAC = (crossAC1 >= 0 && crossAC2 >= 0);
+   bool validBD = (crossBD1 >= 0 && crossBD2 >= 0);
+
+   return validAC ? std::make_pair(0, 2) : std::make_pair(1, 3);
+}
+
+
+
 void PShapeImpl::populateIndices() {
    // Becuase we flip the Y-axis to maintain processings coordinate system
    // we have to reverse the triangle winding direction for any geometry
@@ -967,18 +1043,58 @@ void PShapeImpl::populateIndices() {
    if (style == GROUP) return;
 
    if (vertices.size() == 0) return;
+
+   if ( !isFilled() ) return;
+
    dirty=true;
 
    if (style == QUADS || style == QUAD) {
       if (vertices.size() % 4 != 0) abort();
-      for (int i= 0; i< vertices.size(); i+=4) {
-         auto quad = triangulatePolygon( {vertices.begin() + i, vertices.begin() + i + 4},{});
-         for( auto &&j : quad ) {
-            indices.push_back(j + i);
-         }
-      }
+      for (int i = 0; i < vertices.size(); i += 4) {
+        glm::vec2 A2D, B2D, C2D, D2D;
+        projectTo2D(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position, vertices[i + 3].position,
+                    A2D, B2D, C2D, D2D);
+
+         auto diag = chooseValidDiagonal(A2D, B2D, C2D, D2D);
+         int d1 = diag.first;
+         int d2 = diag.second;
+
+         // First Triangle
+         indices.push_back(i + d1);
+         indices.push_back(i + ((d1 + 1) % 4));
+         indices.push_back(i + d2);
+
+         // Second Triangle
+         indices.push_back(i + d1);
+         indices.push_back(i + d2);
+         indices.push_back(i + ((d2 + 1) % 4));
+    }
+   }
+   else if (style == QUAD_STRIP) {
+     for (int i = 0; i < vertices.size() - 2; i += 2) {
+        glm::vec2 A2D, B2D, C2D, D2D;
+        projectTo2D(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position, vertices[i + 3].position,
+                    A2D, B2D, C2D, D2D);
+
+         auto diag = chooseValidDiagonal(A2D, B2D, C2D, D2D);
+         int d1 = diag.first;
+         int d2 = diag.second;
+
+         // Mapping function to correct order for QUAD_STRIP
+         auto s = [](int i) { return (i == 2) ? 3 : (i == 3) ? 2 : i; };
+
+         // First Triangle
+         indices.push_back(i + s(d1));
+         indices.push_back(i + s((d1 + 1) % 4));
+         indices.push_back(i + s(d2));
+
+         // Second Triangle
+         indices.push_back(i + s(d1));
+         indices.push_back(i + s(d2));
+         indices.push_back(i + s((d2 + 1) % 4));
+     }
    } else if (style == TRIANGLE_STRIP) {
-      bool reverse = false;
+   bool reverse = false;
       for (int i = 0; i < vertices.size() - 2; i++ ){
          if (reverse) {
             indices.push_back(i+2);
@@ -990,22 +1106,6 @@ void PShapeImpl::populateIndices() {
             indices.push_back(i+2);
          }
          reverse = !reverse;
-      }
-   } else if (style == QUAD_STRIP) {
-      for (int i = 0; i < vertices.size() - 2; i+=2 ){
-         std::vector<gl::vertex> quad_verts = {vertices[i], vertices[i+1], vertices[i+3], vertices[i+2]};
-         auto quad = triangulatePolygon( quad_verts, {});
-         auto s = [](int i) {
-            if (i==2)
-               return 3;
-            else if (i==3)
-               return 2;
-            else
-               return i;
-         };
-         for( auto &&j : quad ) {
-            indices.push_back(s(j) + i);
-         }
       }
    } else if (style == CONVEX_POLYGON) {
       // Fill with triangle fan
