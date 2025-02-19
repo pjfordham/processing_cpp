@@ -363,9 +363,9 @@ public:
       xTextAlign = x;
    }
 
-   void blendMode(int b) {
+   int blendMode(int b) {
       flush();
-      glc.blendMode(b);
+      return glc.blendMode(b);
    }
 
    void hint(int type) {
@@ -398,8 +398,10 @@ public:
          y = y - ascent;
       }
 
+      auto mode = blendMode(BLEND);
       drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
                        text_image, _shape.getFillColor() );
+      blendMode(mode);
    }
 
    void text(char c, float x, float y, float twidth = -1, float theight = -1) {
@@ -1212,7 +1214,7 @@ void PGraphics::textAlign(int a) {
    impl->textAlign(a);
 }
 
-void PGraphics::blendMode(int b){
+int PGraphics::blendMode(int b){
    return impl->blendMode(b);
 }
 

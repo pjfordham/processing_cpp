@@ -44,42 +44,47 @@ namespace gl {
       return { r, g, b, a };
    }
 
-   void context::blendMode(int b ) {
+   int context::blendMode(int b ) {
+      if (currentBlendMode == b)
+         return b;
+
       glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       switch (b) {
       case BLEND:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
          glBlendEquation(GL_FUNC_ADD);
          break;
       case ADD:
-         glBlendEquation(GL_FUNC_ADD);
          glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+         glBlendEquation(GL_FUNC_ADD);
          break;
       case SUBTRACT:
-         glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
          glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+         glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
          break;
       case DARKEST:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
          glBlendEquation(GL_MIN);
          break;
       case LIGHTEST:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
          glBlendEquation(GL_MAX);
          break;
       case DIFFERENCE:
-         glBlendEquation(GL_FUNC_SUBTRACT);
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+         // Not supported
+         glDisable(GL_BLEND);
          break;
       case EXCLUSION:
+         glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
          glBlendEquation(GL_FUNC_ADD);
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
          break;
       case MULTIPLY:
-         glBlendEquation(GL_FUNC_ADD);
          glBlendFunc(GL_DST_COLOR, GL_ZERO);
+         glBlendEquation(GL_FUNC_ADD);
          break;
       case SCREEN:
-         glBlendEquation(GL_FUNC_ADD);
          glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+         glBlendEquation(GL_FUNC_ADD);
          break;
       case REPLACE:
          glDisable(GL_BLEND);
@@ -87,6 +92,7 @@ namespace gl {
       default:
          abort();
       }
+      return std::exchange(currentBlendMode,b);
    }
 
    void batch_t::draw( const glm::mat4 &transform ) {

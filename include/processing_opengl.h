@@ -201,8 +201,9 @@ namespace gl {
    };
 
    class context {
+      int currentBlendMode = -1;
    public:
-      void blendMode( int b );
+      int blendMode( int b );
 
       void init();
 

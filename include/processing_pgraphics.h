@@ -109,7 +109,7 @@ public:
 
    void textSize(int size);
 
-   void blendMode(int b);
+   int blendMode(int b);
 
    void hint(int type);
 
