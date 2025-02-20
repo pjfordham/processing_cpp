@@ -245,6 +245,8 @@ class PShape {
 
    PVector getVertex(int i) const;
 
+   PShape copy() const;
+
    void setVertex(int i, PVector v);
 
    void setVertex(int i, float x, float y , float z = 0);

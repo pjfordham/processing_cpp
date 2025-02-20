@@ -88,7 +88,6 @@ public:
       return shape_matrix;
    }
 
-   PShapeImpl(const PShapeImpl&) = delete;
    PShapeImpl& operator=(const PShapeImpl&) = delete;
 
    PShapeImpl(PShapeImpl&& x) {
@@ -143,6 +142,8 @@ public:
          gl::color{0.0f,0.0f,0.0f,1.0f},
          1.0, 1.0, 4, getBlankTexture() };
    }
+
+   PShapeImpl(const PShapeImpl &copy) = default;
 
    ~PShapeImpl() {
       DEBUG_METHOD();
@@ -2168,6 +2169,10 @@ PVector PShape::getVertex(int i, PVector &x) const{
 
 void PShape::attribPosition(std::string_view name, float x, float y, float z, float w) {
    return impl->attribPosition(name, x, y, z, w);
+}
+
+PShape PShape::copy() const {
+   return { std::make_shared<PShapeImpl>(*impl) };
 }
 
 PShape loadShape( std::string_view filename ) {

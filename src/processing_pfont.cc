@@ -197,7 +197,7 @@ PShape PFontImpl::render_as_pshape(std::string_view text) {
          x = 0;
          y += face->size->metrics.height/64.0 / ( scale_factor );
       } else {
-         auto shape = glyph(c);
+         auto shape = glyph(c).copy();
          shape.translate( x, y, 0 );
          group.addChild( shape );
          x += advance(c);

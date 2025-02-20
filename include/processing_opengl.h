@@ -138,7 +138,7 @@ namespace gl {
 
       VAO() noexcept;
 
-      VAO(const VAO& x) noexcept = delete;
+      VAO(const VAO& x) noexcept = default;
 
       VAO(VAO&& x) noexcept;
 
