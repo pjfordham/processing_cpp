@@ -693,7 +693,10 @@ public:
    }
 
    void shape(PShape &pshape, float x, float y) {
-      shape( pshape, x, y, pshape.width, pshape.height );
+      pushMatrix();
+      _shape.translate(x,y);
+      shape(pshape);
+      popMatrix();
    }
 
    void shape(PShape &pshape, float x, float y, float width, float height) {
