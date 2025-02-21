@@ -135,10 +135,15 @@ public:
 
    void reserve(int v, int i) {
       DEBUG_METHOD();
+      reserve(v);
+      indices.reserve(i);
+   }
+
+   void reserve(int v) {
+      DEBUG_METHOD();
       vertices.reserve(v);
       materials.reserve(v);
       extras.reserve(v);
-      indices.reserve(i);
    }
 
    PShapeImpl() {
@@ -1303,28 +1308,41 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
 PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShapeImpl shape;
-
-   int NUMBER_OF_VERTICES=16;
-
-   shape.reserve(NUMBER_OF_VERTICES * 2, NUMBER_OF_VERTICES * 4);
-
-   shape.beginShape(CONVEX_POLYGON);
+   shape.reserve(8);
+   shape.beginShape(TRIANGLES_NOSTROKE);
    shape.transform( transform );
 
-   float start_angle = (p2 - p1).heading() + HALF_PI;
+   PVector normal1 = (p2 - p1).normal();
+   normal1.normalize();
+   normal1.mult(weight1/2.0);
+   PVector normal2 = (p2 - p1).normal();
+   normal2.normalize();
+   normal2.mult(weight2/2.0);
+
+   PVector end_offset1 = (p2 - p1);
+   end_offset1.normalize();
+   end_offset1.mult(weight1/2.0);
+   PVector end_offset2 = (p2 - p1);
+   end_offset2.normalize();
+   end_offset2.mult(weight2 / 2.0);
 
    shape.noStroke();
-   shape.fill(color1);
-   for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p1.x + cosf(i + start_angle) * weight1/2, p1.y + sinf(i+start_angle) * weight1/2, p1.z);
-   }
+   shape.circleTexture();
 
-   start_angle += PI;
+   shape.fill(color1);
+   shape.vertex(p1 + normal1 - end_offset1, PVector2(0.0,0.0));
+   shape.vertex(p1 + normal1,               PVector2(0.5,0.0));
+   shape.vertex(p1 - normal1,               PVector2(0.5,1.0));
+   shape.vertex(p1 - normal1 - end_offset1, PVector2(0.0,1.0));
 
    shape.fill(color2);
-   for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p2.x + cosf(i+start_angle) * weight2/2, p2.y + sinf(i+start_angle) * weight2/2, p2.z);
-   }
+   shape.vertex(p2 + normal2,               PVector2(0.5,0.0));
+   shape.vertex(p2 + normal2 + end_offset2, PVector2(1.0,0.0));
+   shape.vertex(p2 - normal2 + end_offset2, PVector2(1.0,1.0));
+   shape.vertex(p2 - normal2,               PVector2(0.5,1.0));
+
+   shape.populateIndices( { 0,1,2, 0,2,3, 4,5,6, 4,6,7, 1,4,7, 1,7,2 } );
+
    shape.endShape(CLOSE);
    return shape;
 }
