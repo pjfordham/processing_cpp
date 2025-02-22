@@ -203,11 +203,16 @@ static const char *defaultFragmentShader = R"glsl(
 
          if ( vertTindex == -1 ) { // It's a circle
             vec2 pos = vertTexCoord.xy;
-            vec2 centre = vec2(0.5,0.5);
-            if (distance(pos,centre) > 0.5)
-               discard;
-            else
-               gl_FragColor = gl_FrontFacing ? vertColor : backVertColor;
+            vec2 centre = vec2(0.5, 0.5);
+            float dist = distance(pos, centre);
+            float radius = 0.5;
+            float edgeWidth = fwidth(dist); // Automatically adapts to resolution
+            float alpha = smoothstep(radius + edgeWidth, radius - edgeWidth, dist);
+
+            if (alpha < 0.01) discard;
+
+            gl_FragColor = (gl_FrontFacing ? vertColor : backVertColor);
+            gl_FragColor.a *= alpha;
          } else {
             gl_FragColor = texture2D(texture[vertTindex], vertTexCoord.st) * (gl_FrontFacing ? vertColor : backVertColor);
          }
