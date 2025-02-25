@@ -1341,6 +1341,10 @@ void PGraphics::ellipse(float x, float y, float width, float height){
    return impl->ellipse(x,y,width,height);
 }
 
+void PGraphics::ellipse(PVector v, float width, float height){
+   return impl->ellipse(v.x,v.y,width,height);
+}
+
 void PGraphics::ellipse(float x, float y, float radius){
    return impl->ellipse(x,y,radius,radius);
 }
