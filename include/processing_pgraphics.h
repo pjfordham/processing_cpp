@@ -172,6 +172,8 @@ public:
 
    void shape(PShape &pshape);
 
+   void ellipse(PVector v, float width, float height);
+
    void ellipse(float x, float y, float width, float height);
 
    void ellipse(float x, float y, float radius);
