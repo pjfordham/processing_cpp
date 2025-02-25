@@ -158,6 +158,10 @@ public:
       return glm::cross( veca, vecb );
    }
 
+   PVector normalInPlane(const PVector& planeNormal) const {
+      return glm::normalize(glm::cross(*this,planeNormal));
+   }
+
    PVector normal() {
       if (x == 0 && y == 0) {
          return PVector{z > 0.0 ? 1.0f : -1.0f ,0,0};
@@ -188,7 +192,7 @@ public:
    }
 
    // Method to calculate the dot product of two vectors
-   float dot(PVector v) {
+   float dot(const PVector &v) const {
       const glm::vec3 &veca = *this;
       const glm::vec3 &vecb = v;
       return glm::dot( veca, vecb );
@@ -404,6 +408,12 @@ struct PLine {
       return l1_norm;
    }
 
+   PVector normalInPlane(const PVector& planeNormal) const {
+      PVector l1_norm = (end - start).normalInPlane(planeNormal);
+      l1_norm.normalize();
+      return l1_norm;
+   }
+
    PLine offset(float value) {
       PVector l1_norm = normal();
       return { start + l1_norm * value , end + l1_norm * value };
@@ -425,6 +435,41 @@ struct PLine {
 
    }
 
+   PVector intersectInPlane(PLine other, PVector planeNormal) {
+    // Direction vectors of the two lines
+    PVector d1 = end - start;
+    PVector d2 = other.end - other.start;
+
+    // Normal to the plane (we assume both lines lie in the same plane)
+    PVector planeNormalNormalized = planeNormal.normalize();
+
+    // Project the direction vectors onto the plane
+    PVector proj_d1 = d1 - planeNormalNormalized * d1.dot(planeNormalNormalized);
+    PVector proj_d2 = d2 - planeNormalNormalized * d2.dot(planeNormalNormalized);
+
+    // Create a vector between the starting points of the two lines
+    PVector r = other.start - start;
+
+    // Project r onto the plane
+    PVector proj_r = r - planeNormalNormalized * r.dot(planeNormalNormalized);
+
+    // Denominator for the 2D intersection calculation
+    float denom = proj_d1.x * proj_d2.y - proj_d1.y * proj_d2.x;
+
+    if (denom == 0) {
+        // If denom is zero, lines are parallel or coincident, no unique intersection
+        return PVector(); // No intersection, return a default vector
+    }
+
+    // Solve for t1 (parameter along the first line)
+    float t1 = (proj_r.x * proj_d2.y - proj_r.y * proj_d2.x) / denom;
+
+    // Calculate the intersection point in the plane
+    PVector intersectionPlane = start + proj_d1 * t1;
+
+    // Return the intersection point in 3D (still lying on the original plane)
+    return intersectionPlane;
+}
 };
 
 inline PMatrix TranslateMatrix(const PVector &in) {
