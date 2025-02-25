@@ -196,6 +196,10 @@ public:
 
    void beginShape(int style_ = POLYGON);
 
+   void beginContour();
+
+   void endContour();
+
    void tint(float r,float g, float b, float a);
    void tint(float r,float g, float b);
    void tint(float r,float a);
