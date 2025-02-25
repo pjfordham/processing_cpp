@@ -161,6 +161,31 @@ extern int keyCode;
 extern bool mousePressedb;
 extern bool keyPressedb;
 
+class MouseEvent {
+public:
+   enum action_t {
+      PRESS,
+      RELEASE,
+      CLICK,
+      MOVE,
+      DRAG,
+      ENTER,
+      EXIT,
+      WHEEL,
+   };
+
+   action_t action; // Type of event
+   int x, y;   // Mouse position
+   int button; // Button clicked
+   float count; // Scroll amount for wheel
+
+   action_t getAction() const { return action; }
+   int getX() const { return x; }
+   int getY() const { return y; }
+   int getButton() const { return button; }
+   float getCount() const { return count; }
+};
+
 bool dispatchEvents();
 
 void keyPressed();
@@ -172,5 +197,6 @@ void mousePressed();
 void mouseDragged();
 void mouseMoved();
 void mouseReleased();
+void mouseWheel(const MouseEvent &event);
 
 #endif
