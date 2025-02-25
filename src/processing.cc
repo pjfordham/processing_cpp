@@ -138,6 +138,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
    }
 }
 
+void scroll_callback(GLFWwindow* window, double offsetX, double offsetY) {
+   mouseWheel({MouseEvent::WHEEL, 0,0,0,-(float)offsetY});
+}
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
    mouseX = xpos;
    mouseY = ypos;
@@ -195,6 +199,7 @@ void size(int _width, int _height, int mode) {
       glfwSetCharCallback(window, character_callback);
       glfwSetCursorPosCallback(window, mouse_callback);
       glfwSetMouseButtonCallback(window, mouse_button_callback);
+      glfwSetScrollCallback(window, scroll_callback);
    }
 
    glfwMakeContextCurrent(window);
@@ -329,3 +334,4 @@ __attribute__((weak)) void mousePressed() {}
 __attribute__((weak)) void mouseDragged() {}
 __attribute__((weak)) void mouseMoved() {}
 __attribute__((weak)) void mouseReleased() {}
+__attribute__((weak)) void mouseWheel(const MouseEvent&) {}
