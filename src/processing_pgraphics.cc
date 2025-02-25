@@ -1386,6 +1386,14 @@ void PGraphics::beginShape(int style_) {
    return impl->_shape.beginShape(style_);
 }
 
+void PGraphics::beginContour() {
+   return impl->_shape.beginContour();
+}
+
+void PGraphics::endContour() {
+   return impl->_shape.endContour();
+}
+
 void PGraphics::tint(float r, float g, float b, float a){
    return impl->_shape.tint(r,g,b,a);
 }
