@@ -152,6 +152,7 @@ namespace gl {
       int hasTexture(PImage texture);
       void loadBuffers() const;
       void draw() const;
+      void debugPrint() const;
       ~VAO();
    };
 
@@ -189,7 +190,10 @@ namespace gl {
          Shininess = Shininess_;
       }
       size_t size();
-      void compile();
+      void load();
+      void bind();
+
+      void setupTextures(VAO &);
       void draw();
       void draw(const glm::mat4& transform);
       void clear();

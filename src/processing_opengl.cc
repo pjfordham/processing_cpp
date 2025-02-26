@@ -95,29 +95,45 @@ namespace gl {
       return std::exchange(currentBlendMode,b);
    }
 
+   void batch_t::setupTextures(VAO &draw) {
+      std::vector<glm::vec2> textureOffsets(16);
+      for ( int i = 0; i < draw.textures.size() ; ++i ) {
+         PImage &img = draw.textures[i];
+         if (img != PImage::circle()) {
+            // Set this here so if updatePixels needs to create
+            // a new texture have the correct unit bound already.
+            textureOffsets[i] = glm::vec2(1.0 / img.width, 1.0 / img.height);
+            glActiveTexture(GL_TEXTURE0 + i);
+            if (img.isDirty()) {
+               img.updatePixels();
+            }
+            auto textureID = img.getTextureID();
+            glBindTexture(GL_TEXTURE_2D, img.getTextureID());
+         }
+      }
+      TexOffset.set(textureOffsets);
+   }
+
    void batch_t::draw( const glm::mat4 &transform ) {
+#if 0
+      fmt::print("### GEOMETRY DUMP START ###\n");
+      int i = 0;
+      for (auto &vao : vaos) {
+         fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
+         vao.debugPrint();
+      }
+      fmt::print("\n### GEOMETRY DUMP END   ###\n");
+#endif
+
       std::vector<glm::mat4> transforms;
       std::vector<glm::mat3> normals;
       transforms.push_back(transform);
       normals.push_back( glm::mat3(glm::transpose(glm::inverse(transform))) );
-      for (auto &draw: vaos ) {
-         Mmatrix.set( transforms );
-         Nmatrix.set( normals );
+      Mmatrix.set( transforms );
+      Nmatrix.set( normals );
 
-         for ( int i = 0; i < draw.textures.size() ; ++i ) {
-            PImage &img = draw.textures[i];
-            if (img != PImage::circle()) {
-               // Set this here so if updatePixels needs to create
-               // a new texture have the correct unit bound already.
-               glActiveTexture(GL_TEXTURE0 + i);
-               if (img.isDirty()) {
-                  img.updatePixels();
-               }
-               auto textureID = img.getTextureID();
-               glBindTexture(GL_TEXTURE_2D, img.getTextureID());
-            }
-         }
-         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
+      for (auto &draw: vaos ) {
+         setupTextures( draw );
          draw.draw();
       }
    }
@@ -190,27 +206,30 @@ namespace gl {
       }
    }
 
+   void VAO::debugPrint() const {
+      for (auto &m : transforms) {
+         PMatrix(m).print();
+      }
+      fmt::print("Vertices: {}, Materials: {}\n", vertices.size(), materials.size() );
+      for ( int i = 0; i < vertices.size(); ++i ) {
+         fmt::print("{:3}: {}\n", i, vertices[i]);
+      }
+      fmt::print("Triangles: {}\n", indices.size() );
+      for ( int i = 0; i < indices.size(); i+=3 ) {
+         fmt::print("{},{},{} ", indices[i], indices[i+1], indices[i+2]);
+      }
+    }
+
    void batch_t::draw() {
 #if 0
       fmt::print("### GEOMETRY DUMP START ###\n");
       int i = 0;
       for (auto &vao : vaos) {
          fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-         for (auto &m : vao.transforms) {
-            PMatrix(m).print();
-         }
-         fmt::print("Vertices: {}, Materials: {}\n", vao.vertices.size(), vao.materials.size() );
-         for ( int i = 0; i < vao.vertices.size(); ++i ) {
-            fmt::print("{:3}: {}\n", i, vao.vertices[i]);
-         }
-         fmt::print("Triangles: {}\n", vao.indices.size() );
-         for ( int i = 0; i < vao.indices.size(); i+=3 ) {
-            fmt::print("{},{},{} ", vao.indices[i],vao.indices[i+1],vao.indices[i+2]);
-         }
+         vao.debugPrint();
       }
       fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
-
 
       for (auto &draw: vaos ) {
          std::vector<glm::mat3> normals;
@@ -221,22 +240,7 @@ namespace gl {
          Mmatrix.set( draw.transforms );
          Nmatrix.set(normals);
 
-         std::vector<glm::vec2> textureOffsets(16);
-         for ( int i = 0; i < draw.textures.size() ; ++i ) {
-            PImage &img = draw.textures[i];
-            if (img != PImage::circle()) {
-               // Set this here so if updatePixels needs to create
-               // a new texture have the correct unit bound already.
-               textureOffsets[i] = glm::vec2(1.0 / img.width, 1.0 / img.height);
-               glActiveTexture(GL_TEXTURE0 + i);
-               if (img.isDirty()) {
-                  img.updatePixels();
-               }
-               auto textureID = img.getTextureID();
-               glBindTexture(GL_TEXTURE_2D, img.getTextureID());
-            }
-         }
-         TexOffset.set(textureOffsets);
+         setupTextures( draw );
          draw.draw();
       }
    }
@@ -245,9 +249,13 @@ namespace gl {
       return vaos.size();
    }
 
-   void batch_t::compile() {
+   void batch_t::bind() {
       for (auto &draw: vaos ) {
          draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
+      }
+   }
+   void batch_t::load() {
+      for (auto &draw: vaos ) {
          draw.loadBuffers();
       }
    }

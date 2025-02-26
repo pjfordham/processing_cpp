@@ -121,44 +121,33 @@ public:
       batch = {};
    }
 
-   void _flush( gl::batch_t &batch, gl::framebuffer &target, PShader shader ) {
+   void _flush( gl::batch_t &batch, gl::framebuffer &target ) {
+      static PShader flat = flatShader();
+      flushes+=batch.size();
+      // If possible just use the flat shader for performance
+      PShader &shader = (currentShader == defaultShader && scene.lights.size() == 0 &&
+                         batch.usesTextures() == false && batch.usesCircles() == false) ? flat : currentShader;
       glc.setShader( shader.getShader(), scene, batch );
       shader.set_uniforms();
       shader.bind();
       target.bind();
       scene.set();
-      batch.compile();
-      batch.draw();
-      batch.clear();
    }
 
    void flush() {
       if ( batch.size() > 0 ) {
-         flushes+=batch.size();
-         if (currentShader == defaultShader && scene.lights.size() == 0 && batch.usesTextures() == false && batch.usesCircles() == false) {
-            static PShader flat = flatShader();
-            _flush( batch, localFrame, flat );
-         } else {
-            _flush( batch, localFrame, currentShader );
-         }
+         _flush( batch, localFrame );
+         batch.bind();
+         batch.load();
+         batch.draw();
+         batch.clear();
       }
    }
 
    void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
-      static PShader flat = flatShader();
       if ( batch.size() > 0 ) {
-         flushes+=batch.size();
-         if (currentShader == defaultShader && scene.lights.size() == 0 && batch.usesTextures() == false && batch.usesCircles() == false) {
-            glc.setShader( flat.getShader(), scene, batch );
-            flat.set_uniforms();
-            flat.bind();
-         } else {
-            glc.setShader( currentShader.getShader(), scene, batch );
-            currentShader.set_uniforms();
-            currentShader.bind();
-         }
-         localFrame.bind();
-         scene.set();
+         _flush( batch, localFrame );
+         batch.bind();
          batch.draw(transform.glm_data());
       }
    }

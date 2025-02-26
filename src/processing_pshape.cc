@@ -805,7 +805,7 @@ public:
          batch.clear();
          compiled = true;
          flatten( batch, PMatrix::Identity(), true );
-         batch.compile();
+         batch.load();
       }
    }
 
