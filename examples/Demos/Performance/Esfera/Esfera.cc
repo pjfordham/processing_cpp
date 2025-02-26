@@ -43,6 +43,8 @@ public:
     float zb = zo * largo;
 
     strokeWeight(1);
+    // Huge performance boost!
+    strokeCap(SQUARE);
     beginShape(LINES);
     stroke(0);
     vertex(x, y, z);
