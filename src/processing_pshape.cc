@@ -401,6 +401,8 @@ public:
    }
 
    void vertex(PVector p, PVector2 t) {
+      // if ( std::isnan(p.x) || std::isnan(p.y)  || std::isnan(p.z)  || std::isnan(t.x)  || std::isnan(t.y)  )
+      //    abort();
       DEBUG_METHOD();
       dirty=true;
       if (mode == IMAGE) {
@@ -542,10 +544,40 @@ public:
          curve_vertices.clear();
       }
 
+      if (vertices.size() == 0)
+         return;
+
       if (style == POLYGON || style == LINES)
          type = type_;
       else
          type = CLOSE;
+
+      if (style == POLYGON && type == CLOSE) {
+         switch ( vertices.size() ) {
+         case 3:
+            style = TRIANGLES;
+            break;
+         case 4:
+            style = QUADS;
+            break;
+         defailt:
+            break;
+         }
+      }
+
+      if (style == POLYGON) {
+         switch ( vertices.size() ) {
+         case 1:
+            style = POINTS;
+            break;
+         case 2:
+            style = LINES;
+            break;
+         default:
+            break;
+         }
+      }
+
       populateIndices();
       if (!setNormals) {
          // Iterate over all triangles
@@ -871,11 +903,13 @@ public:
             child.flatten(batch, currentTransform, flatten_transforms);
          }
       } else {
-         if ( isFilled() )
-            draw_fill(batch, currentTransform, flatten_transforms);
-         // draw_normals(batch, currentTransform, flatten_transforms);
-         if ( isStroked() )
-            draw_stroke(batch, currentTransform, flatten_transforms);
+         if (vertices.size() > 0) {
+            if ( isFilled() )
+               draw_fill(batch, currentTransform, flatten_transforms);
+            // draw_normals(batch, currentTransform, flatten_transforms);
+            if ( isStroked() )
+               draw_stroke(batch, currentTransform, flatten_transforms);
+         }
       }
       dirty = false;
       return;
@@ -1087,11 +1121,11 @@ void PShapeImpl::populateIndices() {
    if (indices.size() != 0)
       return;
 
-   if (style == GROUP) return;
+   if (style == GROUP || style == LINES || style == POINTS)
+      return;
 
-   if (vertices.size() == 0) return;
-
-   if ( !isFilled() ) return;
+   if (vertices.size() == 0)
+      return;
 
    dirty=true;
 
@@ -1176,8 +1210,6 @@ void PShapeImpl::populateIndices() {
          indices.push_back( i+1 );
          indices.push_back( i+2 );
       }
-   } else if (style == POINTS || style == LINES) {
-      // no indices required for these types.
    } else {
       abort();
    }
@@ -1223,26 +1255,40 @@ PVector fast_ellipse_point(const PVector &center, int index, float xradius, floa
                    center.z);
 }
 
-bool anglesWithinTolerance(float angle1, float angle2, float tolerance) {
-   return angularDifference(angle1, angle2)  <= tolerance;
-}
-
-PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
+PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight, PVector planeNormal) {
    PLine l1{ p1, p2 };
    PLine l2{ p2, p3 };
+   auto n1 = half_weight * l1.normalInPlane( planeNormal );
+   auto n2 = half_weight * l2.normalInPlane( planeNormal );
 
-   float a = angularDifference( l1.heading(), l2.heading() );
+   auto o1 = PLine{p1+n1,p2+n1};
+   auto o2 = PLine{p2+n2,p3+n2};
 
-   // The distance the mitred corners are from the actual line corner position
-   float w = std::max(half_weight, 2 * ( (half_weight / sinf( PI - a )) * sinf ( a / 2)));
+   auto i1 = PLine{p1-n1,p2-n1};
+   auto i2 = PLine{p2-n2,p3-n2};
 
-   auto bisect = (l1.normal() + l2.normal()).normalize();
-   return { p2 + bisect * w, p2 - bisect * w };
+   // Currently only draw inner part of stroke
+   // Fix Z fighting by nudging it a bit
+   PVector nudge = {0,0,0}; //planeNormal * 0.01;
+   return {o1.intersectInPlane(o2,planeNormal)+nudge, i1.intersectInPlane(i2,planeNormal)+nudge};
 }
 
-PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
+// class VertexWalker {
+// public:
+//    virtual const gl::vertex &get(unsigned short i) const = 0;
+//    virtual const PShapeImpl::vInfoExtra &extras(unsigned short i) const = 0;
+//    virtual const unsigned short size() const = 0;
+// };
+
+template <typename VertexWalker>
+PShapeImpl drawLinePoly(const VertexWalker &v, bool closed,
+                        const PMatrix &transform) {
+
    PLine start;
    PLine end;
+
+   auto points = v.size();
+   auto pNormal = v.get(0).normal;
 
    if ( points < 3 )
       abort();
@@ -1251,32 +1297,32 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
    triangle_strip.beginShape(TRIANGLE_STRIP);
    triangle_strip.transform( transform );
    triangle_strip.noStroke();
-   triangle_strip.fill(extras[0].stroke);
-   float half_weight = extras[0].weight / 2.0;
+   triangle_strip.fill(v.extras(0).stroke);
+   float half_weight = v.extras(0).weight / 2.0;
    if (closed) {
-      start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
+      start = drawLineMitred(v.get(points-1).position, v.get(0).position, v.get(1).position, half_weight, pNormal );
       end = start;
    } else {
-      PVector normal = PVector{p[1].position - p[0].position}.normal();
+      PVector normal = PVector{v.get(1).position - v.get(0).position}.normal();
       normal.normalize();
       normal.mult(half_weight);
-      start = {  PVector{p[0].position} + normal, PVector{p[0].position} - normal };
-      normal = PVector{p[points-1].position - p[points-2].position}.normal();
+      start = {  PVector{v.get(0).position} + normal, PVector{v.get(0).position} - normal };
+      normal = PVector{v.get(points-1).position - v.get(points-2).position}.normal();
       normal.normalize();
       normal.mult(half_weight);
-      end = { PVector{p[points-1].position} + normal, PVector{p[points-1].position} - normal };
+      end = { PVector{v.get(points-1).position} + normal, PVector{v.get(points-1).position} - normal };
    }
 
    triangle_strip.vertex( start.start );
    triangle_strip.vertex( start.end );
 
    for (int i =0; i<points-2;++i) {
-      PLine next = drawLineMitred(p[i].position, p[i+1].position, p[i+2].position, half_weight);
+      PLine next = drawLineMitred(v.get(i).position, v.get(i+1).position, v.get(i+2).position, half_weight, pNormal );
       triangle_strip.vertex( next.start );
       triangle_strip.vertex( next.end );
    }
    if (closed) {
-      PLine next = drawLineMitred(p[points-2].position, p[points-1].position, p[0].position, half_weight);
+      PLine next = drawLineMitred(v.get(points-2).position, v.get(points-1).position, v.get(0).position, half_weight, pNormal);
       triangle_strip.vertex( next.start );
       triangle_strip.vertex( next.end );
    }
@@ -1286,6 +1332,68 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
 
    triangle_strip.endShape(CLOSE);
    return triangle_strip;
+}
+
+class DirectVertexWalker {
+   const unsigned short count;
+   const gl::vertex *p;
+   const PShapeImpl::vInfoExtra *extra;
+
+public:
+   DirectVertexWalker( const unsigned int count_, const gl::vertex *p_, const PShapeImpl::vInfoExtra *extra_) :
+      count(count_), p(p_), extra(extra_) {}
+
+   const gl::vertex &get(unsigned short i) const {
+      return p[i];
+   }
+
+   const PShapeImpl::vInfoExtra &extras(unsigned short i) const {
+      return extra[i];
+   }
+
+   const unsigned short size() const {
+      return count;
+   }
+};
+
+class IndirectVertexWalker {
+   const unsigned short count;
+   const gl::vertex *p;
+   const PShapeImpl::vInfoExtra *extra;
+   const unsigned short *idxs;
+
+public:
+   IndirectVertexWalker( unsigned short count_, const unsigned short *idxs_, const gl::vertex *p_, const PShapeImpl::vInfoExtra *extra_) :
+      count(count_), idxs(idxs_), p(p_), extra(extra_) {}
+
+   const gl::vertex &get(unsigned short i) const {
+      return p[idxs[i]];
+   }
+
+   const PShapeImpl::vInfoExtra &extras(unsigned short i) const {
+      return extra[idxs[i]];
+   }
+
+   const unsigned short size() const {
+      return count;
+   }
+};
+
+PShapeImpl drawLinePoly(int points,
+                        const unsigned short *indices,
+                        const gl::vertex *p,
+                        const PShapeImpl::vInfoExtra *extras,
+                        bool closed,
+                        const PMatrix &transform) {
+   return drawLinePoly( IndirectVertexWalker( points, indices, p, extras ), closed, transform );
+}
+
+PShapeImpl drawLinePoly(int points,
+                        const gl::vertex *p,
+                        const PShapeImpl::vInfoExtra *extras,
+                        bool closed,
+                        const PMatrix &transform)  {
+   return drawLinePoly( DirectVertexWalker( points, p, extras ), closed, transform );
 }
 
 PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
@@ -1330,66 +1438,6 @@ PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, c
    return shape;
 }
 
-PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
-
-   PShapeImpl shape;
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
-   PVector normal1 = (p2 - p1).normal();
-   normal1.normalize();
-   normal1.mult(weight1/2.0);
-   PVector normal2 = (p2 - p1).normal();
-   normal2.normalize();
-   normal2.mult(weight2/2.0);
-
-   shape.noStroke();
-
-   shape.fill(color1);
-   shape.vertex(p1 + normal1);
-   shape.vertex(p1 - normal1);
-
-   shape.fill(color2);
-   shape.vertex(p2 - normal2);
-   shape.vertex(p2 + normal2);
-
-   shape.endShape(CLOSE);
-   return shape;
-}
-
-PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
-
-   PShapeImpl shape;
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
-   PVector normal1 = (p2 - p1).normal();
-   normal1.normalize();
-   normal1.mult(weight1/2.0);
-
-   PVector normal2 = (p2 - p1).normal();
-   normal2.normalize();
-   normal2.mult(weight2/2.0);
-
-   PVector end_offset1 = (p2 - p1);
-   end_offset1.normalize();
-   end_offset1.mult(weight1/2.0);
-   PVector end_offset2 = (p2 - p1);
-   end_offset2.normalize();
-   end_offset2.mult(weight2/2.0);
-
-   shape.noStroke();
-
-   shape.fill(color1);
-   shape.vertex(p1 + normal1 - end_offset1);
-   shape.vertex(p1 - normal1 - end_offset1);
-
-   shape.fill(color2);
-   shape.vertex(p2 - normal2 + end_offset2);
-   shape.vertex(p2 + normal2 + end_offset2);
-
-   shape.endShape(CLOSE);
-   return shape;
-}
-
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform) {
    PShape shape = createShape();;
    shape.beginShape(TRIANGLES);
@@ -1408,20 +1456,25 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    return shape;
 }
 
-void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
+void _line(PShapeImpl &triangles, const glm::vec3 &p1, const glm::vec3 &p2,
+           float weight1, float weight2,
+           color color1, color color2,
+           const glm::vec3 &pNormal = glm::vec3{0,0,1} ) {
 
-   PVector normal1 = (p2 - p1).normal();
-   normal1.normalize();
-   normal1.mult(weight1/2.0);
+   glm::vec3 normal1 = glm::cross((p2 - p1),pNormal);
+   normal1 = glm::normalize(normal1);
+   normal1 *= weight1/2.0;
 
-   PVector normal2 = (p2 - p1).normal();
-   normal2.normalize();
-   normal2.mult(weight2/2.0);
+   glm::vec3 normal2 = glm::cross((p2 - p1),pNormal);
+   normal2 = glm::normalize(normal2);
+   normal2 *= weight2/2.0;
 
    unsigned short i = triangles.getCurrentIndex();
+
    triangles.fill( color1 );
    triangles.vertex( p1 + normal1 );
    triangles.vertex( p1 - normal1 );
+
    triangles.fill( color2 );
    triangles.vertex( p2 - normal2 );
    triangles.vertex( p2 + normal2 );
@@ -1435,16 +1488,96 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    triangles.index( i + 3 );
 }
 
+PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+
+   PShapeImpl shape;
+   shape.beginShape(TRIANGLES);
+   shape.transform( transform );
+   shape.noStroke();
+   _line(shape, p1, p2, weight1, weight2, color1, color2);
+   shape.endShape(CLOSE);
+   return shape;
+}
+
+PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+
+   PVector end_offset1 = (p2 - p1);
+   end_offset1.normalize();
+   end_offset1.mult(weight1/2.0);
+   PVector end_offset2 = (p2 - p1);
+   end_offset2.normalize();
+   end_offset2.mult(weight2/2.0);
+
+   PShapeImpl shape;
+   shape.beginShape(TRIANGLES);
+   shape.transform( transform );
+   shape.noStroke();
+   _line(shape, p1 - end_offset1, p2 + end_offset2, weight1, weight2, color1, color2);
+   shape.endShape(CLOSE);
+   return shape;
+}
+
 PShapeImpl drawTriangleStrip(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
    PShapeImpl triangles;
+   int _line_calls = 2 * ( points-2 ) + 1;
+   triangles.reserve( 4 * _line_calls, 6 * _line_calls);
    triangles.beginShape(TRIANGLES);
    triangles.transform( transform );
+   triangles.noStroke();
+
    _line(triangles, p[0].position, p[1].position,
          extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
-   for (int i=2;i<points;++i) {
-      _line(triangles, p[i-1].position, p[i].position, extras[i-1].weight, extras[i].weight, extras[i-1].stroke, extras[i].stroke);
-      _line(triangles, p[i].position, p[i-2].position, extras[i].weight, extras[i-2].weight, extras[i].stroke, extras[i-2].stroke);
+
+   for (int i = 2; i < points; ++i ) {
+      const glm::vec3 &p0 = p[i-2].position;
+      const glm::vec3 &p1 = p[i-1].position;
+      const glm::vec3 &p2 = p[i+0].position;
+      float w0 = extras[i-2].weight;
+      float w1 = extras[i-1].weight;
+      float w2 = extras[i+0].weight;
+      color c0 = extras[i-2].stroke;
+      color c1 = extras[i-1].stroke;
+      color c2 = extras[i+0].stroke;
+
+      _line(triangles, p1, p2, w1, w2, c1, c2);
+      _line(triangles, p2, p0, w1, w0, c1, c0);
    }
+
+   triangles.endShape();
+   return triangles;
+}
+
+PShapeImpl drawQuadStrip(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
+   // TODO: Fix mitred lines to somehow work in 3D
+   PShapeImpl triangles;
+   int _line_calls = 3 * ( (points/2) -2 ) + 1;
+   triangles.reserve( 4 * _line_calls, 6 * _line_calls);
+   triangles.beginShape(TRIANGLES);
+   triangles.transform( transform );
+   triangles.noStroke();
+
+   _line(triangles, p[0].position, p[1].position,
+         extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
+
+   for (int i = 2; i < points; i+=2 ) {
+      const glm::vec3 &p0 = p[i-2].position;
+      const glm::vec3 &p1 = p[i-1].position;
+      const glm::vec3 &p2 = p[i+0].position;
+      const glm::vec3 &p3 = p[i+1].position;
+      float w0 = extras[i-2].weight;
+      float w1 = extras[i-1].weight;
+      float w2 = extras[i+0].weight;
+      float w3 = extras[i+1].weight;
+      color c0 = extras[i-2].stroke;
+      color c1 = extras[i-1].stroke;
+      color c2 = extras[i+0].stroke;
+      color c3 = extras[i+1].stroke;
+
+      _line(triangles, p1, p3, w1, w3, c1, c3 );
+      _line(triangles, p3, p2, w3, w2, c3, c2 );
+      _line(triangles, p2, p0, w2, w0, c2, c0 );
+   }
+
    triangles.endShape();
    return triangles;
 }
@@ -1452,16 +1585,17 @@ PShapeImpl drawTriangleStrip(int points, const gl::vertex *p, const PShapeImpl::
 PShapeImpl drawTriangleNormal(int points, const gl::vertex *p,
                               const PShapeImpl::vInfoExtra *extras, bool closed,
                               const PMatrix &transform) {
-   PShapeImpl shape;
-   shape.beginShape(TRIANGLES);
-   shape.fill(RED);
-   shape.transform( transform );
+   PShapeImpl triangles;
+   triangles.beginShape(TRIANGLES);
+   triangles.fill(RED);
+   triangles.transform( transform );
+   triangles.noStroke();
    PVector pos = (p[0].position + p[1].position + p[2].position) / 3;
    PVector n = ((p[0].normal + p[1].normal + p[2].normal) / 3).normalize();
    float length = PVector{p[0].position - p[1].position}.mag() / 10.0f;
-   _line(shape, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
-   shape.endShape();
-   return shape;
+   _line(triangles, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
+   triangles.endShape();
+   return triangles;
 }
 
 void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool flatten_transforms) const {
@@ -1512,49 +1646,40 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       break;
    }
    case TRIANGLES_NOSTROKE:
+   case GROUP:
       break;
    case TRIANGLES:
    {
-      // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES);
+      if (indices.empty())
+         abort();
       for (int i = 0; i < indices.size(); i+=3 ) {
-         PVector p0 = vertices[indices[i]].position;
-         PVector p1 = vertices[indices[i+1]].position;
-         PVector p2 = vertices[indices[i+2]].position;
-         float w0 = extras[indices[i]].weight;
-         float w1 = extras[indices[i+1]].weight;
-         float w2 = extras[indices[i+2]].weight;
-         color c0 =  extras[indices[i]].stroke;
-         color c1 =  extras[indices[i+1]].stroke;
-         color c2 =  extras[indices[i+2]].stroke;
-
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p2, w1, w2, c1, c2 );
-         _line(shape, p2, p0, w2, w0, c2, c0 );
+         drawLinePoly( 3, indices.data()+i, vertices.data(), extras.data(), true, shape_matrix).draw_fill( batch, transform, flatten_transforms );
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
       break;
    }
    case LINES:
    {
-      // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(2*vertices.size(), 3 * vertices.size());
-      shape.beginShape(TRIANGLES);
       for (int i = 0; i < vertices.size(); i+=2 ) {
-         PVector p0 = vertices[i].position;
-         PVector p1 = vertices[i+1].position;
-         float w0 = extras[i].weight;
-         float w1 = extras[i+1].weight;
-         color c0 =  extras[i].stroke;
-         color c1 =  extras[i+1].stroke;
-         _line(shape, p0, p1, w0, w1, c0, c1 );
+         switch(line_end_cap) {
+         case ROUND:
+            drawRoundLine( vertices[i].position, vertices[i+1].position,
+                           extras[i].weight, extras[i+1].weight,
+                           extras[i].stroke, extras[i+1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            break;
+         case PROJECT:
+            drawCappedLine( vertices[i].position, vertices[i+1].position,
+                            extras[i].weight, extras[i+1].weight,
+                            extras[i].stroke, extras[i+1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            break;
+         case SQUARE:
+            drawLine( vertices[i].position, vertices[i+1].position,
+                      extras[i].weight, extras[i+1].weight,
+                      extras[i].stroke, extras[i+1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            break;
+         default:
+            abort();
+         }
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms );
       break;
    }
    case POLYGON:
@@ -1580,93 +1705,23 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
                }
             }
          }
-      } else if (vertices.size() == 2) {
-         switch(line_end_cap) {
-         case ROUND:
-            drawRoundLine( vertices[0].position, vertices[1].position,
-                           extras[0].weight, extras[1].weight,
-                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-            break;
-         case PROJECT:
-            drawCappedLine( vertices[0].position, vertices[1].position,
-                            extras[0].weight, extras[1].weight,
-                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-            break;
-         case SQUARE:
-            drawLine( vertices[0].position, vertices[1].position,
-                      extras[0].weight, extras[1].weight,
-                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-            break;
-         default:
-            abort();
-         }
-      } else if (vertices.size() == 1) {
-         drawUntexturedFilledEllipse(
-            vertices[0].position.x, vertices[0].position.y,
-            extras[0].weight, extras[0].weight,
-            extras[0].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+      } else {
+         // Other cases should have been converted to other primitives.
+         abort();
       }
       break;
    }
    case QUAD:
    case QUADS:
    {
-      // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES);
       for (int i = 0; i < vertices.size(); i+=4 ) {
-         PVector p0 = vertices[i].position;
-         PVector p1 = vertices[i+1].position;
-         PVector p2 = vertices[i+2].position;
-         PVector p3 = vertices[i+3].position;
-         float w0 = extras[i].weight;
-         float w1 = extras[i+1].weight;
-         float w2 = extras[i+2].weight;
-         float w3 = extras[i+3].weight;
-         color c0 =  extras[i].stroke;
-         color c1 =  extras[i+1].stroke;
-         color c2 =  extras[i+2].stroke;
-         color c3 =  extras[i+3].stroke;
-
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p2, w1, w2, c1, c2 );
-         _line(shape, p2, p3, w2, w3, c2, c3 );
-         _line(shape, p3, p0, w3, w0, c3, c0 );
+         drawLinePoly( 4, vertices.data(), extras.data(), true, shape_matrix).draw_fill( batch, transform, flatten_transforms );
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
       break;
    }
    case QUAD_STRIP:
-   {
-      // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES);
-      for (int i = 0; i < vertices.size()-2; i+=2 ) {
-         PVector p0 = vertices[i+0].position;
-         PVector p1 = vertices[i+1].position;
-         PVector p2 = vertices[i+2].position;
-         PVector p3 = vertices[i+3].position;
-         float w0 = extras[i+0].weight;
-         float w1 = extras[i+1].weight;
-         float w2 = extras[i+2].weight;
-         float w3 = extras[i+3].weight;
-         color c0 =  extras[i+0].stroke;
-         color c1 =  extras[i+1].stroke;
-         color c2 =  extras[i+2].stroke;
-         color c3 =  extras[i+3].stroke;
-
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p3, w1, w3, c1, c3 );
-         _line(shape, p3, p2, w3, w2, c3, c2 );
-         _line(shape, p2, p0, w2, w0, c2, c0 );
-      }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
+      drawQuadStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       break;
-   }
    case TRIANGLE_STRIP:
       drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       break;

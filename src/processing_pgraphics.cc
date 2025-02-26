@@ -707,6 +707,8 @@ public:
    }
 
    void shape(PShape &pshape) {
+      if (!pshape.isGroup() && pshape.getVertexCount() == 0)
+         return;
       if( pshape.isCompiled() ) {
          flush();
          auto &local = pshape.getBatch();
@@ -809,7 +811,7 @@ public:
 
    PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
       PShape shape = createShape();
-      shape.beginShape(POLYGON);
+      shape.beginShape(QUADS);
       shape.copyStyle( _shape );
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
@@ -821,7 +823,7 @@ public:
 
    PShape createLine(float x1, float y1, float z1, float x2, float y2, float z2) {
       PShape shape = createShape();
-      shape.beginShape(POLYGON);
+      shape.beginShape(LINES);
       shape.copyStyle( _shape );
       shape.vertex(x1,y1,z1);
       shape.vertex(x2,y2,z2);
