@@ -69,19 +69,17 @@ namespace gl {
 
       std::vector<light> lights;
       scene_t() {}
-      void setup( uniform LightCount_, uniform LightPosition_, uniform LightNormal_, uniform LightAmbient_,
-                  uniform LightDiffuse_, uniform LightSpecular_, uniform LightFalloff_, uniform LightSpot_,
-                  uniform PVmatrix_, uniform Eye_) {
-         LightCount = LightCount_;
-         LightPosition = LightPosition_;
-         LightNormal = LightNormal_;
-         LightAmbient = LightAmbient_;
-         LightDiffuse = LightDiffuse_;
-         LightSpecular = LightSpecular_;
-         LightFalloff = LightFalloff_;
-         LightSpot = LightSpot_;
-         PVmatrix = PVmatrix_;
-         Eye = Eye_;
+      void setup( const shader_t &shader) {
+         LightCount = shader.get_uniform("lightCount");
+         LightPosition = shader.get_uniform("lightPosition");
+         LightNormal = shader.get_uniform("lightNormal");
+         LightAmbient = shader.get_uniform("lightAmbient");
+         LightDiffuse = shader.get_uniform("lightDiffuse");
+         LightSpecular = shader.get_uniform("lightSpecular");
+         LightFalloff = shader.get_uniform("lightFalloff");
+         LightSpot = shader.get_uniform("lightSpot");
+         PVmatrix = shader.get_uniform("PVmatrix");
+         Eye = shader.get_uniform("eye");
       }
 
       float screenX(float x, float y, float z) {
@@ -178,23 +176,20 @@ namespace gl {
 
    public:
       batch_t() {}
-      void setup( attribute Position_, attribute Normal_, attribute Color_,
-                  attribute Coord_,    attribute TUnit_,  attribute MIndex_,
-                  uniform Mmatrix_, uniform Nmatrix_, uniform TexOffset_,
-                  attribute Ambient_, attribute Specular_, attribute Emissive_, attribute Shininess_) {
-         Position = Position_;
-         Normal = Normal_;
-         Color = Color_;
-         Coord = Coord_;
-         TUnit = TUnit_;
-         MIndex = MIndex_;
-         Mmatrix = Mmatrix_;
-         Nmatrix = Nmatrix_;
-         TexOffset = TexOffset_;
-         Ambient = Ambient_;
-         Specular = Specular_;
-         Emissive = Emissive_;
-         Shininess = Shininess_;
+      void setup( const shader_t &shader ) {
+         Position = shader.get_attribute("position");
+         Normal = shader.get_attribute("normal");
+         Color = shader.get_attribute("color");
+         Coord = shader.get_attribute("texCoord");
+         TUnit = shader.get_attribute("tunit");
+         MIndex = shader.get_attribute("mindex");
+         Mmatrix = shader.get_uniform("Mmatrix");
+         Nmatrix  = shader.get_uniform("Nmatrix");
+         TexOffset = shader.get_uniform("texOffset");
+         Ambient = shader.get_attribute("ambient");
+         Specular = shader.get_attribute("specular");
+         Emissive = shader.get_attribute("emissive");
+         Shininess = shader.get_attribute("shininess");
       }
       size_t size();
       void load();
