@@ -251,10 +251,4 @@ namespace gl {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    }
 
-   void framebuffer::clearDepthBuffer() {
-      DEBUG_METHOD();
-      bind();
-      glClear(GL_DEPTH_BUFFER_BIT);
-   }
-
 } // namespace gl

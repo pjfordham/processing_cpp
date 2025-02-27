@@ -72,8 +72,6 @@ namespace gl {
 
       void clear( float r, float g, float b, float a );
 
-      void clearDepthBuffer();
-
       void blit(framebuffer &dest) const ;
 
       void saveFrame(void *surface);
