@@ -615,35 +615,9 @@ namespace gl {
       uniform uSampler = shader.get_uniform("texture");
       uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
-      // TransformMatrix = shader.get_uniform("transformMatrix");
-
-      scene.setup(
-         shader.get_uniform("lightCount"),
-         shader.get_uniform("lightPosition"),
-         shader.get_uniform("lightNormal"),
-         shader.get_uniform("lightAmbient"),
-         shader.get_uniform("lightDiffuse"),
-         shader.get_uniform("lightSpecular"),
-         shader.get_uniform("lightFalloff"),
-         shader.get_uniform("lightSpot"),
-         shader.get_uniform("PVmatrix"),
-         shader.get_uniform("eye"));
-
-      batch.setup(
-         shader.get_attribute("position"),
-         shader.get_attribute("normal"),
-         shader.get_attribute("color"),
-         shader.get_attribute("texCoord"),
-         shader.get_attribute("tunit"),
-         shader.get_attribute("mindex"),
-         shader.get_uniform("Mmatrix"),
-         shader.get_uniform("Nmatrix"),
-         shader.get_uniform("texOffset"),
-         shader.get_attribute("ambient"),
-         shader.get_attribute("specular"),
-         shader.get_attribute("emissive"),
-         shader.get_attribute("shininess"));
-   }
+      scene.setup( shader );
+      batch.setup( shader );
+    }
 
 } // namespace gl
 
