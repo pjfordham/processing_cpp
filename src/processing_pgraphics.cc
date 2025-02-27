@@ -42,7 +42,6 @@ public:
 
    bool pixels_current = false;
    int textureMode_ = IMAGE;
-   gl::context glc;
 
    gl::framebuffer localFrame;
    gl::framebuffer windowFrame;
@@ -98,8 +97,6 @@ public:
       this->height = height;
       this->aaFactor = aaFactor;
 
-      glc.init();
-
       defaultShader = loadShader();
       shader( defaultShader );
 
@@ -127,7 +124,7 @@ public:
       // If possible just use the flat shader for performance
       PShader &shader = (currentShader == defaultShader && scene.lights.size() == 0 &&
                          batch.usesTextures() == false && batch.usesCircles() == false) ? flat : currentShader;
-      glc.setShader( shader.getShader(), scene, batch );
+      setShader( shader.getShader(), scene, batch );
       shader.set_uniforms();
       shader.bind();
       target.bind();
@@ -354,12 +351,12 @@ public:
 
    int blendMode(int b) {
       flush();
-      return glc.blendMode(b);
+      return scene.blendMode(b);
    }
 
    void hint(int type) {
       flush();
-      glc.hint(type);
+      scene.hint(type);
    }
 
    void text(const std::string &text, float x, float y, float twidth = -1, float theight = -1) {
@@ -1004,7 +1001,7 @@ public:
    void shader(PShader pshader, int kind = TRIANGLES) {
       flush();
       currentShader = pshader;
-      glc.setShader( currentShader.getShader(), scene, batch );
+      setShader( currentShader.getShader(), scene, batch );
       currentShader.set_uniforms();
       currentShader.bind();
    }

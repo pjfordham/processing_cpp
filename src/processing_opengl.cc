@@ -44,55 +44,11 @@ namespace gl {
       return { r, g, b, a };
    }
 
-   int context::blendMode(int b ) {
+   int scene_t::blendMode(int b ) {
       if (currentBlendMode == b)
          return b;
 
-      glEnable(GL_BLEND);
-      switch (b) {
-      case BLEND:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case ADD:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case SUBTRACT:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-         glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-         break;
-      case DARKEST:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-         glBlendEquation(GL_MIN);
-         break;
-      case LIGHTEST:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-         glBlendEquation(GL_MAX);
-         break;
-      case DIFFERENCE:
-         // Not supported
-         glDisable(GL_BLEND);
-         break;
-      case EXCLUSION:
-         glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case MULTIPLY:
-         glBlendFunc(GL_DST_COLOR, GL_ZERO);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case SCREEN:
-         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case REPLACE:
-         glDisable(GL_BLEND);
-         break;
-      default:
-         abort();
-      }
-      return std::exchange(currentBlendMode,b);
+       return std::exchange(currentBlendMode,b);
    }
 
    void batch_t::setupTextures(VAO &draw) {
@@ -330,31 +286,82 @@ namespace gl {
          LightFalloff.set( falloff );
          LightSpot.set( spot );
       }
-   }
 
-   void context::init() {
-      blendMode( BLEND );
+      glEnable(GL_BLEND);
+      switch (currentBlendMode) {
+      case BLEND:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case ADD:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case SUBTRACT:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+         glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+         break;
+      case DARKEST:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+         glBlendEquation(GL_MIN);
+         break;
+      case LIGHTEST:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+         glBlendEquation(GL_MAX);
+         break;
+      case DIFFERENCE:
+         // Not supported
+         glDisable(GL_BLEND);
+         break;
+      case EXCLUSION:
+         glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case MULTIPLY:
+         glBlendFunc(GL_DST_COLOR, GL_ZERO);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case SCREEN:
+         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case REPLACE:
+         glDisable(GL_BLEND);
+         break;
+      default:
+         abort();
+      }
+
       glDepthFunc(GL_LEQUAL);
-      glEnable(GL_DEPTH_TEST);
+      if (depth_test) {
+         glEnable(GL_DEPTH_TEST);
+      } else {
+         glDisable(GL_DEPTH_TEST);
+      }
+      if (depth_mask) {
+         glDepthMask(GL_TRUE);
+      } else {
+         glDepthMask(GL_FALSE);
+      }
    }
 
    void shader_t::bind() const {
       glUseProgram(programID);
    }
 
-   void context::hint(int type) {
+   void scene_t::hint(int type) {
       switch(type) {
       case DISABLE_DEPTH_TEST:
-         glDisable(GL_DEPTH_TEST);
+         depth_test = false;
          break;
       case ENABLE_DEPTH_TEST:
-         glEnable(GL_DEPTH_TEST);
+         depth_test = true;
          break;
       case DISABLE_DEPTH_MASK:
-         glDepthMask (GL_FALSE);
+         depth_mask = false;
          break;
       case ENABLE_DEPTH_MASK:
-         glDepthMask (GL_TRUE);
+         depth_mask = true;
          break;
       default:
          break;
@@ -598,24 +605,45 @@ namespace gl {
          // attribLocation[name] = glGetAttribLocation(programID, name);
       }
 
- }
+   }
 
+   void setShader(const shader_t &shader, scene_t &scene, batch_t &batch) {
+      shader.bind();
+
+      uniform uSampler = shader.get_uniform("texture");
+      uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+
+      // TransformMatrix = shader.get_uniform("transformMatrix");
+
+      scene.setup(
+         shader.get_uniform("lightCount"),
+         shader.get_uniform("lightPosition"),
+         shader.get_uniform("lightNormal"),
+         shader.get_uniform("lightAmbient"),
+         shader.get_uniform("lightDiffuse"),
+         shader.get_uniform("lightSpecular"),
+         shader.get_uniform("lightFalloff"),
+         shader.get_uniform("lightSpot"),
+         shader.get_uniform("PVmatrix"),
+         shader.get_uniform("eye"));
+
+      batch.setup(
+         shader.get_attribute("position"),
+         shader.get_attribute("normal"),
+         shader.get_attribute("color"),
+         shader.get_attribute("texCoord"),
+         shader.get_attribute("tunit"),
+         shader.get_attribute("mindex"),
+         shader.get_uniform("Mmatrix"),
+         shader.get_uniform("Nmatrix"),
+         shader.get_uniform("texOffset"),
+         shader.get_attribute("ambient"),
+         shader.get_attribute("specular"),
+         shader.get_attribute("emissive"),
+         shader.get_attribute("shininess"));
+   }
 
 } // namespace gl
-
-template <>
-struct fmt::formatter<gl::context> {
-   // Format the MyClass object
-   template <typename ParseContext>
-   constexpr auto parse(ParseContext& ctx) {
-      return ctx.begin();
-   }
-
-   template <typename FormatContext>
-   auto format(const gl::context& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "gl_context");
-   }
-};
 
 template <>
 struct fmt::formatter<gl::VAO> {
