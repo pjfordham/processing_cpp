@@ -204,7 +204,7 @@ namespace gl {
       struct geometry_t {
          batch_t batch;
          scene_t scene;
-         shader_t shader;
+         const shader_t &shader;
       };
       std::vector<geometry_t> geometries;
       color background_;
@@ -213,7 +213,7 @@ namespace gl {
          background_ = b;
       }
 
-      void add(batch_t &&b, scene_t sc, shader_t sh) {
+      void add(batch_t &&b, scene_t sc, const shader_t &sh) {
          geometries.emplace_back( std::move(b), sc, sh );
 
       }
@@ -224,8 +224,6 @@ namespace gl {
 
       void render(framebuffer &fb);
    };
-
-   void setShader(const shader_t &shader, scene_t &scene, batch_t &batch);
 
    color flatten_color_mode(::color c);
 

@@ -70,12 +70,12 @@ namespace gl {
    }
 
    shader_t::~shader_t() {
-      // if (programID) {
-      //    glDeleteProgram(programID);
-      // }
+      if (programID) {
+         glDeleteProgram(programID);
+      }
    }
 
-   void shader_t::set_uniforms() {
+   void shader_t::set_uniforms() const {
       DEBUG_METHOD();
       for (const auto& [id, value] : uniforms1f) {
          gl::uniform loc = get_uniform( id.c_str() );
