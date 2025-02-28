@@ -226,11 +226,12 @@ namespace gl {
         geometries.clear();
       }
 
+      void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader );
+
       void render(framebuffer &fb);
    };
 
    color flatten_color_mode(::color c);
-
 } // namespace gl
 
 template <>

@@ -129,7 +129,9 @@ public:
    }
 
    void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
-      abort();
+      flush();
+      frame.render( localFrame );
+      frame.renderDirect( localFrame, batch, transform, scene, currentShader.getShader() );
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -972,12 +974,12 @@ public:
 
    void endDraw() {
       flush();
+      frame.render( localFrame );
    }
 
    int commit_draw() {
       endDraw();
 
-      frame.render( localFrame );
       // If we just blit directly everything is drawn upside down
       // localFrame.blit( windowFrame );
       windowFrame.invert( localFrame );

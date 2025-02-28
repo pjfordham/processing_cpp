@@ -14,6 +14,22 @@
 
 namespace gl {
 
+   void frame_t::renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
+      fb.bind();
+      shader.bind();
+      uniform uSampler = shader.get_uniform("texture");
+      uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+
+      scene.setup( shader );
+      batch.setup( shader );
+      shader.set_uniforms();
+      scene.set();
+      batch.bind();
+      batch.load();
+      batch.draw(transform.glm_data());
+
+   }
+
    void frame_t::render(framebuffer &fb) {
       fb.bind();
       if (c) {
