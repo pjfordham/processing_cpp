@@ -34,7 +34,7 @@ static const char *directFragmentShader = R"glsl(
       uniform sampler2D texture1;
 
       void main() {
-          fragColor = vec4(texture(texture1, vertTexCoord).xyz,1.0);
+         fragColor = vec4(texture(texture1, vertTexCoord).xyz,1.0);
       }
 )glsl";
 
@@ -126,6 +126,8 @@ namespace gl {
             fmt::print(stderr,"Framebuffer not complete, OpenGL Error: {}\n",err);
             abort();
          }
+         glClearColor(0, 0, 0, 1);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
          glBindFramebuffer(GL_FRAMEBUFFER, id);
       } else {
          glBindTexture(GL_TEXTURE_2D, colorBufferID);
@@ -140,6 +142,7 @@ namespace gl {
          fmt::print(stderr,"Framebuffer not complete, OpenGL Error: {}\n",err);
          abort();
       }
+      clear(0,0,0,1);
    }
 
    GLuint framebuffer::getColorBufferID() {
@@ -274,11 +277,14 @@ namespace gl {
       auto a_crd = direct.get_attribute("texCoord");
       a_pos.bind_vec2(4*sizeof(float), 0 );
       a_crd.bind_vec2(4*sizeof(float), (void*)(2*sizeof(float)));
-      glBindVertexArray(0);
-   }
+      bind();
+      glClearColor(1, 0, 0, 1);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  }
 
    void mainframe::invert( framebuffer &src ) {
       bind();
+      // Shouldn't need to do this
       clear(0.0,0.0,0.0,1.0);
       direct.bind();
       glBindVertexArray(directVAO);
@@ -287,8 +293,10 @@ namespace gl {
       uniform texture1 = direct.get_uniform("texture1");
       texture1.set( 0 );
       glActiveTexture(GL_TEXTURE0);
+      glDisable(GL_DEPTH_TEST);
       glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
       glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
+      glEnable(GL_DEPTH_TEST);
       glBindVertexArray(0);
    }
 

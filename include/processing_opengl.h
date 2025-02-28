@@ -207,9 +207,12 @@ namespace gl {
          const shader_t &shader;
       };
       std::vector<geometry_t> geometries;
-      color background_;
+      color background_={0,0,0,1};
+      bool c = false;
+      
    public:
       void background(color b) {
+         c = true;
          background_ = b;
       }
 
@@ -219,7 +222,8 @@ namespace gl {
       }
 
       void clear() {
-         geometries.clear();
+         c= false;
+        geometries.clear();
       }
 
       void render(framebuffer &fb);
