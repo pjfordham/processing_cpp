@@ -147,6 +147,7 @@ public:
 
    void save( const std::string &fileName ) {
       flush();
+      frame.render( localFrame );
       localFrame.blit( pixelsFrame );
       PImage image = createImage(width, height, 0);
       pixelsFrame.saveFrame( image.pixels );
@@ -600,6 +601,7 @@ public:
 
    void loadPixels() {
       flush();
+      frame.render( localFrame );
       localFrame.blit( pixelsFrame );
       pixelsFrame.loadPixels( pixels );
       pixels_current = true;
@@ -607,6 +609,7 @@ public:
 
    void updatePixels() {
       flush();
+      frame.render( localFrame );
       pixelsFrame.updatePixels( pixels );
       pixelsFrame.blit( localFrame );
     }
