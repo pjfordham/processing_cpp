@@ -2174,7 +2174,7 @@ void PShape::attribPosition(std::string_view name, float x, float y, float z, fl
 }
 
 PShape PShape::copy() const {
-   return {};// std::make_shared<PShapeImpl>(*impl) };
+   return { std::make_shared<PShapeImpl>(*impl) };
 }
 
 PShape loadShape( std::string_view filename ) {

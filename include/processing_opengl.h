@@ -143,7 +143,7 @@ namespace gl {
 
       VAO() noexcept;
 
-      VAO(const VAO& x) noexcept = delete;
+      VAO(const VAO& x) noexcept;
 
       VAO(VAO&& x) noexcept;
 
@@ -177,7 +177,7 @@ namespace gl {
    public:
       batch_t() noexcept {}
 
-      batch_t(const batch_t& x) noexcept = delete;
+      batch_t(const batch_t& x) noexcept = default;
       batch_t& operator=(const batch_t&) = delete;
 
       batch_t(batch_t&& x) noexcept =default;

@@ -437,6 +437,14 @@ namespace gl {
       glGenBuffers(1, &materialId);
    }
 
+   VAO::VAO(const VAO &that) noexcept {
+      DEBUG_METHOD();
+      // Needs to be here for code to compile but should never actually happen becuase only
+      // compiled shapes have VAOs and we never copy them.
+      fmt::print(stderr,"Error tried to copy construct a VAO. This should never happen.");
+      abort();
+   }
+
    VAO::VAO(VAO&& x) noexcept : VAO() {
       DEBUG_METHOD();
       *this = std::move(x);
