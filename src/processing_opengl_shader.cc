@@ -67,13 +67,12 @@ namespace gl {
 
       glDeleteShader(VertexShaderID);
       glDeleteShader(FragmentShaderID);
-
    }
 
    shader_t::~shader_t() {
-      if (programID) {
-         glDeleteProgram(programID);
-      }
+      // if (programID) {
+      //    glDeleteProgram(programID);
+      // }
    }
 
    void shader_t::set_uniforms() {

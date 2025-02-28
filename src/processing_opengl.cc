@@ -1,6 +1,7 @@
 #include "glad/glad.h"
 
 #include "processing_opengl.h"
+#include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
 
 #undef DEBUG_METHOD
@@ -12,6 +13,31 @@
 #include <sstream>     // For std::stringstream
 
 namespace gl {
+
+   void frame_t::render(framebuffer &fb) {
+      if (background_.a != 0.0) {
+         fb.clear(background_.r, background_.g, background_.b, background_.a);
+      }
+      for (auto &g : geometries) {
+         // Add flat shader optimizayion
+         g.shader.bind();
+
+         uniform uSampler = g.shader.get_uniform("texture");
+         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+
+         g.scene.setup( g.shader );
+         g.batch.setup( g.shader );
+
+         g.shader.set_uniforms();
+         g.scene.set();
+         g.batch.bind();
+         g.batch.load();
+         g.batch.draw();
+         g.batch.clear();
+      }
+      geometries.clear();
+
+   }
 
    static color HSBtoRGB(float h, float s, float v, float a)
    {
@@ -51,6 +77,22 @@ namespace gl {
        return std::exchange(currentBlendMode,b);
    }
 
+   void batch_t::setup( const shader_t &shader ) {
+      Position = shader.get_attribute("position");
+      Normal = shader.get_attribute("normal");
+      Color = shader.get_attribute("color");
+      Coord = shader.get_attribute("texCoord");
+      TUnit = shader.get_attribute("tunit");
+      MIndex = shader.get_attribute("mindex");
+      Mmatrix = shader.get_uniform("Mmatrix");
+      Nmatrix  = shader.get_uniform("Nmatrix");
+      TexOffset = shader.get_uniform("texOffset");
+      Ambient = shader.get_attribute("ambient");
+      Specular = shader.get_attribute("specular");
+      Emissive = shader.get_attribute("emissive");
+      Shininess = shader.get_attribute("shininess");
+   }
+
    void batch_t::setupTextures(VAO &draw) {
       std::vector<glm::vec2> textureOffsets(16);
       for ( int i = 0; i < draw.textures.size() ; ++i ) {
@@ -72,7 +114,7 @@ namespace gl {
 
    void batch_t::draw( const glm::mat4 &transform ) {
 #if 0
-      fmt::print("### GEOMETRY DUMP START ###\n");
+      fmt::print("### FLAT GEOMETRY DUMP START ###\n");
       int i = 0;
       for (auto &vao : vaos) {
          fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
@@ -606,16 +648,6 @@ namespace gl {
       }
 
    }
-
-   void setShader(const shader_t &shader, scene_t &scene, batch_t &batch) {
-      shader.bind();
-
-      uniform uSampler = shader.get_uniform("texture");
-      uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
-
-      scene.setup( shader );
-      batch.setup( shader );
-    }
 
 } // namespace gl
 

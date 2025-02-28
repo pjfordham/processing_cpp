@@ -143,7 +143,7 @@ namespace gl {
 
       VAO() noexcept;
 
-      VAO(const VAO& x) noexcept = default;
+      VAO(const VAO& x) noexcept = delete;
 
       VAO(VAO&& x) noexcept;
 
@@ -175,22 +175,15 @@ namespace gl {
       std::vector<VAO> vaos;
 
    public:
-      batch_t() {}
-      void setup( const shader_t &shader ) {
-         Position = shader.get_attribute("position");
-         Normal = shader.get_attribute("normal");
-         Color = shader.get_attribute("color");
-         Coord = shader.get_attribute("texCoord");
-         TUnit = shader.get_attribute("tunit");
-         MIndex = shader.get_attribute("mindex");
-         Mmatrix = shader.get_uniform("Mmatrix");
-         Nmatrix  = shader.get_uniform("Nmatrix");
-         TexOffset = shader.get_uniform("texOffset");
-         Ambient = shader.get_attribute("ambient");
-         Specular = shader.get_attribute("specular");
-         Emissive = shader.get_attribute("emissive");
-         Shininess = shader.get_attribute("shininess");
-      }
+      batch_t() noexcept {}
+
+      batch_t(const batch_t& x) noexcept = delete;
+      batch_t& operator=(const batch_t&) = delete;
+
+      batch_t(batch_t&& x) noexcept =default;
+      batch_t& operator=(batch_t&& other) noexcept=default;
+
+      void setup( const shader_t &shader );
       size_t size();
       void load();
       void bind();
@@ -204,6 +197,32 @@ namespace gl {
 
       void vertices( const std::vector<vertex> &vertices,const std::vector<material> &materials,  const std::vector<unsigned short> &indices,
                      const glm::mat4 &transform, bool flatten_transform, PImage texture );
+   };
+
+   class framebuffer;
+   class frame_t {
+      struct geometry_t {
+         batch_t batch;
+         scene_t scene;
+         shader_t shader;
+      };
+      std::vector<geometry_t> geometries;
+      color background_;
+   public:
+      void background(color b) {
+         background_ = b;
+      }
+
+      void add(batch_t &&b, scene_t sc, shader_t sh) {
+         geometries.emplace_back( std::move(b), sc, sh );
+
+      }
+
+      void clear() {
+         geometries.clear();
+      }
+
+      void render(framebuffer &fb);
    };
 
    void setShader(const shader_t &shader, scene_t &scene, batch_t &batch);
