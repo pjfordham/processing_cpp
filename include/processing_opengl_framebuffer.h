@@ -7,15 +7,44 @@
 #include <fmt/core.h>
 
 #include "processing_enum.h"
+#include "processing_opengl_shader.h"
 
 typedef unsigned int GLuint;
 
 namespace gl {
    class framebuffer;
+   class mainframe;
 }
+
 template <> struct fmt::formatter<gl::framebuffer>;
+template <> struct fmt::formatter<gl::mainframe>;
 
 namespace gl {
+
+   class mainframe {
+      int width = 0;
+      int height = 0;
+      shader_t direct;
+      GLuint directVAO = 0;
+      GLuint directVBO = 0;
+   public:
+      mainframe(int width_, int height_);
+      mainframe() noexcept;
+      ~mainframe() noexcept;
+      mainframe(mainframe &&x) noexcept;
+      mainframe& operator=(mainframe&&x) noexcept;
+      mainframe(const mainframe &&x) noexcept = delete;
+      mainframe& operator=(const mainframe&&x) noexcept = delete;
+
+      void bind();
+
+      void clear( float r, float g, float b, float a );
+
+      void invert( framebuffer &src );
+
+      friend struct fmt::formatter<gl::mainframe>;
+   };
+
    class framebuffer {
       int aaFactor = 1;
       int aaMode = SSAA;
@@ -24,6 +53,8 @@ namespace gl {
       int height = 0;
       GLuint depthBufferID = 0;
       GLuint colorBufferID = 0;
+
+      GLuint did=0;
       GLuint textureBufferID = 0;
 
    public:
@@ -41,14 +72,7 @@ namespace gl {
          return id == 0;
       }
 
-      static framebuffer constructMainFrame(int width, int height) {
-         framebuffer frame;
-         frame.width = width;
-         frame.height = height;
-         return frame;
-      }
-
-      framebuffer();
+      framebuffer() noexcept;
 
       framebuffer(int width_, int height_, int aaMode_ , int aaFactor);
 
@@ -65,8 +89,6 @@ namespace gl {
       void updatePixels( const std::vector<unsigned int> &pixels );
 
       void loadPixels( std::vector<unsigned int> &pixels );
-
-      void invert( framebuffer &src );
 
       void bind();
 
@@ -90,8 +112,22 @@ struct fmt::formatter<gl::framebuffer> {
 
    template <typename FormatContext>
    auto format(const gl::framebuffer& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "aaFactor={:<2} aaMode={:<1} id={:4} width={:<4} height={:<4} depthBufferID={:<4} colorBufferID={:<4} textureBufferID={:<4}",
+      return fmt::format_to(ctx.out(), "aaFactor={:<2} aaMode={:<1} id={:4} width={:<4} height={:<4} depthBufferID={:<4} colorBufferID={:<4} textureBufferID={:<4}",
                        v.aaFactor, v.aaMode, v.id, v.width, v.height, v.depthBufferID, v.colorBufferID, v.textureBufferID);
+   }
+};
+
+template <>
+struct fmt::formatter<gl::mainframe> {
+   // Format the MyClass object
+   template <typename ParseContext>
+   constexpr auto parse(ParseContext& ctx) {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const gl::mainframe& v, FormatContext& ctx) {
+      return fmt::format_to(ctx.out(), "width={:<4} height={:<4}", v.width, v.height );
    }
 };
 

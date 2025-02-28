@@ -3,6 +3,7 @@
 #include "glad/glad.h"
 
 #include "processing_opengl.h"
+#include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
 
 #undef DEBUG_METHOD
@@ -11,6 +12,47 @@
 #define DEBUG_METHOD_MESSAGE(x) do {} while (false)
 
 namespace gl {
+
+   void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
+      fb.bind();
+      shader.bind();
+      uniform uSampler = shader.get_uniform("texture");
+      uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+
+      scene.setup( shader );
+      batch.setup( shader );
+      shader.set_uniforms();
+      scene.set();
+      batch.bind();
+      batch.load();
+      batch.draw(transform.glm_data());
+   }
+
+   void frame_t::render(framebuffer &fb) {
+      fb.bind();
+      if (c) {
+         fb.clear(background_.r, background_.g, background_.b, background_.a);
+         c = false;
+      }
+      for (auto &g : geometries) {
+         // Add flat shader optimization
+         g.shader.bind();
+
+         uniform uSampler = g.shader.get_uniform("texture");
+         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+
+         g.scene.setup( g.shader );
+         g.batch.setup( g.shader );
+
+         g.shader.set_uniforms();
+         g.scene.set();
+         g.batch.bind();
+         g.batch.load();
+         g.batch.draw();
+         g.batch.clear();
+      }
+      geometries.clear();
+   }
 
    static color HSBtoRGB(float h, float s, float v, float a)
    {
@@ -47,6 +89,22 @@ namespace gl {
       return std::exchange(currentBlendMode,b);
    }
 
+   void batch_t::setup( const shader_t &shader ) {
+      Position = shader.get_attribute("position");
+      Normal = shader.get_attribute("normal");
+      Color = shader.get_attribute("color");
+      Coord = shader.get_attribute("texCoord");
+      TUnit = shader.get_attribute("tunit");
+      MIndex = shader.get_attribute("mindex");
+      Mmatrix = shader.get_uniform("Mmatrix");
+      Nmatrix  = shader.get_uniform("Nmatrix");
+      TexOffset = shader.get_uniform("texOffset");
+      Ambient = shader.get_attribute("ambient");
+      Specular = shader.get_attribute("specular");
+      Emissive = shader.get_attribute("emissive");
+      Shininess = shader.get_attribute("shininess");
+   }
+
    void batch_t::setupTextures(VAO &draw) {
       std::vector<glm::vec2> textureOffsets(16);
       for ( int i = 0; i < draw.textures.size() ; ++i ) {
@@ -68,7 +126,7 @@ namespace gl {
 
    void batch_t::draw( const glm::mat4 &transform ) {
 #if 0
-      fmt::print("### GEOMETRY DUMP START ###\n");
+      fmt::print("### FLAT GEOMETRY DUMP START ###\n");
       int i = 0;
       for (auto &vao : vaos) {
          fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
@@ -377,6 +435,14 @@ namespace gl {
       glGenBuffers(1, &materialId);
    }
 
+   VAO::VAO(const VAO &that) noexcept {
+      DEBUG_METHOD();
+      // Needs to be here for code to compile but should never actually happen becuase only
+      // compiled shapes have VAOs and we never copy them.
+      fmt::print(stderr,"Error tried to copy construct a VAO. This should never happen.");
+      abort();
+   }
+
    VAO::VAO(VAO&& x) noexcept : VAO() {
       DEBUG_METHOD();
       *this = std::move(x);
@@ -602,16 +668,6 @@ namespace gl {
       }
 
    }
-
-   void setShader(const shader_t &shader, scene_t &scene, batch_t &batch) {
-      shader.bind();
-
-      uniform uSampler = shader.get_uniform("texture");
-      uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
-
-      scene.setup( shader );
-      batch.setup( shader );
-    }
 
 } // namespace gl
 

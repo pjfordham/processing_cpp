@@ -67,7 +67,6 @@ namespace gl {
 
       glDeleteShader(VertexShaderID);
       glDeleteShader(FragmentShaderID);
-
    }
 
    shader_t::~shader_t() {
@@ -76,7 +75,7 @@ namespace gl {
       }
    }
 
-   void shader_t::set_uniforms() {
+   void shader_t::set_uniforms() const {
       DEBUG_METHOD();
       for (const auto& [id, value] : uniforms1f) {
          gl::uniform loc = get_uniform( id.c_str() );

@@ -15,8 +15,6 @@ struct PMaterial;
 class PShapeImpl;
 
 namespace gl {
-   class context;
-   class VAO;
    class batch_t;
 }
 
@@ -231,7 +229,7 @@ class PShape {
 
    gl::batch_t &getBatch() ;
 
-   void flatten(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms = false) const;
+   void flatten(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
 
    void draw_normals(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
 

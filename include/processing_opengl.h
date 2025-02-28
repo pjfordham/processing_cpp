@@ -143,7 +143,7 @@ namespace gl {
 
       VAO() noexcept;
 
-      VAO(const VAO& x) noexcept = default;
+      VAO(const VAO& x) noexcept;
 
       VAO(VAO&& x) noexcept;
 
@@ -175,22 +175,15 @@ namespace gl {
       std::vector<VAO> vaos;
 
    public:
-      batch_t() {}
-      void setup( const shader_t &shader ) {
-         Position = shader.get_attribute("position");
-         Normal = shader.get_attribute("normal");
-         Color = shader.get_attribute("color");
-         Coord = shader.get_attribute("texCoord");
-         TUnit = shader.get_attribute("tunit");
-         MIndex = shader.get_attribute("mindex");
-         Mmatrix = shader.get_uniform("Mmatrix");
-         Nmatrix  = shader.get_uniform("Nmatrix");
-         TexOffset = shader.get_uniform("texOffset");
-         Ambient = shader.get_attribute("ambient");
-         Specular = shader.get_attribute("specular");
-         Emissive = shader.get_attribute("emissive");
-         Shininess = shader.get_attribute("shininess");
-      }
+      batch_t() noexcept {}
+
+      batch_t(const batch_t& x) noexcept = default;
+      batch_t& operator=(const batch_t&) = delete;
+
+      batch_t(batch_t&& x) noexcept =default;
+      batch_t& operator=(batch_t&& other) noexcept=default;
+
+      void setup( const shader_t &shader );
       size_t size();
       void load();
       void bind();
@@ -206,10 +199,39 @@ namespace gl {
                      const glm::mat4 &transform, bool flatten_transform, PImage texture );
    };
 
-   void setShader(const shader_t &shader, scene_t &scene, batch_t &batch);
+   class framebuffer;
+   class frame_t {
+      struct geometry_t {
+         batch_t batch;
+         scene_t scene;
+         const shader_t &shader;
+      };
+      std::vector<geometry_t> geometries;
+      color background_={0,0,0,1};
+      bool c = false;
+
+   public:
+      void background(color b) {
+         c = true;
+         background_ = b;
+      }
+
+      void add(batch_t &&b, scene_t sc, const shader_t &sh) {
+         geometries.emplace_back( std::move(b), sc, sh );
+
+      }
+
+      void clear() {
+         c= false;
+        geometries.clear();
+      }
+
+      void render(framebuffer &fb);
+   };
+
+   void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader );
 
    color flatten_color_mode(::color c);
-
 } // namespace gl
 
 template <>
