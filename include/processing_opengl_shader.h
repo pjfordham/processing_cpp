@@ -67,7 +67,7 @@ namespace gl {
       attribute get_attribute(const std::string &attribute_name) const {
          return {programID, attribute_name};
       }
-      void set_uniforms();
+      void set_uniforms() const;
       void set(const char *id, GLuint textureID);
       void set(const char *id, float value);
       void set(const char *id, float v1, float v2);

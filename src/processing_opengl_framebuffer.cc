@@ -38,10 +38,6 @@ static const char *directFragmentShader = R"glsl(
       }
 )glsl";
 
-static gl::shader_t directShader() {
-   return {directVertexShader, directFragmentShader };
-};
-
 
 namespace gl {
 
@@ -58,10 +54,9 @@ namespace gl {
       return *this;
    }
 
-   framebuffer::framebuffer() {
+   framebuffer::framebuffer() noexcept {
       DEBUG_METHOD();
    }
-
    framebuffer::framebuffer(framebuffer &&x) noexcept : framebuffer() {
       DEBUG_METHOD();
       *this = std::move(x);
@@ -131,6 +126,7 @@ namespace gl {
 
    GLuint framebuffer::getColorBufferID() {
       if (aaMode == MSAA) {
+         // THIS NEEDS WORK
          if (textureBufferID)
             glDeleteTextures(1, &textureBufferID);
          framebuffer frame(width, height, SSAA, 1);
@@ -190,7 +186,55 @@ namespace gl {
       glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
    }
 
-   static GLuint constructDirectVAO() {
+   void framebuffer::bind() {
+      DEBUG_METHOD();
+      glBindFramebuffer(GL_FRAMEBUFFER, id);
+      glViewport(0, 0, width, height);
+   }
+
+   void framebuffer::clear( float r, float g, float b, float a ) {
+      DEBUG_METHOD();
+      bind();
+      glClearColor(r, g, b, a);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   }
+
+   mainframe& mainframe::operator=(mainframe&&x) noexcept {
+      DEBUG_METHOD();
+      std::swap(width,x.width);
+      std::swap(height,x.height);
+      std::swap(direct,x.direct);
+      std::swap(directVAO,x.directVAO);
+      std::swap(directVBO,x.directVBO);
+      return *this;
+   }
+
+   mainframe::mainframe() noexcept {
+      DEBUG_METHOD();
+   }
+
+   mainframe::~mainframe() noexcept {
+      DEBUG_METHOD();
+      if (directVAO) {
+         glBindVertexArray(directVAO);
+         glBindBuffer(GL_ARRAY_BUFFER, 0);
+         glBindVertexArray(0);
+         glDeleteVertexArrays(1, &directVAO);
+         glDeleteBuffers(1, &directVBO);
+      }
+   }
+
+   mainframe::mainframe(mainframe &&x) noexcept : mainframe()  {
+      DEBUG_METHOD();
+      *this = std::move(x);
+   }
+
+   mainframe::mainframe(int width_, int height_) : direct(directVertexShader, directFragmentShader)  {
+      // Direct needs to be copy constrcted as move assignment doesn't seem to
+      // work
+      width = width_;
+      height = height_;
+
       float quadVertices[] = {
          // Position (NDC)   // TexCoord (flipped vertically)
          -1.0f, -1.0f,      0.0f, 1.0f,  // Bottom-left
@@ -201,36 +245,30 @@ namespace gl {
           1.0f,  1.0f,      1.0f, 0.0f,  // Top-right
          -1.0f,  1.0f,      0.0f, 0.0f   // Top-left
       };
-      GLuint VAO, VBO;
-      glGenVertexArrays(1, &VAO);
-      glGenBuffers(1, &VBO);
 
-      glBindVertexArray(VAO);
+      glGenVertexArrays(1, &directVAO);
+      glGenBuffers(1, &directVBO);
 
-      glBindBuffer(GL_ARRAY_BUFFER, VBO);
+      glBindVertexArray(directVAO);
+
+      glBindBuffer(GL_ARRAY_BUFFER, directVBO);
       glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
-      shader_t direct = directShader();
       auto a_pos = direct.get_attribute("position");
       auto a_crd = direct.get_attribute("texCoord");
       a_pos.bind_vec2(4*sizeof(float), 0 );
       a_crd.bind_vec2(4*sizeof(float), (void*)(2*sizeof(float)));
-      return VAO;
+      glBindVertexArray(0);
    }
 
-   void framebuffer::invert( framebuffer &src ) {
-      DEBUG_METHOD();
-
-      static GLuint vao = constructDirectVAO();
-      // If this is static then we segfault when it's destructed.
-      static shader_t direct = directShader();
-      static uniform texture1 = direct.get_uniform("texture1");
-
+   void mainframe::invert( framebuffer &src ) {
       bind();
       clear(0.0,0.0,0.0,1.0);
       direct.bind();
-
-      glBindVertexArray(vao);
+      glBindVertexArray(directVAO);
+      glBindBuffer(GL_ARRAY_BUFFER, directVBO);
+      // Can probably remove this from fast path
+      uniform texture1 = direct.get_uniform("texture1");
       texture1.set( 0 );
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
@@ -238,13 +276,13 @@ namespace gl {
       glBindVertexArray(0);
    }
 
-   void framebuffer::bind() {
+   void mainframe::bind() {
       DEBUG_METHOD();
-      glBindFramebuffer(GL_FRAMEBUFFER, id);
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
       glViewport(0, 0, width, height);
    }
 
-   void framebuffer::clear( float r, float g, float b, float a ) {
+   void mainframe::clear( float r, float g, float b, float a ) {
       DEBUG_METHOD();
       bind();
       glClearColor(r, g, b, a);

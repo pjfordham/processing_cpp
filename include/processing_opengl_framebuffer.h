@@ -7,6 +7,7 @@
 #include <fmt/core.h>
 
 #include "processing_enum.h"
+#include "processing_opengl_shader.h"
 
 typedef unsigned int GLuint;
 
@@ -16,6 +17,29 @@ namespace gl {
 template <> struct fmt::formatter<gl::framebuffer>;
 
 namespace gl {
+
+   class mainframe {
+      int width = 0;
+      int height = 0;
+      shader_t direct;
+      GLuint directVAO = 0;
+      GLuint directVBO = 0;
+   public:
+      mainframe(int width_, int height_);
+      mainframe() noexcept;
+      ~mainframe() noexcept;
+      mainframe(mainframe &&x) noexcept;
+      mainframe& operator=(mainframe&&x) noexcept;
+      mainframe(const mainframe &&x) noexcept = delete;
+      mainframe& operator=(const mainframe&&x) noexcept = delete;
+
+      void bind();
+
+      void clear( float r, float g, float b, float a );
+
+      void invert( framebuffer &src );
+   };
+
    class framebuffer {
       int aaFactor = 1;
       int aaMode = SSAA;
@@ -41,14 +65,7 @@ namespace gl {
          return id == 0;
       }
 
-      static framebuffer constructMainFrame(int width, int height) {
-         framebuffer frame;
-         frame.width = width;
-         frame.height = height;
-         return frame;
-      }
-
-      framebuffer();
+      framebuffer() noexcept;
 
       framebuffer(int width_, int height_, int aaMode_ , int aaFactor);
 
@@ -65,8 +82,6 @@ namespace gl {
       void updatePixels( const std::vector<unsigned int> &pixels );
 
       void loadPixels( std::vector<unsigned int> &pixels );
-
-      void invert( framebuffer &src );
 
       void bind();
 
