@@ -48,6 +48,8 @@ namespace gl {
       int height = 0;
       GLuint depthBufferID = 0;
       GLuint colorBufferID = 0;
+
+      GLuint did=0;
       GLuint textureBufferID = 0;
 
    public:
