@@ -223,7 +223,7 @@ namespace gl {
 
       static GLuint vao = constructDirectVAO();
       // If this is static then we segfault when it's destructed.
-      shader_t direct = directShader();
+      static shader_t direct = directShader();
       static uniform texture1 = direct.get_uniform("texture1");
 
       bind();
