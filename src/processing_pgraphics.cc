@@ -44,7 +44,7 @@ public:
    int textureMode_ = IMAGE;
 
    gl::framebuffer localFrame;
-   gl::framebuffer windowFrame;
+   gl::mainframe windowFrame;
    gl::framebuffer pixelsFrame;
    gl::frame_t frame;
    gl::scene_t scene;
@@ -90,7 +90,7 @@ public:
    PGraphicsImpl(int width, int height, int mode, int aaMode = MSAA, int aaFactor = 2) :
       localFrame(width, height, aaMode, aaFactor),
       pixelsFrame(width, height, SSAA, 1),
-      windowFrame( gl::framebuffer::constructMainFrame( width, height ) ),
+      windowFrame( width, height ),
       _shape( createShape() ) {
 
       DEBUG_METHOD();
@@ -113,6 +113,7 @@ public:
       height = 0;
       defaultShader = {};
       currentShader = {};
+      windowFrame = {};
       localFrame = {};
       pixelsFrame = {};
       scene = {};
