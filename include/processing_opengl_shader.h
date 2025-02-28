@@ -46,13 +46,13 @@ namespace gl {
       void set(const glm::mat4 &value) const;
    };
 
-  class shader_t {
-     std::map<std::string, glm::vec3> uniforms3fv;
-     std::map<std::string, glm::vec2> uniforms2fv;
-     std::map<std::string, float>     uniforms1f;
-     std::map<std::string, GLuint>    uniformsSampler;
+   class shader_t {
+      std::map<std::string, glm::vec3> uniforms3fv;
+      std::map<std::string, glm::vec2> uniforms2fv;
+      std::map<std::string, float>     uniforms1f;
+      std::map<std::string, GLuint>    uniformsSampler;
 
-  public:
+   public:
       bool operator!=(const shader_t &other) {
          return programID != other.programID;
       }
@@ -73,7 +73,7 @@ namespace gl {
       void set(const char *id, float v1, float v2);
       void set(const char *id, float v1, float v2, float v3);
 
-  };
+   };
 
 } // namespace gl
 

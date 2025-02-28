@@ -46,8 +46,9 @@ public:
    gl::framebuffer localFrame;
    gl::framebuffer windowFrame;
    gl::framebuffer pixelsFrame;
-   gl::batch_t batch;
+   gl::frame_t frame;
    gl::scene_t scene;
+   gl::batch_t batch;
 
    int ellipse_mode = CENTER;
    int rect_mode = CORNER;
@@ -116,37 +117,18 @@ public:
       pixelsFrame = {};
       scene = {};
       batch = {};
-   }
-
-   void _flush( gl::batch_t &batch, gl::framebuffer &target ) {
-      static PShader flat = flatShader();
-      flushes+=batch.size();
-      // If possible just use the flat shader for performance
-      PShader &shader = (currentShader == defaultShader && scene.lights.size() == 0 &&
-                         batch.usesTextures() == false && batch.usesCircles() == false) ? flat : currentShader;
-      setShader( shader.getShader(), scene, batch );
-      shader.set_uniforms();
-      shader.bind();
-      target.bind();
-      scene.set();
+      frame = {};
    }
 
    void flush() {
       if ( batch.size() > 0 ) {
-         _flush( batch, localFrame );
-         batch.bind();
-         batch.load();
-         batch.draw();
-         batch.clear();
+         frame.add( std::move(batch), scene, currentShader.getShader() );
       }
+      batch.clear();
    }
 
    void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
-      if ( batch.size() > 0 ) {
-         _flush( batch, localFrame );
-         batch.bind();
-         batch.draw(transform.glm_data());
-      }
+      abort();
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -164,6 +146,7 @@ public:
 
    void save( const std::string &fileName ) {
       flush();
+      frame.render( localFrame );
       localFrame.blit( pixelsFrame );
       PImage image = createImage(width, height, 0);
       pixelsFrame.saveFrame( image.pixels );
@@ -397,7 +380,8 @@ public:
 
    void background(float r, float g, float b, float a = color::scaleA) {
       auto color = gl::flatten_color_mode({r,g,b,a});
-      localFrame.clear( color.r, color.g, color.b, color.a );
+      frame.background( color );
+      //localFrame.clear( color.r, color.g, color.b, color.a );
    }
 
    void background(float gray) {
@@ -618,6 +602,7 @@ public:
 
    void loadPixels() {
       flush();
+      frame.render( localFrame );
       localFrame.blit( pixelsFrame );
       pixelsFrame.loadPixels( pixels );
       pixels_current = true;
@@ -625,6 +610,7 @@ public:
 
    void updatePixels() {
       flush();
+      frame.render( localFrame );
       pixelsFrame.updatePixels( pixels );
       pixelsFrame.blit( localFrame );
     }
@@ -705,9 +691,9 @@ public:
          }
       } else {
          if (pshape == _shape) {
-            pshape.flatten( batch, PMatrix::Identity() );
+            pshape.flatten( batch, PMatrix::Identity(), false );
          } else {
-            pshape.flatten( batch, _shape.getShapeMatrix() );
+            pshape.flatten( batch, _shape.getShapeMatrix(), false );
          }
       }
    }
@@ -991,6 +977,8 @@ public:
 
    int commit_draw() {
       endDraw();
+
+      frame.render( localFrame );
       // If we just blit directly everything is drawn upside down
       // localFrame.blit( windowFrame );
       windowFrame.invert( localFrame );
@@ -1001,7 +989,7 @@ public:
    void shader(PShader pshader, int kind = TRIANGLES) {
       flush();
       currentShader = pshader;
-      setShader( currentShader.getShader(), scene, batch );
+      //setShader( currentShader.getShader(), scene, batch );
       currentShader.set_uniforms();
       currentShader.bind();
    }
