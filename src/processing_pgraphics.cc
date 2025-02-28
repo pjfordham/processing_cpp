@@ -379,9 +379,7 @@ public:
    }
 
    void background(float r, float g, float b, float a = color::scaleA) {
-      auto color = gl::flatten_color_mode({r,g,b,a});
-      frame.background( color );
-      //localFrame.clear( color.r, color.g, color.b, color.a );
+      frame.background( gl::flatten_color_mode({r,g,b,a}) );
    }
 
    void background(float gray) {

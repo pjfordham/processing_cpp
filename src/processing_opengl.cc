@@ -14,8 +14,10 @@
 namespace gl {
 
    void frame_t::render(framebuffer &fb) {
-      if (background_.a != 0.0) {
+      fb.bind();
+      if (c) {
          fb.clear(background_.r, background_.g, background_.b, background_.a);
+          c = false;
       }
       for (auto &g : geometries) {
          // Add flat shader optimizayion
