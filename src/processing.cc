@@ -253,6 +253,8 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    {
       PROFILE_SCOPE("setup");
       setup();
+      // Draw anything from setup.
+      g.commit_draw();
       PShape::optimize();
    }
 
