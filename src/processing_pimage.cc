@@ -40,10 +40,11 @@ public:
    GLuint textureID = 0;
    int textureWrap;
    bool dirty = true;
+   bool dont_delete = false;
 
    ~PImageImpl() {
       DEBUG_METHOD();
-      if (textureID) {
+      if (textureID && !dont_delete) {
          glDeleteTextures(1, &textureID);
       }
       if (pixels) {
@@ -60,6 +61,7 @@ public:
 
    PImageImpl(GLuint textureID_) : textureID(textureID_) {
       DEBUG_METHOD();
+      dont_delete = true;
       textureWrap = textureWrapMode;
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
