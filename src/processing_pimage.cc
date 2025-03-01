@@ -61,8 +61,10 @@ public:
    PImageImpl(GLuint textureID_) : textureID(textureID_) {
       DEBUG_METHOD();
       textureWrap = textureWrapMode;
+      glBindTexture(GL_TEXTURE_2D, textureID);
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
       glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+      glBindTexture(GL_TEXTURE_2D, 0);
    }
 
    PImageImpl(int w, int h, uint32_t *pixels_) : width(w), height(h) {
