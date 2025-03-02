@@ -131,7 +131,7 @@ public:
    void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
       flush();
       frame.render( localFrame );
-      frame.renderDirect( localFrame, batch, transform, scene, currentShader.getShader() );
+      gl::renderDirect( localFrame, batch, transform.glm_data(), scene, currentShader.getShader() );
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
