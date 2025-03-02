@@ -16,14 +16,28 @@
 
 static const char *directVertexShader = R"glsl(
       #version 400
-      in vec2 position;
-      in vec2 texCoord;
 
       out vec2 vertTexCoord;
 
       void main() {
-          gl_Position = vec4(position, -1.0, 1.0); // Directly use NDC
-          vertTexCoord = texCoord;
+          // Define the hardcoded vertices and texture coordinates
+          const vec4 vertices[6] = vec4[6](
+              vec4(-1.0, -1.0, 0.0, 1.0),  // Bottom-left
+              vec4( 1.0, -1.0, 1.0, 1.0),  // Bottom-right
+              vec4( 1.0,  1.0, 1.0, 0.0),  // Top-right
+              vec4(-1.0, -1.0, 0.0, 1.0),  // Bottom-left
+              vec4( 1.0,  1.0, 1.0, 0.0),  // Top-right
+              vec4(-1.0,  1.0, 0.0, 0.0)   // Top-left
+          );
+
+          // Hardcoded vertices are indexed, so use gl_VertexID to fetch
+          vec4 vertex = vertices[gl_VertexID];
+
+          // Set the position in NDC space
+          gl_Position = vec4(vertex.xy, -1.0, 1.0);
+
+          // Pass the texture coordinates
+          vertTexCoord = vertex.zw;
       }
 )glsl";
 
@@ -229,8 +243,6 @@ namespace gl {
       std::swap(width,x.width);
       std::swap(height,x.height);
       std::swap(direct,x.direct);
-      std::swap(directVAO,x.directVAO);
-      std::swap(directVBO,x.directVBO);
       return *this;
    }
 
@@ -240,13 +252,6 @@ namespace gl {
 
    mainframe::~mainframe() noexcept {
       DEBUG_METHOD();
-      if (directVAO) {
-         glBindVertexArray(directVAO);
-         glBindBuffer(GL_ARRAY_BUFFER, 0);
-         glBindVertexArray(0);
-         glDeleteVertexArrays(1, &directVAO);
-         glDeleteBuffers(1, &directVBO);
-      }
    }
 
    mainframe::mainframe(mainframe &&x) noexcept : mainframe()  {
@@ -259,42 +264,19 @@ namespace gl {
       // work
       width = width_;
       height = height_;
-
-      float quadVertices[] = {
-         // Position (NDC)   // TexCoord (flipped vertically)
-         -1.0f, -1.0f,      0.0f, 1.0f,  // Bottom-left
-          1.0f, -1.0f,      1.0f, 1.0f,  // Bottom-right
-          1.0f,  1.0f,      1.0f, 0.0f,  // Top-right
-
-         -1.0f, -1.0f,      0.0f, 1.0f,  // Bottom-left
-          1.0f,  1.0f,      1.0f, 0.0f,  // Top-right
-         -1.0f,  1.0f,      0.0f, 0.0f   // Top-left
-      };
-
-      glGenVertexArrays(1, &directVAO);
-      glGenBuffers(1, &directVBO);
-
-      glBindVertexArray(directVAO);
-
-      glBindBuffer(GL_ARRAY_BUFFER, directVBO);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-      auto a_pos = direct.get_attribute("position");
-      auto a_crd = direct.get_attribute("texCoord");
-      a_pos.bind_vec2(4*sizeof(float), 0 );
-      a_crd.bind_vec2(4*sizeof(float), (void*)(2*sizeof(float)));
       bind();
       glClearColor(1, 0, 0, 1);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
    void mainframe::invert( framebuffer &src ) {
+      GLuint directVAO;
+      glGenVertexArrays(1, &directVAO);
+      glBindVertexArray(directVAO);
       bind();
       // Shouldn't need to do this
       clear(0.0,0.0,0.0,1.0);
       direct.bind();
-      glBindVertexArray(directVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, directVBO);
       // Can probably remove this from fast path
       uniform texture1 = direct.get_uniform("texture1");
       texture1.set( 0 );
@@ -304,6 +286,7 @@ namespace gl {
       glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
       glEnable(GL_DEPTH_TEST);
       glBindVertexArray(0);
+      glDeleteVertexArrays(1, &directVAO);
    }
 
    void mainframe::bind() {

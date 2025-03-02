@@ -25,8 +25,6 @@ namespace gl {
       int width = 0;
       int height = 0;
       shader_t direct;
-      GLuint directVAO = 0;
-      GLuint directVBO = 0;
    public:
       mainframe(int width_, int height_);
       mainframe() noexcept;
