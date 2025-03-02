@@ -49,9 +49,12 @@ namespace gl {
 
       GLuint did=0;
       GLuint textureBufferID = 0;
-
+      bool owning = true;
+      
    public:
       GLuint getColorBufferID();
+
+      framebuffer nonowing_copy() const;
 
       auto getWidth() const {
          return width;

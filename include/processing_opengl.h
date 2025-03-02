@@ -227,6 +227,7 @@ namespace gl {
       }
 
       void render(framebuffer &fb);
+      void render2(framebuffer &fb);
    };
 
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader );

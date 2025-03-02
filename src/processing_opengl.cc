@@ -1,16 +1,19 @@
 #include "glad/glad.h"
+#include <GLFW/glfw3.h>
 
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
+#include <thread>
 
 #undef DEBUG_METHOD
 #undef DEBUG_METHOD_MESSAGE
 #define DEBUG_METHOD() do {} while (false)
 #define DEBUG_METHOD_MESSAGE(x) do {} while (false)
 
-namespace gl {
+extern GLFWwindow *sharedContext, *window;
 
+namespace gl {
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
       fb.bind();
       shader.bind();
@@ -26,7 +29,20 @@ namespace gl {
       batch.draw(transform.glm_data());
    }
 
+   std::thread renderThread;
+
    void frame_t::render(framebuffer &fb) {
+      if (renderThread.joinable()) {
+         renderThread.join();
+      }
+      renderThread = std::thread( &frame_t::render2, this, std::ref(fb) );
+      //renderThread.join();
+      glfwMakeContextCurrent( window );
+   }
+
+   void frame_t::render2(framebuffer &frame) {
+      glfwMakeContextCurrent( sharedContext );
+      framebuffer fb = frame.nonowing_copy();
       fb.bind();
       if (c) {
          fb.clear(background_.r, background_.g, background_.b, background_.a);
@@ -50,6 +66,7 @@ namespace gl {
          g.batch.clear();
       }
       geometries.clear();
+      glfwMakeContextCurrent( NULL );
    }
 
    static color HSBtoRGB(float h, float s, float v, float a)
@@ -427,7 +444,7 @@ namespace gl {
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
-      glGenVertexArrays(1, &vao);
+      // glGenVertexArrays(1, &vao);
       glGenBuffers(1, &indexId);
       glGenBuffers(1, &vertexId);
       glGenBuffers(1, &materialId);
@@ -465,10 +482,10 @@ namespace gl {
                    attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess) {
       DEBUG_METHOD();
 
+      if (!vao)
+         glGenVertexArrays(1, &vao);
       glBindVertexArray(vao);
-
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
-
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
       Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
       Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));

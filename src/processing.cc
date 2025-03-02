@@ -169,6 +169,7 @@ int drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed si
 int frameCount = 0;
 
 GLFWwindow *window = NULL;
+GLFWwindow *sharedContext = NULL;
 
 PGraphics createGraphics(int width, int height, int mode) {
    return { width, height, mode };
@@ -202,6 +203,7 @@ void size(int _width, int _height, int mode) {
       glfwSetScrollCallback(window, scroll_callback);
    }
 
+   sharedContext = glfwCreateWindow(1, 1, "", NULL, window);
    glfwMakeContextCurrent(window);
 
    // Initialize GLAD for OpenGL function loading

@@ -66,15 +66,74 @@ namespace gl {
       std::swap(colorBufferID,x.colorBufferID);
       std::swap(did,x.did);
       std::swap(textureBufferID,x.textureBufferID);
+      std::swap(owning,x.owning);
       return *this;
    }
 
    framebuffer::framebuffer() noexcept {
       DEBUG_METHOD();
    }
+
    framebuffer::framebuffer(framebuffer &&x) noexcept : framebuffer() {
       DEBUG_METHOD();
       *this = std::move(x);
+   }
+
+   framebuffer framebuffer::nonowing_copy() const {
+      DEBUG_METHOD();
+
+      framebuffer fb;
+      fb.owning = false;
+      fb.aaFactor = aaFactor;
+      fb.aaMode = aaMode;
+      fb.width = width;
+      fb.height = height;
+
+      glGenFramebuffers(1, &fb.id);
+      fb.bind();
+
+      fb.depthBufferID = depthBufferID;
+      glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+
+      glActiveTexture(GL_TEXTURE0);
+
+      fb.colorBufferID = colorBufferID;
+
+      if (aaMode == MSAA) {
+         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorBufferID);
+         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colorBufferID, 0);
+
+      } else {
+         glBindTexture(GL_TEXTURE_2D, colorBufferID);
+         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBufferID, 0);
+      }
+
+      auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+      if (err != GL_FRAMEBUFFER_COMPLETE) {
+         fmt::print(stderr,"Framebuffer not complete, OpenGL Error: {}\n",err);
+         abort();
+      }
+
+      fb.clear(0,0,0,1);
+
+      if (aaMode == MSAA) {
+         glGenFramebuffers(1, &fb.did);
+         glBindFramebuffer(GL_FRAMEBUFFER, fb.did);
+
+         fb.textureBufferID = textureBufferID;
+         glBindTexture(GL_TEXTURE_2D, textureBufferID);
+         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureBufferID, 0);
+
+         auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+         if (err != GL_FRAMEBUFFER_COMPLETE) {
+            fmt::print(stderr,"zFramebuffer not complete, OpenGL Error: {}\n",err);
+            abort();
+         }
+         glClearColor(0, 0, 0, 1);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      }
+      return fb;
    }
 
    framebuffer::framebuffer(int width_, int height_, int aaMode_, int aaFactor_)  {
@@ -177,12 +236,14 @@ namespace gl {
 
    framebuffer::~framebuffer() {
       DEBUG_METHOD();
-      if (textureBufferID)
-         glDeleteTextures(1, &textureBufferID);
-      if (depthBufferID)
-         glDeleteRenderbuffers(1, &depthBufferID);
-      if (colorBufferID)
-         glDeleteTextures(1, &colorBufferID);
+      if (owning) {
+         if (textureBufferID)
+            glDeleteTextures(1, &textureBufferID);
+         if (depthBufferID)
+            glDeleteRenderbuffers(1, &depthBufferID);
+         if (colorBufferID)
+            glDeleteTextures(1, &colorBufferID);
+      }
       if (id)
          glDeleteFramebuffers(1, &id);
       if (did)
