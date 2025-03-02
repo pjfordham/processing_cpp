@@ -14,7 +14,7 @@
 
 namespace gl {
 
-   void frame_t::renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
+   void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
       fb.bind();
       shader.bind();
       uniform uSampler = shader.get_uniform("texture");
@@ -27,17 +27,16 @@ namespace gl {
       batch.bind();
       batch.load();
       batch.draw(transform.glm_data());
-
    }
 
    void frame_t::render(framebuffer &fb) {
       fb.bind();
       if (c) {
          fb.clear(background_.r, background_.g, background_.b, background_.a);
-          c = false;
+         c = false;
       }
       for (auto &g : geometries) {
-         // Add flat shader optimizayion
+         // Add flat shader optimization
          g.shader.bind();
 
          uniform uSampler = g.shader.get_uniform("texture");
@@ -54,7 +53,6 @@ namespace gl {
          g.batch.clear();
       }
       geometries.clear();
-
    }
 
    static color HSBtoRGB(float h, float s, float v, float a)
