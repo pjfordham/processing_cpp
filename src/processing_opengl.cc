@@ -84,10 +84,7 @@ namespace gl {
    }
 
    int scene_t::blendMode(int b ) {
-      if (currentBlendMode == b)
-         return b;
-
-       return std::exchange(currentBlendMode,b);
+      return std::exchange(currentBlendMode,b);
    }
 
    void batch_t::setup( const shader_t &shader ) {
