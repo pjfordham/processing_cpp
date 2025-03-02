@@ -10,9 +10,6 @@
 #define DEBUG_METHOD() do {} while (false)
 #define DEBUG_METHOD_MESSAGE(x) do {} while (false)
 
-#include <fstream>     // For std::ifstream
-#include <sstream>     // For std::stringstream
-
 namespace gl {
 
    static color HSBtoRGB(float h, float s, float v, float a)
