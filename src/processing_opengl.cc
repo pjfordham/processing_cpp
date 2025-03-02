@@ -9,9 +9,6 @@
 #define DEBUG_METHOD() do {} while (false)
 #define DEBUG_METHOD_MESSAGE(x) do {} while (false)
 
-#include <fstream>     // For std::ifstream
-#include <sstream>     // For std::stringstream
-
 namespace gl {
 
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
