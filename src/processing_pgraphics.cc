@@ -990,9 +990,8 @@ public:
    void shader(PShader pshader, int kind = TRIANGLES) {
       flush();
       currentShader = pshader;
-      //setShader( currentShader.getShader(), scene, batch );
+      // ??? not sure when this should happen now?
       currentShader.set_uniforms();
-      currentShader.bind();
    }
 
    void resetShader() {
@@ -1001,9 +1000,13 @@ public:
    }
 
    void filter(PShader pshader) {
+      flush();
+      frame.render( localFrame );
       PShader oldShader = currentShader;
       shader(pshader);
       background( getAsPImage() );
+      flush();
+      frame.render( localFrame );
       shader(oldShader);
    }
 
