@@ -209,7 +209,7 @@ namespace gl {
       std::vector<geometry_t> geometries;
       color background_={0,0,0,1};
       bool c = false;
-      
+
    public:
       void background(color b) {
          c = true;
@@ -226,10 +226,10 @@ namespace gl {
         geometries.clear();
       }
 
-      void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader );
-
       void render(framebuffer &fb);
    };
+
+   void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader );
 
    color flatten_color_mode(::color c);
 } // namespace gl
