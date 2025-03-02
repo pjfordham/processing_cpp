@@ -4,12 +4,15 @@
 #include <sstream>     // For std::stringstream
 
 #include <fmt/core.h>
+#include <GLFW/glfw3.h>
+#include <thread>
 
 #include "processing_enum.h"
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
 #include "processing_opengl_shader.h"
+#include "processing_task_queue.h"
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
@@ -52,7 +55,6 @@ static const char *directFragmentShader = R"glsl(
       }
 )glsl";
 
-
 namespace gl {
 
    framebuffer& framebuffer::operator=(framebuffer&&x) noexcept {
@@ -66,16 +68,19 @@ namespace gl {
       std::swap(colorBufferID,x.colorBufferID);
       std::swap(did,x.did);
       std::swap(textureBufferID,x.textureBufferID);
+      std::swap(owning,x.owning);
       return *this;
    }
 
    framebuffer::framebuffer() noexcept {
       DEBUG_METHOD();
    }
+
    framebuffer::framebuffer(framebuffer &&x) noexcept : framebuffer() {
       DEBUG_METHOD();
       *this = std::move(x);
    }
+
 
    framebuffer::framebuffer(int width_, int height_, int aaMode_, int aaFactor_)  {
       DEBUG_METHOD();
@@ -95,6 +100,8 @@ namespace gl {
       } else {
          abort();
       }
+
+      renderThread.dispatch( [&] {
 
       glGenFramebuffers(1, &id);
       bind();
@@ -160,15 +167,19 @@ namespace gl {
          glClearColor(0, 0, 0, 1);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       }
+      } );
    }
 
    GLuint framebuffer::getColorBufferID() {
       if (aaMode == MSAA) {
-         glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
-         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, did);
-         glBlitFramebuffer(0,0,width,height,0,0,width,height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
-         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+         renderThread.dispatch([&] {
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, did);
+            glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+                              GL_COLOR_BUFFER_BIT, GL_LINEAR);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+         } );
          return textureBufferID;
       } else {
          return colorBufferID;
@@ -177,12 +188,14 @@ namespace gl {
 
    framebuffer::~framebuffer() {
       DEBUG_METHOD();
-      if (textureBufferID)
-         glDeleteTextures(1, &textureBufferID);
-      if (depthBufferID)
-         glDeleteRenderbuffers(1, &depthBufferID);
-      if (colorBufferID)
-         glDeleteTextures(1, &colorBufferID);
+      if (owning) {
+         if (textureBufferID)
+            glDeleteTextures(1, &textureBufferID);
+         if (depthBufferID)
+            glDeleteRenderbuffers(1, &depthBufferID);
+         if (colorBufferID)
+            glDeleteTextures(1, &colorBufferID);
+      }
       if (id)
          glDeleteFramebuffers(1, &id);
       if (did)
@@ -192,38 +205,47 @@ namespace gl {
    void framebuffer::blit(framebuffer &dest) const {
       DEBUG_METHOD();
       if (id != dest.id) {
-         glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
-         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.id);
-         glBlitFramebuffer(0,0,width,height,0,0,dest.width,dest.height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
-         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-      }
+        renderThread.dispatch([&] {
+          glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
+          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.id);
+          glBlitFramebuffer(0, 0, width, height, 0, 0, dest.width, dest.height,
+                            GL_COLOR_BUFFER_BIT, GL_LINEAR);
+          glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        });
+        }
    }
 
    void framebuffer::updatePixels( const std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, colorBufferID);
-      glTexSubImage2D(GL_TEXTURE_2D, 0,
-                      0, 0,
-                      width, height,
-                      GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-      glBindTexture(GL_TEXTURE_2D, 0);
+      renderThread.dispatch( [&] {
+         glActiveTexture(GL_TEXTURE0);
+         glBindTexture(GL_TEXTURE_2D, colorBufferID);
+         glTexSubImage2D(GL_TEXTURE_2D, 0,
+                         0, 0,
+                         width, height,
+                         GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+         glBindTexture(GL_TEXTURE_2D, 0);
+      });
    }
-
+   
    void framebuffer::loadPixels( std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
+      renderThread.dispatch( [&] {
       pixels.resize(width*height);
       bind();
       glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+      } );
    }
 
    void framebuffer::saveFrame(void *surface) {
       DEBUG_METHOD();
-      bind();
-      glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
+      renderThread.dispatch( [&] {
+         bind();
+         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
+      } );
    }
-
+   
    void framebuffer::bind() {
       DEBUG_METHOD();
       glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -263,42 +285,39 @@ namespace gl {
       // work
       width = width_;
       height = height_;
-      bind();
-      glClearColor(1, 0, 0, 1);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
    void mainframe::invert( framebuffer &src ) {
-      GLuint directVAO;
-      glGenVertexArrays(1, &directVAO);
-      glBindVertexArray(directVAO);
-      bind();
-      // Shouldn't need to do this
-      clear(0.0,0.0,0.0,1.0);
-      direct.bind();
-      // Can probably remove this from fast path
-      uniform texture1 = direct.get_uniform("texture1");
-      texture1.set( 0 );
-      glActiveTexture(GL_TEXTURE0);
-      glDisable(GL_DEPTH_TEST);
-      glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
-      glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
-      glEnable(GL_DEPTH_TEST);
-      glBindVertexArray(0);
-      glDeleteVertexArrays(1, &directVAO);
+
+      renderThread.dispatch( [&] {
+         GLuint directVAO;
+         glGenVertexArrays(1, &directVAO);
+         glBindVertexArray(directVAO);
+         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+         glViewport(0, 0, width, height);
+         glClearColor(0, 0, 0, 1);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         bind();
+         direct.bind();
+         // Can probably remove this from fast path
+         uniform texture1 = direct.get_uniform("texture1");
+         texture1.set( 0 );
+         glActiveTexture(GL_TEXTURE0);
+         glDisable(GL_DEPTH_TEST);
+         glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
+         glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
+         glEnable(GL_DEPTH_TEST);
+         glBindVertexArray(0);
+         glDeleteVertexArrays(1, &directVAO);
+      } );
    }
 
    void mainframe::bind() {
       DEBUG_METHOD();
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      glViewport(0, 0, width, height);
    }
 
    void mainframe::clear( float r, float g, float b, float a ) {
       DEBUG_METHOD();
-      bind();
-      glClearColor(r, g, b, a);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    }
 
 } // namespace gl

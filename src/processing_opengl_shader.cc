@@ -9,6 +9,7 @@
 #include "glad/glad.h"
 #include "processing_opengl_shader.h"
 #include "processing_opengl.h"
+#include "processing_task_queue.h"
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
@@ -17,6 +18,8 @@ namespace gl {
 
    shader_t::shader_t(const char *vertex, const char *fragment) {
       // Create the shaders
+      renderThread.dispatch([&] {
+
       GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
       GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -67,12 +70,15 @@ namespace gl {
 
       glDeleteShader(VertexShaderID);
       glDeleteShader(FragmentShaderID);
+      });
    }
 
    shader_t::~shader_t() {
-      if (programID) {
-         glDeleteProgram(programID);
-      }
+      renderThread.dispatch( [&] {
+         if (programID) {
+            glDeleteProgram(programID);
+         }
+      } );
    }
 
    void shader_t::set_uniforms() const {
