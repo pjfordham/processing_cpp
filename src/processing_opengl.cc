@@ -44,10 +44,7 @@ namespace gl {
    }
 
    int scene_t::blendMode(int b ) {
-      if (currentBlendMode == b)
-         return b;
-
-       return std::exchange(currentBlendMode,b);
+      return std::exchange(currentBlendMode,b);
    }
 
    void batch_t::setupTextures(VAO &draw) {
