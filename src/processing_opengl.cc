@@ -1,20 +1,25 @@
 #include <utility>
 
 #include "glad/glad.h"
+#include <GLFW/glfw3.h>
 
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
+#include <thread>
+#include "processing_task_queue.h"
 
 #undef DEBUG_METHOD
 #undef DEBUG_METHOD_MESSAGE
 #define DEBUG_METHOD() do {} while (false)
 #define DEBUG_METHOD_MESSAGE(x) do {} while (false)
 
-namespace gl {
+TaskQueue renderThread;
 
+namespace gl {
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
-      fb.bind();
+      renderThread.dispatch( [&] {
+         fb.bind();
       shader.bind();
       uniform uSampler = shader.get_uniform("texture");
       uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
@@ -26,10 +31,12 @@ namespace gl {
       batch.bind();
       batch.load();
       batch.draw(transform.glm_data());
+      } );
    }
 
    void frame_t::render(framebuffer &fb) {
-      fb.bind();
+        renderThread.dispatch( [&] {
+         fb.bind();
       if (c) {
          fb.clear(background_.r, background_.g, background_.b, background_.a);
          c = false;
@@ -52,6 +59,7 @@ namespace gl {
          g.batch.clear();
       }
       geometries.clear();
+      });
    }
 
    static color HSBtoRGB(float h, float s, float v, float a)
@@ -105,6 +113,7 @@ namespace gl {
       Shininess = shader.get_attribute("shininess");
    }
 
+   //THIS ONE
    void batch_t::setupTextures(VAO &draw) {
       std::vector<glm::vec2> textureOffsets(16);
       for ( int i = 0; i < draw.textures.size() ; ++i ) {
@@ -429,10 +438,12 @@ namespace gl {
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
-      glGenVertexArrays(1, &vao);
-      glGenBuffers(1, &indexId);
-      glGenBuffers(1, &vertexId);
-      glGenBuffers(1, &materialId);
+      renderThread.dispatch( [&] {
+         // glGenVertexArrays(1, &vao);
+         glGenBuffers(1, &indexId);
+         glGenBuffers(1, &vertexId);
+         glGenBuffers(1, &materialId);
+      } );
    }
 
    VAO::VAO(const VAO &that) noexcept {
@@ -467,10 +478,10 @@ namespace gl {
                    attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess) {
       DEBUG_METHOD();
 
+      if (!vao)
+         glGenVertexArrays(1, &vao);
       glBindVertexArray(vao);
-
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
-
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
       Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
       Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
@@ -510,16 +521,21 @@ namespace gl {
 
    VAO::~VAO() {
       DEBUG_METHOD();
-      if (vao) {
-         glBindVertexArray(vao);
-         glBindBuffer(GL_ARRAY_BUFFER, 0);
-         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-         glBindVertexArray(0);
-         glDeleteVertexArrays(1, &vao);
-         glDeleteBuffers(1, &indexId);
-         glDeleteBuffers(1, &vertexId);
-         glDeleteBuffers(1, &materialId);
-      }
+      // renderThread.dispatch( [&] {
+         if (vao) {
+            glBindVertexArray(vao);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &vao);
+         }
+         if (indexId)
+            glDeleteBuffers(1, &indexId);
+         if (vertexId)
+            glDeleteBuffers(1, &vertexId);
+         if (materialId)
+            glDeleteBuffers(1, &materialId);
+      // } );
    }
 
    int VAO::hasTexture(PImage texture) {

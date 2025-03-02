@@ -7,6 +7,7 @@
 
 #include "processing.h"
 #include "processing_profile.h"
+#include "processing_task_queue.h"
 
 PGraphics g;
 int setFrameRate = 60;
@@ -202,13 +203,17 @@ void size(int _width, int _height, int mode) {
       glfwSetScrollCallback(window, scroll_callback);
    }
 
-   glfwMakeContextCurrent(window);
 
-   // Initialize GLAD for OpenGL function loading
-   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-      fmt::print("Failed to initialize GLAD\n");
-      abort();
-   }
+   glfwMakeContextCurrent(NULL);
+
+   renderThread.dispatch([] {
+      glfwMakeContextCurrent(window);
+      // Initialize GLAD for OpenGL function loading
+      if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+         fmt::print("Failed to initialize GLAD\n");
+         abort();
+      }
+   });
 
    // Create a window
    width = _width;
@@ -293,7 +298,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          }
          {
             PROFILE_SCOPE("glSwapWindow");
-            glfwSwapBuffers(window);
+            renderThread.dispatch( [] {
+               glfwSwapBuffers(window);
+            } );
          }
          if (test_mode) {
             g.saveFrame( std::string(argv[0]) + "-####.png" );
@@ -316,10 +323,14 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       }
    }
 
+
    PShape::close();
    PImage::close();
    PShader::close();
    PGraphics::close();
+
+   // ensure all renderThread work is complete before we shutdown
+   renderThread.~TaskQueue();
 
    glfwTerminate();
 
