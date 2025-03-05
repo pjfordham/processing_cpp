@@ -63,10 +63,10 @@ static const char *defaultVertexShader = R"glsl(
       in vec3 normal;
       in vec2 texCoord;
 
-      attribute vec4 ambient;
-      attribute vec4 specular;
-      attribute vec4 emissive;
-      attribute float shininess;
+      in vec4 ambient;
+      in vec4 specular;
+      in vec4 emissive;
+      in float shininess;
 
       in int tunit;
 
@@ -195,9 +195,11 @@ static const char *defaultFragmentShader = R"glsl(
       uniform sampler2D texture[16];
       flat in int vertTindex;
 
-      varying vec4 vertColor;
-      varying vec4 backVertColor;
-      varying vec4 vertTexCoord;
+      in vec4 vertColor;
+      in vec4 backVertColor;
+      in vec4 vertTexCoord;
+
+      out vec4 fragColor;
 
       void main() {
 
@@ -207,9 +209,9 @@ static const char *defaultFragmentShader = R"glsl(
             if (distance(pos,centre) > 0.5)
                discard;
             else
-               gl_FragColor = gl_FrontFacing ? vertColor : backVertColor;
+               fragColor = gl_FrontFacing ? vertColor : backVertColor;
          } else {
-            gl_FragColor = texture2D(texture[vertTindex], vertTexCoord.st) * (gl_FrontFacing ? vertColor : backVertColor);
+            fragColor = texture2D(texture[vertTindex], vertTexCoord.st) * (gl_FrontFacing ? vertColor : backVertColor);
          }
       }
 
