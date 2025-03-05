@@ -17,6 +17,7 @@ add_subdirectory(external/freetype)
 add_subdirectory(external/libglfw)
 add_subdirectory(external/fmtlib)
 add_subdirectory(external/libtess2)
+add_subdirectory(external/glm)
 
 add_library(Processing
   src/processing.cc
@@ -71,6 +72,7 @@ target_include_directories(Processing
   external/libglfw/include
   external/libtess2/Include
   external/fmtlib/include
+  external/glm/include
   ${CURL_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
   )
@@ -83,6 +85,7 @@ target_link_libraries(Processing
     tess2
     glfw
     freetype
+    glm
     ${CURL_LIBRARIES}
     LibXml2::LibXml2
     fmt
