@@ -75,7 +75,7 @@ target_include_directories(Processing
   ${LIBXML2_INCLUDE_DIR}
   )
 
-pkg_check_modules(SAIL_CXX IMPORTED_TARGET REQUIRED libsail-c++)
+pkg_check_modules(SAIL_CXX IMPORTED_TARGET REQUIRED sail-c++)
 # Link the libraries
 target_link_libraries(Processing
     PUBLIC

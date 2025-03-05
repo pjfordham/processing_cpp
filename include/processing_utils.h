@@ -11,7 +11,7 @@
 #include <chrono>
 #include <ctime>
 #include <fstream>
-
+#include <functional>
 
 // This macro pulls the API a subobject into current scope.
 #define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }

@@ -227,7 +227,7 @@ struct fmt::formatter<gl::color> {
 
    template <typename FormatContext>
    auto format(const gl::color& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "R{:8.2f},G{:8.2f},B{:8.2f},A{:8.2f}",v.r,v.g,v.b,v.a);
+      return fmt::format_to(ctx.out(), "R{:8.2f},G{:8.2f},B{:8.2f},A{:8.2f}",v.r,v.g,v.b,v.a);
    }
 };
 
@@ -241,7 +241,7 @@ struct fmt::formatter<gl::vertex> {
 
    template <typename FormatContext>
    auto format(const gl::vertex& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "P{} N{} Tu{} Tc{} C{}",
+      return fmt::format_to(ctx.out(), "P{} N{} Tu{} Tc{} C{}",
                        v.position,
                        v.normal,
                        v.tunit,

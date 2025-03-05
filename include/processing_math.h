@@ -578,7 +578,7 @@ struct fmt::formatter<glm::vec2> {
 
     template <typename FormatContext>
     auto format(const glm::vec2& v, FormatContext& ctx) {
-        return format_to(ctx.out(), "{:8.2f},{:8.2f}",v.x,v.y);
+       return fmt::format_to(ctx.out(), "{:8.2f},{:8.2f}",v.x,v.y);
     }
 };
 
@@ -592,7 +592,7 @@ struct fmt::formatter<glm::vec3> {
 
     template <typename FormatContext>
     auto format(const glm::vec3& v, FormatContext& ctx) {
-        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z);
+       return fmt::format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z);
     }
 };
 
@@ -606,7 +606,7 @@ struct fmt::formatter<glm::vec4> {
 
     template <typename FormatContext>
     auto format(const glm::vec4& v, FormatContext& ctx) {
-        return format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z,v.w);
+       return fmt::format_to(ctx.out(), "{:8.2f},{:8.2f},{:8.2f},{:8.2f}",v.x,v.y,v.z,v.w);
     }
 };
 
