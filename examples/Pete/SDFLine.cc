@@ -1,5 +1,3 @@
-#include <glm/gtx/norm.hpp>
-
 void setup() {
    size(640, 480);
    //noLoop();
@@ -10,7 +8,7 @@ float dLine(const glm::vec2& P, const glm::vec2& A, const glm::vec2& B) {
    glm::vec2 AB = B - A;  // Segment direction
    glm::vec2 AP = P - A;  // Vector from A to P
 
-   float proj = glm::dot(AP, AB) / glm::length2(AB); // Project AP onto AB (normalized)
+   float proj = glm::dot(AP, AB) / glm::dot(AB, AB); // Project AP onto AB (normalized)
 
    // Clamp projection to stay within the segment
    proj = glm::clamp(proj, 0.0f, 1.0f);
@@ -18,7 +16,7 @@ float dLine(const glm::vec2& P, const glm::vec2& A, const glm::vec2& B) {
    glm::vec2 closestPoint = A + proj * AB;  // Compute the closest point on the segment
    glm::vec2 normal = P - closestPoint;  // Vector from closest point to P
 
-   return glm::length2(normal);  // Return sqaured distance (positive always)
+   return glm::dot(normal, normal);  // Return sqaured distance (positive always)
 }
 
 float dClosedPoly(const glm::vec2& P, const std::vector<glm::vec2> &A) {
