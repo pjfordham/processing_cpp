@@ -8,7 +8,7 @@
 	branch = tags/10.2.0
 [submodule "external/libtess2"]
 	path = external/libtess2
-	url = git@github.com:pjfordham/libtess2.git
+	url = https://github.com/pjfordham/libtess2.git
 [submodule "external/freetype"]
 	path = external/freetype
 	url = https://github.com/freetype/freetype.git
