@@ -61,7 +61,7 @@ private:
    PMatrix shape_matrix = PMatrix::Identity();
    color stroke_color = BLACK;
    PImage texture_ = getBlankTexture();
-   gl::color gl_fill_color = gl::flatten_color_mode(WHITE);
+   gl::color gl_fill_color = flatten_color_mode(WHITE);
    color fill_color = WHITE;
    color tint_color = WHITE;
    int style = POLYGON;
@@ -561,7 +561,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       color specular_color = {r,g,b,a};
-      auto gl_specular_color = gl::flatten_color_mode( specular_color );
+      auto gl_specular_color = flatten_color_mode( specular_color );
       currentMaterial.specularColor = gl_specular_color;
    }
 
@@ -575,7 +575,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       fill_color = {r,g,b,a};
-      gl_fill_color = gl::flatten_color_mode( fill_color );
+      gl_fill_color = flatten_color_mode( fill_color );
       currentMaterial.ambientColor = gl_fill_color;
    }
 
@@ -662,7 +662,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       fill_color = {0,0,0,0};
-      gl_fill_color = gl::flatten_color_mode( fill_color );
+      gl_fill_color = flatten_color_mode( fill_color );
    }
 
    bool isStroked() const {
@@ -679,7 +679,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       tint_color = {r,g,b,a};
-      gl_fill_color = gl::flatten_color_mode( tint_color );
+      gl_fill_color = flatten_color_mode( tint_color );
       currentMaterial.ambientColor = gl_fill_color;
    }
 
@@ -715,7 +715,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       tint_color = WHITE;
-      gl_fill_color = gl::flatten_color_mode( tint_color );
+      gl_fill_color = flatten_color_mode( tint_color );
    }
 
    void strokeCap(int cap) {
@@ -757,10 +757,10 @@ public:
       dirty=true;
       if (!z ) {
          for ( auto&&v : vertices ) {
-            v.fill = gl::flatten_color_mode({0.0,0.0,0.0,0.0});
+            v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
          }
          for ( auto&&v : materials ) {
-            v.ambientColor = gl::flatten_color_mode({0.0,0.0,0.0,0.0});
+            v.ambientColor = flatten_color_mode({0.0,0.0,0.0,0.0});
          }
       }
    }
@@ -769,7 +769,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       fill_color = c;
-      gl::color clr = gl::flatten_color_mode(fill_color);
+      gl::color clr = flatten_color_mode(fill_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
@@ -782,7 +782,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       tint_color = c;
-      gl::color clr = gl::flatten_color_mode(tint_color);
+      gl::color clr = flatten_color_mode(tint_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }

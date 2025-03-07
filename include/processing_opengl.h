@@ -6,6 +6,7 @@
 
 #include "processing_opengl_shader.h"
 #include "processing_opengl_texture.h"
+#include "processing_opengl_color.h"
 #include "processing_utils.h"
 #include "processing_enum.h"
 #include "processing_math.h"
@@ -16,10 +17,6 @@ typedef unsigned int GLuint;
 
 
 namespace gl {
-
-   struct color {
-      float r,g,b,a;
-   };
 
    struct vertex {
       glm::vec3 position;
@@ -86,12 +83,12 @@ namespace gl {
       }
 
       float screenX(float x, float y, float z) {
-         glm::vec3 in = { x, y, z };
+         glm::vec4 in = { x, y, z, 1 };
          return (projection_matrix * (view_matrix * in)).x;
       }
 
       float screenY(float x, float y, float z) {
-         glm::vec3 in = { x, y, z };
+         glm::vec4 in = { x, y, z, 1 };
          return (projection_matrix * (view_matrix * in)).y;
       }
 
@@ -101,7 +98,12 @@ namespace gl {
       }
 
       void setViewMatrix( const glm::mat4 &PV ) {
-         view_matrix = PMatrix::FlipY().glm_data() * PV ;
+         glm::mat4 flipY = {
+            { 1.0f,  0.0f, 0.0f, 0.0f },
+            { 0.0f, -1.0f, 0.0f, 0.0f },
+            { 0.0f,  0.0f, 1.0f, 0.0f } ,
+            { 0.0f,  0.0f, 0.0f, 1.0f } };
+         view_matrix = flipY * PV ;
       }
 
       void pushAmbientLight( glm::vec3 color ) {
@@ -227,8 +229,8 @@ namespace gl {
       }
 
       void clear() {
-         c= false;
-        geometries.clear();
+         c = false;
+         geometries.clear();
       }
 
       void render(framebuffer &fb);
@@ -236,7 +238,6 @@ namespace gl {
 
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader );
 
-   color flatten_color_mode(::color c);
 } // namespace gl
 
 template <>

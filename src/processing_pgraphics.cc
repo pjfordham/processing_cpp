@@ -384,7 +384,7 @@ public:
    }
 
    void background(float r, float g, float b, float a = color::scaleA) {
-      frame.background( gl::flatten_color_mode({r,g,b,a}) );
+      frame.background( flatten_color_mode({r,g,b,a}) );
    }
 
    void background(float gray) {
