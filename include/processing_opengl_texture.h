@@ -28,6 +28,8 @@ namespace gl {
 
       GLuint get_id() const;
 
+      void bind() const;
+
       operator bool() const;
 
       void set_pixels(const unsigned int *pixels, int width, int height);
