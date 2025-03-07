@@ -17,7 +17,7 @@
 
 namespace gl {
 
-   void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
+   void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
       fb.bind();
       shader.bind();
       uniform uSampler = shader.get_uniform("texture");
@@ -29,7 +29,7 @@ namespace gl {
       scene.set();
       batch.bind();
       batch.load();
-      batch.draw(transform.glm_data());
+      batch.draw( transform );
    }
 
    void frame_t::render(framebuffer &fb) {
@@ -188,7 +188,7 @@ namespace gl {
 
    void VAO::debugPrint() const {
       for (auto &m : transforms) {
-         PMatrix(m).print();
+         fmt::print("{}\n",m);
       }
       fmt::print("Vertices: {}, Materials: {}\n", vertices.size(), materials.size() );
       for ( int i = 0; i < vertices.size(); ++i ) {
