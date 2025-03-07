@@ -43,6 +43,12 @@ public:
     // Dispatch a task; depends on mode (debugMode, blockingMode, or asyncMode)
    template <typename Func, typename... Args>
    void dispatch(Func&& func, Args&&... args) {
+      dispatch(mode, std::forward<Func>(func), std::forward<Args>(args)... );
+   }
+
+    // Dispatch a task; depends on mode (debugMode, blockingMode, or asyncMode)
+   template <typename Func, typename... Args>
+   void dispatch(Mode mode, Func&& func, Args&&... args) {
       // if current thread is already worker then abort
       if (std::this_thread::get_id() == worker.get_id())  {
          // int s;
