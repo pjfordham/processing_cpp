@@ -297,7 +297,6 @@ namespace gl {
          glViewport(0, 0, width, height);
          glClearColor(0, 0, 0, 1);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-         bind();
          direct.bind();
          // Can probably remove this from fast path
          uniform texture1 = direct.get_uniform("texture1");
@@ -310,14 +309,6 @@ namespace gl {
          glBindVertexArray(0);
          glDeleteVertexArrays(1, &directVAO);
       } );
-   }
-
-   void mainframe::bind() {
-      DEBUG_METHOD();
-   }
-
-   void mainframe::clear( float r, float g, float b, float a ) {
-      DEBUG_METHOD();
    }
 
 } // namespace gl

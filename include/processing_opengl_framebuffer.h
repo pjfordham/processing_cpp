@@ -31,10 +31,6 @@ namespace gl {
       mainframe(const mainframe &&x) noexcept = delete;
       mainframe& operator=(const mainframe&&x) noexcept = delete;
 
-      void bind();
-
-      void clear( float r, float g, float b, float a );
-
       void invert( framebuffer &src );
    };
 
@@ -50,7 +46,7 @@ namespace gl {
       GLuint did=0;
       GLuint textureBufferID = 0;
       bool owning = true;
-      
+
    public:
       GLuint getColorBufferID();
 
