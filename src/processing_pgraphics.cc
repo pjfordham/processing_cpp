@@ -982,7 +982,7 @@ public:
 
       // If we just blit directly everything is drawn upside down
       // localFrame.blit( windowFrame );
-      windowFrame.invert( localFrame );
+      windowFrame.invert( localFrame.getColorBufferID() );
 
       return std::exchange(flushes, 0);
    }

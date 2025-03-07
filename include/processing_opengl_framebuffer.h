@@ -34,11 +34,7 @@ namespace gl {
       mainframe(const mainframe &&x) noexcept = delete;
       mainframe& operator=(const mainframe&&x) noexcept = delete;
 
-      void bind();
-
-      void clear( float r, float g, float b, float a );
-
-      void invert( framebuffer &src );
+      void invert( GLuint textureID );
 
       friend struct fmt::formatter<gl::mainframe>;
    };

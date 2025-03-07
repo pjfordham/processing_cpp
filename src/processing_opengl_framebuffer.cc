@@ -264,42 +264,30 @@ namespace gl {
       // work
       width = width_;
       height = height_;
-      bind();
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
       glClearColor(1, 0, 0, 1);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
-   void mainframe::invert( framebuffer &src ) {
+   void mainframe::invert( GLuint textureID ) {
       GLuint directVAO;
       glGenVertexArrays(1, &directVAO);
       glBindVertexArray(directVAO);
-      bind();
-      // Shouldn't need to do this
-      clear(0.0,0.0,0.0,1.0);
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glViewport(0, 0, width, height);
+      glClearColor(0, 0, 0, 1);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       direct.bind();
       // Can probably remove this from fast path
       uniform texture1 = direct.get_uniform("texture1");
       texture1.set( 0 );
       glActiveTexture(GL_TEXTURE0);
       glDisable(GL_DEPTH_TEST);
-      glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
+      glBindTexture(GL_TEXTURE_2D, textureID);
       glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
       glEnable(GL_DEPTH_TEST);
       glBindVertexArray(0);
       glDeleteVertexArrays(1, &directVAO);
-   }
-
-   void mainframe::bind() {
-      DEBUG_METHOD();
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      glViewport(0, 0, width, height);
-   }
-
-   void mainframe::clear( float r, float g, float b, float a ) {
-      DEBUG_METHOD();
-      bind();
-      glClearColor(r, g, b, a);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    }
 
 } // namespace gl
