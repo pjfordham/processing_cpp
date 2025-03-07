@@ -31,7 +31,7 @@ namespace gl {
       mainframe(const mainframe &&x) noexcept = delete;
       mainframe& operator=(const mainframe&&x) noexcept = delete;
 
-      void invert( framebuffer &src );
+      void invert( GLuint textureID );
    };
 
    class framebuffer {
