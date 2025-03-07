@@ -18,6 +18,7 @@ TaskQueue renderThread;
 
 namespace gl {
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const PMatrix &transform, scene_t scene, const shader_t &shader ) {
+      // TODO not happy with this
       renderThread.dispatch( [&] {
          fb.bind();
       shader.bind();
@@ -35,7 +36,8 @@ namespace gl {
    }
 
    void frame_t::render(framebuffer &fb) {
-        renderThread.dispatch( [&] {
+      // TODO needs attention
+      renderThread.dispatch( [&] {
          fb.bind();
       if (c) {
          fb.clear(background_.r, background_.g, background_.b, background_.a);
@@ -438,7 +440,7 @@ namespace gl {
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
-      renderThread.dispatch( [&] {
+      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
          // glGenVertexArrays(1, &vao);
          glGenBuffers(1, &indexId);
          glGenBuffers(1, &vertexId);

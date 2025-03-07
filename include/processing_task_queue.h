@@ -21,7 +21,7 @@ public:
         Async // Default mode is Async (worker thread)
     };
 
-    TaskQueue(Mode mode = Mode::Blocking) : mode(mode) {
+    TaskQueue(Mode mode = Mode::Async) : mode(mode) {
         if (mode != Mode::Debug) {
             worker = std::thread(&TaskQueue::workerThread, this);
         }

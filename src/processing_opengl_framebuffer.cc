@@ -101,7 +101,7 @@ namespace gl {
          abort();
       }
 
-      renderThread.dispatch( [&] {
+      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
 
       glGenFramebuffers(1, &id);
       bind();
@@ -172,7 +172,7 @@ namespace gl {
 
    GLuint framebuffer::getColorBufferID() {
       if (aaMode == MSAA) {
-         renderThread.dispatch([&] {
+         renderThread.dispatch([width=width, height=height, id=id, did=did] {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, did);
             glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
@@ -205,10 +205,10 @@ namespace gl {
    void framebuffer::blit(framebuffer &dest) const {
       DEBUG_METHOD();
       if (id != dest.id) {
-        renderThread.dispatch([&] {
+         renderThread.dispatch([width=width,height=height,id=id,dwidth=dest.width, dheight=dest.height, did=dest.id] {
           glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
-          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest.id);
-          glBlitFramebuffer(0, 0, width, height, 0, 0, dest.width, dest.height,
+          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, did);
+          glBlitFramebuffer(0, 0, width, height, 0, 0, dwidth, dheight,
                             GL_COLOR_BUFFER_BIT, GL_LINEAR);
           glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
           glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -218,7 +218,7 @@ namespace gl {
 
    void framebuffer::updatePixels( const std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
-      renderThread.dispatch( [&] {
+      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
          glActiveTexture(GL_TEXTURE0);
          glBindTexture(GL_TEXTURE_2D, colorBufferID);
          glTexSubImage2D(GL_TEXTURE_2D, 0,
@@ -228,10 +228,10 @@ namespace gl {
          glBindTexture(GL_TEXTURE_2D, 0);
       });
    }
-   
+
    void framebuffer::loadPixels( std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
-      renderThread.dispatch( [&] {
+      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
       pixels.resize(width*height);
       bind();
       glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
@@ -240,12 +240,12 @@ namespace gl {
 
    void framebuffer::saveFrame(void *surface) {
       DEBUG_METHOD();
-      renderThread.dispatch( [&] {
+      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
          bind();
          glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
       } );
    }
-   
+
    void framebuffer::bind() {
       DEBUG_METHOD();
       glBindFramebuffer(GL_FRAMEBUFFER, id);
@@ -287,9 +287,9 @@ namespace gl {
       height = height_;
   }
 
-   void mainframe::invert( framebuffer &src ) {
+   void mainframe::invert( GLuint textureID ) {
 
-      renderThread.dispatch( [&] {
+      renderThread.dispatch( [width=width, height=height, textureID, &direct = direct ] {
          GLuint directVAO;
          glGenVertexArrays(1, &directVAO);
          glBindVertexArray(directVAO);
@@ -303,7 +303,7 @@ namespace gl {
          texture1.set( 0 );
          glActiveTexture(GL_TEXTURE0);
          glDisable(GL_DEPTH_TEST);
-         glBindTexture(GL_TEXTURE_2D, src.getColorBufferID());
+         glBindTexture(GL_TEXTURE_2D, textureID);
          glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
          glEnable(GL_DEPTH_TEST);
          glBindVertexArray(0);
