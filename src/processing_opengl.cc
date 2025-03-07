@@ -1,13 +1,14 @@
 #include <utility>
+#include <thread>
 
 #include "glad/glad.h"
-#include <GLFW/glfw3.h>
 
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_debug.h"
-#include <thread>
 #include "processing_task_queue.h"
+
+#include <glm/gtc/type_ptr.hpp>
 
 #undef DEBUG_METHOD
 #undef DEBUG_METHOD_MESSAGE
@@ -62,37 +63,6 @@ namespace gl {
       }
       geometries.clear();
       });
-   }
-
-   static color HSBtoRGB(float h, float s, float v, float a)
-   {
-      int i = floorf(h * 6);
-      auto f = h * 6.0 - i;
-      auto p = v * (1.0 - s);
-      auto q = v * (1.0 - f * s);
-      auto t = v * (1.0 - (1.0 - f) * s);
-
-      float r,g,b;
-      switch (i % 6) {
-      case 0: r = v, g = t, b = p; break;
-      case 1: r = q, g = v, b = p; break;
-      case 2: r = p, g = v, b = t; break;
-      case 3: r = p, g = q, b = v; break;
-      case 4: r = t, g = p, b = v; break;
-      case 5: r = v, g = p, b = q; break;
-      }
-      return { r, g, b, a };
-   }
-
-   color flatten_color_mode(::color c) {
-      float r = map(c.r,0,::color::scaleR,0,1);
-      float g = map(c.g,0,::color::scaleG,0,1);
-      float b = map(c.b,0,::color::scaleB,0,1);
-      float a = map(c.a,0,::color::scaleA,0,1);
-      if (::color::mode == HSB) {
-         return HSBtoRGB(r,g,b,a);
-      }
-      return { r, g, b, a };
    }
 
    int scene_t::blendMode(int b ) {
@@ -172,8 +142,9 @@ namespace gl {
       if (vertices.size() > 65536)
          abort();
 
+      glm::mat4 I;
       const glm::mat4 &transform =
-         flatten_transforms ? PMatrix::Identity().glm_data() : transform_;
+         flatten_transforms ? I : transform_;
 
       if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
          vaos.emplace_back();
@@ -210,7 +181,7 @@ namespace gl {
 
       for (auto &v : vertices) {
          vao.vertices.emplace_back(
-            flatten_transforms ? transform_ * v.position : v.position,
+            flatten_transforms ? transform_ * glm::vec4(v.position,1.0) : v.position,
             v.normal,
             v.coord,
             v.fill,

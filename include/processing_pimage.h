@@ -2,6 +2,7 @@
 #define PROCESSING_PIMAGE_H
 
 #include "processing_properties.h"
+#include "processing_opengl_color.h"
 #include "processing_color.h"
 
 #include <vector>

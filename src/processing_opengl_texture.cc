@@ -60,6 +60,12 @@ namespace gl {
       return id;
    }
 
+   void texture_t::bind() const {
+     // renderThread.dispatch( [id=id] {
+        glBindTexture(GL_TEXTURE_2D, id);
+     // } );
+   }
+
    texture_t::operator bool() const {
       return id != 0;
    }
