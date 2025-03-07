@@ -18,7 +18,16 @@ namespace gl {
 
    shader_t::shader_t(const char *vertex, const char *fragment) {
       // Create the shaders
-      renderThread.dispatch([&] {
+      renderThread.dispatch(TaskQueue::Mode::Blocking, [&] {
+         programID = glCreateProgram();
+      } );
+
+      // We need to create copies of the shader sources to live in the lambda.
+      // Or we could just dispatch it blocking but where's the fun in that.
+      renderThread.dispatch( [v=std::string(vertex), f=std::string(fragment), programID = programID] {
+
+      const char *fragment = f.c_str();
+      const char *vertex = v.c_str();
 
       GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
       GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -51,7 +60,6 @@ namespace gl {
       }
 
       // Link the program
-      programID = glCreateProgram();
       glAttachShader(programID, VertexShaderID);
       glAttachShader(programID, FragmentShaderID);
       glLinkProgram(programID);
@@ -74,7 +82,7 @@ namespace gl {
    }
 
    shader_t::~shader_t() {
-      renderThread.dispatch( [&] {
+      renderThread.dispatch( [programID = programID] {
          if (programID) {
             glDeleteProgram(programID);
          }
