@@ -128,6 +128,7 @@ public:
    void reserve(int v, int i) {
       DEBUG_METHOD();
       vertices.reserve(v);
+      materials.reserve(v);
       extras.reserve(v);
       indices.reserve(i);
    }
@@ -1624,6 +1625,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
    DEBUG_METHOD();
    if (vertices.size() > 2 && style != POINTS && style != LINES) {
       std::vector<gl::material> m;
+      m.reserve( materials.size() );
       for (auto &material : materials ) {
          m.emplace_back( gl::material{
                { material.ambientColor.r,  material.ambientColor.g,  material.ambientColor.b,  material.ambientColor.a  },
