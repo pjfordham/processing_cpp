@@ -124,14 +124,16 @@ public:
    void flush() {
       if ( batch.size() > 0 ) {
          frame.add( std::move(batch), scene, currentShader.getShader() );
+         pixels_current = false;
+         batch.clear();
       }
-      batch.clear();
    }
 
    void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
       flush();
       frame.render( localFrame );
       gl::renderDirect( localFrame, batch, transform.glm_data(), scene, currentShader.getShader() );
+      pixels_current = false;
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -604,8 +606,10 @@ public:
    void loadPixels() {
       flush();
       frame.render( localFrame );
-      localFrame.blit( pixelsFrame );
-      pixelsFrame.loadPixels( pixels );
+      if ( pixels_current == false ) {
+         localFrame.blit( pixelsFrame );
+         pixelsFrame.loadPixels( pixels );
+      }
       pixels_current = true;
    }
 
@@ -614,6 +618,7 @@ public:
       frame.render( localFrame );
       pixelsFrame.updatePixels( pixels );
       pixelsFrame.blit( localFrame );
+      pixels_current = true;
     }
 
    color get(int x, int y) {
@@ -681,7 +686,6 @@ public:
    }
 
    void shape(PShape &pshape) {
-      pixels_current = false;
       if( pshape.isCompiled() ) {
          flush();
          auto &local = pshape.getBatch();
