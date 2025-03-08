@@ -38,32 +38,33 @@ namespace gl {
    }
 
    void frame_t::render(framebuffer &fb) {
-      // TODO needs attention
-      renderThread.dispatch( [&] {
+
+      renderThread.dispatch( [c=c,&fb, background_=background_,geo=geometries]  {
          fb.bind();
-      if (c) {
-         fb.clear(background_.r, background_.g, background_.b, background_.a);
-         c = false;
-      }
-      for (auto &g : geometries) {
-         // Add flat shader optimization
-         g.shader.bind();
+         if (c) {
+            fb.clear(background_.r, background_.g, background_.b, background_.a);
+         }
+         for (auto g : geo) {
+            // Add flat shader optimization
+            g.shader.bind();
 
-         uniform uSampler = g.shader.get_uniform("texture");
-         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+            uniform uSampler = g.shader.get_uniform("texture");
+            uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
-         g.scene.setup( g.shader );
-         g.batch.setup( g.shader );
+            g.scene.setup( g.shader );
+            g.batch.setup( g.shader );
 
-         g.shader.set_uniforms();
-         g.scene.set();
-         g.batch.bind();
-         g.batch.load();
-         g.batch.draw();
-         g.batch.clear();
-      }
-      geometries.clear();
+            g.shader.set_uniforms();
+            g.scene.set();
+            g.batch.bind();
+            g.batch.load();
+            g.batch.draw();
+            g.batch.clear();
+         }
       });
+
+      geometries.clear();
+      c = false;
    }
 
    int scene_t::blendMode(int b ) {
@@ -413,7 +414,7 @@ namespace gl {
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
-      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
+      renderThread.dispatch( TaskQueue::Mode::Async, [&] {
          // glGenVertexArrays(1, &vao);
          glGenBuffers(1, &indexId);
          glGenBuffers(1, &vertexId);
