@@ -105,10 +105,10 @@ namespace gl {
       Shininess = shader.get_attribute("shininess");
    }
 
-   void batch_t::setupTextures(VAO &draw) {
+   void batch_t::setupTextures(VAO_ptr draw) {
       std::vector<glm::vec2> textureOffsets(16);
-      for ( int i = 0; i < draw.textures.size() ; ++i ) {
-         PImage &img = draw.textures[i];
+      for ( int i = 0; i < draw->textures.size() ; ++i ) {
+         PImage &img = draw->textures[i];
          if (img != PImage::circle()) {
             // Set this here so if updatePixels needs to create
             // a new texture have the correct unit bound already.
@@ -130,7 +130,7 @@ namespace gl {
       int i = 0;
       for (auto &vao : vaos) {
          fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-         vao.debugPrint();
+         vao->debugPrint();
       }
       fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
@@ -144,7 +144,7 @@ namespace gl {
 
       for (auto &draw: vaos ) {
          setupTextures( draw );
-         draw.draw();
+         draw->draw();
       }
    }
 
@@ -164,31 +164,31 @@ namespace gl {
       const glm::mat4 &transform =
          flatten_transforms ? PMatrix::Identity().glm_data() : transform_;
 
-      if (vaos.size() == 0 || vaos.back().vertices.size() + vertices.size() > 65536) {
-         vaos.emplace_back();
-         vaos.back().transforms.push_back( transform );
-         vaos.back().textures.push_back(texture_);
+      if (vaos.size() == 0 || vaos.back()->vertices.size() + vertices.size() > 65536) {
+         vaos.emplace_back(std::make_shared<VAO>());
+         vaos.back()->transforms.push_back( transform );
+         vaos.back()->textures.push_back(texture_);
       }
       // At this point vaos has a back and that back has a transform and a texture.
       // It also has enough capacity for these triangles.
 
-      if ( transform != vaos.back().transforms.back()) {
-         if (vaos.back().transforms.size() == MaxTransformsPerBatch) {
-            vaos.emplace_back();
-            vaos.back().textures.push_back(texture_);
+      if ( transform != vaos.back()->transforms.back()) {
+         if (vaos.back()->transforms.size() == MaxTransformsPerBatch) {
+            vaos.emplace_back(std::make_shared<VAO>());
+            vaos.back()->textures.push_back(texture_);
          }
-         vaos.back().transforms.push_back(transform);
+         vaos.back()->transforms.push_back(transform);
       }
 
-      if ( texture_ != vaos.back().textures.back()) {
-         if (vaos.back().textures.size() == MaxTextureImageUnits) {
-            vaos.emplace_back();
-            vaos.back().transforms.push_back( transform );
+      if ( texture_ != vaos.back()->textures.back()) {
+         if (vaos.back()->textures.size() == MaxTextureImageUnits) {
+            vaos.emplace_back(std::make_shared<VAO>());
+            vaos.back()->transforms.push_back( transform );
          }
-         vaos.back().textures.push_back(texture_);
+         vaos.back()->textures.push_back(texture_);
       }
 
-      auto &vao = vaos.back();
+      auto &vao = *(vaos.back());
       int currentM = vao.transforms.size() - 1;
       int tunit = vao.textures.size() - 1;
       int offset = vao.vertices.size();
@@ -236,22 +236,22 @@ namespace gl {
       int i = 0;
       for (auto &vao : vaos) {
          fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-         vao.debugPrint();
+         vao->debugPrint();
       }
       fmt::print("\n### GEOMETRY DUMP END   ###\n");
 #endif
 
       for (auto &draw: vaos ) {
          std::vector<glm::mat3> normals;
-         for ( const auto &transform : draw.transforms ) {
+         for ( const auto &transform : draw->transforms ) {
             normals.push_back( glm::mat3(glm::transpose(glm::inverse(transform))) );
          }
 
-         Mmatrix.set( draw.transforms );
+         Mmatrix.set( draw->transforms );
          Nmatrix.set(normals);
 
          setupTextures( draw );
-         draw.draw();
+         draw->draw();
       }
    }
 
@@ -261,18 +261,18 @@ namespace gl {
 
    void batch_t::bind() {
       for (auto &draw: vaos ) {
-         draw.bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
+         draw->bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
       }
    }
    void batch_t::load() {
       for (auto &draw: vaos ) {
-         draw.loadBuffers();
+         draw->loadBuffers();
       }
    }
 
    bool batch_t::usesCircles() const {
       for (auto &draw: vaos ) {
-         if (std::find(draw.textures.begin(), draw.textures.end(), PImage::circle()) != draw.textures.end())
+         if (std::find(draw->textures.begin(), draw->textures.end(), PImage::circle()) != draw->textures.end())
          {
             return true;
          }
@@ -283,8 +283,8 @@ namespace gl {
    bool batch_t::usesTextures() const {
       for (auto &draw: vaos ) {
          // This could be a better test
-         if (!(draw.textures.size() == 1 && draw.textures[0] != PImage::circle() &&
-               draw.textures[0].width == 1 && draw.textures[0].height == 1)) {
+         if (!(draw->textures.size() == 1 && draw->textures[0] != PImage::circle() &&
+               draw->textures[0].width == 1 && draw->textures[0].height == 1)) {
             return true;
          }
       }

@@ -161,6 +161,8 @@ namespace gl {
       ~VAO();
    };
 
+   typedef std::shared_ptr<VAO>  VAO_ptr;
+
    class batch_t {
       attribute Position;
       attribute Normal;
@@ -172,7 +174,7 @@ namespace gl {
       uniform Nmatrix;
       uniform TexOffset;
       attribute Ambient, Specular, Emissive, Shininess;
-      std::vector<VAO> vaos;
+      std::vector<VAO_ptr> vaos;
 
    public:
       batch_t() noexcept {}
@@ -188,7 +190,7 @@ namespace gl {
       void load();
       void bind();
 
-      void setupTextures(VAO &);
+      void setupTextures(VAO_ptr);
       void draw();
       void draw(const glm::mat4& transform);
       void clear();
