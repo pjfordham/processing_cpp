@@ -38,7 +38,7 @@ public:
    int getWidth() const;
    int getHeight() const;
    unsigned int *getPixels();
-   GLuint getAsTexture();
+   gl::texture_ptr getAsTexture();
    PImage getAsPImage();
    void drawPImageWithCPU( PImage img, int x, int y );
 

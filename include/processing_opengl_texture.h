@@ -1,6 +1,8 @@
 #ifndef PROCESSING_OPENGL_TEXTURE_H
 #define PROCESSING_OPENGL_TEXTURE_H
 
+#include <memory>
+
 typedef unsigned int GLuint;
 typedef signed int GLint;
 
@@ -37,7 +39,7 @@ namespace gl {
       void get_pixels(unsigned int *pixels) const;
    };
 
-
+   typedef std::shared_ptr<texture_t> texture_ptr;
 }
 
 #endif

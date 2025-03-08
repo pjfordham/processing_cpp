@@ -38,13 +38,12 @@ public:
    int width = 0;
    int height = 0;
    unsigned int *pixels = nullptr;
-   gl::texture_t texture;
+   gl::texture_ptr texture;
    int textureWrap;
    bool dirty = true;
 
    ~PImageImpl() {
       DEBUG_METHOD();
-      texture.release();
       if (pixels) {
          delete [] pixels;
       }
@@ -57,10 +56,10 @@ public:
       std::fill(pixels, pixels+width*height, color(BLACK));
    }
 
-   PImageImpl(GLuint textureID_) : texture(textureID_) {
+   PImageImpl(gl::texture_ptr textureID_) : texture(textureID_) {
       DEBUG_METHOD();
-      width = texture.get_width();
-      height = texture.get_height();
+      width = texture->get_width();
+      height = texture->get_height();
    }
 
    PImageImpl(int w, int h, uint32_t *pixels_, int) : width(w), height(h) {
@@ -134,14 +133,19 @@ public:
    void updatePixels() {
       DEBUG_METHOD();
       if (dirty) {
-         texture.set_pixels( pixels, width, height );
+         if (!texture) {
+            texture = std::make_shared<gl::texture_t>();
+         }
+         texture->set_pixels( pixels, width, height );
          dirty = false;
       }
    }
 
    void releaseTexture() {
       DEBUG_METHOD();
-      texture.release();
+      if (texture) {
+         texture->release();
+      }
    }
 
    void filter(int x, float level=1.0) {
@@ -190,12 +194,13 @@ public:
    }
 
    void loadPixels() {
-      DEBUG_METHOD();
-      if (pixels) return;
-      if (!texture)
-         abort();
-      pixels = new uint32_t[width*height];
-      glGetTexImage( GL_TEXTURE_2D, 0 , GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+       DEBUG_METHOD();
+       if (pixels) return;
+       if (!texture)
+          abort();
+       pixels = new uint32_t[width*height];
+       texture->bind();
+       glGetTexImage( GL_TEXTURE_2D, 0 , GL_RGBA, GL_UNSIGNED_BYTE, pixels );
    }
 
    void convolve(const std::vector<std::vector<float>> &kernel) {
@@ -265,7 +270,7 @@ struct fmt::formatter<PImageImpl> {
 
     template <typename FormatContext>
     auto format(const PImageImpl& v, FormatContext& ctx) {
-       return format_to(ctx.out(), "width={:<4} height={:<4} pixels={:<16} textureID={:<4} dirty={:<6}", v.width, v.height, (void*)v.pixels, v.texture.get_id(),v.dirty);
+       return format_to(ctx.out(), "width={:<4} height={:<4} pixels={:<16} textureID={:<4} dirty={:<6}", v.width, v.height, (void*)v.pixels, v.texture ? v.texture->get_id() : -2 ,v.dirty);
     }
 };
 
@@ -308,7 +313,7 @@ color PImage::get(int x, int y) const {
 }
 
 GLuint PImage::getTextureID() const {
-   return impl->texture.get_id();
+   return impl->texture->get_id();
 }
 
 void PImage::set(int x, int y, color c) {
@@ -376,7 +381,7 @@ PImage createImage(int width, int height, int mode) {
    return PImage( std::make_shared<PImageImpl>(width,height,mode) );
 }
 
-PImage createImageFromTexture(GLuint textureID) {
+PImage createImageFromTexture(gl::texture_ptr textureID) {
    return PImage( std::make_shared<PImageImpl>(textureID) );
 }
 
