@@ -95,9 +95,9 @@ public:
 };
 
 
-PerlinNoise perlin_noise;
-int perlin_octaves = 4 ;
-float perlin_falloff = 0.5;
+thread_local PerlinNoise perlin_noise;
+thread_local int perlin_octaves = 4 ;
+thread_local float perlin_falloff = 0.5;
 
 
 void noiseSeed(int seed) {
