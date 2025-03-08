@@ -3,6 +3,7 @@
 
 #include "processing_properties.h"
 #include "processing_opengl_color.h"
+#include "processing_opengl_texture.h"
 #include "processing_color.h"
 
 #include <vector>
@@ -96,7 +97,7 @@ public:
 
 PImage createImage(int width, int height, int mode);
 PImage createBlankImage();
-PImage createImageFromTexture(GLuint textureID);
+PImage createImageFromTexture(gl::texture_ptr textureID);
 PImage loadImage(std::string_view URL);
 PImage requestImage(std::string_view URL);
 

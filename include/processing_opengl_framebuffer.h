@@ -31,7 +31,7 @@ namespace gl {
       mainframe(const mainframe &&x) noexcept = delete;
       mainframe& operator=(const mainframe&&x) noexcept = delete;
 
-      void invert( GLuint textureID );
+      void invert( texture_ptr textureID );
    };
 
    class framebuffer {
@@ -48,7 +48,7 @@ namespace gl {
       bool owning = true;
 
    public:
-      GLuint getColorBufferID();
+      texture_ptr getColorBufferID();
 
       auto getWidth() const {
          return width;
