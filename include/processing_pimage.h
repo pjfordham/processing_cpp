@@ -59,10 +59,7 @@ public:
 
    PImage() {}
 
-   static PImage circle() {
-      PImage a;
-      return a;
-   }
+   static PImage circle();
 
    PImage( std::shared_ptr<PImageImpl> impl_ );
 
@@ -72,7 +69,7 @@ public:
 
    color get(int x, int y) const;
 
-   GLuint getTextureID() const;
+   gl::texture_ptr getTextureID() const;
 
    void set(int x, int y, color c);
 

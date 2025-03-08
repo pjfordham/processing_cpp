@@ -1,12 +1,14 @@
 #include "processing_pimage.h"
 #include "processing_debug.h"
 #include "processing_opengl_texture.h"
+
 #include <sail-c++/sail-c++.h>
 #include <curl/curl.h>
 #include "glad/glad.h"
 #include <fmt/core.h>
 #include <iostream>
 #include <filesystem>
+
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
 
@@ -107,6 +109,14 @@ public:
          pixels[y * width + x] = c;
          dirty = true;
       }
+   }
+
+   gl::texture_ptr getTextureID() {
+      DEBUG_METHOD();
+      if ( dirty ) {
+         updatePixels();
+      }
+      return texture;
    }
 
    bool isDirty() {
@@ -312,8 +322,8 @@ color PImage::get(int x, int y) const {
    return impl->get(x,y);
 }
 
-GLuint PImage::getTextureID() const {
-   return impl->texture->get_id();
+gl::texture_ptr PImage::getTextureID() const {
+   return impl->getTextureID();
 }
 
 void PImage::set(int x, int y, color c) {
@@ -362,6 +372,10 @@ void PImage::close() {
    curl_global_cleanup();
 }
 
+PImage PImage::circle() {
+   static PImage a = createImageFromTexture( gl::texture_t::circle() );
+   return a;
+}
 
 static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
