@@ -28,7 +28,7 @@ const float QUARTER_PI = M_PI / 4.0;
 const float DEG_TO_RAD = 0.01745329238474369f;
 
 inline float random(float min, float max) {
-   static std::mt19937 randomNumbers( 1 );
+   thread_local static std::mt19937 randomNumbers( 1 );
    std::uniform_real_distribution<float> randomLocationRange(min, max);
    return randomLocationRange( randomNumbers );
 }
@@ -519,8 +519,8 @@ inline float dist(float x1, float y1, float x2, float y2) {
 
 inline float randomGaussian()
 {
-   static std::mt19937 randomNumbers( 1 );
-   static std::normal_distribution<float> dist(0.0f, 1.0f);
+   thread_local static std::mt19937 randomNumbers( 1 );
+   thread_local static std::normal_distribution<float> dist(0.0f, 1.0f);
    return dist(randomNumbers);
 }
 
