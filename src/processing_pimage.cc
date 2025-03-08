@@ -114,6 +114,14 @@ public:
       }
    }
 
+   gl::texture_ptr getTextureID() {
+      DEBUG_METHOD();
+      if ( dirty ) {
+         updatePixels();
+      }
+      return texture;
+   }
+
    bool isDirty() {
       DEBUG_METHOD();
       return dirty;
@@ -312,8 +320,8 @@ color PImage::get(int x, int y) const {
    return impl->get(x,y);
 }
 
-GLuint PImage::getTextureID() const {
-   return impl->texture->get_id();
+gl::texture_ptr PImage::getTextureID() const {
+   return impl->getTextureID();
 }
 
 void PImage::set(int x, int y, color c) {
@@ -361,6 +369,10 @@ void PImage::close() {
    curl_global_cleanup();
 }
 
+PImage PImage::circle() {
+   static PImage a = createImageFromTexture( gl::texture_t::circle() );
+   return a;
+}
 
 PImage createBlankImage() {
    auto p = PImage( std::make_shared<PImageImpl>(1,1,0) );

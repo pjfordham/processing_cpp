@@ -8,6 +8,9 @@ typedef signed int GLint;
 
 namespace gl {
 
+   class texture_t;
+   typedef std::shared_ptr<texture_t> texture_ptr;
+
    class texture_t {
       GLuint id;
       GLint wrap;
@@ -21,6 +24,11 @@ namespace gl {
 
       // Create and manage the texture
       texture_t();
+
+      static texture_ptr circle() {
+         static texture_ptr t = std::make_shared<texture_t>(-1);
+         return t;
+      }
 
       void release();
 
@@ -39,7 +47,6 @@ namespace gl {
       void get_pixels(unsigned int *pixels) const;
    };
 
-   typedef std::shared_ptr<texture_t> texture_ptr;
 }
 
 #endif

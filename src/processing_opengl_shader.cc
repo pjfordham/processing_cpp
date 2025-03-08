@@ -7,8 +7,7 @@
 #include <fmt/core.h>
 
 #include "glad/glad.h"
-#include "processing_opengl_shader.h"
-#include "processing_opengl.h"
+#include "processing_opengl_texture.h"
 #include "processing_task_queue.h"
 
 #undef DEBUG_METHOD
@@ -107,12 +106,12 @@ namespace gl {
          // TODO: Fix hardcoding of unit 15
          gl::uniform loc = get_uniform( id.c_str() );
          glActiveTexture(GL_TEXTURE0 + 15);
-         glBindTexture(GL_TEXTURE_2D, value);
+         glBindTexture(GL_TEXTURE_2D, value->get_id());
          loc.set( 15 );
       }
    }
 
-   void shader_t::set(const char *id, GLuint textureID) {
+   void shader_t::set(const char *id, texture_ptr textureID) {
       DEBUG_METHOD();
       uniformsSampler[id] = textureID;
    }

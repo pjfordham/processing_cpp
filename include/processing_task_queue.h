@@ -51,8 +51,8 @@ public:
    void dispatch(Mode mode, Func&& func, Args&&... args) {
       // if current thread is already worker then abort
       if (std::this_thread::get_id() == worker.get_id())  {
-         int s;
-         fmt::print(stderr,"Warning: dispatch of {} from render thread, just calling direct.\n", abi::__cxa_demangle(typeid(func).name(), nullptr,nullptr, &s));
+         // int s;
+         // fmt::print(stderr,"Warning: dispatch of {} from render thread, just calling direct.\n", abi::__cxa_demangle(typeid(func).name(), nullptr,nullptr, &s));
          std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
          return;
       }
