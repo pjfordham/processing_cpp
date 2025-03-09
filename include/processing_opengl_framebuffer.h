@@ -13,8 +13,11 @@ typedef unsigned int GLuint;
 
 namespace gl {
    class framebuffer;
+   class mainframe;
 }
+
 template <> struct fmt::formatter<gl::framebuffer>;
+template <> struct fmt::formatter<gl::mainframe>;
 
 namespace gl {
 
@@ -33,6 +36,7 @@ namespace gl {
 
       void invert( texture_ptr textureID );
       void release_shader() noexcept;
+      friend struct fmt::formatter<gl::mainframe>;
    };
 
    class framebuffer {
@@ -46,7 +50,6 @@ namespace gl {
 
       GLuint did=0;
       GLuint textureBufferID = 0;
-      bool owning = true;
 
    public:
       texture_ptr getColorBufferID();
@@ -103,8 +106,22 @@ struct fmt::formatter<gl::framebuffer> {
 
    template <typename FormatContext>
    auto format(const gl::framebuffer& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "aaFactor={:<2} aaMode={:<1} id={:4} width={:<4} height={:<4} depthBufferID={:<4} colorBufferID={:<4} textureBufferID={:<4}",
+      return fmt::format_to(ctx.out(), "aaFactor={:<2} aaMode={:<1} id={:4} width={:<4} height={:<4} depthBufferID={:<4} colorBufferID={:<4} textureBufferID={:<4}",
                        v.aaFactor, v.aaMode, v.id, v.width, v.height, v.depthBufferID, v.colorBufferID, v.textureBufferID);
+   }
+};
+
+template <>
+struct fmt::formatter<gl::mainframe> {
+   // Format the MyClass object
+   template <typename ParseContext>
+   constexpr auto parse(ParseContext& ctx) {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const gl::mainframe& v, FormatContext& ctx) {
+      return fmt::format_to(ctx.out(), "width={:<4} height={:<4}", v.width, v.height );
    }
 };
 

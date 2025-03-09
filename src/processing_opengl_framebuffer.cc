@@ -68,7 +68,6 @@ namespace gl {
       std::swap(colorBufferID,x.colorBufferID);
       std::swap(did,x.did);
       std::swap(textureBufferID,x.textureBufferID);
-      std::swap(owning,x.owning);
       return *this;
    }
 
