@@ -36,6 +36,10 @@ namespace gl {
 
       int get_height() const;
 
+      int _get_width() const;
+
+      int _get_height() const;
+
       GLuint get_id() const;
 
       void bind() const;
