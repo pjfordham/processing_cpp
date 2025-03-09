@@ -101,7 +101,7 @@ namespace gl {
          abort();
       }
 
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( [&] {
 
       glGenFramebuffers(1, &id);
       bind();
@@ -168,6 +168,7 @@ namespace gl {
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       }
       } );
+      renderThread.wait_until_nothing_in_flight();
    }
 
    texture_ptr framebuffer::getColorBufferID() {
@@ -218,7 +219,7 @@ namespace gl {
 
    void framebuffer::updatePixels( const std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( [&] {
          glActiveTexture(GL_TEXTURE0);
          glBindTexture(GL_TEXTURE_2D, colorBufferID);
          glTexSubImage2D(GL_TEXTURE_2D, 0,
@@ -227,23 +228,26 @@ namespace gl {
                          GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
          glBindTexture(GL_TEXTURE_2D, 0);
       });
+      renderThread.wait_until_nothing_in_flight();
    }
 
    void framebuffer::loadPixels( std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( [&] {
       pixels.resize(width*height);
       bind();
       glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
       } );
+      renderThread.wait_until_nothing_in_flight();
    }
 
    void framebuffer::saveFrame(void *surface) {
       DEBUG_METHOD();
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( [&] {
          bind();
          glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, surface);
       } );
+      renderThread.wait_until_nothing_in_flight();
    }
 
    void framebuffer::bind() {
@@ -273,6 +277,10 @@ namespace gl {
 
    mainframe::~mainframe() noexcept {
       DEBUG_METHOD();
+   }
+
+   void mainframe::release_shader() noexcept {
+      direct = {};
    }
 
    mainframe::mainframe(mainframe &&x) noexcept : mainframe()  {

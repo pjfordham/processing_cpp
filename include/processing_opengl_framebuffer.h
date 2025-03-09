@@ -32,6 +32,7 @@ namespace gl {
       mainframe& operator=(const mainframe&&x) noexcept = delete;
 
       void invert( texture_ptr textureID );
+      void release_shader() noexcept;
    };
 
    class framebuffer {

@@ -323,14 +323,15 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       }
    }
 
+   // ensure all renderThread work is complete before we shutdown
+   renderThread.wait_until_nothing_in_flight();
 
    PShape::close();
    PImage::close();
    PShader::close();
    PGraphics::close();
 
-   // ensure all renderThread work is complete before we shutdown
-   renderThread.~TaskQueue();
+   renderThread.wait_until_nothing_in_flight();
 
    glfwTerminate();
 

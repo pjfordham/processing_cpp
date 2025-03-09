@@ -69,6 +69,7 @@ target_include_directories(Processing
   PUBLIC
   include
   PkgConfig::SAIL_CXX
+  external/ThreadPool
   external/glad/include
   external/freetype/include
   external/libglfw/include
