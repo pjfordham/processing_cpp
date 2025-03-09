@@ -21,7 +21,7 @@ TaskQueue renderThread;
 namespace gl {
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
       // TODO not happy with this
-      renderThread.dispatch( [&] {
+      renderThread.enqueue( [&] {
          fb.bind();
       shader.bind();
       uniform uSampler = shader.get_uniform("texture");
@@ -39,7 +39,7 @@ namespace gl {
 
    void frame_t::render(framebuffer &fb) {
 
-      renderThread.dispatch( [c=c,&fb, background_=background_,geo=geometries]  {
+      renderThread.enqueue( [c=c,&fb, background_=background_,geo=geometries]  {
          fb.bind();
          if (c) {
             fb.clear(background_.r, background_.g, background_.b, background_.a);
@@ -414,7 +414,7 @@ namespace gl {
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
-      renderThread.dispatch( TaskQueue::Mode::Async, [&] {
+      renderThread.enqueue( [&] {
          // glGenVertexArrays(1, &vao);
          glGenBuffers(1, &indexId);
          glGenBuffers(1, &vertexId);
@@ -497,7 +497,7 @@ namespace gl {
 
    VAO::~VAO() {
       DEBUG_METHOD();
-      // renderThread.dispatch( [&] {
+      // renderThread.enqueue( [&] {
          if (vao) {
             glBindVertexArray(vao);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
