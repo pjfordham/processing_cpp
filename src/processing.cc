@@ -206,7 +206,7 @@ void size(int _width, int _height, int mode) {
 
    glfwMakeContextCurrent(NULL);
 
-   renderThread.dispatch([] {
+   renderThread.enqueue([] {
       glfwMakeContextCurrent(window);
       // Initialize GLAD for OpenGL function loading
       if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -298,7 +298,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
          }
          {
             PROFILE_SCOPE("glSwapWindow");
-            renderThread.dispatch( [] {
+            renderThread.enqueue( [] {
                glfwSwapBuffers(window);
             } );
          }

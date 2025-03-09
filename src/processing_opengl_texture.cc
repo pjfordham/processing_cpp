@@ -6,7 +6,7 @@ namespace gl {
 
    texture_t::~texture_t() {
       if(owning) {
-         renderThread.dispatch( [id=id] {
+         renderThread.enqueue( [id=id] {
             glDeleteTextures(1,&id);
          } );
       }
@@ -14,7 +14,7 @@ namespace gl {
 
    // Create a non owning texture wrapper
    texture_t::texture_t( GLuint textureID ) : id(textureID), owning(false) {
-      // renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
+      // renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
       //    glBindTexture(GL_TEXTURE_2D, textureID);
       //    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &wrap);
       //    glBindTexture(GL_TEXTURE_2D, 0);
@@ -27,7 +27,7 @@ namespace gl {
 
    void texture_t::release() {
       if (id && owning) {
-         renderThread.dispatch( [id=id] {
+         renderThread.enqueue( [id=id] {
             glDeleteTextures(1,&id);
          } );
       }
@@ -54,7 +54,7 @@ namespace gl {
 
    int texture_t::get_width() const {
       int width;
-      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
          width = _get_width();
       } );
       return width;
@@ -62,7 +62,7 @@ namespace gl {
 
    int texture_t::get_height() const {
       int height;
-      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
          height = _get_height();
       } );
       return height;
@@ -73,7 +73,7 @@ namespace gl {
    }
 
    void texture_t::bind() const {
-     // renderThread.dispatch( [id=id] {
+     // renderThread.enqueue( [id=id] {
         glBindTexture(GL_TEXTURE_2D, id);
      // } );
    }
@@ -83,7 +83,7 @@ namespace gl {
    }
 
    void texture_t::set_pixels(const unsigned int *pixels, int width, int height) {
-      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
          if (!id) {
             glGenTextures(1, &id);
             glBindTexture(GL_TEXTURE_2D, id);
@@ -100,7 +100,7 @@ namespace gl {
    }
 
    void texture_t::get_pixels(unsigned int *pixels) const {
-      renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
          glBindTexture(GL_TEXTURE_2D, id);
          glGetTexImage(GL_TEXTURE_2D, 0 , GL_RGBA, GL_UNSIGNED_BYTE, pixels );
          glBindTexture(GL_TEXTURE_2D, 0);

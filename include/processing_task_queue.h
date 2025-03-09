@@ -42,17 +42,17 @@ public:
 
     // Dispatch a task; depends on mode (debugMode, blockingMode, or asyncMode)
    template <typename Func, typename... Args>
-   void dispatch(Func&& func, Args&&... args) {
-      dispatch(mode, std::forward<Func>(func), std::forward<Args>(args)... );
+   void enqueue(Func&& func, Args&&... args) {
+      enqueue(mode, std::forward<Func>(func), std::forward<Args>(args)... );
    }
 
     // Dispatch a task; depends on mode (debugMode, blockingMode, or asyncMode)
    template <typename Func, typename... Args>
-   void dispatch(Mode mode, Func&& func, Args&&... args) {
+   void enqueue(Mode mode, Func&& func, Args&&... args) {
       // if current thread is already worker then abort
       if (std::this_thread::get_id() == worker.get_id())  {
          int s;
-         fmt::print(stderr,"Warning: dispatch of {} from render thread, just calling direct.\n", abi::__cxa_demangle(typeid(func).name(), nullptr,nullptr, &s));
+         fmt::print(stderr,"Warning: enqueue of {} from render thread, just calling direct.\n", abi::__cxa_demangle(typeid(func).name(), nullptr,nullptr, &s));
          std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
          return;
       }
