@@ -36,12 +36,26 @@ namespace gl {
       owning = false;
    }
 
+   int texture_t::_get_width() const {
+      int width;
+      glBindTexture(GL_TEXTURE_2D, id);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+      glBindTexture(GL_TEXTURE_2D, 0);
+      return width;
+   }
+
+   int texture_t::_get_height() const {
+      int height;
+      glBindTexture(GL_TEXTURE_2D, id);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+      glBindTexture(GL_TEXTURE_2D, 0);
+      return height;
+   }
+
    int texture_t::get_width() const {
       int width;
       renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
-         glBindTexture(GL_TEXTURE_2D, id);
-         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-         glBindTexture(GL_TEXTURE_2D, 0);
+         width = _get_width();
       } );
       return width;
    }
@@ -49,9 +63,7 @@ namespace gl {
    int texture_t::get_height() const {
       int height;
       renderThread.dispatch( TaskQueue::Mode::Blocking, [&] {
-         glBindTexture(GL_TEXTURE_2D, id);
-         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-         glBindTexture(GL_TEXTURE_2D, 0);
+         height = _get_height();
       } );
       return height;
    }

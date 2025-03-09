@@ -97,7 +97,7 @@ namespace gl {
          if (img != texture_t::circle()) {
             // Set this here so if updatePixels needs to create
             // a new texture have the correct unit bound already.
-            textureOffsets[i] = glm::vec2(1.0 / img->get_width(), 1.0 / img->get_height());
+            textureOffsets[i] = glm::vec2(1.0 / img->_get_width(), 1.0 / img->_get_height());
             glActiveTexture(GL_TEXTURE0 + i);
             // if (img.isDirty()) {
             //    img.updatePixels();
