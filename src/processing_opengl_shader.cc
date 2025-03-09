@@ -17,9 +17,10 @@ namespace gl {
 
    shader_t::shader_t(const char *vertex, const char *fragment) {
       // Create the shaders
-      renderThread.enqueue(TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( [&] {
          programID = glCreateProgram();
       } );
+      renderThread.wait_until_nothing_in_flight();
 
       // We need to create copies of the shader sources to live in the lambda.
       // Or we could just dispatch it blocking but where's the fun in that.
@@ -81,11 +82,13 @@ namespace gl {
    }
 
    shader_t::~shader_t() {
-      renderThread.enqueue( [programID = programID] {
-         if (programID) {
-            glDeleteProgram(programID);
-         }
-      } );
+      if (programID) {
+         renderThread.enqueue( [programID = programID] {
+            if (programID) {
+               glDeleteProgram(programID);
+            }
+         } );
+      }
    }
 
    void shader_t::set_uniforms() const {

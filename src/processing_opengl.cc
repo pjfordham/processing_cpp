@@ -16,7 +16,7 @@
 #define DEBUG_METHOD() do {} while (false)
 #define DEBUG_METHOD_MESSAGE(x) do {} while (false)
 
-TaskQueue renderThread;
+progschj::ThreadPool renderThread(1);
 
 namespace gl {
    void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
@@ -87,7 +87,6 @@ namespace gl {
       Shininess = shader.get_attribute("shininess");
    }
 
-   //THIS ONE
    void batch_t::setupTextures(VAO_ptr draw) {
       std::vector<glm::vec2> textureOffsets(16);
       for ( int i = 0; i < draw->textures.size() ; ++i ) {
@@ -99,9 +98,6 @@ namespace gl {
             // a new texture have the correct unit bound already.
             textureOffsets[i] = glm::vec2(1.0 / img->_get_width(), 1.0 / img->_get_height());
             glActiveTexture(GL_TEXTURE0 + i);
-            // if (img.isDirty()) {
-            //    img.updatePixels();
-            // }
             img->bind();
          }
       }

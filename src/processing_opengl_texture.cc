@@ -53,19 +53,17 @@ namespace gl {
    }
 
    int texture_t::get_width() const {
-      int width;
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
-         width = _get_width();
+      auto width = renderThread.enqueue( [&] {
+         return _get_width();
       } );
-      return width;
+      return width.get();
    }
 
    int texture_t::get_height() const {
-      int height;
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
-         height = _get_height();
+      auto height = renderThread.enqueue( [&] {
+         return _get_height();
       } );
-      return height;
+      return height.get();
    }
 
    GLuint texture_t::get_id() const {
@@ -83,7 +81,7 @@ namespace gl {
    }
 
    void texture_t::set_pixels(const unsigned int *pixels, int width, int height) {
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( [&] {
          if (!id) {
             glGenTextures(1, &id);
             glBindTexture(GL_TEXTURE_2D, id);
@@ -97,14 +95,16 @@ namespace gl {
          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
          glBindTexture(GL_TEXTURE_2D, 0);
       } );
+      renderThread.wait_until_nothing_in_flight();
    }
 
    void texture_t::get_pixels(unsigned int *pixels) const {
-      renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
+      renderThread.enqueue( [&] {
          glBindTexture(GL_TEXTURE_2D, id);
          glGetTexImage(GL_TEXTURE_2D, 0 , GL_RGBA, GL_UNSIGNED_BYTE, pixels );
          glBindTexture(GL_TEXTURE_2D, 0);
       } );
+      renderThread.wait_until_nothing_in_flight();
    }
 
 }

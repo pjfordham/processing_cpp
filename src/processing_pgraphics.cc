@@ -113,6 +113,7 @@ public:
       height = 0;
       defaultShader = {};
       currentShader = {};
+      windowFrame.release_shader();
       windowFrame = {};
       localFrame = {};
       pixelsFrame = {};
