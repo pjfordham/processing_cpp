@@ -9,6 +9,7 @@
 #include <set>
 #include <fmt/core.h>
 
+#include "processing_pimage.h"
 #include "processing_opengl_texture.h"
 
 class PShaderImpl;
@@ -54,6 +55,8 @@ public:
    void bind();
 
    void set_uniforms();
+
+   void set(const char *uniform, PImage image);
 
    void set(const char *uniform, gl::texture_ptr image);
 

@@ -239,6 +239,8 @@ public:
 
    void set(const char *uniform, gl::texture_ptr image);
 
+   void set(const char *uniform, PImage image);
+
    void set(const char *uniform, float value);
 
    void set(const char *uniform, float v1, float v2);
@@ -287,6 +289,11 @@ void PShaderImpl::set_uniforms() {
       shader.set(id.c_str(), value);
    }
    shader.set_uniforms();
+}
+
+void PShaderImpl::set(const char *id, PImage img) {
+   DEBUG_METHOD();
+   uniformsSampler[id] = img.getTextureID();
 }
 
 void PShaderImpl::set(const char *id, gl::texture_ptr img) {
@@ -355,6 +362,10 @@ void PShader::bind() {
 }
 
 void PShader::set(const char *uniform, gl::texture_ptr image) {
+   impl->set( uniform, image );
+}
+
+void PShader::set(const char *uniform, PImage image) {
    impl->set( uniform, image );
 }
 
