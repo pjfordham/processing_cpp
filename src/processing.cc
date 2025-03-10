@@ -332,6 +332,7 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    PGraphics::close();
 
    renderThread.wait_until_nothing_in_flight();
+   renderThread.shutdown();
 
    glfwTerminate();
 
