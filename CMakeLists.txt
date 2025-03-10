@@ -68,7 +68,6 @@ install(FILES
 target_include_directories(Processing
   PUBLIC
   include
-  PkgConfig::SAIL_CXX
   external/ThreadPool
   external/stb
   external/glad/include
@@ -81,11 +80,9 @@ target_include_directories(Processing
   ${LIBXML2_INCLUDE_DIR}
   )
 
-pkg_check_modules(SAIL_CXX IMPORTED_TARGET REQUIRED sail-c++)
 # Link the libraries
 target_link_libraries(Processing
     PUBLIC
-    PkgConfig::SAIL_CXX
     tess2
     glfw
     freetype
