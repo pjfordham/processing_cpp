@@ -39,6 +39,9 @@ namespace gl {
 
    void frame_t::render(framebuffer &fb) {
 
+      // Stop the main thread getting multiple frames ahead of the render thread.
+      renderThread.wait_until_nothing_in_flight();
+
       renderThread.enqueue( [c=c,&fb, background_=background_,geo=geometries]  {
          fb.bind();
          if (c) {

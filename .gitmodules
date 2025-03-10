@@ -17,7 +17,6 @@
 	path = external/glm
 	url = https://github.com/g-truc/glm.git
         branch = release-1-0-2
-
 [submodule "external/ThreadPool"]
 	path = external/ThreadPool
 	url = https://github.com/pjfordham/ThreadPool.git

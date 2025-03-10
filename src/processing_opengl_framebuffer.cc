@@ -117,8 +117,8 @@ namespace gl {
       } else {
          glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
       }
-
       glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferID);
+      glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
       glActiveTexture(GL_TEXTURE0);
 
@@ -130,13 +130,14 @@ namespace gl {
          glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
          glTexParameterf(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
          glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colorBufferID, 0);
-
+         glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
       } else {
          glBindTexture(GL_TEXTURE_2D, colorBufferID);
          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
          glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBufferID, 0);
+         glBindTexture(GL_TEXTURE_2D, 0);
       }
 
       auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -157,6 +158,7 @@ namespace gl {
          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
          glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureBufferID, 0);
+         glBindTexture(GL_TEXTURE_2D, 0);
 
          auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
          if (err != GL_FRAMEBUFFER_COMPLETE) {
@@ -188,18 +190,40 @@ namespace gl {
 
    framebuffer::~framebuffer() {
       DEBUG_METHOD();
-      if (owning) {
-         if (textureBufferID)
-            glDeleteTextures(1, &textureBufferID);
-         if (depthBufferID)
-            glDeleteRenderbuffers(1, &depthBufferID);
-         if (colorBufferID)
-            glDeleteTextures(1, &colorBufferID);
+
+      if (id) {
+         renderThread.enqueue([&] {
+            if (id) {
+               glBindFramebuffer(GL_FRAMEBUFFER, id);
+               glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0);
+               if (aaMode == MSAA) {
+                  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, 0, 0);
+               } else {
+                  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+               }
+               glBindFramebuffer(GL_FRAMEBUFFER, 0);
+               glDeleteFramebuffers(1, &id);
+            }
+
+            if (did) {
+               glBindFramebuffer(GL_FRAMEBUFFER, did);
+               glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+               glBindFramebuffer(GL_FRAMEBUFFER, 0);
+               glDeleteFramebuffers(1, &did);
+            }
+
+            if (textureBufferID)
+               glDeleteTextures(1, &textureBufferID);
+            if (depthBufferID)
+               glDeleteRenderbuffers(1, &depthBufferID);
+            if (colorBufferID)
+               glDeleteTextures(1, &colorBufferID);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+         });
+         renderThread.wait_until_nothing_in_flight();
       }
-      if (id)
-         glDeleteFramebuffers(1, &id);
-      if (did)
-         glDeleteFramebuffers(1, &did);
+
    }
 
    void framebuffer::blit(framebuffer &dest) const {
