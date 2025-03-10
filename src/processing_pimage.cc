@@ -1,11 +1,16 @@
 #include "processing_pimage.h"
 #include "processing_debug.h"
-#include <sail-c++/sail-c++.h>
 #include <curl/curl.h>
 #include "glad/glad.h"
 #include <fmt/core.h>
 #include <iostream>
 #include <filesystem>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
 
@@ -269,12 +274,7 @@ public:
       DEBUG_METHOD();
       loadPixels();
       createDirectoriesForFile(filename);
-      sail::image_output output(filename);
-      sail::image image = sail::image( (void*)pixels, SAIL_PIXEL_FORMAT_BPP32_RGBA, width, height );
-      if (!image.is_valid())
-         abort();
-      output.next_frame( image );
-      output.finish();
+      stbi_write_png(filename.c_str(), width, height, 4, pixels, width * 4);
    }
 
 };
@@ -372,7 +372,6 @@ void PImage::save_as( std::string_view filename ) const {
 }
 
 void PImage::init() {
-   sail::log::set_barrier( SAIL_LOG_LEVEL_WARNING );
    curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -381,14 +380,6 @@ void PImage::close() {
    curl_global_cleanup();
 }
 
-
-static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
-{
-    size_t realsize = size * nmemb;
-    auto* response = static_cast<std::vector<unsigned char>*>(userdata);
-    response->insert(response->end(), ptr, ptr + realsize);
-    return realsize;
-}
 
 PImage createBlankImage() {
    auto p = PImage( std::make_shared<PImageImpl>(1,1,0) );
@@ -404,18 +395,23 @@ PImage createImageFromTexture(GLuint textureID) {
    return PImage( std::make_shared<PImageImpl>(textureID) );
 }
 
-PImage loadImage(std::string_view URL) {
+size_t write_callback(char* contents, size_t size, size_t nmemb, void* userp) {
+    std::vector<unsigned char>* buffer = static_cast<std::vector<unsigned char>*>(userp);
+    size_t total_size = size * nmemb;
+    buffer->insert(buffer->end(), (unsigned char*)contents, (unsigned char*)contents + total_size);
+    return total_size;
+}
 
+PImage loadImage(std::string_view URL) {
    std::string sURL{URL};
-   // try local fileysystem
-   using namespace std::literals;
-   sail::image image;
-   try {
-      image =sail::image(("data/"s + sURL).c_str());
-   } catch (...) {
-      // If that didn't work try downling it with CURL
-      // Set up the libcurl easy handle
+   int width, height, channels;
+   unsigned char* data = stbi_load(("data/" + sURL).c_str(), &width, &height, &channels, 4);
+
+   if (!data) {
+      // If local load fails, try downloading with CURL
       CURL* curl = curl_easy_init();
+      if (!curl) return PImage(nullptr);
+
       curl_easy_setopt(curl, CURLOPT_URL, sURL.c_str());
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
       std::vector<unsigned char> response_body;
@@ -424,17 +420,17 @@ PImage loadImage(std::string_view URL) {
       CURLcode res = curl_easy_perform(curl);
       if (res == CURLE_OK) {
          // Load the image from the response data
-         sail::image_input image_input(response_body.data(), response_body.size());
+         data = stbi_load_from_memory(response_body.data(), response_body.size(), &width, &height, &channels, 4);
          curl_easy_cleanup(curl);
-         image = image_input.next_frame();
       }
    }
-   if (!image.is_valid()) {
+   if (!data) {
       abort();
    }
 
-   image.convert(SAIL_PIXEL_FORMAT_BPP32_RGBA);
-   return PImage( std::make_shared<PImageImpl>( image.width(), image.height(), (uint32_t*)image.pixels()) );
+   PImage image(std::make_shared<PImageImpl>(width, height, (uint32_t*)data));
+   stbi_image_free(data);
+   return image;
 }
 
 PImage requestImage(std::string_view URL) {
@@ -460,4 +456,3 @@ std::size_t PImage::_pixels_offset() { return offsetof(PImage,pixels); }
 //
 // End of properties.
 //
-
