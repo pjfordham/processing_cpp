@@ -15,6 +15,8 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <stb_perlin.h>
+
 using std::lerp;
 
 void noiseSeed(int seed);

@@ -17,4 +17,6 @@
 	path = external/glm
 	url = https://github.com/g-truc/glm.git
         branch = release-1-0-2
-
+[submodule "external/stb"]
+	path = external/stb
+	url = https://github.com/nothings/stb.git
