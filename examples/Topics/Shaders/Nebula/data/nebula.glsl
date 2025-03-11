@@ -68,7 +68,7 @@ float surface3 ( vec3 coord, float frequency ) {
 	n += 0.125	* abs( cnoise4( coord * frequency * 8.0 ) );
 	n += 0.0625	* abs( cnoise4( coord * frequency * 16.0 ) );
 	
-	return n;
+	return n / 2.0;
 }
 	
 void main( void ) {
