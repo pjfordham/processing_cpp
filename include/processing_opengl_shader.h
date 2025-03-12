@@ -5,12 +5,13 @@
 #include <map>
 #include <string>
 
-#include "glad/glad.h"
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
+typedef unsigned int GLuint;
+typedef int GLint;
 
 namespace gl {
 

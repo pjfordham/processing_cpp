@@ -1,5 +1,6 @@
 #include "processing_pimage.h"
 #include "processing_debug.h"
+#include "processing_opengl_texture.h"
 #include <curl/curl.h>
 #include "glad/glad.h"
 #include <fmt/core.h>
@@ -42,16 +43,12 @@ public:
    int width = 0;
    int height = 0;
    unsigned int *pixels = nullptr;
-   GLuint textureID = 0;
+   gl::texture_t texture;
    int textureWrap;
    bool dirty = true;
-   bool dont_delete = false;
 
    ~PImageImpl() {
       DEBUG_METHOD();
-      if (textureID && !dont_delete) {
-         glDeleteTextures(1, &textureID);
-      }
       if (pixels) {
          delete [] pixels;
       }
@@ -59,22 +56,18 @@ public:
 
    PImageImpl(int w, int h, int mode) : width(w), height(h) {
       DEBUG_METHOD();
-      textureWrap = textureWrapMode;
+      textureWrap = mode;
       pixels = new uint32_t[width*height];
       std::fill(pixels, pixels+width*height, color(BLACK));
    }
 
-   PImageImpl(GLuint textureID_) : textureID(textureID_) {
+   PImageImpl(GLuint textureID_) : texture(textureID_) {
       DEBUG_METHOD();
-      dont_delete = true;
-      textureWrap = textureWrapMode;
-      glBindTexture(GL_TEXTURE_2D, textureID);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-      glBindTexture(GL_TEXTURE_2D, 0);
+      width = texture.get_width();
+      height = texture.get_height();
    }
 
-   PImageImpl(int w, int h, uint32_t *pixels_) : width(w), height(h) {
+   PImageImpl(int w, int h, uint32_t *pixels_, int) : width(w), height(h) {
       DEBUG_METHOD();
       textureWrap = textureWrapMode;
       pixels = new uint32_t[width*height];
@@ -144,35 +137,16 @@ public:
 
    void updatePixels() {
       DEBUG_METHOD();
-      if (textureID == 0) {
-         glGenTextures(1, &textureID);
-         glBindTexture(GL_TEXTURE_2D, textureID);
-         // set texture parameters
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      }
       if (dirty) {
-         glBindTexture(GL_TEXTURE_2D, textureID);
-         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-         if ( textureWrap == CLAMP ) {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-         } else if ( textureWrap == REPEAT ) {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-         }
+         texture.set_pixels( pixels, width, height, textureWrap == CLAMP ? GL_CLAMP_TO_EDGE : GL_REPEAT );
          dirty = false;
       }
-      glBindTexture(GL_TEXTURE_2D, 0);
    }
 
    void releaseTexture() {
       DEBUG_METHOD();
-      if (textureID) {
-         glDeleteTextures(1,&textureID);
-         textureID = 0;
-         dirty = true;
-      }
+      texture.release();
+      dirty = true;
    }
 
    void filter(int x, float level=1.0) {
@@ -223,7 +197,7 @@ public:
    void loadPixels() {
       DEBUG_METHOD();
       if (pixels) return;
-      if (textureID == 0)
+      if (!texture)
          abort();
       pixels = new uint32_t[width*height];
       glGetTexImage( GL_TEXTURE_2D, 0 , GL_RGBA, GL_UNSIGNED_BYTE, pixels );
@@ -291,7 +265,7 @@ struct fmt::formatter<PImageImpl> {
 
     template <typename FormatContext>
     auto format(const PImageImpl& v, FormatContext& ctx) {
-        return format_to(ctx.out(), "width={:<4} height={:<4} pixels={:<16} textureID={:<4} dirty={:<6}", v.width, v.height, (void*)v.pixels, v.textureID,v.dirty);
+       return format_to(ctx.out(), "width={:<4} height={:<4} pixels={:<16} textureID={:<4} dirty={:<6}", v.width, v.height, (void*)v.pixels, v.texture.get_id(),v.dirty);
     }
 };
 
@@ -334,7 +308,7 @@ color PImage::get(int x, int y) const {
 }
 
 GLuint PImage::getTextureID() const {
-   return impl->textureID;
+   return impl->texture.get_id();
 }
 
 void PImage::set(int x, int y, color c) {
@@ -384,7 +358,7 @@ void PImage::close() {
 
 
 PImage createBlankImage() {
-   auto p = PImage( std::make_shared<PImageImpl>(1,1,0) );
+   auto p = PImage( std::make_shared<PImageImpl>(1,1,CLAMP) );
    p.pixels[0] = color(255.0f);
    return p;
 }
@@ -430,7 +404,7 @@ PImage loadImage(std::string_view URL) {
       abort();
    }
 
-   PImage image(std::make_shared<PImageImpl>(width, height, (uint32_t*)data));
+   PImage image(std::make_shared<PImageImpl>(width, height, (uint32_t*)data, 0));
    stbi_image_free(data);
    return image;
 }
