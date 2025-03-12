@@ -553,7 +553,7 @@ public:
                         {right,top},
                         {right,bottom},
                         {left, bottom},
-                        createImageFromTexture(gfx.getAsTexture()),
+                        gfx.getAsPImage(),
                         _shape.getTintColor() );
    }
 
