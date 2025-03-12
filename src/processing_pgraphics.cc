@@ -115,6 +115,7 @@ public:
       defaultShader = {};
       currentShader = {};
       flatShader = {};
+      windowFrame.release_shader();
       windowFrame = {};
       localFrame = {};
       pixelsFrame = {};
