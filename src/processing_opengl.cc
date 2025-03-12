@@ -2,11 +2,14 @@
 #include <thread>
 
 #include "glad/glad.h"
+#include <GLFW/glfw3.h>
 
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
 #include "processing_math.h"
 #include "processing_debug.h"
+#include <thread>
+#include "processing_task_queue.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -15,47 +18,58 @@
 #define DEBUG_METHOD() do {} while (false)
 #define DEBUG_METHOD_MESSAGE(x) do {} while (false)
 
+progschj::ThreadPool renderThread(1);
+
 namespace gl {
+   void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) { 
+      renderThread.enqueue( [&fb, &shader, &batch, transform, scene] () mutable {
+         fb.bind();
+         shader.bind();
+         uniform uSampler = shader.get_uniform("texture");
+         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
-   void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
-      fb.bind();
-      shader.bind();
-      uniform uSampler = shader.get_uniform("texture");
-      uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
-
-      scene.setup( shader );
-      batch.setup( shader );
-      shader.set_uniforms();
-      scene.set();
-      batch.bind();
-      batch.load();
-      batch.draw( transform );
+         scene.setup( shader );
+         batch.setup( shader );
+         shader.set_uniforms();
+         scene.set();
+         batch.bind();
+         // Shouldn't need to do this every time
+         batch.load();
+         batch.draw( transform );
+      } );
    }
 
    void frame_t::render(framebuffer &fb) {
-      fb.bind();
-      if (c) {
-         fb.clear(background_.r, background_.g, background_.b, background_.a);
-         c = false;
-      }
-      for (auto &g : geometries) {
-         // Add flat shader optimization
-         g.shader.bind();
 
-         uniform uSampler = g.shader.get_uniform("texture");
-         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+      // Stop the main thread getting multiple frames ahead of the render thread.
+      renderThread.wait_until_nothing_in_flight();
 
-         g.scene.setup( g.shader );
-         g.batch.setup( g.shader );
+      renderThread.enqueue( [c=c,&fb, background_=background_,geo=geometries]  {
+         fb.bind();
+         if (c) {
+            fb.clear(background_.r, background_.g, background_.b, background_.a);
+         }
+         for (auto g : geo) {
+            // Add flat shader optimization
+            g.shader.bind();
 
-         g.shader.set_uniforms();
-         g.scene.set();
-         g.batch.bind();
-         g.batch.load();
-         g.batch.draw();
-         g.batch.clear();
-      }
+            uniform uSampler = g.shader.get_uniform("texture");
+            uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+
+            g.scene.setup( g.shader );
+            g.batch.setup( g.shader );
+
+            g.shader.set_uniforms();
+            g.scene.set();
+            g.batch.bind();
+            g.batch.load();
+            g.batch.draw();
+            g.batch.clear();
+         }
+      });
+
       geometries.clear();
+      c = false;
    }
 
    int scene_t::blendMode(int b ) {
@@ -86,7 +100,7 @@ namespace gl {
             // Set this here so get_width and get_height don't mess up
             // previously bound textures.
             glActiveTexture(GL_TEXTURE0 + i);
-            textureOffsets[i] = glm::vec2(1.0 / img->get_width(), 1.0 / img->get_height());
+            textureOffsets[i] = glm::vec2(1.0 / img->_get_width(), 1.0 / img->_get_height());
             img->bind();
          }
       }
@@ -405,10 +419,12 @@ namespace gl {
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
-      glGenVertexArrays(1, &vao);
-      glGenBuffers(1, &indexId);
-      glGenBuffers(1, &vertexId);
-      glGenBuffers(1, &materialId);
+      renderThread.enqueue( [&] {
+         // glGenVertexArrays(1, &vao);
+         glGenBuffers(1, &indexId);
+         glGenBuffers(1, &vertexId);
+         glGenBuffers(1, &materialId);
+      } );
    }
 
    VAO::VAO(const VAO &that) noexcept {
@@ -443,10 +459,10 @@ namespace gl {
                    attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess) {
       DEBUG_METHOD();
 
+      if (!vao)
+         glGenVertexArrays(1, &vao);
       glBindVertexArray(vao);
-
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
-
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
       Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
       Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
@@ -486,16 +502,21 @@ namespace gl {
 
    VAO::~VAO() {
       DEBUG_METHOD();
-      if (vao) {
-         glBindVertexArray(vao);
-         glBindBuffer(GL_ARRAY_BUFFER, 0);
-         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-         glBindVertexArray(0);
-         glDeleteVertexArrays(1, &vao);
-         glDeleteBuffers(1, &indexId);
-         glDeleteBuffers(1, &vertexId);
-         glDeleteBuffers(1, &materialId);
-      }
+      // renderThread.enqueue( [&] {
+         if (vao) {
+            glBindVertexArray(vao);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &vao);
+         }
+         if (indexId)
+            glDeleteBuffers(1, &indexId);
+         if (vertexId)
+            glDeleteBuffers(1, &vertexId);
+         if (materialId)
+            glDeleteBuffers(1, &materialId);
+      // } );
    }
 
    int VAO::hasTexture(texture_ptr texture) {

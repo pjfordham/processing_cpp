@@ -152,6 +152,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pixelmatch-cpp)
 
+FetchContent_Declare(
+  ThreadPool
+  GIT_REPOSITORY https://github.com/pjfordham/ThreadPool.git
+  GIT_TAG        master
+)
+FetchContent_MakeAvailable(ThreadPool)
+
 
 add_library(Processing
   src/processing.cc
@@ -209,6 +216,7 @@ target_include_directories(Processing
   include
   external/glad/include
   ${stb_SOURCE_DIR}
+  ${threadpool_SOURCE_DIR}
   ${pixelmatch-cpp_SOURCE_DIR}/include
   )
 
