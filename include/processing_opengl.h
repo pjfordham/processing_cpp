@@ -5,8 +5,11 @@
 #include <fmt/core.h>
 
 #include "processing_opengl_shader.h"
+#include "processing_opengl_texture.h"
 #include "processing_utils.h"
-#include "processing_pimage.h"
+#include "processing_enum.h"
+#include "processing_math.h"
+#include "processing_color.h"
 
 typedef int GLint;
 typedef unsigned int GLuint;
@@ -138,7 +141,7 @@ namespace gl {
       std::vector<vertex> vertices;
       std::vector<material> materials;
       std::vector<unsigned short> indices;
-      std::vector<PImage> textures;
+      std::vector<gl::texture_ptr> textures;
       std::vector<glm::mat4> transforms;
 
       VAO() noexcept;
@@ -154,7 +157,7 @@ namespace gl {
       void bind( attribute Position, attribute Normal, attribute Color,
                  attribute Coord,    attribute TUnit,  attribute MIndex,
                  attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess);
-      int hasTexture(PImage texture);
+      int hasTexture(gl::texture_ptr texture);
       void loadBuffers() const;
       void draw() const;
       void debugPrint() const;
@@ -198,7 +201,7 @@ namespace gl {
       bool usesTextures() const;
 
       void vertices( const std::vector<vertex> &vertices,const std::vector<material> &materials,  const std::vector<unsigned short> &indices,
-                     const glm::mat4 &transform, bool flatten_transform, PImage texture );
+                     const glm::mat4 &transform, bool flatten_transform, gl::texture_ptr texture );
    };
 
    class framebuffer;

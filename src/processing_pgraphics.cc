@@ -80,7 +80,7 @@ public:
    int getWidth() const { return width; }
    int getHeight() const {return height; }
    unsigned int *getPixels() { return pixels.data(); }
-   GLuint getAsTexture() { return localFrame.getColorBufferID(); }
+   gl::texture_ptr getAsTexture() { return localFrame.getColorBufferID(); }
    PImage getAsPImage() { return createImageFromTexture(localFrame.getColorBufferID()); }
 
    ~PGraphicsImpl() {
@@ -1051,7 +1051,7 @@ PGraphics::PGraphics(int width, int height, int mode, int aaMode, int aaFactor)
    graphicsHandles().push_back(impl);
 }
 
-GLuint PGraphics::getAsTexture() {
+gl::texture_ptr PGraphics::getAsTexture() {
    return impl->getAsTexture();
 }
 

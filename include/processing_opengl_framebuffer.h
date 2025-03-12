@@ -34,7 +34,7 @@ namespace gl {
       mainframe(const mainframe &&x) noexcept = delete;
       mainframe& operator=(const mainframe&&x) noexcept = delete;
 
-      void invert( GLuint textureID );
+      void invert( texture_ptr textureID );
 
       friend struct fmt::formatter<gl::mainframe>;
    };
@@ -52,7 +52,7 @@ namespace gl {
       GLuint textureBufferID = 0;
 
    public:
-      GLuint getColorBufferID();
+      texture_ptr getColorBufferID();
 
       auto getWidth() const {
          return width;

@@ -1634,7 +1634,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
                material.specularExponent
             } );
       }
-      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, texture_ );
+      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, texture_.getTextureID() );
    }
 }
 

@@ -2,6 +2,7 @@
 #define PROCESSING_PIMAGE_H
 
 #include "processing_properties.h"
+#include "processing_opengl_texture.h"
 #include "processing_color.h"
 
 #include <vector>
@@ -57,10 +58,7 @@ public:
 
    PImage() {}
 
-   static PImage circle() {
-      PImage a;
-      return a;
-   }
+   static PImage circle();
 
    PImage( std::shared_ptr<PImageImpl> impl_ );
 
@@ -70,7 +68,7 @@ public:
 
    color get(int x, int y) const;
 
-   GLuint getTextureID() const;
+   gl::texture_ptr getTextureID() const;
 
    void set(int x, int y, color c);
 
@@ -95,7 +93,7 @@ public:
 
 PImage createImage(int width, int height, int mode);
 PImage createBlankImage();
-PImage createImageFromTexture(GLuint textureID);
+PImage createImageFromTexture(gl::texture_ptr textureID);
 PImage loadImage(std::string_view URL);
 PImage requestImage(std::string_view URL);
 

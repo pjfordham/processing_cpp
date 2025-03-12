@@ -163,16 +163,17 @@ namespace gl {
       }
    }
 
-   GLuint framebuffer::getColorBufferID() {
+   texture_ptr framebuffer::getColorBufferID() {
       if (aaMode == MSAA) {
          glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, did);
-         glBlitFramebuffer(0,0,width,height,0,0,width,height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
+         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+                           GL_COLOR_BUFFER_BIT, GL_LINEAR);
          glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-         return textureBufferID;
+         return std::make_shared<texture_t>(textureBufferID);
       } else {
-         return colorBufferID;
+         return std::make_shared<texture_t>(colorBufferID);
       }
    }
 
@@ -266,7 +267,7 @@ namespace gl {
       height = height_;
   }
 
-   void mainframe::invert( GLuint textureID ) {
+   void mainframe::invert( texture_ptr textureID ) {
       GLuint directVAO;
       glGenVertexArrays(1, &directVAO);
       glBindVertexArray(directVAO);
@@ -280,7 +281,7 @@ namespace gl {
       texture1.set( 0 );
       glActiveTexture(GL_TEXTURE0);
       glDisable(GL_DEPTH_TEST);
-      glBindTexture(GL_TEXTURE_2D, textureID);
+      glBindTexture(GL_TEXTURE_2D, textureID->get_id());
       glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
       glEnable(GL_DEPTH_TEST);
       glBindVertexArray(0);

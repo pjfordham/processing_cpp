@@ -10,6 +10,8 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
+#include "processing_opengl_texture.h"
+
 typedef unsigned int GLuint;
 typedef int GLint;
 
@@ -48,10 +50,10 @@ namespace gl {
    };
 
    class shader_t {
-      std::map<std::string, glm::vec3> uniforms3fv;
-      std::map<std::string, glm::vec2> uniforms2fv;
-      std::map<std::string, float>     uniforms1f;
-      std::map<std::string, GLuint>    uniformsSampler;
+      std::map<std::string, glm::vec3>   uniforms3fv;
+      std::map<std::string, glm::vec2>   uniforms2fv;
+      std::map<std::string, float>       uniforms1f;
+      std::map<std::string, texture_ptr> uniformsSampler;
 
    public:
       bool operator!=(const shader_t &other) {
@@ -69,7 +71,7 @@ namespace gl {
          return {programID, attribute_name};
       }
       void set_uniforms() const;
-      void set(const char *id, GLuint textureID);
+      void set(const char *id, gl::texture_ptr textureID);
       void set(const char *id, float value);
       void set(const char *id, float v1, float v2);
       void set(const char *id, float v1, float v2, float v3);

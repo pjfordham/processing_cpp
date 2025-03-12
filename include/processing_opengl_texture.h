@@ -1,6 +1,8 @@
 #ifndef PROCESSING_OPENGL_TEXTURE_H
 #define PROCESSING_OPENGL_TEXTURE_H
 
+#include <memory>
+
 typedef unsigned int GLuint;
 typedef signed int GLint;
 
@@ -13,6 +15,9 @@ namespace gl {
 template <> struct fmt::formatter<gl::texture_t>;
 
 namespace gl {
+
+   class texture_t;
+   typedef std::shared_ptr<texture_t> texture_ptr;
 
    class texture_t {
       GLuint id;
@@ -33,6 +38,11 @@ namespace gl {
       texture_t& operator=(const texture_t&) = delete;
       texture_t& operator=(texture_t&&) = delete;
 
+      static texture_ptr circle() {
+         static texture_ptr t = std::make_shared<texture_t>(-1);
+         return t;
+      }
+
       void release();
 
       int get_width() const;
@@ -51,7 +61,6 @@ namespace gl {
 
       friend struct fmt::formatter<gl::texture_t>;
   };
-
 
 }
 #endif

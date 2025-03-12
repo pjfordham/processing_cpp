@@ -4,6 +4,7 @@
 
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
+#include "processing_math.h"
 #include "processing_debug.h"
 
 #undef DEBUG_METHOD
@@ -108,17 +109,13 @@ namespace gl {
    void batch_t::setupTextures(VAO_ptr draw) {
       std::vector<glm::vec2> textureOffsets(16);
       for ( int i = 0; i < draw->textures.size() ; ++i ) {
-         PImage &img = draw->textures[i];
-         if (img != PImage::circle()) {
-            // Set this here so if updatePixels needs to create
-            // a new texture have the correct unit bound already.
-            textureOffsets[i] = glm::vec2(1.0 / img.width, 1.0 / img.height);
+         auto &img = draw->textures[i];
+         if (img != texture_t::circle()) {
+            // Set this here so get_width and get_height don't mess up
+            // previously bound textures.
             glActiveTexture(GL_TEXTURE0 + i);
-            if (img.isDirty()) {
-               img.updatePixels();
-            }
-            auto textureID = img.getTextureID();
-            glBindTexture(GL_TEXTURE_2D, img.getTextureID());
+            textureOffsets[i] = glm::vec2(1.0 / img->get_width(), 1.0 / img->get_height());
+            img->bind();
          }
       }
       TexOffset.set(textureOffsets);
@@ -148,7 +145,7 @@ namespace gl {
       }
    }
 
-   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, PImage texture_ ) {
+   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, texture_ptr texture_ ) {
       DEBUG_METHOD();
 
       // Do this better and share somehow with shader and texture unit init
@@ -193,7 +190,7 @@ namespace gl {
       int tunit = vao.textures.size() - 1;
       int offset = vao.vertices.size();
 
-      if(texture_ == PImage::circle()) {
+      if(texture_ == texture_t::circle()) {
          tunit = -1;
       }
 
@@ -222,7 +219,7 @@ namespace gl {
       }
       fmt::print("Vertices: {}, Materials: {}\n", vertices.size(), materials.size() );
       for ( int i = 0; i < vertices.size(); ++i ) {
-         fmt::print("{:3}: {}\n", i, vertices[i]);
+//         fmt::print("{:3}: {}\n", i, vertices[i]);
       }
       fmt::print("Triangles: {}\n", indices.size() );
       for ( int i = 0; i < indices.size(); i+=3 ) {
@@ -272,7 +269,7 @@ namespace gl {
 
    bool batch_t::usesCircles() const {
       for (auto &draw: vaos ) {
-         if (std::find(draw->textures.begin(), draw->textures.end(), PImage::circle()) != draw->textures.end())
+         if (std::find(draw->textures.begin(), draw->textures.end(), texture_t::circle()) != draw->textures.end())
          {
             return true;
          }
@@ -283,8 +280,8 @@ namespace gl {
    bool batch_t::usesTextures() const {
       for (auto &draw: vaos ) {
          // This could be a better test
-         if (!(draw->textures.size() == 1 && draw->textures[0] != PImage::circle() &&
-               draw->textures[0].width == 1 && draw->textures[0].height == 1)) {
+         if (!(draw->textures.size() == 1 && draw->textures[0] != texture_t::circle() &&
+               draw->textures[0]->get_width() == 1 && draw->textures[0]->get_height() == 1)) {
             return true;
          }
       }
@@ -522,7 +519,7 @@ namespace gl {
       }
    }
 
-   int VAO::hasTexture(PImage texture) {
+   int VAO::hasTexture(texture_ptr texture) {
       auto it = std::find(textures.begin(), textures.end(), texture);
       if (it == textures.end())
          return -1;

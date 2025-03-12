@@ -219,7 +219,7 @@ static const char *defaultFragmentShader = R"glsl(
 
 class PShaderImpl {
 
-   std::map<std::string, PImage> uniformsSampler;
+   std::map<std::string, gl::texture_ptr> uniformsSampler;
    gl::shader_t shader;
 
 public:
@@ -236,6 +236,8 @@ public:
    void bind();
 
    void set_uniforms();
+
+   void set(const char *uniform, gl::texture_ptr image);
 
    void set(const char *uniform, PImage image);
 
@@ -280,16 +282,21 @@ void PShaderImpl::bind() {
 void PShaderImpl::set_uniforms() {
    DEBUG_METHOD();
    for (auto& [id, value] : uniformsSampler) {
-      if (value.isDirty()) {
-         value.updatePixels();
-      }
-      auto textureID = value.getTextureID();
-      shader.set(id.c_str(), textureID);
+      // if (value.isDirty()) {
+      //    value.updatePixels();
+      // }
+//      auto textureID = value.getTextureID();
+      shader.set(id.c_str(), value);
    }
    shader.set_uniforms();
 }
 
 void PShaderImpl::set(const char *id, PImage img) {
+   DEBUG_METHOD();
+   uniformsSampler[id] = img.getTextureID();
+}
+
+void PShaderImpl::set(const char *id, gl::texture_ptr img) {
    DEBUG_METHOD();
    uniformsSampler[id] = img;
 }
@@ -352,6 +359,10 @@ void PShader::set_uniforms() {
 
 void PShader::bind() {
    impl->bind();
+}
+
+void PShader::set(const char *uniform, gl::texture_ptr image) {
+   impl->set( uniform, image );
 }
 
 void PShader::set(const char *uniform, PImage image) {
