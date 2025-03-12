@@ -116,7 +116,8 @@ public:
       defaultShader = {};
       currentShader = {};
       flatShader = {};
-      windowFrame = gl::mainframe();
+      windowFrame.release_shader();
+      windowFrame = gl::mainframe();;
       localFrame = {};
       pixelsFrame = {};
       scene = {};

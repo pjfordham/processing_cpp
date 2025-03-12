@@ -26,3 +26,6 @@
 [submodule "external/dejavu-fonts-ttf"]
 	path = external/dejavu-fonts-ttf
 	url = https://github.com/senotrusov/dejavu-fonts-ttf.git
+[submodule "external/ThreadPool"]
+	path = external/ThreadPool
+	url = https://github.com/pjfordham/ThreadPool.git
