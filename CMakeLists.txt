@@ -74,6 +74,7 @@ target_include_directories(Processing
   PUBLIC
   include
   external/stb
+  external/ThreadPool
   external/glad/include
   external/freetype/include
   external/libglfw/include
