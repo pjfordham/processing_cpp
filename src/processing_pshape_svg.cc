@@ -286,13 +286,14 @@ static void parseSVGPath(const std::string &data, PShape& pshape) {
       {
          open = false;
          pshape.endContour( );
+	 i++;
       }
       else
       {
          open = true;
          pshape.endContour();
       }
-      parseWhiteSpace(++i);
+      parseWhiteSpace(i);
    }
    if (open) {
       pshape.endShape( OPEN );
