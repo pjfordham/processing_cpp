@@ -180,6 +180,8 @@ namespace gl {
       uniform TexOffset;
       attribute Ambient, Specular, Emissive, Shininess;
       std::vector<VAO_ptr> vaos;
+      bool uses_textures = false;
+      bool uses_circles = false;
 
    public:
       batch_t() noexcept {}

@@ -120,6 +120,13 @@ namespace gl {
    void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, texture_ptr texture_ ) {
       DEBUG_METHOD();
 
+      if (texture_ == texture_t::circle())
+         uses_circles = true;
+      // This could be a better test, we're just testing
+      // for a single pixel texture.
+      else if (texture_->get_width() != 1 || texture_->get_height() != 1)
+         uses_textures = true;
+
       // Do this better and share somehow with shader and texture unit init
       // code.
       // glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
@@ -150,22 +157,34 @@ namespace gl {
          vaos.back()->transforms.push_back(transform);
       }
 
-      if ( texture_ != vaos.back()->textures.back()) {
-         if (vaos.back()->textures.size() == MaxTextureImageUnits) {
-            vaos.emplace_back(std::make_shared<VAO>());
-            vaos.back()->transforms.push_back( transform );
+      // Try to reused existing textures if they are the same. Hopefully the
+      // search will be minimal cost since N<15 but we could use a hashmap
+      // if need-be. Could apply to transforms too but comparision cost is
+      // much higher.
+      int tunit;
+      if(texture_ == texture_t::circle()) {
+         tunit = -1;
+      } else {
+         auto &vec = vaos.back()->textures;
+         auto i = std::find(vec.begin(), vec.end(), texture_);
+
+         if ( i == vec.end() ) {
+            if (vec.size() == MaxTextureImageUnits) {
+               vaos.emplace_back(std::make_shared<VAO>());
+               vaos.back()->transforms.push_back( transform );
+            }
+            // Old version of vec might have been invalidated.
+            auto &vec = vaos.back()->textures;
+            vec.push_back(texture_);
+            tunit = vec.size() - 1;
+         } else {
+            tunit = i - vec.begin();
          }
-         vaos.back()->textures.push_back(texture_);
       }
 
       auto &vao = *(vaos.back());
       int currentM = vao.transforms.size() - 1;
-      int tunit = vao.textures.size() - 1;
       int offset = vao.vertices.size();
-
-      if(texture_ == texture_t::circle()) {
-         tunit = -1;
-      }
 
       for (auto &v : vertices) {
          vao.vertices.emplace_back(
@@ -192,7 +211,7 @@ namespace gl {
       }
       fmt::print("Vertices: {}, Materials: {}\n", vertices.size(), materials.size() );
       for ( int i = 0; i < vertices.size(); ++i ) {
-//         fmt::print("{:3}: {}\n", i, vertices[i]);
+         fmt::print("{:3}: {}\n", i, vertices[i]);
       }
       fmt::print("Triangles: {}\n", indices.size() );
       for ( int i = 0; i < indices.size(); i+=3 ) {
@@ -241,24 +260,11 @@ namespace gl {
    }
 
    bool batch_t::usesCircles() const {
-      for (auto &draw: vaos ) {
-         if (std::find(draw->textures.begin(), draw->textures.end(), texture_t::circle()) != draw->textures.end())
-         {
-            return true;
-         }
-      }
-      return false;
+      return uses_circles;
    }
 
    bool batch_t::usesTextures() const {
-      for (auto &draw: vaos ) {
-         // This could be a better test
-         if (!(draw->textures.size() == 1 && draw->textures[0] != texture_t::circle() &&
-               draw->textures[0]->get_width() == 1 && draw->textures[0]->get_height() == 1)) {
-            return true;
-         }
-      }
-      return false;
+      return uses_textures;
    }
 
    void batch_t::clear() {
