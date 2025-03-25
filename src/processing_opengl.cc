@@ -150,22 +150,34 @@ namespace gl {
          vaos.back()->transforms.push_back(transform);
       }
 
-      if ( texture_ != vaos.back()->textures.back()) {
-         if (vaos.back()->textures.size() == MaxTextureImageUnits) {
-            vaos.emplace_back(std::make_shared<VAO>());
-            vaos.back()->transforms.push_back( transform );
+      // Try to reused existing textures if they are the same. Hopefully the
+      // search will be minimal cost since N<15 but we could use a hashmap
+      // if need-be. Could apply to transforms too but comparision cost is
+      // much higher.
+      int tunit;
+      if(texture_ == texture_t::circle()) {
+         tunit = -1;
+      } else {
+         auto &vec = vaos.back()->textures;
+         auto i = std::find(vec.begin(), vec.end(), texture_);
+
+         if ( i == vec.end() ) {
+            if (vec.size() == MaxTextureImageUnits) {
+               vaos.emplace_back(std::make_shared<VAO>());
+               vaos.back()->transforms.push_back( transform );
+            }
+            // Old version of vec might have been invalidated.
+            auto &vec = vaos.back()->textures;
+            vec.push_back(texture_);
+            tunit = vec.size() - 1;
+         } else {
+            tunit = i - vec.begin();
          }
-         vaos.back()->textures.push_back(texture_);
       }
 
       auto &vao = *(vaos.back());
       int currentM = vao.transforms.size() - 1;
-      int tunit = vao.textures.size() - 1;
       int offset = vao.vertices.size();
-
-      if(texture_ == texture_t::circle()) {
-         tunit = -1;
-      }
 
       for (auto &v : vertices) {
          vao.vertices.emplace_back(
@@ -192,7 +204,7 @@ namespace gl {
       }
       fmt::print("Vertices: {}, Materials: {}\n", vertices.size(), materials.size() );
       for ( int i = 0; i < vertices.size(); ++i ) {
-//         fmt::print("{:3}: {}\n", i, vertices[i]);
+         fmt::print("{:3}: {}\n", i, vertices[i]);
       }
       fmt::print("Triangles: {}\n", indices.size() );
       for ( int i = 0; i < indices.size(); i+=3 ) {
