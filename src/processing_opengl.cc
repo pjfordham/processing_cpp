@@ -21,7 +21,7 @@
 progschj::ThreadPool renderThread(1);
 
 namespace gl {
-   void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) { 
+   void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
       renderThread.enqueue( [&fb, &shader, &batch, transform, scene] () mutable {
          fb.bind();
          shader.bind();
@@ -33,8 +33,6 @@ namespace gl {
          shader.set_uniforms();
          scene.set();
          batch.bind();
-         // Shouldn't need to do this every time
-         batch.load();
          batch.draw( transform );
       } );
    }
@@ -62,7 +60,7 @@ namespace gl {
             g.shader.set_uniforms();
             g.scene.set();
             g.batch.bind();
-            g.batch.load();
+            g.batch._load();
             g.batch.draw();
             g.batch.clear();
          }
@@ -267,10 +265,18 @@ namespace gl {
          draw->bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
       }
    }
+
+   void batch_t::_load() {
+         for (auto &draw: vaos ) {
+            draw->loadBuffers();
+         }
+   }
+
    void batch_t::load() {
-      for (auto &draw: vaos ) {
-         draw->loadBuffers();
-      }
+      renderThread.enqueue( [&] {
+         _load();
+      } );
+      renderThread.wait_until_nothing_in_flight();
    }
 
    bool batch_t::usesCircles() const {
