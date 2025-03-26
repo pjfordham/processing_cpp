@@ -71,6 +71,7 @@ public:
 
    PShader defaultShader;
    PShader currentShader;
+   PShader flatShader;
 
    int flushes = 0;
 
@@ -100,7 +101,7 @@ public:
 
       defaultShader = loadShader();
       shader( defaultShader );
-
+      flatShader = loadFlatShader();
       noLights();
       camera();
       perspective();
@@ -113,6 +114,7 @@ public:
       height = 0;
       defaultShader = {};
       currentShader = {};
+      flatShader = {};
       windowFrame = {};
       localFrame = {};
       pixelsFrame = {};
@@ -121,9 +123,16 @@ public:
       frame = {};
    }
 
+   PShader &getBestShader(gl::batch_t &batch) {
+      // If we're using the default shader and there are no lights, no textures and no circles
+      // then use the flat shader for performance.
+      return (currentShader == defaultShader && scene.lights.size() == 0 &&
+              batch.usesTextures() == false && batch.usesCircles() == false) ? flatShader : currentShader;
+   }
+
    void flush() {
       if ( batch.size() > 0 ) {
-         frame.add( std::move(batch), scene, currentShader.getShader() );
+         frame.add( std::move(batch), scene, getBestShader(batch).getShader() );
          pixels_current = false;
          batch.clear();
       }
@@ -132,7 +141,7 @@ public:
    void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
       flush();
       frame.render( localFrame );
-      gl::renderDirect( localFrame, batch, transform.glm_data(), scene, currentShader.getShader() );
+      gl::renderDirect( localFrame, batch, transform.glm_data(), scene, getBestShader(batch).getShader() );
       pixels_current = false;
    }
 

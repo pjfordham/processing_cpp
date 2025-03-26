@@ -388,7 +388,7 @@ void PShader::close() {
    PShader_releaseAllShaders();
 }
 
-PShader flatShader() {
+PShader loadFlatShader() {
    return {0, flatVertexShader, flatFragmentShader };
 };
 

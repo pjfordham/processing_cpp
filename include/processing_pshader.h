@@ -68,7 +68,7 @@ public:
 
 
 };
-PShader flatShader();
+PShader loadFlatShader();
 PShader directShader();
 PShader loadShader();
 PShader loadShader(const char *fragShader);
