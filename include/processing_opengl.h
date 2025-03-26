@@ -194,6 +194,7 @@ namespace gl {
 
       void setup( const shader_t &shader );
       size_t size();
+      void _load();
       void load();
       void bind();
 
