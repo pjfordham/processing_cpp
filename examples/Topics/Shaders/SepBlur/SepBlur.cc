@@ -14,7 +14,7 @@ PGraphics pass1, pass2;
 void setup() {
   size(640, 360, P2D);
 
-  blur = loadShader("blur.glsl");
+  blur = loadShader("sepblur.glsl");
   blur.set("blurSize", 9);
   blur.set("sigma", 5.0f);
 
