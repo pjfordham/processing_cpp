@@ -28,6 +28,9 @@ PShader burn;
 PShader overlay;
 PShader difference;
 
+void initShaders();
+void drawOutput(float x, float y, float w, float h);
+
 void setup() {
   size(640, 360, P2D);
   destImage = loadImage("leaves.jpg");

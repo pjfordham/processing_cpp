@@ -66,6 +66,10 @@ public:
 
    void set(const char *uniform, float v1, float v2, float v3);
 
+   void set(const char *uniform, int v1, int v2);
+
+   void set(const char *uniform, int v1, int v2, int v3, int v4);
+
 
 };
 PShader loadFlatShader();
