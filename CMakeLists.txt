@@ -108,7 +108,6 @@ set(skip_examples
   "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"                   # No XML
   "examples/Topics/Cellular Automata/Spore1/Spore1.cc"                                 # Will fix
   "examples/Topics/Cellular Automata/Spore2/Spore2.cc"                                 # Will fix
-  "examples/Topics/Shaders/Conway/Conway.cc"                                           # No ppixels uniform
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )

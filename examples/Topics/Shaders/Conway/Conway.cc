@@ -10,7 +10,7 @@ void setup() {
   pg = createGraphics(400, 400, P2D);
   pg.noSmooth();
   conway = loadShader("conway.glsl");
-  conway.set("resolution", float(pg.width), float(pg.height));
+  conway.set("resolution", float(pg.getWidth()), float(pg.getHeight()));
 }
 
 void draw() {
@@ -21,7 +21,8 @@ void draw() {
   pg.beginDraw();
   pg.background(0);
   pg.shader(conway);
-  pg.rect(0, 0, pg.width, pg.height);
+  pg.rect(0, 0, pg.getWidth(), pg.getHeight());
   pg.endDraw();
   image(pg, 0, 0, width, height);
+  conway.set("ppixels", g.getAsPImage() );
 }
