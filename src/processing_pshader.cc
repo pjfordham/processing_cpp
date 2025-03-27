@@ -247,6 +247,10 @@ public:
 
    void set(const char *uniform, float v1, float v2, float v3);
 
+   void set(const char *uniform, int v1, int v2);
+
+   void set(const char *uniform, int v1, int v2, int v3, int v4);
+
    friend struct fmt::formatter<PShaderImpl>;
 
 };
@@ -316,6 +320,16 @@ void PShaderImpl::set(const char *id, float v1, float v2, float v3) {
    shader.set(id, v1, v2, v3);
 }
 
+void PShaderImpl::set(const char *id, int v1, int v2) {
+   DEBUG_METHOD();
+   shader.set(id,v1,v2);
+}
+
+void PShaderImpl::set(const char *id, int v1, int v2, int v3, int v4) {
+   DEBUG_METHOD();
+   shader.set(id, v1, v2, v3, v4);
+}
+
 void PShaderImpl::releaseShaders() {
    DEBUG_METHOD();
    shader = {};
@@ -379,6 +393,14 @@ void PShader::set(const char *uniform, float v1, float v2) {
 
 void PShader::set(const char *uniform, float v1, float v2, float v3) {
    impl->set( uniform, v1, v2, v3 );
+}
+
+void PShader::set(const char *uniform, int v1, int v2) {
+   impl->set( uniform, v1, v2 );
+}
+
+void PShader::set(const char *uniform, int v1, int v2, int v3, int v4) {
+   impl->set( uniform, v1, v2, v3, v4 );
 }
 
 void PShader::init() {

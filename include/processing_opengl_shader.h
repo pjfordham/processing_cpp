@@ -40,6 +40,8 @@ namespace gl {
       void set(const glm::vec2 &value) const;
       void set(const glm::vec3 &value) const;
       void set(const glm::vec4 &value) const;
+      void set(const std::array<int,2> &value) const;
+      void set(const std::array<int,4> &value) const;
       void set(const std::vector<int> &value) const;
       void set(const std::vector<glm::vec2> &value) const;
       void set(const std::vector<glm::vec3> &value) const;
@@ -52,6 +54,8 @@ namespace gl {
    class shader_t {
       std::map<std::string, glm::vec3>   uniforms3fv;
       std::map<std::string, glm::vec2>   uniforms2fv;
+      std::map<std::string, std::array<int,2>> uniforms2i;
+      std::map<std::string, std::array<int,4>> uniforms4i;
       std::map<std::string, float>       uniforms1f;
       std::map<std::string, texture_ptr> uniformsSampler;
 
@@ -75,6 +79,8 @@ namespace gl {
       void set(const char *id, float value);
       void set(const char *id, float v1, float v2);
       void set(const char *id, float v1, float v2, float v3);
+      void set(const char *id, int v1, int v2);
+      void set(const char *id, int v1, int v2, int v3, int v4);
 
    };
 

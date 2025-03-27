@@ -90,12 +90,22 @@ namespace gl {
          gl::uniform loc = get_uniform( id.c_str() );
          loc.set( value );
       }
-      for (auto& [id, value] : uniformsSampler) {
-         // TODO: Fix hardcoding of unit 15
+      for (const auto& [id, value] : uniforms2i) {
          gl::uniform loc = get_uniform( id.c_str() );
-         glActiveTexture(GL_TEXTURE0 + 15);
+         loc.set( value );
+      }
+      for (const auto& [id, value] : uniforms4i) {
+         gl::uniform loc = get_uniform( id.c_str() );
+         loc.set( value );
+      }
+      // TODO fix to make sure we don't collides with
+      // other textures.
+      int i = 15;
+      for (auto& [id, value] : uniformsSampler) {
+         gl::uniform loc = get_uniform( id.c_str() );
+         glActiveTexture(GL_TEXTURE0 + i);
          glBindTexture(GL_TEXTURE_2D, value->get_id());
-         loc.set( 15 );
+         loc.set( i-- );
       }
    }
 
@@ -117,6 +127,16 @@ namespace gl {
    void shader_t::set(const char *id, float v1, float v2, float v3) {
       DEBUG_METHOD();
       uniforms3fv[id] = {v1, v2, v3};
+   }
+
+   void shader_t::set(const char *id, int v1, int v2) {
+      DEBUG_METHOD();
+      uniforms2i[id] = {v1, v2};
+   }
+
+   void shader_t::set(const char *id, int v1, int v2, int v3, int v4){
+      DEBUG_METHOD();
+      uniforms4i[id] = {v1, v2, v3, v4};
    }
 
 } // namespace gl

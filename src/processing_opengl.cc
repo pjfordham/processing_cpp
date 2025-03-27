@@ -554,6 +554,16 @@ namespace gl {
          glUniform1i(id,value);
    }
 
+   void uniform::set(const std::array<int,2> &value) const {
+      if ( id != -1 )
+         glUniform2i(id, value[0], value[1] );
+   }
+
+   void uniform::set(const std::array<int,4> &value) const {
+      if ( id != -1 )
+         glUniform4i(id, value[0], value[1], value[2], value[3] );
+   }
+
    void uniform::set(const glm::vec2 &value) const {
       if ( id != -1 )
          glUniform2fv(id, 1, glm::value_ptr(value) );
