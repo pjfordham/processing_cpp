@@ -42,6 +42,8 @@ public:
    PImage getAsPImage();
    void drawPImageWithCPU( PImage img, int x, int y );
 
+   void resize(int width, int height);
+
    void save( const std::string &fileName );
 
    void saveFrame( std::string fileName = "frame-####.png" );
