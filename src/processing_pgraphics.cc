@@ -60,7 +60,8 @@ public:
    int width = 0;
    int height = 0;
    float aaFactor;
-
+   int aaMode;
+   
    int xTextAlign = LEFT;
    int yTextAlign = TOP;
 
@@ -80,6 +81,15 @@ public:
 
    glm::vec3 falloff = {1.0,0.0,0.0};
    glm::vec3 specular = {0.0,0.0,0.0};
+
+   int resize_width = 0;
+   int resize_height = 0;
+   void resize(int width, int height) {
+      if (this->width != width || this->height != height) {
+         resize_width = width;
+         resize_height = height;
+      }
+   }
 
    int getWidth() const { return width; }
    int getHeight() const {return height; }
@@ -101,6 +111,7 @@ public:
       this->width = width;
       this->height = height;
       this->aaFactor = aaFactor;
+      this->aaMode = aaMode;
 
       defaultShader = loadShader();
       shader( defaultShader );
@@ -1040,7 +1051,12 @@ public:
       localFrame = gl::framebuffer(width, height, SSAA, 1);
    }
 
-   void beginDraw() {}
+   void beginDraw() {
+      noLights();
+      camera();
+      perspective();
+      _shape.resetMatrix();
+   }
 
    void endDraw() {
       blitPixels();
@@ -1049,11 +1065,23 @@ public:
    }
 
    int commit_draw() {
-      endDraw();
-
       // If we just blit directly everything is drawn upside down
       // localFrame.blit( windowFrame );
       windowFrame.invert( localFrame.getColorBufferID() );
+
+      if (resize_width || resize_height) {
+         width = resize_width;
+         height = resize_height;
+
+         localFrame = gl::framebuffer(width, height, aaMode, aaFactor);
+         pixelsFrame = gl::framebuffer(width, height, SSAA, 1);
+         windowFrame = gl::mainframe( width, height );
+         resize_width = 0;
+         resize_height = 0;
+         camera();
+         perspective();
+         background(DEFAULT_GRAY);
+     }
 
       return std::exchange(flushes, 0);
    }
@@ -1132,6 +1160,10 @@ void PGraphics::drawPImageWithCPU( PImage img, int x, int y ) {
 
 void PGraphics::save( const std::string &fileName ){
    return impl->save(fileName);
+}
+
+void PGraphics::resize( int width, int height ){
+   return impl->resize(width, height);
 }
 
 void PGraphics::saveFrame( std::string fileName ){

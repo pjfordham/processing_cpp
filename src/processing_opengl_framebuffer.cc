@@ -69,6 +69,7 @@ namespace gl {
       std::swap(colorBufferID,x.colorBufferID);
       std::swap(did,x.did);
       std::swap(textureBufferID,x.textureBufferID);
+      std::swap(colorBuffer,x.colorBuffer);
       return *this;
    }
 
@@ -163,11 +164,14 @@ namespace gl {
 
          auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
          if (err != GL_FRAMEBUFFER_COMPLETE) {
-            fmt::print(stderr,"zFramebuffer not complete, OpenGL Error: {}\n",err);
+            fmt::print(stderr,"Framebuffer not complete, OpenGL Error: {}\n",err);
             abort();
          }
          glClearColor(0, 0, 0, 1);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         colorBuffer = std::make_shared<texture_t>(textureBufferID);
+      } else {
+         colorBuffer = std::make_shared<texture_t>(colorBufferID);
       }
       } );
       renderThread.wait_until_nothing_in_flight();
@@ -183,10 +187,8 @@ namespace gl {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
          } );
-         return std::make_shared<texture_t>(textureBufferID);
-      } else {
-         return std::make_shared<texture_t>(colorBufferID);
       }
+      return colorBuffer;
    }
 
    framebuffer::~framebuffer() {

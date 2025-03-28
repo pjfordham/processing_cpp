@@ -179,6 +179,7 @@ add_library(Processing
   src/processing_xml.cc
   src/processing_json.cc
   src/processing_stb_image_impl.cc
+  src/processing_psurface.cc
   external/glad/src/glad.c
 )
 
@@ -202,6 +203,7 @@ install(FILES
   include/processing_opengl_texture.h
   include/processing_pgraphics.h
   include/processing_profile.h
+  include/processing_psurface.h
   include/processing_pshader.h
   include/processing_pshader_builder.h
   include/processing_java_compatability.h
@@ -238,9 +240,6 @@ set(skip_examples
   "examples/Demos/Graphics/DepthSort/DepthSort.cc"                                     # No depth sort
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"       # Won't support
   "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"             # Won't support
-  "examples/Demos/Tests/MultipleWindows/Arcball.cc"                                    # No multiple windows
-  "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"                            # No multiple windows
-  "examples/Demos/Tests/ResizeTest/ResizeTest.cc"                                      # No resize
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )
