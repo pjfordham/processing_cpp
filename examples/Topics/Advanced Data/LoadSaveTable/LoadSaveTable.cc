@@ -15,8 +15,14 @@
  121,179,44.758068,Melancholy
  */
 
+#include "Bubble.h"
+
+
+void loadData();
+
+
 // An Array of Bubble objects
-Bubble[] bubbles;
+std::vector<Bubble> bubbles;
 // A Table object
 Table table;
 
@@ -28,7 +34,7 @@ void setup() {
 void draw() {
   background(255);
   // Display all bubbles
-  for (Bubble b : bubbles) {
+  for (Bubble &b : bubbles) {
     b.display();
     b.rollover(mouseX, mouseY);
   }
@@ -44,25 +50,23 @@ void loadData() {
   table = loadTable("data.csv", "header");
 
   // The size of the array of Bubble objects is determined by the total number of rows in the CSV
-  bubbles = new Bubble[table.getRowCount()];
+  bubbles.clear();
 
   // You can access iterate over all the rows in a table
-  int rowCount = 0;
-  for (TableRow row : table.rows()) {
+  for (TableRow &row : table.rows()) {
     // You can access the fields via their column name (or index)
     float x = row.getFloat("x");
     float y = row.getFloat("y");
     float d = row.getFloat("diameter");
-    String n = row.getString("name");
+    std::string n = row.getString("name");
     // Make a Bubble object out of the data read
-    bubbles[rowCount] = new Bubble(x, y, d, n);
-    rowCount++;
+    bubbles.emplace_back(x, y, d, n);
   }
 }
 
 void mousePressed() {
   // Create a new row
-  TableRow row = table.addRow();
+  TableRow &row = table.addRow();
   // Set the values of that row
   row.setFloat("x", mouseX);
   row.setFloat("y", mouseY);
@@ -76,7 +80,7 @@ void mousePressed() {
   }
 
   // Writing the CSV back to the same file
-  saveTable(table, "data/data.csv");
+  saveTable(table, "data.csv");
   // And reloading it
   loadData();
 }
