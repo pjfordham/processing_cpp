@@ -2,6 +2,118 @@
 #include <fstream>
 #include <curl/curl.h>
 
+TableRow::TableRow() {}
+TableRow::TableRow(const std::map<std::string, std::string>& rowData) : data(rowData) {}
+
+std::string TableRow::getString(const std::string& column) const {
+   auto it = data.find(column);
+   return it != data.end() ? it->second : "";
+}
+
+float TableRow::getFloat(const std::string& column) const {
+   return atof(getString(column).c_str());
+}
+
+void TableRow::setString(const std::string& column, const std::string& value) {
+   data[column] = value;
+}
+
+void TableRow::setFloat(const std::string& column, float value) {
+   setString(column, fmt::format("{}", value));
+}
+
+const std::map<std::string, std::string>& TableRow::getData() const {
+      return data;
+}
+
+Table::Table() {}
+
+std::vector<TableRow> Table::rows() { return _rows; }
+
+bool Table::loadCSV(const std::string& filename) {
+   std::ifstream file(std::string("data/")+filename);
+   if (!file.is_open()) {
+      std::cerr << "Error opening file: " << filename << std::endl;
+      return false;
+   }
+
+   std::string line;
+   if (std::getline(file, line)) {
+      std::stringstream ss(line);
+      std::string column;
+      while (std::getline(ss, column, ',')) {
+         headers.push_back(column);
+      }
+   }
+   while (std::getline(file, line)) {
+      std::stringstream ss(line);
+      std::string value;
+      std::map<std::string, std::string> rowData;
+      for (const auto& header : headers) {
+         if (!std::getline(ss, value, ',')) break;
+         rowData[header] = value;
+      }
+      _rows.emplace_back(rowData);
+   }
+
+   file.close();
+   return true;
+}
+
+TableRow &Table::addRow() {
+   _rows.emplace_back();
+   if (_rows.size() > 10) {
+      _rows.erase(_rows.begin());
+   }
+   return _rows.back();
+}
+
+int Table::getRowCount() const {
+   return _rows.size();
+}
+
+void Table::removeRow(int index) {
+   if (index >= 0 && index < _rows.size()) {
+      _rows.erase(_rows.begin() + index);
+   } else {
+      std::cerr << "Invalid row index." << std::endl;
+      }
+}
+
+bool Table::saveCSV(const std::string& filename) {
+   std::ofstream file(std::string("data/") + filename);
+   if (!file.is_open()) {
+      std::cerr << "Error saving file: " << filename << std::endl;
+      return false;
+   }
+
+   for (size_t i = 0; i < headers.size(); ++i) {
+      file << headers[i] << (i < headers.size() - 1 ? "," : "\n");
+   }
+
+   for (const auto& row : _rows) {
+      const auto& rowData = row.getData();
+      for (size_t i = 0; i < headers.size(); ++i) {
+         file << rowData.at(headers[i]) << (i < headers.size() - 1 ? "," : "\n");
+      }
+   }
+
+   file.close();
+   return true;
+}
+
+Table loadTable(const std::string& file, const std::string& header) {
+   Table table;
+   if ( header != "header" )
+      abort();
+   table.loadCSV(file);
+   return table;
+}
+
+void saveTable(Table &t, const std::string &file ) {
+   t.saveCSV(file);
+}
+
 void link(std::string_view link) {
    (void)!system(fmt::format("xdg-open {} >nul 2>nul",link).c_str());
 }

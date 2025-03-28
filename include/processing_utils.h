@@ -13,6 +13,44 @@
 #include <fstream>
 #include <functional>
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <map>
+
+class TableRow {
+   std::map<std::string, std::string> data;
+
+public:
+   TableRow();
+   TableRow(const std::map<std::string, std::string>& rowData);
+   std::string getString(const std::string& column) const;
+   float getFloat(const std::string& column) const;
+   void setString(const std::string& column, const std::string& value);
+   void setFloat(const std::string& column, float value);
+   const std::map<std::string, std::string>& getData() const;
+};
+
+class Table {
+   std::vector<TableRow> _rows;
+   std::vector<std::string> headers;
+
+public:
+   Table();
+   std::vector<TableRow> rows();
+   bool loadCSV(const std::string& filename);
+   TableRow &addRow();
+   int getRowCount() const;
+   void removeRow(int index);
+   bool saveCSV(const std::string& filename);
+};
+
+Table loadTable(const std::string& file, const std::string& header);
+
+void saveTable(Table &t, const std::string &file );
+
+
 // This macro pulls the API a subobject into current scope.
 #define MAKE_GLOBAL(method, instance) template<typename... Args> auto method(Args&&... args) { return instance.method(args...); }
 
