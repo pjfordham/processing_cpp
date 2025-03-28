@@ -24,5 +24,5 @@ void draw() {
   pg.rect(0, 0, pg.getWidth(), pg.getHeight());
   pg.endDraw();
   image(pg, 0, 0, width, height);
-  conway.set("ppixels", g.getAsPImage() );
+  conway.set("ppixels", surface.g.getAsPImage() );
 }

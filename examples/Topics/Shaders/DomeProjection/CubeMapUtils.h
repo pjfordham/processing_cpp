@@ -61,7 +61,7 @@ void drawCubeMap() {
 void drawDomeMaster() {
   camera();
   ortho();
-  g.resetMatrix();
+  resetMatrix();
   shader(cubemapShader);
   shape(domeSphere);
   resetShader();
@@ -77,7 +77,7 @@ void regenerateEnvMap() {
   perspective(90.0f * DEG_TO_RAD, 1.0f, 1.0f, 1025.0f);
   for (int face = GL_TEXTURE_CUBE_MAP_POSITIVE_X; face <
                   GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; face++) {
-    g.resetMatrix();
+    resetMatrix();
 
     if (face == GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
       camera(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f);
@@ -97,7 +97,7 @@ void regenerateEnvMap() {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, face, envMapTextureID, 0);
 
     drawScene(); // Draw objects in the scene
-    g.commit_draw(); // Make sure that the geometry in the scene is pushed to the GPU
+    surface.g.commit_draw(); // Make sure that the geometry in the scene is pushed to the GPU
     noLights();  // Disabling lights to avoid adding many times
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, face, 0, 0);
   }
