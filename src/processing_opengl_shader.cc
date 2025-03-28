@@ -1,5 +1,3 @@
-#include "processing.h"
-#include "processing_debug.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -7,6 +5,7 @@
 #include <fmt/core.h>
 
 #include "glad/glad.h"
+#include "processing_debug.h"
 #include "processing_opengl_shader.h"
 #include "processing_opengl.h"
 #include "processing_opengl_texture.h"
