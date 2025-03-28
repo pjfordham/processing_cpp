@@ -53,7 +53,8 @@ namespace gl {
 
       GLuint did=0;
       GLuint textureBufferID = 0;
-
+      texture_ptr colorBuffer;
+      
    public:
       texture_ptr getColorBufferID();
 
