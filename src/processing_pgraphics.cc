@@ -83,8 +83,10 @@ public:
    int resize_width = 0;
    int resize_height = 0;
    void resize(int width, int height) {
-      resize_width = width;
-      resize_height = height;
+      if (this->width != width || this->height != height) {
+         resize_width = width;
+         resize_height = height;
+      }
    }
 
    int getWidth() const { return width; }
@@ -1026,6 +1028,7 @@ public:
       if (resize_width || resize_height) {
          width = resize_width;
          height = resize_height;
+
          localFrame = gl::framebuffer(width, height, aaMode, aaFactor);
          pixelsFrame = gl::framebuffer(width, height, SSAA, 1);
          windowFrame = gl::mainframe( width, height );
