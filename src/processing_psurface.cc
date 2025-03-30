@@ -3,72 +3,97 @@
 
 #include <fmt/core.h>
 #include <string>
+#include <vector>
 
-#include "processing.h"
 #include "processing_psurface.h"
 #include "processing_enum.h"
+#include "processing_task_queue.h"
 
-
-__attribute__((weak)) void keyTyped() {}
-__attribute__((weak)) void keyPressed() {}
-__attribute__((weak)) void keyReleased() {}
-__attribute__((weak)) void setup() {}
-__attribute__((weak)) void draw() {}
-__attribute__((weak)) void mousePressed() {}
-__attribute__((weak)) void mouseDragged() {}
-__attribute__((weak)) void mouseMoved() {}
-__attribute__((weak)) void mouseReleased() {}
-__attribute__((weak)) void mouseWheel(const MouseEvent&) {}
-
-int mouseX = 0;
-int mouseY = 0;
-int pmouseX = 0;
-int pmouseY = 0;
-
-char key = 0;
-int keyCode = 0;
-
-bool mousePressedb = false;
-bool keyPressedb = false;
-
-void character_callback(GLFWwindow* window, unsigned int codepoint) {
-   // Handle the Unicode character codepoint here
-   // You can convert it to a character if needed
-   char character = static_cast<char>(codepoint);
-   key = character;
-   keyCode = character;
-   keyTyped();
+static std::vector<PSurface*> &surfaceHandles() {
+   static std::vector<PSurface*> handles;
+   return handles;
 }
 
-void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mods) {
+extern PSurface *psurface;
+
+void PSurface_setup() {
+   renderThread.enqueue( [i=psurface] {
+      i->makeContextCurrent();
+   } );
+   psurface->setupFrame();
+   for (auto i : surfaceHandles()) {
+      if (i == psurface) continue;
+      i->construct(psurface);
+      renderThread.enqueue( [i] {
+         i->makeContextCurrent();
+      } );
+      i->setupFrame();
+   }
+}
+
+void PSurface_draw() {
+   for (auto i : surfaceHandles()) {
+      if (i->width) {
+         renderThread.enqueue( [i] {
+            i->makeContextCurrent();
+         } );
+         i->drawFrame();
+         renderThread.enqueue( [i] {
+            i->swapBuffers();
+         } );
+      }
+   }
+}
+
+PSurface::PSurface() {
+   surfaceHandles().push_back(this);
+}
+
+PSurface::~PSurface() {
+   auto &vec = surfaceHandles();
+   vec.erase(std::remove(vec.begin(), vec.end(), this), vec.end());
+}
+
+static void character_callback(GLFWwindow* window, unsigned int codepoint) {
+   // Handle the Unicode character codepoint here
+   // You can convert it to a character if needed
+   PSurface* surface = (PSurface*)glfwGetWindowUserPointer(window);
+   char character = static_cast<char>(codepoint);
+   surface->key = character;
+   surface->keyCode = character;
+   surface->keyTyped();
+}
+
+static void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mods) {
+   PSurface* surface = (PSurface*)glfwGetWindowUserPointer(window);
    if (action == GLFW_PRESS || action == GLFW_REPEAT || action == GLFW_RELEASE) {
       switch(key_) {
       case GLFW_KEY_ESCAPE:
-         surface.close();
+         surface->shutdown();
          break;
       case GLFW_KEY_UP:
-         key = CODED;
-         keyCode = UP;
+         surface->key = CODED;
+         surface->keyCode = UP;
          break;
       case GLFW_KEY_DOWN:
-         key = CODED;
-         keyCode = DOWN;
+         surface->key = CODED;
+         surface->keyCode = DOWN;
          break;
       case GLFW_KEY_LEFT:
-         key = CODED;
-         keyCode = LEFT;
+         surface->key = CODED;
+         surface->keyCode = LEFT;
          break;
       case GLFW_KEY_RIGHT:
-         key = CODED;
-         keyCode = RIGHT;
+         surface->key = CODED;
+         surface->keyCode = RIGHT;
          break;
       case GLFW_KEY_ENTER:
-         key = CODED;
-         keyCode = ENTER;
+         surface->key = CODED;
+         surface->keyCode = ENTER;
          break;
       case GLFW_KEY_SPACE:
-         key = ' ';
-         keyCode = 0;
+         surface->key = ' ';
+         surface->keyCode = 0;
          break;
       case GLFW_KEY_A:
       case GLFW_KEY_B:
@@ -96,8 +121,8 @@ void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mo
       case GLFW_KEY_X:
       case GLFW_KEY_Y:
       case GLFW_KEY_Z:
-         keyCode = 0;
-         key = (mods & GLFW_MOD_SHIFT) ? (key_ - GLFW_KEY_A + 'A') : (key_ - GLFW_KEY_A + 'a');
+         surface->keyCode = 0;
+         surface->key = (mods & GLFW_MOD_SHIFT) ? (key_ - GLFW_KEY_A + 'A') : (key_ - GLFW_KEY_A + 'a');
          break;
       case GLFW_KEY_0:
       case GLFW_KEY_1:
@@ -109,56 +134,67 @@ void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mo
       case GLFW_KEY_7:
       case GLFW_KEY_8:
       case GLFW_KEY_9:
-         keyCode = 0;
-         key = key_ - GLFW_KEY_0 + '0';
+         surface->keyCode = 0;
+         surface->key = key_ - GLFW_KEY_0 + '0';
          break;
       default:
-         keyCode = CODED;
-         key = 0;
+         surface->keyCode = CODED;
+         surface->key = 0;
          break;
       }
    }
    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-      keyPressedb = true;
-      keyPressed();
+      surface->keyPressedb = true;
+      surface->keyPressed();
    } else {
-      keyPressedb = false;
-      keyReleased();
+      surface->keyPressedb = false;
+      surface->keyReleased();
    }
 }
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+   PSurface* surface = (PSurface*)glfwGetWindowUserPointer(window);
    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-      mousePressed();
-      mousePressedb = true;
+      surface->mousePressed();
+      surface->mousePressedb = true;
    }
    else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-      mouseReleased();
-      mousePressedb = false;
+      surface->mouseReleased();
+      surface->mousePressedb = false;
    }
 }
 
-void scroll_callback(GLFWwindow* window, double offsetX, double offsetY) {
-   mouseWheel({MouseEvent::WHEEL, 0,0,0,-(float)offsetY});
+static void scroll_callback(GLFWwindow* window, double offsetX, double offsetY) {
+   PSurface* surface = (PSurface*)glfwGetWindowUserPointer(window);
+   surface->mouseWheel({MouseEvent::WHEEL, 0,0,0,-(float)offsetY});
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-   mouseX = xpos;
-   mouseY = ypos;
-   if (mousePressedb) {
-      mouseDragged();
+static void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+   PSurface* surface = (PSurface*)glfwGetWindowUserPointer(window);
+   surface->mouseX = xpos;
+   surface->mouseY = ypos;
+   if (surface->mousePressedb) {
+      surface->mouseDragged();
    } else {
-      mouseMoved();
+      surface->mouseMoved();
    }
 }
 
-PSurface surface;
-
-// Callback function to handle window resizing
-void framebuffer_size_callback(GLFWwindow* window, int _width, int _height) {
-   surface.dispatch_size_callback(_width,_height);
+static void framebuffer_size_callback(GLFWwindow* window, int _width, int _height) {
+   PSurface* surface = (PSurface*)glfwGetWindowUserPointer(window);
+   surface->dispatch_size_callback(_width,_height);
 }
 
+void PSurface::init() {
+   if (!glfwInit()) {
+      fmt::print("Failed to initialize GLFW\n");
+      abort();
+   }
+}
+
+void PSurface::close() {
+   glfwTerminate();
+}
 
 void PSurface::setResizable( bool r ) {
    resizable = r;
@@ -169,22 +205,14 @@ void PSurface::setResizable( bool r ) {
    }
 }
 
-void PSurface::setSizeCallback(SizeCallbackType c) {
-   callback = c;
-}
-
 void PSurface::dispatch_size_callback(int _width, int _height) {
    width = _width;
    height = _height;
-   callback(width,height);
+   g.resize(width,height);
 }
 
 bool PSurface::getResizable() const {
    return resizable;
-}
-
-void PSurface::shutdown() {
-   glfwTerminate();
 }
 
 void PSurface::setSize(int _width, int _height) {
@@ -214,12 +242,8 @@ void PSurface::swapBuffers() {
    pmouseY = mouseY;
 }
 
-void PSurface::close() {
+void PSurface::shutdown() {
    glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-
-void exit() {
-   surface.close();
 }
 
 void PSurface::setVisible( bool r) {
@@ -234,38 +258,79 @@ bool PSurface::runLoop() {
    return width != 0 && !glfwWindowShouldClose(window);
 }
 
+void PSurface::construct(PSurface *main) {
 
-void PSurface::init(bool test_mode) {
-   // Initialize GLFW
-   if (!glfwInit()) {
-      fmt::print("Failed to initialize GLFW\n");
-      abort();
-   } else {
-      glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-      glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-      glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-      glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-      glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-      glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-      window = glfwCreateWindow(640, 480, "Proce++ing", nullptr, nullptr);
-      if (!test_mode) {
-         // Set input callback functions
-         glfwSetKeyCallback(window, key_callback);
-         glfwSetCharCallback(window, character_callback);
-         glfwSetCursorPosCallback(window, mouse_callback);
-         glfwSetMouseButtonCallback(window, mouse_button_callback);
-         glfwSetScrollCallback(window, scroll_callback);
-         glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-      }
-      glfwMakeContextCurrent(NULL);
+   glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+   glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+   window = glfwCreateWindow(640, 480, "Proce++ing", nullptr, main ? main->window : nullptr);
+   if (!test_mode) {
+      // Set input callback functions
+      glfwSetKeyCallback(window, key_callback);
+      glfwSetCharCallback(window, character_callback);
+      glfwSetCursorPosCallback(window, mouse_callback);
+      glfwSetMouseButtonCallback(window, mouse_button_callback);
+      glfwSetScrollCallback(window, scroll_callback);
+      glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
    }
+   glfwMakeContextCurrent(NULL);
+   glfwSetWindowUserPointer(window, this);
 }
 
 void PSurface::makeContextCurrent() {
    glfwMakeContextCurrent(window);
-   // Initialize GLAD for OpenGL function loading
-   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-      fmt::print("Failed to initialize GLAD\n");
-      abort();
+   static bool GLAD = true;
+   if (GLAD) {
+      //  Initialize GLAD for OpenGL function loading
+      if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+         fmt::print("Failed to initialize GLAD\n");
+         abort();
+      }
+      GLAD = false;
    }
+}
+
+int PSurface::drawFrame() {
+   g.resetMatrix();
+   g.noLights();
+   draw();
+   return g.commit_draw();
+}
+
+void PSurface::size(int _width, int _height) {
+   size(_width,_height, P2D );
+}
+
+void PSurface::size(int _width, int _height, int mode) {
+   setSize(_width, _height);
+   if (!test_mode)
+      setVisible( true );
+   width = _width;
+   height = _height;
+   g = PGraphics(width, height, mode);
+}
+
+void PSurface::setupFrame() {
+   textFont( createFont("DejaVuSans.ttf",12) );
+   setup();
+   if (width != 0) {
+      // Draw anything from setup.
+      g.commit_draw();
+   }
+   PShape::optimize();
+}
+
+void PSurface::loadPixels() {
+   g.loadPixels();
+   pixels = g.getPixels();
+}
+
+PGraphics PSurface::createGraphics(int w, int h, int mode) {
+   return {w,h,mode};
+}
+PGraphics PSurface::createGraphics(int w, int h) {
+   return {w,h,P3D};
 }

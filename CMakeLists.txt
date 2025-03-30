@@ -100,8 +100,6 @@ set(skip_examples
   "examples/Demos/Graphics/DepthSort/DepthSort.cc"                                     # No depth sort
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"       # Won't support
   "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"             # Won't support
-  "examples/Demos/Tests/MultipleWindows/Arcball.cc"                                    # No multiple windows
-  "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"                            # No multiple windows
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
   "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"                         # No JSON
   "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"                           # No XML

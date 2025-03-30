@@ -7,54 +7,32 @@
 #include "processing_task_queue.h"
 #include "processing_psurface.h"
 
-PGraphics g;
 int setFrameRate = 60;
+int frameRateb = 0;
+int frameCount = 0;
 bool xloop = true;
-int width = 0;
-int height = 0;
-
-unsigned int *pixels;
-
-
 bool test_mode = false;
 
-int frameRateb = 0;
+PSurfaceMain surface;
+PSurface *psurface = &surface;
+void PSurface_setup();
+void PSurface_draw();
 
-int drawFrame() {     // Update the screen if 16.6667ms (60 FPS) have elapsed since the last frame
+// Elevate these to global scope
+int &width = surface.width;
+int &height = surface.height;
+int &mouseX = surface.mouseX;
+int &mouseY = surface.mouseY;
+int &pmouseX = surface.pmouseX;
+int &pmouseY = surface.pmouseY;
+char &key = surface.key;
+int &keyCode = surface.keyCode;
+bool &mousePressedb = surface.mousePressedb;
+bool &keyPressedb = surface.keyPressedb;
+unsigned int *&pixels = surface.pixels;
 
-   g.resetMatrix();
-   g.noLights();
-   // Call the sketch's draw()
-   draw();
-   int flushes = g.commit_draw();
-
-   return flushes;
-}
-
-int frameCount = 0;
-
-
-PGraphics createGraphics(int width, int height, int mode) {
-   return { width, height, mode };
-}
-
-// Callback function to handle window resizing
-void framebuffer_size_callback(int _width, int _height) {
-   width = _width;
-   height = _height;
-   g.resize(width,height);
-}
-
-void size(int _width, int _height, int mode) {
-
-   surface.setSize(_width, _height);
-   if (!test_mode)
-      surface.setVisible( true );
-
-   // Create a window
-   width = _width;
-   height = _height;
-   g = createGraphics(width, height, mode);
+void exit() {
+   surface.shutdown();
 }
 
 __attribute__((weak)) int main(int argc, char* argv[]) {
@@ -73,9 +51,10 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    }
 
    PFont::init();
+   PSurface::init();
 
-   surface.init(test_mode);
-   surface.setSizeCallback(framebuffer_size_callback);
+   surface.construct();
+
    renderThread.enqueue( [&] {
       surface.makeContextCurrent();
    } );
@@ -89,13 +68,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    {
       PROFILE_SCOPE("setup");
-      setup();
-      if (width != 0) {
-         // Draw anything from setup.
-         g.commit_draw();
-      }
-      PShape::optimize();
+      PSurface_setup();
    }
+
 
    int zframeCount = 0;
 
@@ -124,18 +99,9 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
       }
 
       if (xloop || frameCount == 0 || test_mode) {
-         {
-            PROFILE_SCOPE("drawFrame");
-            flushes = drawFrame();
-         }
-         {
-            PROFILE_SCOPE("glSwapWindow");
-            renderThread.enqueue( [] {
-               surface.swapBuffers();
-            } );
-         }
+         PSurface_draw();
          if (test_mode) {
-            g.saveFrame( std::string(argv[0]) + "-####.png" );
+            surface.g.saveFrame( std::string(argv[0]) + "-####.png" );
          }
          frameCount++;
          zframeCount++;
@@ -168,8 +134,20 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
 
    surface.shutdown();
 
+   PSurface::close();
    PFont::close();
 
    Profile::Instrumentor::Get().EndSession();
    return 0;
 }
+
+__attribute__((weak)) void keyTyped() {}
+__attribute__((weak)) void keyPressed() {}
+__attribute__((weak)) void keyReleased() {}
+__attribute__((weak)) void setup() {}
+__attribute__((weak)) void draw() {}
+__attribute__((weak)) void mousePressed() {}
+__attribute__((weak)) void mouseDragged() {}
+__attribute__((weak)) void mouseMoved() {}
+__attribute__((weak)) void mouseReleased() {}
+__attribute__((weak)) void mouseWheel(const MouseEvent&) {}
