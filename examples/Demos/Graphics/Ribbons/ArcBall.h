@@ -183,31 +183,7 @@ public:
   void applyQuat2Matrix(Quat q){
      // Extract the values from Q
      auto aa = q.getValue();
-     float q0 = aa[0];
-     float q1 = aa[1];
-     float q2 = aa[2];
-     float q3 = aa[3];
-
-     // Compute the elements of the rotation matrix
-     float r00 = 2 * (q0 * q0 + q1 * q1) - 1;
-     float r01 = 2 * (q1 * q2 - q0 * q3);
-     float r02 = 2 * (q1 * q3 + q0 * q2);
-
-     float r10 = 2 * (q1 * q2 + q0 * q3);
-     float r11 = 2 * (q0 * q0 + q2 * q2) - 1;
-     float r12 = 2 * (q2 * q3 - q0 * q1);
-
-     float r20 = 2 * (q1 * q3 - q0 * q2);
-     float r21 = 2 * (q2 * q3 + q0 * q1);
-     float r22 = 2 * (q0 * q0 + q3 * q3) - 1;
-
-     // Create and return the rotation matrix
-     transform( PMatrix(
-        PVector4{r00, r01, r02, 0.0},
-        PVector4{r10, r11, r12, 0.0},
-        PVector4{r20, r21, r22, 0.0},
-        PVector4{0.0, 0.0, 0.0, 1.0}
-                   ) );
+     rotate(aa[0], aa[1], aa[2], aa[3]);
   }
 };
 

@@ -58,6 +58,8 @@ public:
 
    void scale(float x);
 
+   void rotate(float x, float y, float z, float w);
+
    void rotate(float angle, PVector axis);
 
    void rotate(float angle);

@@ -14,6 +14,10 @@
 
 #include "processing_debug.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
 
@@ -204,6 +208,11 @@ public:
       indices.clear();
       children.clear();
       batch.clear();
+   }
+
+   void rotate(float angle, float x, float y, float z) {
+      DEBUG_METHOD();
+      rotate(angle, PVector(x,y,z));
    }
 
    void rotate(float angle) {
@@ -1722,6 +1731,10 @@ void PShape::copyStyle( const PShape other ) {
 
 void PShape::clear() {
    return impl->clear();
+}
+
+void PShape::rotate(float x, float y, float z, float w) {
+   return impl->rotate(x,y,z,w);
 }
 
 void PShape::rotate(float angle) {

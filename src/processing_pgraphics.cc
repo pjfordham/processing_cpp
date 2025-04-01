@@ -1116,6 +1116,10 @@ void PGraphics::rotate(float angle, PVector axis){
    return impl->_shape.rotate(angle,axis);
 }
 
+void PGraphics::rotate(float x, float y, float z, float w){
+   return impl->_shape.rotate(x,y,z,w);
+}
+
 void PGraphics::rotate(float angle){
    return impl->_shape.rotate(angle);
 }

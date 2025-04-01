@@ -84,6 +84,8 @@ class PShape {
 
    void rotate(float angle, PVector axis);
 
+   void rotate(float x, float y, float z, float w);
+
    void translate(PVector t);
 
    void translate(float x, float y, float z=0);
