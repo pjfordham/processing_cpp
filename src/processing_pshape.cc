@@ -24,11 +24,6 @@ class PShapeImpl {
    friend struct std::hash<PShapeImpl>;
 
 public:
-   static const PImage getBlankTexture() {
-      static PImage blankTexture = createBlankImage();
-      return blankTexture;
-   }
-
    struct vInfoExtra {
       color stroke;
       float weight;
@@ -60,7 +55,7 @@ private:
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
    color stroke_color = BLACK;
-   PImage texture_ = getBlankTexture();
+   PImage texture_ = PShape::getBlankTexture();
    gl::color gl_fill_color = flatten_color_mode(WHITE);
    color fill_color = WHITE;
    color tint_color = WHITE;
@@ -141,7 +136,7 @@ public:
          gl::color{0.0f,0.0f,0.0f,1.0f},
          gl::color{0.0f,0.0f,0.0f,1.0f},
          gl::color{0.0f,0.0f,0.0f,1.0f},
-         1.0, 1.0, 4, getBlankTexture() };
+         1.0, 1.0, 4, PShape::getBlankTexture() };
    }
 
    PShapeImpl(const PShapeImpl &copy) = default;
@@ -298,7 +293,7 @@ public:
 
    bool isTextureSet() const {
       DEBUG_METHOD();
-      return texture_ != getBlankTexture();
+      return texture_ != PShape::getBlankTexture();
    }
 
    void material(PMaterial &mat) {
@@ -326,7 +321,7 @@ public:
    void noTexture() {
       DEBUG_METHOD();
       dirty=true;
-      texture_ = getBlankTexture();
+      texture_ = PShape::getBlankTexture();
    }
 
    void noNormal() {

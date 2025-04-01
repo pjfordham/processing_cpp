@@ -30,7 +30,7 @@ class PShape {
    static void close();
 
    float width=0, height=0;
-   static const PImage getBlankTexture() {
+   static const PImage &getBlankTexture() {
       static PImage blankTexture = createBlankImage();
       return blankTexture;
    }
