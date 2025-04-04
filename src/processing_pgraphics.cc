@@ -392,6 +392,10 @@ public:
       text(s,x,y,twidth,theight);
    }
 
+   void background(color c) {
+      background(c.r,c.g,c.b,c.a);
+   }
+
    void background(float r, float g, float b, float a = color::scaleA) {
       frame.background( flatten_color_mode({r,g,b,a}) );
    }
