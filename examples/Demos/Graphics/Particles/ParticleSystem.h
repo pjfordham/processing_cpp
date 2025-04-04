@@ -8,11 +8,11 @@ public:
 
   ParticleSystem() {}
 
-   ParticleSystem(int n, PImage sprite) {
+  ParticleSystem(int n, PImage sprite) {
     particleShape = createGroup();
 
     for (int i = 0; i < n; i++) {
-      Particle p = particles.emplace_back(sprite);
+      Particle &p = particles.emplace_back(sprite);
       particleShape.addChild(p.getShape());
     }
   }

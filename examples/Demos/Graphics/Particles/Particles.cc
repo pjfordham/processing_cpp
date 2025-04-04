@@ -25,7 +25,7 @@ void draw () {
 
   fill(255);
   textSize(16);
-  // text("Frame rate: " + int(frameRate), 10, 20);
+  text(fmt::format("Frame rate: {}",int(frameRateb)), 10, 20);
 
 }
 
