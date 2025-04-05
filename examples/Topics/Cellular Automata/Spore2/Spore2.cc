@@ -9,70 +9,46 @@
  * like wanting to move to the same space) and in random order.
  */
 
-World w;
+//  The World class simply provides two functions, get and set, which access the
+//  display in the same way as getPixel and setPixel.  The only difference is that
+//  the World class's get and set do screen wraparound ("toroidal coordinates").
+class World {
+public:
+   
+  void setpix(int x, int y, color c) {
+    while(x < 0) x+=width;
+    while(x > width - 1) x-=width;
+    while(y < 0) y+=height;
+    while(y > height - 1) y-=height;
+    set(x, y, c);
+  }
+
+  color getpix(int x, int y) {
+    while(x < 0) x+=width;
+    while(x > width - 1) x-=width;
+    while(y < 0) y+=height;
+    while(y > height - 1) y-=height;
+    return get(x, y);
+  }
+};
+
+
 int maxcells = 8000;
 int numcells;
-Cell[] cells = new Cell[maxcells];
 color spore1, spore2, spore3, spore4;
 color black = color(0, 0, 0);
 // set lower for smoother animation, higher for faster simulation
 int runs_per_loop = 10000;
 
-void setup()
-{
-  size(640, 360);
-  frameRate(24);
-  reset();
-}
-
-void reset() {
-  clearScreen();
-  w = new World();
-  spore1 = color(128, 172, 255);
-  spore2 = color(64, 128, 255);
-  spore3 = color(255, 128, 172);
-  spore4 = color(255, 64, 128);
-  numcells = 0;
-  seed();
-}
-
-void seed()
-{
-  // Add cells at random places
-  for (int i = 0; i < maxcells; i++)
-  {
-    int cX = int(random(width));
-    int cY = int(random(height));
-    int c;
-    float r = random(1);
-    if (r < 0.25) c = spore1;
-    else if (r < 0.5) c = spore2;
-    else if (r < 0.75) c = spore3;
-    else c = spore4;
-    if (w.getpix(cX, cY) == black)
-    {
-      w.setpix(cX, cY, c);
-      cells[numcells] = new Cell(cX, cY);
-      numcells++;
-    }
-  }
-}
-
-void draw() {
-  // Run cells in random order
-  for (int i = 0; i < runs_per_loop; i++) {
-    int selected = min((int)random(numcells), numcells - 1);
-    cells[selected].run();
-  }
-}
-
-void clearScreen() {
-  background(0);
-}
+void seed();
+void clearScreen();
+World w;
 
 class Cell {
-  int x, y;
-  Cell(int xin, int yin) {
+public:
+   int x, y;
+   Cell() {}
+   Cell(int xin, int yin) {
     x = xin;
     y = yin;
   }
@@ -134,34 +110,69 @@ class Cell {
   void move(int dx, int dy) {
     if (w.getpix(x + dx, y + dy) == black) {
       w.setpix(x + dx, y + dy, w.getpix(x, y));
-      w.setpix(x, y, color(0));
+      w.setpix(x, y, black);
       x += dx;
       y += dy;
     }
   }
+};
+
+std::vector<Cell> cells(maxcells);
+void reset();
+void seed();
+
+void setup()
+{
+  size(640, 360);
+  frameRate(24);
+  reset();
 }
 
-//  The World class simply provides two functions, get and set, which access the
-//  display in the same way as getPixel and setPixel.  The only difference is that
-//  the World class's get and set do screen wraparound ("toroidal coordinates").
-class World {
+void reset() {
+  clearScreen();
+  spore1 = color(128, 172, 255);
+  spore2 = color(64, 128, 255);
+  spore3 = color(255, 128, 172);
+  spore4 = color(255, 64, 128);
+  numcells = 0;
+  seed();
+}
 
-  void setpix(int x, int y, int c) {
-    while(x < 0) x+=width;
-    while(x > width - 1) x-=width;
-    while(y < 0) y+=height;
-    while(y > height - 1) y-=height;
-    set(x, y, c);
-  }
-
-  color getpix(int x, int y) {
-    while(x < 0) x+=width;
-    while(x > width - 1) x-=width;
-    while(y < 0) y+=height;
-    while(y > height - 1) y-=height;
-    return get(x, y);
+void seed()
+{
+  // Add cells at random places
+  for (int i = 0; i < maxcells; i++)
+  {
+    int cX = int(random(width));
+    int cY = int(random(height));
+    color c;
+    float r = random(1);
+    if (r < 0.25) c = spore1;
+    else if (r < 0.5) c = spore2;
+    else if (r < 0.75) c = spore3;
+    else c = spore4;
+    if (w.getpix(cX, cY) == black)
+    {
+      w.setpix(cX, cY, c);
+      cells[numcells] = Cell(cX, cY);
+      numcells++;
+    }
   }
 }
+
+void draw() {
+  // Run cells in random order
+  for (int i = 0; i < runs_per_loop; i++) {
+    int selected = min((int)random(numcells), numcells - 1);
+    cells[selected].run();
+  }
+}
+
+void clearScreen() {
+  background(0);
+}
+
+
 
 void mousePressed() {
   reset();

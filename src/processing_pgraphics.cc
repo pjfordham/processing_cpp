@@ -41,6 +41,7 @@ public:
    static void close();
 
    bool pixels_current = false;
+   bool pixels_to_update = false;
    int textureMode_ = IMAGE;
 
    gl::framebuffer localFrame;
@@ -133,7 +134,6 @@ public:
    void flush() {
       if ( batch.size() > 0 ) {
          frame.add( std::move(batch), scene, getBestShader(batch).getShader() );
-         pixels_current = false;
          batch.clear();
       }
    }
@@ -142,7 +142,6 @@ public:
       flush();
       frame.render( localFrame );
       gl::renderDirect( localFrame, batch, transform.glm_data(), scene, getBestShader(batch).getShader() );
-      pixels_current = false;
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -155,7 +154,7 @@ public:
             pixels[(col+y)*width+(row+x)] = color(fontp,fontp,fontp);
          }
       }
-      updatePixels();
+      pixels_to_update = true;
    }
 
    void save( const std::string &fileName ) {
@@ -398,6 +397,8 @@ public:
 
    void background(float r, float g, float b, float a = color::scaleA) {
       frame.background( flatten_color_mode({r,g,b,a}) );
+      pixels_current = false;
+      pixels_to_update = false;
    }
 
    void background(float gray) {
@@ -617,9 +618,9 @@ public:
    }
 
    void loadPixels() {
-      flush();
-      frame.render( localFrame );
       if ( pixels_current == false ) {
+         flush();
+         frame.render( localFrame );
          localFrame.blit( pixelsFrame );
          pixelsFrame.loadPixels( pixels );
       }
@@ -627,11 +628,18 @@ public:
    }
 
    void updatePixels() {
-      flush();
-      frame.render( localFrame );
-      pixelsFrame.updatePixels( pixels );
-      pixelsFrame.blit( localFrame );
-      pixels_current = true;
+      pixels_to_update = true;
+   }
+
+   void blitPixels() {
+      if (pixels_to_update) {
+         flush();
+         frame.render( localFrame );
+         pixelsFrame.updatePixels( pixels );
+         pixelsFrame.blit( localFrame );
+         pixels_current = true;
+         pixels_to_update = false;
+      }
     }
 
    color get(int x, int y) {
@@ -642,7 +650,7 @@ public:
 
    void set(int x, int y, color c) {
       pixels[y*width+x] = c;
-      updatePixels();
+      pixels_to_update = true;
    }
 
    void set(int x, int y, PImage i) {
@@ -714,6 +722,8 @@ public:
             pshape.flatten( batch, _shape.getShapeMatrix(), false );
          }
       }
+      pixels_current = false;
+      blitPixels();
    }
 
    void ellipse(float x, float y, float width, float height) {
@@ -990,6 +1000,7 @@ public:
    void beginDraw() {}
 
    void endDraw() {
+      blitPixels();
       flush();
       frame.render( localFrame );
    }
