@@ -9,10 +9,14 @@
  * <a href=" "> links
  */
 
+#include <regex>
+
 // Our source url
-String url = "http://processing.org";
+std::string url = "https://processing.org";
 // We'll store the results in an array
-String[] links;
+std::vector<std::string> links;
+
+std::vector<std::string> loadLinks(std::string_view s);
 
 void setup() {
   size(640, 360);
@@ -24,30 +28,30 @@ void draw() {
   background(0);
   // Display the raw links
   fill(255);
-  for (int i = 0; i < links.length; i++) {
+  for (int i = 0; i < links.size(); i++) {
     text(links[i],10,16+i*16);
   }
 }
 
-String[] loadLinks(String s) {
+std::vector<std::string> loadLinks(std::string_view s) {
   // Load the raw HTML
-  String[] lines = loadStrings(s);
+  std::vector<std::string> lines = loadStrings(s);
   // Put it in one big string
-  String html = join(lines,"\n");
+  std::string html = join(lines,"\n");
 
   // A wacky regex for matching a URL
-  String regex = "<\\s*a\\s+href\\s*=\\s*\"(.*?)\"";
-  // The matches are in a two dimensional array
-  // The first dimension is all matches
-  // The second dimension is the groups
-  String[][] matches = matchAll(html, regex);
+  std::string regexStr = "<\\s*a\\s+href\\s*=\\s*\"(.*?)\"";
+
+  std::regex regex(regexStr, std::regex::icase);
 
   // An array for the results
-  String[] results = new String[matches.length];
+  std::vector<std::string> results;
+  auto begin = std::sregex_iterator(html.begin(), html.end(), regex);
+  auto end = std::sregex_iterator();
 
   // We want group 1 for each result
-  for (int i = 0; i < results.length; i++) {
-     results[i] = matches[i][1];
+  for (auto i = begin; i != end; ++i) {
+      results.push_back((*i)[1].str());
   }
 
   // Return the results

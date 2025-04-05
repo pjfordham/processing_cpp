@@ -103,7 +103,6 @@ set(skip_examples
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
   "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"                         # No JSON
   "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"                           # No XML
-  "examples/Topics/Advanced Data/Regex/Regex.cc"                                       # No regex
   "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"                   # No XML
   "examples/Topics/Cellular Automata/Spore1/Spore1.cc"                                 # Will fix
   "examples/Topics/Cellular Automata/Spore2/Spore2.cc"                                 # Will fix
