@@ -104,8 +104,6 @@ set(skip_examples
   "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"                         # No JSON
   "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"                           # No XML
   "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"                   # No XML
-  "examples/Topics/Cellular Automata/Spore1/Spore1.cc"                                 # Will fix
-  "examples/Topics/Cellular Automata/Spore2/Spore2.cc"                                 # Will fix
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )

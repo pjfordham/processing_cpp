@@ -15,7 +15,7 @@
 class World {
 public:
 
-  void setpix(int x, int y, int c) {
+  void setpix(int x, int y, color c) {
     while(x < 0) x+=width;
     while(x > width - 1) x-=width;
     while(y < 0) y+=height;
@@ -73,7 +73,7 @@ public:
   void move(int dx, int dy) {
     if (w.getpix(x + dx, y + dy) == black) {
       w.setpix(x + dx, y + dy, w.getpix(x, y));
-      w.setpix(x, y, color(0));
+      w.setpix(x, y, black);
       x += dx;
       y += dy;
     }
