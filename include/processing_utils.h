@@ -70,6 +70,7 @@ void saveStrings(std::string_view fileName, std::vector<std::string> &data);
 std::vector<std::string> splitTokens(std::string_view input, std::string_view delimiters);
 std::string join(const std::vector<std::string>& strings, std::string_view separator);
 std::string toLowerCase(std::string_view input);
+std::vector<char> loadURL(std::string_view URL);
 
 std::string trim(const std::string& str);
 std::vector<std::string> split(std::string_view input, std::string_view delimiter);

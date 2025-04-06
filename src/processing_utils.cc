@@ -153,6 +153,9 @@ std::vector<char> loadURL(std::string_view URL) {
    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
    std::vector<char> response_body;
    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);
+   // Set a custom User-Agent
+   curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; Linux x86_64)");
+
 
    // Perform the request
    CURLcode res = curl_easy_perform(curl);

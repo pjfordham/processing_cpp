@@ -1,4 +1,5 @@
 #include <processing_xml.h>
+#include <processing_utils.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -50,6 +51,14 @@ int XML::getInt(std::string_view attrName) {
    return result;
 }
 
+std::string XML::getString(std::string_view attrName) {
+   xmlChar *val = xmlGetProp(element, BAD_CAST std::string(attrName).c_str());
+   if (!val) return 0;
+   std::string result((char*)val);
+   xmlFree(val);
+   return result;
+}
+
 void XML::setInt(std::string_view attrName, int value) {
    xmlSetProp(element, BAD_CAST std::string(attrName).c_str(), BAD_CAST std::to_string(value).c_str());
 }
@@ -58,6 +67,14 @@ float XML::getFloatContent() {
    xmlChar *content = xmlNodeGetContent(element);
    if (!content) return 0.0f;
    float val = std::stof((const char *)content);
+   xmlFree(content);
+   return val;
+}
+
+int XML::getIntContent() {
+   xmlChar *content = xmlNodeGetContent(element);
+   if (!content) return 0;
+   int val = std::stoi((const char *)content);
    xmlFree(content);
    return val;
 }
@@ -74,13 +91,18 @@ void XML::setFloatContent(float f) {
    xmlNodeSetContent(element, BAD_CAST str.c_str());
 }
 
+void XML::setIntContent(int f) {
+   std::string str = std::to_string(f);
+   xmlNodeSetContent(element, BAD_CAST str.c_str());
+}
+
 void XML::setContent(std::string content) {
    xmlNodeSetContent(element, BAD_CAST content.c_str());
 }
 
 XML loadXML(std::string_view filename) {
-   std::string f = std::string("data/") + std::string(filename);
-   xmlDoc *doc = xmlReadFile(f.data(), nullptr, 0);
+   std::vector<char> buffer = loadURL(filename);
+   xmlDoc *doc = xmlReadMemory(buffer.data(), buffer.size(), nullptr, nullptr, 0);
    if (!doc) return {};
    xmlNode *root = xmlDocGetRootElement(doc);
    return XML(std::shared_ptr<xmlDoc>(doc, xmlFreeDoc), root);
