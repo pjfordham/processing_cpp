@@ -13,6 +13,7 @@
 #include "processing_time.h"
 #include "processing_pshader.h"
 #include "processing_psurface.h"
+#include "processing_xml.h"
 
 void keyPressed();
 void keyReleased();

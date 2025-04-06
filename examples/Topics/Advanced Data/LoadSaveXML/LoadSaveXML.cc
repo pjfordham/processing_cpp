@@ -23,10 +23,14 @@
 </bubbles>
  */
 
+#include "Bubble.h"
+
 // An Array of Bubble objects
-Bubble[] bubbles;
+std::vector<Bubble> bubbles;
 // A Table object
 XML xml;
+
+void loadData();
 
 void setup() {
   size(640, 360);
@@ -36,7 +40,7 @@ void setup() {
 void draw() {
   background(255);
   // Display all bubbles
-  for (Bubble b : bubbles) {
+  for (Bubble &b : bubbles) {
     b.display();
     b.rollover(mouseX, mouseY);
   }
@@ -50,12 +54,9 @@ void loadData() {
   // Load XML file
   xml = loadXML("data.xml");
   // Get all the child nodes named "bubble"
-  XML[] children = xml.getChildren("bubble");
+  std::vector<XML> children = xml.getChildren("bubble");
 
-  // The size of the array of Bubble objects is determined by the total XML elements named "bubble"
-  bubbles = new Bubble[children.length];
-
-  for (int i = 0; i < bubbles.length; i++) {
+  for (int i = 0; i < children.size(); i++) {
 
     // The position element has two attributes: x and y
     XML positionElement = children[i].getChild("position");
@@ -70,10 +71,10 @@ void loadData() {
 
     // The label is the content of the child named "label"
     XML labelElement = children[i].getChild("label");
-    String label = labelElement.getContent();
+    std::string label = labelElement.getContent();
 
     // Make a Bubble object out of the data read
-    bubbles[i] = new Bubble(x, y, diameter, label);
+    bubbles.emplace_back(x, y, diameter, label);
   }
 
 }
@@ -102,9 +103,9 @@ void mousePressed() {
 
 
   // Here we are removing the oldest bubble if there are more than 10
-  XML[] children = xml.getChildren("bubble");
+  std::vector<XML> children = xml.getChildren("bubble");
     // If the XML file has more than 10 bubble elements
-  if (children.length > 10) {
+  if (children.size() > 10) {
     // Delete the first one
     xml.removeChild(children[0]);
   }
