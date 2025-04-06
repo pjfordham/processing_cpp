@@ -104,7 +104,6 @@ set(skip_examples
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"                                      # No resize
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
   "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"                         # No JSON
-  "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"                   # No XML
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )

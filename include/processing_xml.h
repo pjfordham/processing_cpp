@@ -25,9 +25,12 @@ public:
    void removeChild(XML x);
    int getInt(std::string_view attrName);
    void setInt(std::string_view attrName, int value);
+   std::string getString(std::string_view attrName);
    float getFloatContent();
+   int getIntContent();
    std::string getContent();
    void setFloatContent(float f);
+   void setIntContent(int f);
    void setContent(std::string content);
 };
 
