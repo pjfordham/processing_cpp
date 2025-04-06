@@ -35,6 +35,7 @@ add_library(Processing
   src/processing_opengl_texture.cc
   src/processing_pgraphics.cc
   src/processing_pshader.cc
+  src/processing_xml.cc
   external/glad/src/glad.c
 )
 
@@ -63,6 +64,7 @@ install(FILES
   include/processing_java_compatability.h
   include/processing_time.h
   include/processing_enum.h
+  include/processing_xml.h
   DESTINATION include)
 
 target_include_directories(Processing
@@ -102,7 +104,6 @@ set(skip_examples
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"                                      # No resize
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
   "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"                         # No JSON
-  "examples/Topics/Advanced Data/LoadSaveXML/LoadSaveXML.cc"                           # No XML
   "examples/Topics/Advanced Data/XMLYahooWeather/XMLYahooWeather.cc"                   # No XML
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
