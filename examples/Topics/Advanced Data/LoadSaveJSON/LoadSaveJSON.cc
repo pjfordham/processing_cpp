@@ -30,10 +30,14 @@
  }
  */
 
+#include "Bubble.h"
+
 // An Array of Bubble objects
-Bubble[] bubbles;
+std::vector<Bubble> bubbles;
 // A JSON object
 JSONObject json;
+
+void loadData();
 
 void setup() {
   size(640, 360);
@@ -43,7 +47,7 @@ void setup() {
 void draw() {
   background(255);
   // Display all bubbles
-  for (Bubble b : bubbles) {
+  for (Bubble &b : bubbles) {
     b.display();
     b.rollover(mouseX, mouseY);
   }
@@ -60,8 +64,6 @@ void draw() {
   JSONArray bubbleData = json.getJSONArray("bubbles");
 
   // The size of the array of Bubble objects is determined by the total XML elements named "bubble"
-  bubbles = new Bubble[bubbleData.size()];
-
   for (int i = 0; i < bubbleData.size(); i++) {
     // Get each object in the array
     JSONObject bubble = bubbleData.getJSONObject(i);
@@ -73,19 +75,19 @@ void draw() {
 
     // Get diamter and label
     float diameter = bubble.getFloat("diameter");
-    String label = bubble.getString("label");
+    std::string label = bubble.getString("label");
 
     // Put object in array
-    bubbles[i] = new Bubble(x, y, diameter, label);
+    bubbles.emplace_back(x, y, diameter, label);
   }
 }
 
  void mousePressed() {
   // Create a new JSON bubble object
-  JSONObject newBubble = new JSONObject();
+  JSONObject newBubble;
 
   // Create a new JSON position object
-  JSONObject position = new JSONObject();
+  JSONObject position;
   position.setInt("x", mouseX);
   position.setInt("y", mouseY);
 

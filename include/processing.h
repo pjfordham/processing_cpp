@@ -13,6 +13,7 @@
 #include "processing_time.h"
 #include "processing_pshader.h"
 #include "processing_xml.h"
+#include "processing_json.h"
 
 // This is the global PGraphcs object that forms the top level canvas.
 extern PGraphics g;
