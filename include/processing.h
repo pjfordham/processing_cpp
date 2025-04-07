@@ -14,6 +14,7 @@
 #include "processing_pshader.h"
 #include "processing_psurface.h"
 #include "processing_xml.h"
+#include "processing_json.h"
 
 void keyPressed();
 void keyReleased();

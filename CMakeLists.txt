@@ -18,6 +18,7 @@ add_subdirectory(external/libglfw)
 add_subdirectory(external/fmtlib)
 add_subdirectory(external/libtess2)
 add_subdirectory(external/glm)
+add_subdirectory(external/json)
 
 add_library(Processing
   src/processing.cc
@@ -37,6 +38,7 @@ add_library(Processing
   src/processing_pshader.cc
   src/processing_psurface.cc
   src/processing_xml.cc
+  src/processing_json.cc
   external/glad/src/glad.c
 )
 
@@ -67,6 +69,7 @@ install(FILES
   include/processing_time.h
   include/processing_enum.h
   include/processing_xml.h
+  include/processing_json.h
   DESTINATION include)
 
 target_include_directories(Processing
@@ -80,6 +83,7 @@ target_include_directories(Processing
   external/libtess2/Include
   external/fmtlib/include
   external/glm/include
+  external/json/include
   ${CURL_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
   )
@@ -103,7 +107,6 @@ set(skip_examples
   "examples/Demos/Graphics/LowLevelGLVboInterleaved/LowLevelGLVboInterleaved.cc"       # Won't support
   "examples/Demos/Graphics/LowLevelGLVboSeparate/LowLevelGLVboSeparate.cc"             # Won't support
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
-  "examples/Topics/Advanced Data/LoadSaveJSON/LoadSaveJSON.cc"                         # No JSON
   "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )
