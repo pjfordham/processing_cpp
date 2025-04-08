@@ -40,6 +40,7 @@ private:
    bool setNormals = false;
    PVector n = { 0.0, 0.0, 0.0 };
 
+   std::string id;
    std::vector<int> contour;
    std::vector<gl::vertex> vertices;
    std::vector<PMaterial> materials;
@@ -71,6 +72,10 @@ public:
 
    float width = 1.0;
    float height = 1.0;
+
+   void setID(std::string_view s) {
+      id = s;
+   }
 
    void enableStyle() {
       dirty = true;
@@ -158,6 +163,16 @@ public:
    PShape getChild( int i ) {
       DEBUG_METHOD();
       return children[i];
+   }
+
+   PShape getChild( std::string_view s ) const {
+      DEBUG_METHOD();
+      for (auto &&child : children) {
+         if (child.impl->id == s) {
+            return child;
+         }
+      }
+      return createShape();
    }
 
    color getStrokeColor() const {
@@ -1771,6 +1786,10 @@ PShape PShape::getChild( int i ) {
    return impl->getChild(i);
 }
 
+PShape PShape::getChild( std::string_view i ) {
+   return impl->getChild(i);
+}
+
 color PShape::getFillColor() const {
    return impl->getFillColor();
 }
@@ -2210,6 +2229,10 @@ int PShape::getChildCount() const{
 
 int PShape::getVertexCount() const{
    return impl->getVertexCount();
+}
+
+void PShape::setID(std::string_view s) {
+   return impl->setID(s);
 }
 
 void PShape::enableStyle() {
