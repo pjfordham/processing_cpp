@@ -259,6 +259,10 @@ static void parseSVGOpacity(const std::string &data, int &alpha) {
    alpha = std::stof( data ) * 255;
 }
 
+static void parseSVGID(const std::string &data, PShape& pshape) {
+   pshape.setID( data );
+}
+
 static void parseSVGPath(const std::string &data, PShape& pshape) {
    std::string::const_iterator i = data.begin();
    pshape.beginShape();
@@ -479,6 +483,11 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
          if (xdata) {
             parseSVGOpacity((char*)xdata, alpha);
+         }
+         xmlFree(xdata);
+         xdata = xmlGetProp(node, (xmlChar*)"id");
+         if (xdata) {
+            parseSVGID((char*)xdata, shape);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"fill");

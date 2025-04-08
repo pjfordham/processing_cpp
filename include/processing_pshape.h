@@ -56,6 +56,8 @@ class PShape {
 
    PShape getChild( int i );
 
+   PShape getChild( std::string_view i );
+
    float getStrokeWeight() const;
 
    color getStrokeColor() const;
@@ -65,6 +67,8 @@ class PShape {
    color getTintColor() const;
 
    bool isGroup() const;
+
+   void setID( std::string_view );
 
    void enableStyle();
 
