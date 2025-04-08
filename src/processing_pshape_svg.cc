@@ -331,11 +331,6 @@ static void parseNode(xmlNode* node, PShape& pshape) {
    if (node->type == XML_ELEMENT_NODE) {
       type = (char*)node->name;
 
-      PShape shape = createShape();;
-      shape.beginShape();
-      shape.fill(BLACK);
-      shape.noStroke();
-
       if (type == "svg") {
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"width");
          float width, height;
@@ -354,7 +349,19 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             pshape.height = height;
          }
          xmlFree(xdata);
+
+         pshape.beginShape( GROUP );
+         for (xmlNode* child = node->children; child; child = child->next) {
+            parseNode(child, pshape);
+         }
+         pshape.endShape();
+         return;
       }
+
+      PShape shape = createShape();;
+      shape.beginShape();
+      shape.fill(BLACK);
+      shape.noStroke();
 
       if (type == "circle") {
          int alpha = 255;
