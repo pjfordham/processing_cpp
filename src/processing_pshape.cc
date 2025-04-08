@@ -854,8 +854,8 @@ public:
          if ( isFilled() )
             draw_fill(batch, currentTransform, flatten_transforms);
          // draw_normals(batch, currentTransform, flatten_transforms);
-         if ( isStroked() )
-            draw_stroke(batch, currentTransform, flatten_transforms);
+         // We shold handle stroke on a per vertex basis and ignore global settings, maybe fill as well?
+         draw_stroke(batch, currentTransform, flatten_transforms);
       }
       dirty = false;
       return;
@@ -1224,6 +1224,9 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
    PLine start;
    PLine end;
 
+   if (extras[0].stroke.a == 0.0)
+      return {};
+
    if ( points < 3 )
       abort();
 
@@ -1271,6 +1274,8 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
 PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShapeImpl shape;
+   if (color1.a == 0.0 && color2.a == 0.0)
+      return shape;
 
    int NUMBER_OF_VERTICES=16;
 
@@ -1300,6 +1305,8 @@ PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, c
 PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShapeImpl shape;
+   if (color1.a == 0.0 && color2.a == 0.0)
+      return shape;
    shape.beginShape(CONVEX_POLYGON);
    shape.transform( transform );
    PVector normal1 = (p2 - p1).normal();
@@ -1326,6 +1333,8 @@ PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color 
 PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
    PShapeImpl shape;
+   if (color1.a == 0.0 && color2.a == 0.0)
+      return shape;
    shape.beginShape(CONVEX_POLYGON);
    shape.transform( transform );
    PVector normal1 = (p2 - p1).normal();
@@ -1376,6 +1385,9 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
 }
 
 void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
+
+   if (color1.a == 0.0 && color2.a == 0.0 )
+      return;
 
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
@@ -1471,10 +1483,12 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
    case POINTS:
    {
       for (int i = 0; i< vertices.size() ; ++i ) {
-         drawUntexturedFilledEllipse(
-            vertices[i].position.x, vertices[i].position.y,
-            extras[i].weight, extras[i].weight,
-            extras[i].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+         if (extras[i].stroke.a != 0.0) {
+            drawUntexturedFilledEllipse(
+               vertices[i].position.x, vertices[i].position.y,
+               extras[i].weight, extras[i].weight,
+               extras[i].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+         }
       }
       break;
    }
@@ -1568,10 +1582,12 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
             abort();
          }
       } else if (vertices.size() == 1) {
-         drawUntexturedFilledEllipse(
-            vertices[0].position.x, vertices[0].position.y,
-            extras[0].weight, extras[0].weight,
-            extras[0].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+         if (extras[0].stroke.a != 0.0) {
+            drawUntexturedFilledEllipse(
+               vertices[0].position.x, vertices[0].position.y,
+               extras[0].weight, extras[0].weight,
+               extras[0].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+         }
       }
       break;
    }
