@@ -106,7 +106,7 @@ set(skip_examples
   "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"                            # No multiple windows
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"                                      # No resize
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
-  "examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
+  #"examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )
 
