@@ -1617,8 +1617,37 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       break;
    case TRIANGLE_FAN:
-      abort();
+   {
+      // TODO: Proper 3D miters for triangle fan edges
+      PShapeImpl shape;
+      int n = vertices.size();
+      if (n < 3) break;
+
+      shape.reserve(3 * (n-2), 3 * (n-2));
+      shape.beginShape(TRIANGLES);
+
+      PVector center = vertices[0].position;
+      float centerWeight = extras[0].weight;
+      color centerColor = extras[0].stroke;
+
+      for (int i = 1; i < n - 1; ++i) {
+         PVector p0 = vertices[i].position;
+         PVector p1 = vertices[i + 1].position;
+         float w0 = extras[i].weight;
+         float w1 = extras[i + 1].weight;
+         color c0 = extras[i].stroke;
+         color c1 = extras[i + 1].stroke;
+
+         // Stroke outer edges of each triangle
+         _line(shape, center, p0, centerWeight, w0, centerColor, c0);
+         _line(shape, p0, p1, w0, w1, c0, c1);
+         _line(shape, p1, center, w1, centerWeight, c1, centerColor);
+      }
+
+      shape.endShape();
+      shape.draw_fill(batch, transform, flatten_transforms);
       break;
+   }
    default:
       abort();
       break;
