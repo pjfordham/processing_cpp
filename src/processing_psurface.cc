@@ -294,9 +294,9 @@ void PSurface::makeContextCurrent() {
 }
 
 int PSurface::drawFrame() {
-   g.resetMatrix();
-   g.noLights();
+   g.beginDraw();
    draw();
+   g.endDraw();
    return g.commit_draw();
 }
 
@@ -311,6 +311,7 @@ void PSurface::size(int _width, int _height, int mode) {
    width = _width;
    height = _height;
    g = PGraphics(width, height, mode);
+   g.beginDraw();
 }
 
 void PSurface::setupFrame() {
@@ -318,6 +319,7 @@ void PSurface::setupFrame() {
    setup();
    if (width != 0) {
       // Draw anything from setup.
+      g.endDraw();
       g.commit_draw();
    }
    PShape::optimize();
