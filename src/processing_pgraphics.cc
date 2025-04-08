@@ -1010,7 +1010,12 @@ public:
       localFrame = gl::framebuffer(width, height, SSAA, 1);
    }
 
-   void beginDraw() {}
+   void beginDraw() {
+      noLights();
+      camera();
+      perspective();
+      _shape.resetMatrix();
+   }
 
    void endDraw() {
       blitPixels();
@@ -1019,8 +1024,6 @@ public:
    }
 
    int commit_draw() {
-      endDraw();
-
       // If we just blit directly everything is drawn upside down
       // localFrame.blit( windowFrame );
       windowFrame.invert( localFrame.getColorBufferID() );
