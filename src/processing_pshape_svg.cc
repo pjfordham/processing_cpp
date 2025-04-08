@@ -220,10 +220,10 @@ static void parseSVGTransform(const std::string &data, PShape &pshape,
    parseFloat( i,x6);
    parseText(i , ")");
 
-   transform = PMatrix{ { x1, x2, 0, 0 },
-                        { x3, x3, 0, 0 },
-                        {  0,  0, 1, 0 },
-                        { x5, x6, 0, 1 } };
+   transform = PMatrix{ glm::mat4( x1, x2, 0, 0,
+                                   x3, x4, 0, 0,
+                                    0,  0, 1, 0,
+                                   x5, x6, 0, 1 ) };
 }
 
 static void parseSVGFillColor(const std::string &data, PShape &pshape, int alpha) {
@@ -277,7 +277,8 @@ static void parseSVGPath(const std::string &data, PShape& pshape) {
       lx = x;
       ly = y;
       parseWhiteSpace(i);
-      while (*i == 'c' || *i == 'C' || *i == 's' || *i == 'S'|| *i == 'l' || *i == 'L') {
+      while (*i == 'c' || *i == 'C' || *i == 's' || *i == 'S'|| *i == 'l' || *i == 'L'
+             || *i == 'h' || *i == 'H'|| *i == 'v' || *i == 'V') {
          parseCurve(i, pshape );
          parseLine( i, pshape );
          parseWhiteSpace(i);
@@ -331,11 +332,6 @@ static void parseNode(xmlNode* node, PShape& pshape) {
    if (node->type == XML_ELEMENT_NODE) {
       type = (char*)node->name;
 
-      PShape shape = createShape();;
-      shape.beginShape();
-      shape.fill(BLACK);
-      shape.noStroke();
-
       if (type == "svg") {
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"width");
          float width, height;
@@ -354,7 +350,19 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             pshape.height = height;
          }
          xmlFree(xdata);
+
+         pshape.beginShape( GROUP );
+         for (xmlNode* child = node->children; child; child = child->next) {
+            parseNode(child, pshape);
+         }
+         pshape.endShape();
+         return;
       }
+
+      PShape shape = createShape();;
+      shape.beginShape();
+      shape.fill(BLACK);
+      shape.noStroke();
 
       if (type == "circle") {
          int alpha = 255;
