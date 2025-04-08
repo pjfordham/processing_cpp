@@ -1718,7 +1718,7 @@ void PShape::close() {
    PShape_releaseAllVAOs();
 }
 
-PShape::PShape( std::shared_ptr<PShapeImpl> impl_ ) : impl(impl_) {
+PShape::PShape(std::shared_ptr<PShapeImpl> impl_) : impl(impl_) {
    shapeHandles().push_back(impl_);
 }
 
@@ -1823,11 +1823,8 @@ void PShape::beginShape(int style_){
 }
 
 PShape createShape() {
-   auto impl = std::make_shared<PShapeImpl>();
-   shapeHandles().push_back(impl);
-   return impl;
+   return {std::make_shared<PShapeImpl>()};
 }
-
 
 void PShape::beginContour(){
    return impl->beginContour();
