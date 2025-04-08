@@ -731,12 +731,18 @@ public:
    void setStroke(bool c) {
       DEBUG_METHOD();
       dirty=true;
+      for (auto &&child : children) {
+         child.setStroke(c);
+      }
       setStroke( color( 0.0f, 0.0f, 0.0f, 0.0f ) );
    }
 
    void setStroke(color c) {
       DEBUG_METHOD();
       dirty=true;
+      for (auto &&child : children) {
+         child.setStroke(c);
+      }
       for ( auto&&v : extras ) {
          v.stroke = c;
       }
@@ -745,6 +751,9 @@ public:
    void setStrokeWeight(float w) {
       DEBUG_METHOD();
       dirty=true;
+      for (auto &&child : children) {
+         child.setStrokeWeight(w);
+      }
       for ( auto&&v : extras ) {
          v.weight = w;
       }
@@ -753,12 +762,18 @@ public:
    void setTexture( PImage img ) {
       DEBUG_METHOD();
       dirty=true;
-      texture( img );
+       for (auto &&child : children) {
+         child.setTexture(img);
+      }
+     texture( img );
    }
 
    void setFill(bool z) {
       DEBUG_METHOD();
       dirty=true;
+      for (auto &&child : children) {
+         child.setFill(z);
+      }
       if (!z ) {
          for ( auto&&v : vertices ) {
             v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
@@ -772,6 +787,9 @@ public:
    void setFill(color c) {
       DEBUG_METHOD();
       dirty=true;
+      for (auto &&child : children) {
+         child.setFill(c);
+      }
       fill_color = c;
       gl::color clr = flatten_color_mode(fill_color);
       for ( auto&&v : vertices ) {
@@ -785,6 +803,9 @@ public:
    void setTint(color c) {
       DEBUG_METHOD();
       dirty=true;
+      for (auto &&child : children) {
+         child.setFill(c);
+      }
       tint_color = c;
       gl::color clr = flatten_color_mode(tint_color);
       for ( auto&&v : vertices ) {
