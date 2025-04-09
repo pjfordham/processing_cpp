@@ -242,19 +242,19 @@ namespace gl {
 
 } // namespace gl
 
-template <>
-struct fmt::formatter<gl::color> {
-   // Format the MyClass object
-   template <typename ParseContext>
-   constexpr auto parse(ParseContext& ctx) {
-      return ctx.begin();
-   }
+// template <>
+// struct fmt::formatter<gl::color> {
+//    // Format the MyClass object
+//    template <typename ParseContext>
+//    constexpr auto parse(ParseContext& ctx) {
+//       return ctx.begin();
+//    }
 
-   template <typename FormatContext>
-   auto format(const gl::color& v, FormatContext& ctx) {
-      return fmt::format_to(ctx.out(), "R{:8.2f},G{:8.2f},B{:8.2f},A{:8.2f}",v.r,v.g,v.b,v.a);
-   }
-};
+//    template <typename FormatContext>
+//    auto format(const gl::color& v, FormatContext& ctx) {
+//       return fmt::format_to(ctx.out(), "R{:8.2f},G{:8.2f},B{:8.2f},A{:8.2f}",v.r,v.g,v.b,v.a);
+//    }
+// };
 
 template <>
 struct fmt::formatter<gl::vertex> {

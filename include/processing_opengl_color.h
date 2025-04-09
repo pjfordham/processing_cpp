@@ -1,11 +1,11 @@
 #ifndef PROCESSING_OPENGL_COLOR_H
 #define PROCESSING_OPENGL_COLOR_H
 
+#include <glm/vec4.hpp>
+
 namespace gl {
 
-   struct color {
-      float r,g,b,a;
-   };
+   typedef glm::vec4 color;
 
 };
 

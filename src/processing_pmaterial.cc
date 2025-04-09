@@ -33,15 +33,15 @@ void loadMaterials(const char *objPath) {
       } else if( lineType == "Ka" ) {
          float x = 0, y = 0, z = 0;
          lineSS >> x >> y >> z;
-         materials[currentName].ambientColor = {x,y,z};
+         materials[currentName].ambientColor = {x,y,z,1};
       } else if( lineType == "Kd" ) {
          float x = 0, y = 0, z = 0;
          lineSS >> x >> y >> z;
-         materials[currentName].diffuseColor = {x,y,z};
+         materials[currentName].diffuseColor = {x,y,z,1};
       } else if( lineType == "Ks" ) {
          float x = 0, y = 0, z = 0;
          lineSS >> x >> y >> z;
-         materials[currentName].specularColor = {x,y,z};
+         materials[currentName].specularColor = {x,y,z,1};
       } else if( lineType == "#" || lineType == ""  ) {
       } else if( lineType == "Ns" ) {
          float x = 0;
