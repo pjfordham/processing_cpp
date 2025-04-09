@@ -167,7 +167,7 @@ struct fmt::formatter<color> {
 
     template <typename FormatContext>
     auto format(const color& v, FormatContext& ctx) {
-       return format_to(ctx.out(), "R{:3},G{:3},B{:3},A{:3}",(int)v.r,(int)v.g,(int)v.b,(int)v.a);
+       return fmt::format_to(ctx.out(), "R{:3},G{:3},B{:3},A{:3}",(int)v.r,(int)v.g,(int)v.b,(int)v.a);
     }
 };
 
