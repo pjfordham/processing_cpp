@@ -1431,16 +1431,14 @@ PShapeImpl drawTriangleStrip(int points, const gl::vertex *p, const PShapeImpl::
    return triangles;
 }
 
-PShapeImpl drawTriangleNormal(int points, const gl::vertex *p,
-                              const PShapeImpl::vInfoExtra *extras, bool closed,
-                              const PMatrix &transform) {
+PShapeImpl drawTriangleNormal(const gl::vertex &p0, const gl::vertex &p1, const gl::vertex &p2, const PMatrix &transform) {
    PShapeImpl shape;
    shape.beginShape(TRIANGLES);
    shape.fill(RED);
    shape.transform( transform );
-   PVector pos = (p[0].position + p[1].position + p[2].position) / 3;
-   PVector n = ((p[0].normal + p[1].normal + p[2].normal) / 3).normalize();
-   float length = PVector{p[0].position - p[1].position}.mag() / 10.0f;
+   PVector pos = (p0.position + p1.position + p2.position) / 3;
+   PVector n = ((p0.normal + p1.normal + p2.normal) / 3).normalize();
+   float length = PVector{p0.position - p1.position}.mag() / 10.0f;
    _line(shape, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
    shape.endShape();
    return shape;
@@ -1460,15 +1458,8 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool
    case TRIANGLE_FAN:
       // All of these should have just been flattened to triangles
       for (int i = 0; i < indices.size(); i+=3 ) {
-         std::vector<gl::vertex> triangle;
-         std::vector<vInfoExtra> xtras;
-         triangle.push_back( vertices[indices[i]] );
-         triangle.push_back( vertices[indices[i+1]] );
-         triangle.push_back( vertices[indices[i+2]] );
-         xtras.push_back( extras[indices[i]] );
-         xtras.push_back( extras[indices[i+1]] );
-         xtras.push_back( extras[indices[i+2]] );
-         drawTriangleNormal( 3, triangle.data(), xtras.data(), false, shape_matrix).draw_fill( batch, transform, flatten_transforms );
+         drawTriangleNormal( vertices[indices[i]],vertices[indices[i+1]], vertices[indices[i+2]],
+                             shape_matrix).draw_fill( batch, transform, flatten_transforms );
       }
       break;
    case POINTS:
