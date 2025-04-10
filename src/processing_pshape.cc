@@ -68,6 +68,9 @@ private:
    bool compiled = false;
    gl::batch_t batch;
 
+   bool stroked = true;
+   bool filled = true;
+
 public:
 
    float width = 1.0;
@@ -125,6 +128,8 @@ public:
       std::swap(style,other.style);
       std::swap(width,other.width);
       std::swap(height,other.height);
+      std::swap(filled,other.filled);
+      std::swap(stroked,other.stroked);
       std::swap(useGlobalStyle,other.useGlobalStyle);
       return *this;
    }
@@ -207,6 +212,8 @@ public:
       n = other.n;
       stroke_color = other.stroke_color;
       fill_color = other.fill_color;
+      filled = other.filled;
+      stroked = other.stroked;
       gl_fill_color = other.gl_fill_color;
       tint_color = other.tint_color;
       stroke_weight = other.stroke_weight;
@@ -593,6 +600,7 @@ public:
    void fill(float r,float g,  float b, float a) {
       DEBUG_METHOD();
       dirty=true;
+      filled = true;
       fill_color = {r,g,b,a};
       gl_fill_color = flatten_color_mode( fill_color );
       currentMaterial.ambientColor = gl_fill_color;
@@ -634,6 +642,7 @@ public:
    void stroke(float r,float g,  float b, float a) {
       DEBUG_METHOD();
       dirty=true;
+      stroked = true;
       stroke_color = {r,g,b,a};
    }
 
@@ -674,24 +683,23 @@ public:
    void noStroke() {
       DEBUG_METHOD();
       dirty=true;
-      stroke_color = {0,0,0,0};
+      stroked = false;
    }
 
    void noFill() {
       DEBUG_METHOD();
       dirty=true;
-      fill_color = {0,0,0,0};
-      gl_fill_color = flatten_color_mode( fill_color );
+      filled = false;
    }
 
    bool isStroked() const {
       DEBUG_METHOD();
-      return stroke_color.a != 0.0;
+      return stroked;
    }
 
    bool isFilled() const {
       DEBUG_METHOD();
-      return fill_color.a != 0;
+      return filled;
    }
 
    void tint(float r,float g,  float b, float a) {
@@ -749,12 +757,13 @@ public:
       for (auto &&child : children) {
          child.setStroke(c);
       }
-      setStroke( color( 0.0f, 0.0f, 0.0f, 0.0f ) );
+      stroked = c;
    }
 
    void setStroke(color c) {
       DEBUG_METHOD();
       dirty=true;
+      stroked = true;
       for (auto &&child : children) {
          child.setStroke(c);
       }
@@ -789,6 +798,7 @@ public:
       for (auto &&child : children) {
          child.setFill(z);
       }
+      filled = z;
       if (!z ) {
          for ( auto&&v : vertices ) {
             v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
@@ -802,6 +812,7 @@ public:
    void setFill(color c) {
       DEBUG_METHOD();
       dirty=true;
+      filled = true;
       for (auto &&child : children) {
          child.setFill(c);
       }
