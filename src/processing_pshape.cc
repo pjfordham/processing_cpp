@@ -72,7 +72,7 @@ private:
 
       std::optional<std::optional<color>> override_fill_color;
       std::optional<std::optional<color>> override_stroke_color;
-      std::optional<color> override_stroke_weight;
+      std::optional<float> override_stroke_weight;
    };
 
    style_t style;
@@ -1230,7 +1230,7 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { p2 + bisect * w, p2 - bisect * w };
 }
 
-PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform, std::optional<color> override)  {
+PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform, std::optional<color> override_color, std::optional<float> override_weight)  {
    PLine start;
    PLine end;
 
@@ -1241,8 +1241,8 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
    triangle_strip.beginShape(TRIANGLE_STRIP);
    triangle_strip.transform( transform );
    triangle_strip.noStroke();
-   triangle_strip.fill(override.value_or(extras[0].stroke));
-   float half_weight = extras[0].weight / 2.0;
+   triangle_strip.fill(override_color.value_or(extras[0].stroke));
+   float half_weight = override_weight.value_or(extras[0].weight) / 2.0;
    if (closed) {
       start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
       end = start;
@@ -1468,7 +1468,7 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool
 
 void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
    DEBUG_METHOD();
-   std::optional<color> override = style.override_stroke_color ? style.override_stroke_color.value() : std::optional<color>();
+   std::optional<color> override_color = style.override_stroke_color ? style.override_stroke_color.value() : std::optional<color>();
    switch( kind ) {
    case POINTS:
    {
@@ -1531,13 +1531,13 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
          } else {
             if ( contour.empty() ) {
-               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
+               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
             } else {
                if (contour[0] != 0) {
-                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
+                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
                }
                auto q = contour;
                q.push_back(vertices.size());
@@ -1545,7 +1545,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
                   drawLinePoly( q[i+1] - q[i],
                                 vertices.data() + q[i],
                                 extras.data() + q[i],
-                                type == CLOSE, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
+                                type == CLOSE, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
                }
             }
          }
