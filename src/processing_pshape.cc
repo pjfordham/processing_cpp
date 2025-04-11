@@ -55,26 +55,7 @@ private:
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
 
-   struct style_t {
-
-      std::optional<color> fill_color = WHITE;
-      gl::color gl_fill_color = flatten_color_mode(WHITE);
-
-      std::optional<color> stroke_color = BLACK;
-      float stroke_weight = 1.0f;
-      int line_end_cap = ROUND;
-
-      PMaterial currentMaterial;
-
-      std::optional<PImage> texture_;
-      color tint_color = WHITE;
-      int mode = IMAGE;
-
-      std::optional<std::optional<color>> override_fill_color;
-      std::optional<std::optional<color>> override_stroke_color;
-      std::optional<float> override_stroke_weight;
-   };
-
+   std::vector<style_t> style_stack;
    style_t style;
 
    int kind = POLYGON;
@@ -83,8 +64,22 @@ private:
 
 public:
 
+   void pushStyle() {
+      style_stack.push_back(style);
+   }
+
+   void popStyle() {
+      style = style_stack.back();
+      style_stack.pop_back();
+      dirty = true;
+   }
+
    float width = 1.0;
    float height = 1.0;
+
+   bool usesGlobalStyle() const {
+      return useGlobalStyle;
+   }
 
    void setID(std::string_view s) {
       id = s;
@@ -93,12 +88,18 @@ public:
    void enableStyle() {
       dirty = true;
       useGlobalStyle = false;
+      for (auto &&child : children) {
+         child.enableStyle();
+      }
    }
 
    void disableStyle() {
       dirty = true;
       useGlobalStyle = true;
-   }
+      for (auto &&child : children) {
+         child.disableStyle();
+      }
+  }
 
    const PMatrix& getShapeMatrix() const {
       DEBUG_METHOD();
@@ -124,6 +125,7 @@ public:
       std::swap(dirty,other.dirty);
       std::swap(type,other.type);
       std::swap(style,other.style);
+      std::swap(style_stack,other.style_stack);
       std::swap(tightness,other.tightness);
       std::swap(curve_vertices,other.curve_vertices);
       std::swap(shape_matrix,other.shape_matrix);
@@ -744,9 +746,6 @@ public:
    void setStroke(bool c) {
       DEBUG_METHOD();
       dirty = true;
-      for (auto &&child : children) {
-         child.setStroke(c);
-      }
       style.override_stroke_color = std::optional<color>();
    }
 
@@ -754,68 +753,35 @@ public:
       DEBUG_METHOD();
       dirty = true;
       style.override_stroke_color = std::optional<color>(c);
-      for (auto &&child : children) {
-         child.setStroke(c);
-      }
    }
 
    void setStrokeWeight(float w) {
       DEBUG_METHOD();
       dirty=true;
       style.override_stroke_weight = w;
-      for (auto &&child : children) {
-         child.setStrokeWeight(w);
-      }
    }
 
    void setTexture( PImage img ) {
       DEBUG_METHOD();
       dirty=true;
-      for (auto &&child : children) {
-         child.setTexture(img);
-      }
       texture( img );
    }
 
    void setFill(bool z) {
       DEBUG_METHOD();
       dirty=true;
-      for (auto &&child : children) {
-         child.setFill(z);
-      }
       style.override_fill_color = std::optional<color>();
-      // if (!z ) {
-      //    for ( auto&&v : vertices ) {
-      //       v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
-      //    }
-      //    for ( auto&&v : materials ) {
-      //       v.ambientColor = flatten_color_mode({0.0,0.0,0.0,0.0});
-      //    }
-      // }
    }
 
    void setFill(color c) {
       DEBUG_METHOD();
       dirty = true;
-      for (auto &&child : children) {
-         child.setFill(c);
-      }
       style.override_fill_color = std::optional<color>(c);
-      // gl::color clr = flatten_color_mode(style.fill_color.value());
-      // for ( auto&&v : vertices ) {
-      //    v.fill = clr;
-      // }
-      // for ( auto&&v : materials ) {
-      //    v.ambientColor = clr;
-      // }
    }
 
    void setTint(color c) {
       DEBUG_METHOD();
       dirty=true;
-      for (auto &&child : children) {
-         child.setFill(c);
-      }
       style.tint_color = c;
       gl::color clr = flatten_color_mode(style.tint_color);
       for ( auto&&v : vertices ) {
@@ -836,11 +802,11 @@ public:
       return false;
    }
 
-   void compile() {
+   void compile(PShape global_style) {
       if (!isCompiled()) {
          batch.clear();
          compiled = true;
-         flatten( batch, PMatrix::Identity(), true );
+         flatten( batch, PMatrix::Identity(), true, global_style );
          batch.load();
       }
    }
@@ -853,12 +819,18 @@ public:
       return batch;
    }
 
-   void flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
+   void flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms, PShape global_style)  {
       DEBUG_METHOD();
+      if (useGlobalStyle) {
+         pushStyle();
+         setFill( global_style.getFillColor() );
+         setStroke( global_style.getStrokeColor() );
+         setStrokeWeight( global_style.getStrokeWeight() );
+      }
       auto currentTransform = transform * shape_matrix;
       if ( kind == GROUP ) {
          for (auto &&child : children) {
-            child.flatten(batch, currentTransform, flatten_transforms);
+            child.flatten(batch, currentTransform, flatten_transforms, global_style);
          }
       } else {
          if ( isFilled() )
@@ -866,6 +838,9 @@ public:
          // draw_normals(batch, currentTransform, flatten_transforms);
          if ( isStroked() )
             draw_stroke(batch, currentTransform, flatten_transforms);
+      }
+      if (useGlobalStyle) {
+         popStyle();
       }
       dirty = false;
       return;
@@ -1695,15 +1670,15 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
    if (vertices.size() > 2 && kind != POINTS && kind != LINES) {
       std::vector<gl::material> m;
       m.reserve( materials.size() );
+      std::optional<gl::color> override = style.override_fill_color ? flatten_color_mode(style.override_fill_color.value()) : std::optional<gl::color>();
       for (auto &material : materials ) {
          m.emplace_back(
-            material.ambientColor,
+            override.value_or(material.ambientColor),
             material.specularColor,
             material.emissiveColor,
             material.specularExponent
             );
       }
-      std::optional<gl::color> override = style.override_fill_color ? flatten_color_mode(style.override_fill_color.value()) : std::optional<gl::color>();
       batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_.value_or(PShape::getBlankTexture()).getTextureID(), override);
    }
 }
@@ -1724,13 +1699,13 @@ static void PShape_releaseAllVAOs() {
 void PShape::init() {
 }
 
-void PShape::optimize() {
+void PShape::optimize(PShape global_style) {
    PShape::gc();
    auto &handles = shapeHandles();
    for (auto i : handles) {
       if (auto p = i.lock()) {
          if (p->getChildCount() > 0) {
-            p->compile();
+            p->compile(global_style);
          }
       }
    }
@@ -2178,8 +2153,8 @@ void PShape::setTint(color c){
 }
 
 
-void PShape::compile() {
-   return impl->compile();
+void PShape::compile(PShape gs) {
+   return impl->compile(gs);
 }
 
 bool PShape::isCompiled() const {
@@ -2190,8 +2165,8 @@ gl::batch_t &PShape::getBatch() {
    return impl->getBatch();
 }
 
-void PShape::flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
-   return impl->flatten(batch, transform, flatten_transforms);
+void PShape::flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms, PShape global_style) {
+   return impl->flatten(batch, transform, flatten_transforms, global_style);
 }
 
 void PShape::draw_normals(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
@@ -2218,6 +2193,10 @@ int PShape::getVertexCount() const{
 
 void PShape::setID(std::string_view s) {
    return impl->setID(s);
+}
+
+bool PShape::usesGlobalStyle() const {
+   return impl->usesGlobalStyle();
 }
 
 void PShape::enableStyle() {
