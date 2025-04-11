@@ -65,7 +65,7 @@ private:
    int mode = IMAGE;
    float stroke_weight = 1.0f;
 
-   int style = POLYGON;
+   int kind = POLYGON;
    bool compiled = false;
    gl::batch_t batch;
 
@@ -123,7 +123,7 @@ public:
       std::swap(currentMaterial, other.currentMaterial);
       std::swap(fill_color,other.fill_color);
       std::swap(tint_color,other.tint_color);
-      std::swap(style,other.style);
+      std::swap(kind,other.kind);
       std::swap(width,other.width);
       std::swap(height,other.height);
       std::swap(useGlobalStyle,other.useGlobalStyle);
@@ -198,14 +198,13 @@ public:
 
    bool isGroup() const {
       DEBUG_METHOD();
-      return style == GROUP;
+      return kind == GROUP;
    }
 
    void copyStyle( const PShapeImpl &other ) {
       DEBUG_METHOD();
       dirty=true;
       texture_= other.texture_;
-      n = other.n;
       stroke_color = other.stroke_color;
       fill_color = other.fill_color;
       gl_fill_color = other.gl_fill_color;
@@ -292,11 +291,11 @@ public:
       shape_matrix = PMatrix::Identity();
    }
 
-   void beginShape(int style_ = POLYGON) {
+   void beginShape(int kind_ = POLYGON) {
       DEBUG_METHOD();
       dirty=true;
       // Supported types, POLYGON, POINTS, TRIANGLES, TRINALGE_STRIP, GROUP
-      style = style_;
+      kind = kind_;
       clear();
    }
 
@@ -538,7 +537,7 @@ public:
          curve_vertices.clear();
       }
 
-      if (style == POLYGON || style == LINES)
+      if (kind == POLYGON || kind == LINES)
          type = type_;
       else
          type = CLOSE;
@@ -834,7 +833,7 @@ public:
       DEBUG_METHOD();
       if ( dirty ) {
          return true;
-      } else if ( style == GROUP ) {
+      } else if ( kind == GROUP ) {
          for (auto &&child : children) {
             if (child.impl->is_dirty())
                return true;
@@ -863,7 +862,7 @@ public:
    void flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
       DEBUG_METHOD();
       auto currentTransform = transform * shape_matrix;
-      if ( style == GROUP ) {
+      if ( kind == GROUP ) {
          for (auto &&child : children) {
             child.flatten(batch, currentTransform, flatten_transforms);
          }
@@ -1084,7 +1083,7 @@ void PShapeImpl::populateIndices() {
    if (indices.size() != 0)
       return;
 
-   if (style == GROUP) return;
+   if (kind == GROUP) return;
 
    if (vertices.size() == 0) return;
 
@@ -1092,7 +1091,7 @@ void PShapeImpl::populateIndices() {
 
    dirty=true;
 
-   if (style == QUADS || style == QUAD) {
+   if (kind == QUADS || kind == QUAD) {
       if (vertices.size() % 4 != 0) abort();
       for (int i = 0; i < vertices.size(); i += 4) {
         glm::vec2 A2D, B2D, C2D, D2D;
@@ -1114,7 +1113,7 @@ void PShapeImpl::populateIndices() {
          indices.push_back(i + ((d2 + 1) % 4));
     }
    }
-   else if (style == QUAD_STRIP) {
+   else if (kind == QUAD_STRIP) {
      for (int i = 0; i < vertices.size() - 2; i += 2) {
         glm::vec2 A2D, B2D, C2D, D2D;
         projectTo2D(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position, vertices[i + 3].position,
@@ -1137,7 +1136,7 @@ void PShapeImpl::populateIndices() {
          indices.push_back(i + s(d2));
          indices.push_back(i + s((d2 + 1) % 4));
      }
-   } else if (style == TRIANGLE_STRIP) {
+   } else if (kind == TRIANGLE_STRIP) {
    bool reverse = false;
       for (int i = 0; i < vertices.size() - 2; i++ ){
          if (reverse) {
@@ -1151,29 +1150,29 @@ void PShapeImpl::populateIndices() {
          }
          reverse = !reverse;
       }
-   } else if (style == CONVEX_POLYGON) {
+   } else if (kind == CONVEX_POLYGON) {
       // Fill with triangle fan
       for (int i = 1; i < vertices.size() - 1 ; i++ ) {
          indices.push_back( 0 );
          indices.push_back( i );
          indices.push_back( i+1 );
       }
-   }  else if (style == TRIANGLE_FAN) {
+   }  else if (kind == TRIANGLE_FAN) {
       // Fill with triangle fan
       for (int i = 1; i < vertices.size() - 2 ; i++ ) {
          indices.push_back( 0 );
          indices.push_back( i );
          indices.push_back( i+1 );
       }
-   } else if (style == POLYGON) {
+   } else if (kind == POLYGON) {
       indices = triangulatePolygon(vertices, contour);
-   } else if (style == TRIANGLES) {
+   } else if (kind == TRIANGLES) {
       for (int i = 0; i < vertices.size(); i+=3 ) {
          indices.push_back( i );
          indices.push_back( i+1 );
          indices.push_back( i+2 );
       }
-   } else if (style == POINTS || style == LINES) {
+   } else if (kind == POINTS || kind == LINES) {
       // no indices required for these types.
    } else {
       abort();
@@ -1448,7 +1447,7 @@ PShapeImpl drawTriangleNormal(const gl::vertex &p0, const gl::vertex &p1, const 
 
 void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool flatten_transforms) const {
    DEBUG_METHOD();
-   switch( style ) {
+   switch( kind ) {
    case TRIANGLES_NOSTROKE:
    case TRIANGLES:
    case TRIANGLE_STRIP:
@@ -1475,7 +1474,7 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool
 
 void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
    DEBUG_METHOD();
-   switch( style ) {
+   switch( kind ) {
    case POINTS:
    {
       for (int i = 0; i< vertices.size() ; ++i ) {
@@ -1685,7 +1684,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
 
 void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool flatten_transforms) const {
    DEBUG_METHOD();
-   if (vertices.size() > 2 && style != POINTS && style != LINES) {
+   if (vertices.size() > 2 && kind != POINTS && kind != LINES) {
       std::vector<gl::material> m;
       m.reserve( materials.size() );
       for (auto &material : materials ) {
@@ -1851,8 +1850,8 @@ void PShape::resetMatrix(){
 }
 
 
-void PShape::beginShape(int style_){
-   return impl->beginShape(style_);
+void PShape::beginShape(int kind_){
+   return impl->beginShape(kind_);
 }
 
 PShape createShape() {
@@ -2361,8 +2360,8 @@ const char *typeToTxt(int type) {
    }
 }
 
-const char *styleToTxt(int style) {
-   switch (style) {
+const char *kindToTxt(int kind) {
+   switch (kind) {
    case POINTS:
       return "POINTS";
    case POLYGON:
@@ -2404,42 +2403,10 @@ struct fmt::formatter<PShapeImpl> {
 
    template <typename FormatContext>
    auto format(const PShapeImpl& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "vertices={:<4} indices={:<4} style={:20} type={:6}",
+      return format_to(ctx.out(), "vertices={:<4} indices={:<4} kind={:20} type={:6}",
                        v.vertices.size(), v.indices.size(),
-                       styleToTxt(v.style),
+                       kindToTxt(v.kind),
                        typeToTxt(v.type)
          );
    }
 };
-
-namespace std {
-    template <>
-    struct hash<PShapeImpl> {
-       std::size_t operator()(const PShapeImpl& p) const {
-          std::size_t hash_val = 0;
-          hash_combine(hash_val, p.setNormals);
-          //hash_combine(hash_val, p.n);
-          //hash_combine(hash_val, p.contour);
-          //hash_combine(hash_val, p.vertices);
-          //hash_combine(hash_val, p.extras);
-          //hash_combine(hash_val, p.children);
-          //hash_combine(hash_val, p.indices);
-          //hash_combine(hash_val, p.vaos);
-          hash_combine(hash_val, p.type);
-          hash_combine(hash_val, p.type);
-          hash_combine(hash_val, p.mode);
-          hash_combine(hash_val, p.stroke_weight);
-          hash_combine(hash_val, p.line_end_cap);
-          hash_combine(hash_val, p.tightness);
-          //hash_combine(hash_val, p.curve_vertices);
-          //hash_combine(hash_val, p.shape_matrix);
-          //hash_combine(hash_val, p.stroke_color);
-          //hash_combine(hash_val, p.texture_);
-          //hash_combine(hash_val, p.gl_fill_color);
-          //hash_combine(hash_val, p.fill_color);
-          //hash_combine(hash_val, p.tint_color);
-          hash_combine(hash_val, p.style);
-          return hash_val;
-       }
-    };
-}
