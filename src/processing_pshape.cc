@@ -48,23 +48,22 @@ private:
    std::vector<PShape> children;
    std::vector<unsigned short> indices;
 
-   PMaterial currentMaterial;
-
    mutable bool dirty = true;
 
    int type = OPEN;
-   int mode = IMAGE;
-   float stroke_weight = 1.0f;
-   int line_end_cap = ROUND;
    float tightness = 0.0f;
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
-   PImage texture_ = PShape::getBlankTexture();
-   gl::color gl_fill_color = flatten_color_mode(WHITE);
 
    std::optional<color> fill_color = WHITE;
    std::optional<color> stroke_color = BLACK;
    std::optional<color> tint_color = WHITE;
+   gl::color gl_fill_color = flatten_color_mode(WHITE);
+   std::optional<PImage> texture_;
+   int line_end_cap = ROUND;
+   PMaterial currentMaterial;
+   int mode = IMAGE;
+   float stroke_weight = 1.0f;
 
    int style = POLYGON;
    bool compiled = false;
@@ -319,7 +318,7 @@ public:
 
    bool isTextureSet() const {
       DEBUG_METHOD();
-      return texture_ != PShape::getBlankTexture();
+      return !!texture_;
    }
 
    void material(PMaterial &mat) {
@@ -346,8 +345,8 @@ public:
 
    void noTexture() {
       DEBUG_METHOD();
-      dirty=true;
-      texture_ = PShape::getBlankTexture();
+      dirty = true;
+      texture_.reset();
    }
 
    void noNormal() {
@@ -401,8 +400,8 @@ public:
       DEBUG_METHOD();
       dirty=true;
       if (mode == IMAGE) {
-         t.x /= texture_.width;
-         t.y /= texture_.height;
+         t.x /= texture_.value_or(PShape::getBlankTexture()).width;
+         t.y /= texture_.value_or(PShape::getBlankTexture()).height;
       }
       vertices.push_back( { p, n, t, gl_fill_color } );
       materials.push_back( currentMaterial );
@@ -1697,7 +1696,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
                material.specularExponent
             } );
       }
-      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, texture_.getTextureID() );
+      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, texture_.value_or(PShape::getBlankTexture()).getTextureID() );
    }
 }
 
