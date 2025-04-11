@@ -55,15 +55,19 @@ private:
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
 
-   std::optional<color> fill_color = WHITE;
-   std::optional<color> stroke_color = BLACK;
-   std::optional<color> tint_color = WHITE;
-   gl::color gl_fill_color = flatten_color_mode(WHITE);
-   std::optional<PImage> texture_;
-   int line_end_cap = ROUND;
-   PMaterial currentMaterial;
-   int mode = IMAGE;
-   float stroke_weight = 1.0f;
+   struct style_t {
+      std::optional<color> fill_color = WHITE;
+      std::optional<color> stroke_color = BLACK;
+      std::optional<color> tint_color = WHITE;
+      gl::color gl_fill_color = flatten_color_mode(WHITE);
+      std::optional<PImage> texture_;
+      int line_end_cap = ROUND;
+      PMaterial currentMaterial;
+      int mode = IMAGE;
+      float stroke_weight = 1.0f;
+   };
+
+   style_t style;
 
    int kind = POLYGON;
    bool compiled = false;
@@ -111,18 +115,10 @@ public:
       std::swap(indices,other.indices);
       std::swap(dirty,other.dirty);
       std::swap(type,other.type);
-      std::swap(mode,other.mode);
-      std::swap(stroke_weight,other.stroke_weight);
-      std::swap(line_end_cap,other.line_end_cap);
+      std::swap(style,other.style);
       std::swap(tightness,other.tightness);
       std::swap(curve_vertices,other.curve_vertices);
       std::swap(shape_matrix,other.shape_matrix);
-      std::swap(stroke_color,other.stroke_color);
-      std::swap(texture_,other.texture_);
-      std::swap(gl_fill_color,other.gl_fill_color);
-      std::swap(currentMaterial, other.currentMaterial);
-      std::swap(fill_color,other.fill_color);
-      std::swap(tint_color,other.tint_color);
       std::swap(kind,other.kind);
       std::swap(width,other.width);
       std::swap(height,other.height);
@@ -141,7 +137,7 @@ public:
    PShapeImpl() {
       DEBUG_METHOD();
       reserve(4,6);
-      currentMaterial = {
+      style.currentMaterial = {
          gl::color{1.0f,1.0f,1.0f,1.0f},
          gl::color{0.0f,0.0f,0.0f,1.0f},
          gl::color{0.0f,0.0f,0.0f,1.0f},
@@ -178,22 +174,22 @@ public:
 
    color getStrokeColor() const {
       DEBUG_METHOD();
-      return stroke_color.value_or( color(0,0,0,0) );
+      return style.stroke_color.value_or( color(0,0,0,0) );
    }
 
    float getStrokeWeight() const {
       DEBUG_METHOD();
-      return stroke_weight;
+      return style.stroke_weight;
    }
 
    color getFillColor() const {
       DEBUG_METHOD();
-      return fill_color.value_or( color(0,0,0,0) );
+      return style.fill_color.value_or( color(0,0,0,0) );
    }
 
    color getTintColor() const {
       DEBUG_METHOD();
-      return tint_color.value_or( WHITE );
+      return style.tint_color.value_or( WHITE );
    }
 
    bool isGroup() const {
@@ -204,14 +200,7 @@ public:
    void copyStyle( const PShapeImpl &other ) {
       DEBUG_METHOD();
       dirty=true;
-      texture_= other.texture_;
-      stroke_color = other.stroke_color;
-      fill_color = other.fill_color;
-      gl_fill_color = other.gl_fill_color;
-      tint_color = other.tint_color;
-      stroke_weight = other.stroke_weight;
-      line_end_cap = other.line_end_cap;
-      currentMaterial = other.currentMaterial;
+      style = other.style;
    }
 
    void clear() {
@@ -312,12 +301,12 @@ public:
    void textureMode( int mode_ ) {
       DEBUG_METHOD();
       dirty=true;
-      mode = mode_;
+      style.mode = mode_;
    }
 
    bool isTextureSet() const {
       DEBUG_METHOD();
-      return !!texture_;
+      return !!style.texture_;
    }
 
    void material(PMaterial &mat) {
@@ -326,26 +315,26 @@ public:
       noStroke();
       textureMode( NORMAL );
       texture( mat.texture );
-      currentMaterial = mat;
+      style.currentMaterial = mat;
    }
 
    void texture(PImage img) {
       DEBUG_METHOD();
       dirty=true;
-      texture_ = img;
+      style.texture_ = img;
    }
 
    void circleTexture() {
       DEBUG_METHOD();
       dirty=true;
-      mode = NORMAL;
-      texture_ = PImage::circle();
+      style.mode = NORMAL;
+      style.texture_ = PImage::circle();
    }
 
    void noTexture() {
       DEBUG_METHOD();
       dirty = true;
-      texture_.reset();
+      style.texture_.reset();
    }
 
    void noNormal() {
@@ -398,13 +387,13 @@ public:
    void vertex(PVector p, PVector2 t) {
       DEBUG_METHOD();
       dirty=true;
-      if (mode == IMAGE) {
-         t.x /= texture_.value_or(PShape::getBlankTexture()).width;
-         t.y /= texture_.value_or(PShape::getBlankTexture()).height;
+      if (style.mode == IMAGE) {
+         t.x /= style.texture_.value_or(PShape::getBlankTexture()).width;
+         t.y /= style.texture_.value_or(PShape::getBlankTexture()).height;
       }
-      vertices.push_back( { p, n, t, gl_fill_color } );
-      materials.push_back( currentMaterial );
-      extras.push_back( { getStrokeColor(), stroke_weight } );
+      vertices.push_back( { p, n, t, style.gl_fill_color } );
+      materials.push_back( style.currentMaterial );
+      extras.push_back( { getStrokeColor(), style.stroke_weight } );
    }
 
    void index(unsigned short i) {
@@ -581,21 +570,21 @@ public:
       dirty=true;
       color specular_color = {r,g,b,a};
       auto gl_specular_color = flatten_color_mode( specular_color );
-      currentMaterial.specularColor = gl_specular_color;
+      style.currentMaterial.specularColor = gl_specular_color;
    }
 
    void shininess(float r) {
       DEBUG_METHOD();
       dirty=true;
-      currentMaterial.specularExponent = r;
+      style.currentMaterial.specularExponent = r;
    }
 
    void fill(float r,float g,  float b, float a) {
       DEBUG_METHOD();
       dirty = true;
-      fill_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( fill_color.value() );
-      currentMaterial.ambientColor = gl_fill_color;
+      style.fill_color = {r,g,b,a};
+      style.gl_fill_color = flatten_color_mode( style.fill_color.value() );
+      style.currentMaterial.ambientColor = style.gl_fill_color;
    }
 
    void fill(float r,float g, float b) {
@@ -634,7 +623,7 @@ public:
    void stroke(float r,float g,  float b, float a) {
       DEBUG_METHOD();
       dirty = true;
-      stroke_color = {r,g,b,a};
+      style.stroke_color = {r,g,b,a};
    }
 
    void stroke(float r,float g, float b) {
@@ -668,37 +657,37 @@ public:
    void strokeWeight(float x) {
       DEBUG_METHOD();
       dirty=true;
-      stroke_weight = x;
+      style.stroke_weight = x;
    }
 
    void noStroke() {
       DEBUG_METHOD();
       dirty = true;
-      stroke_color.reset();
+      style.stroke_color.reset();
    }
 
    void noFill() {
       DEBUG_METHOD();
       dirty = true;
-      fill_color.reset();
+      style.fill_color.reset();
    }
 
    bool isStroked() const {
       DEBUG_METHOD();
-      return !!stroke_color;
+      return !!style.stroke_color;
    }
 
    bool isFilled() const {
       DEBUG_METHOD();
-      return !!fill_color;
+      return !!style.fill_color;
    }
 
    void tint(float r,float g,  float b, float a) {
       DEBUG_METHOD();
       dirty = true;
-      tint_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( tint_color.value() );
-      currentMaterial.ambientColor = gl_fill_color;
+      style.tint_color = {r,g,b,a};
+      style.gl_fill_color = flatten_color_mode( style.tint_color.value() );
+      style.currentMaterial.ambientColor = style.gl_fill_color;
    }
 
    void tint(float r,float g, float b) {
@@ -732,14 +721,14 @@ public:
    void noTint() {
       DEBUG_METHOD();
       dirty=true;
-      tint_color.reset();
-      gl_fill_color = flatten_color_mode( WHITE );
+      style.tint_color.reset();
+      style.gl_fill_color = flatten_color_mode( WHITE );
    }
 
    void strokeCap(int cap) {
       DEBUG_METHOD();
       dirty=true;
-      line_end_cap = cap;
+      style.line_end_cap = cap;
    }
 
    void setStroke(bool c) {
@@ -748,13 +737,13 @@ public:
       for (auto &&child : children) {
          child.setStroke(c);
       }
-      stroke_color.reset();
+      style.stroke_color.reset();
    }
 
    void setStroke(color c) {
       DEBUG_METHOD();
       dirty = true;
-      stroke_color = c;
+      style.stroke_color = c;
       for (auto &&child : children) {
          child.setStroke(c);
       }
@@ -766,6 +755,7 @@ public:
    void setStrokeWeight(float w) {
       DEBUG_METHOD();
       dirty=true;
+      style.stroke_weight = w;
       for (auto &&child : children) {
          child.setStrokeWeight(w);
       }
@@ -777,10 +767,10 @@ public:
    void setTexture( PImage img ) {
       DEBUG_METHOD();
       dirty=true;
-       for (auto &&child : children) {
+      for (auto &&child : children) {
          child.setTexture(img);
       }
-     texture( img );
+      texture( img );
    }
 
    void setFill(bool z) {
@@ -789,7 +779,7 @@ public:
       for (auto &&child : children) {
          child.setFill(z);
       }
-      fill_color.reset();
+      style.fill_color.reset();
       if (!z ) {
          for ( auto&&v : vertices ) {
             v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
@@ -806,8 +796,8 @@ public:
       for (auto &&child : children) {
          child.setFill(c);
       }
-      fill_color = c;
-      gl::color clr = flatten_color_mode(fill_color.value());
+      style.fill_color = c;
+      gl::color clr = flatten_color_mode(style.fill_color.value());
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
@@ -822,8 +812,8 @@ public:
       for (auto &&child : children) {
          child.setFill(c);
       }
-      tint_color = c;
-      gl::color clr = flatten_color_mode(tint_color.value());
+      style.tint_color = c;
+      gl::color clr = flatten_color_mode(style.tint_color.value());
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
@@ -1555,7 +1545,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
             }
          }
       } else if (vertices.size() == 2) {
-         switch(line_end_cap) {
+         switch(style.line_end_cap) {
          case ROUND:
             drawRoundLine( vertices[0].position, vertices[1].position,
                            extras[0].weight, extras[1].weight,
@@ -1695,7 +1685,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
                material.specularExponent
             } );
       }
-      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, texture_.value_or(PShape::getBlankTexture()).getTextureID() );
+      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_.value_or(PShape::getBlankTexture()).getTextureID() );
    }
 }
 
