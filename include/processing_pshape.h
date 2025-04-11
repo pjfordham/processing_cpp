@@ -6,17 +6,38 @@
 #include "processing_enum.h"
 #include "processing_pimage.h"
 #include "processing_java_compatability.h"
+#include "processing_pmaterial.h"
 
 #include <vector>
 #include <string_view>
 #include <memory>
 
-struct PMaterial;
 class PShapeImpl;
 
 namespace gl {
    class batch_t;
 }
+
+struct style_t {
+
+   std::optional<color> fill_color = WHITE;
+   gl::color gl_fill_color = flatten_color_mode(WHITE);
+
+   std::optional<color> stroke_color = BLACK;
+   float stroke_weight = 1.0f;
+   int line_end_cap = ROUND;
+
+   PMaterial currentMaterial;
+
+   std::optional<PImage> texture_;
+   color tint_color = WHITE;
+   int mode = IMAGE;
+
+   std::optional<std::optional<color>> override_fill_color;
+   std::optional<std::optional<color>> override_stroke_color;
+   std::optional<float> override_stroke_weight;
+
+};
 
 class PShape {
    friend PShapeImpl;
@@ -25,7 +46,7 @@ class PShape {
    friend PShape createShape();
  public:
    static void init();
-   static void optimize();
+   static void optimize(PShape global_shape);
    static void gc();
    static void close();
 
@@ -69,6 +90,8 @@ class PShape {
    bool isGroup() const;
 
    void setID( std::string_view );
+
+   bool usesGlobalStyle() const;
 
    void enableStyle();
 
@@ -229,13 +252,13 @@ class PShape {
 
    void setTint(color c);
 
-   void compile();
+   void compile(PShape global_shape);
 
    bool isCompiled() const;
 
    gl::batch_t &getBatch() ;
 
-   void flatten(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   void flatten(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms, PShape global_shape) ;
 
    void draw_normals(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
 

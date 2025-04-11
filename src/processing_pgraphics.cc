@@ -69,6 +69,7 @@ public:
    float xsphere_vres = 30;
 
    PShape _shape;
+
    std::vector<unsigned int> pixels;
 
    std::vector<PMatrix> matrix_stack;
@@ -89,6 +90,10 @@ public:
          resize_width = width;
          resize_height = height;
       }
+   }
+
+   PShape getGlobalShape() const {
+      return _shape;
    }
 
    int getWidth() const { return width; }
@@ -770,9 +775,9 @@ public:
          }
       } else {
          if (pshape == _shape) {
-            pshape.flatten( batch, PMatrix::Identity(), false );
+            pshape.flatten( batch, PMatrix::Identity(), false, _shape );
          } else {
-            pshape.flatten( batch, _shape.getShapeMatrix(), false );
+            pshape.flatten( batch, _shape.getShapeMatrix(), false, _shape );
          }
       }
       pixels_current = false;
@@ -1127,6 +1132,10 @@ void PGraphics::filter(int kind) {
 
 void PGraphics::filter(int kind, float param) {
    return impl->filter(kind,param);
+}
+
+PShape PGraphics::getGlobalShape() const {
+   return impl->getGlobalShape();
 }
 
 int PGraphics::getWidth() const {

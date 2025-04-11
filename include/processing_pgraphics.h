@@ -35,6 +35,8 @@ public:
 
    PGraphics(int width, int height, int mode, int aaMode = MSAA, int aaFactor = 2);
 
+   PShape getGlobalShape() const;
+   
    int getWidth() const;
    int getHeight() const;
    unsigned int *getPixels();
