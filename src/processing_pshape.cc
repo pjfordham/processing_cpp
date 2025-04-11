@@ -1626,15 +1626,26 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
    }
    case TRIANGLE_STRIP:
    {
-      const gl::vertex *p = vertices.data();
       PShapeImpl triangles;
       triangles.beginShape(TRIANGLES);
       triangles.transform( shape_matrix );
-      _line(triangles, p[0].position, p[1].position,
-            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight), override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke));
+      _line(triangles,
+            vertices[0].position, vertices[1].position,
+            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
+            override_color.value_or(extras[0].stroke),  override_color.value_or(extras[1].stroke));
       for (int i=2;i<vertices.size();++i) {
-         _line(triangles, p[i-1].position, p[i].position, override_weight.value_or(extras[i-1].weight), override_weight.value_or(extras[i].weight), override_color.value_or(extras[i-1].stroke), override_color.value_or(extras[i].stroke));
-               _line(triangles, p[i].position, p[i-2].position, override_weight.value_or(extras[i].weight), override_weight.value_or(extras[i-2].weight), override_color.value_or(extras[i].stroke), override_color.value_or(extras[i-2].stroke));
+         PVector p0 = vertices[i-2].position;
+         PVector p1 = vertices[i-1].position;
+         PVector p2 = vertices[i-0].position;
+         float w0 = override_weight.value_or(extras[i-2].weight);
+         float w1 = override_weight.value_or(extras[i-1].weight);
+         float w2 = override_weight.value_or(extras[i-0].weight);
+         color c0 = override_color.value_or(extras[i-2].stroke);
+         color c1 = override_color.value_or(extras[i-1].stroke);
+         color c2 = override_color.value_or(extras[i-0].stroke);
+
+         _line(triangles, p1, p2, w1, w2, c1, c2);
+         _line(triangles, p2, p0, w1, w0, c2, c0);
       }
       triangles.endShape();
       triangles.draw_fill( batch, transform, flatten_transforms );
