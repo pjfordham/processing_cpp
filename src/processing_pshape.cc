@@ -56,15 +56,20 @@ private:
    PMatrix shape_matrix = PMatrix::Identity();
 
    struct style_t {
+
       std::optional<color> fill_color = WHITE;
-      std::optional<color> stroke_color = BLACK;
-      std::optional<color> tint_color = WHITE;
       gl::color gl_fill_color = flatten_color_mode(WHITE);
-      std::optional<PImage> texture_;
-      int line_end_cap = ROUND;
-      PMaterial currentMaterial;
-      int mode = IMAGE;
+
+      std::optional<color> stroke_color = BLACK;
       float stroke_weight = 1.0f;
+      int line_end_cap = ROUND;
+
+      PMaterial currentMaterial;
+
+      std::optional<PImage> texture_;
+      color tint_color = WHITE;
+      int mode = IMAGE;
+
    };
 
    style_t style;
@@ -189,7 +194,7 @@ public:
 
    color getTintColor() const {
       DEBUG_METHOD();
-      return style.tint_color.value_or( WHITE );
+      return style.tint_color;
    }
 
    bool isGroup() const {
@@ -686,7 +691,7 @@ public:
       DEBUG_METHOD();
       dirty = true;
       style.tint_color = {r,g,b,a};
-      style.gl_fill_color = flatten_color_mode( style.tint_color.value() );
+      style.gl_fill_color = flatten_color_mode( style.tint_color );
       style.currentMaterial.ambientColor = style.gl_fill_color;
    }
 
@@ -721,7 +726,7 @@ public:
    void noTint() {
       DEBUG_METHOD();
       dirty=true;
-      style.tint_color.reset();
+      style.tint_color = WHITE;
       style.gl_fill_color = flatten_color_mode( WHITE );
    }
 
@@ -813,7 +818,7 @@ public:
          child.setFill(c);
       }
       style.tint_color = c;
-      gl::color clr = flatten_color_mode(style.tint_color.value());
+      gl::color clr = flatten_color_mode(style.tint_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
