@@ -59,17 +59,16 @@ private:
    float tightness = 0.0f;
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
-   color stroke_color = BLACK;
    PImage texture_ = PShape::getBlankTexture();
    gl::color gl_fill_color = flatten_color_mode(WHITE);
-   color fill_color = WHITE;
-   color tint_color = WHITE;
+
+   std::optional<color> fill_color = WHITE;
+   std::optional<color> stroke_color = BLACK;
+   std::optional<color> tint_color = WHITE;
+
    int style = POLYGON;
    bool compiled = false;
    gl::batch_t batch;
-
-   bool stroked = true;
-   bool filled = true;
 
 public:
 
@@ -128,8 +127,6 @@ public:
       std::swap(style,other.style);
       std::swap(width,other.width);
       std::swap(height,other.height);
-      std::swap(filled,other.filled);
-      std::swap(stroked,other.stroked);
       std::swap(useGlobalStyle,other.useGlobalStyle);
       return *this;
    }
@@ -182,7 +179,7 @@ public:
 
    color getStrokeColor() const {
       DEBUG_METHOD();
-      return stroke_color;
+      return stroke_color.value_or( color(0,0,0,0) );
    }
 
    float getStrokeWeight() const {
@@ -192,12 +189,12 @@ public:
 
    color getFillColor() const {
       DEBUG_METHOD();
-      return fill_color;
+      return fill_color.value_or( color(0,0,0,0) );
    }
 
    color getTintColor() const {
       DEBUG_METHOD();
-      return tint_color;
+      return tint_color.value_or( WHITE );
    }
 
    bool isGroup() const {
@@ -212,8 +209,6 @@ public:
       n = other.n;
       stroke_color = other.stroke_color;
       fill_color = other.fill_color;
-      filled = other.filled;
-      stroked = other.stroked;
       gl_fill_color = other.gl_fill_color;
       tint_color = other.tint_color;
       stroke_weight = other.stroke_weight;
@@ -411,7 +406,7 @@ public:
       }
       vertices.push_back( { p, n, t, gl_fill_color } );
       materials.push_back( currentMaterial );
-      extras.push_back( {stroke_color, stroke_weight } );
+      extras.push_back( { getStrokeColor(), stroke_weight } );
    }
 
    void index(unsigned short i) {
@@ -599,10 +594,9 @@ public:
 
    void fill(float r,float g,  float b, float a) {
       DEBUG_METHOD();
-      dirty=true;
-      filled = true;
+      dirty = true;
       fill_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( fill_color );
+      gl_fill_color = flatten_color_mode( fill_color.value() );
       currentMaterial.ambientColor = gl_fill_color;
    }
 
@@ -641,8 +635,7 @@ public:
 
    void stroke(float r,float g,  float b, float a) {
       DEBUG_METHOD();
-      dirty=true;
-      stroked = true;
+      dirty = true;
       stroke_color = {r,g,b,a};
    }
 
@@ -682,31 +675,31 @@ public:
 
    void noStroke() {
       DEBUG_METHOD();
-      dirty=true;
-      stroked = false;
+      dirty = true;
+      stroke_color.reset();
    }
 
    void noFill() {
       DEBUG_METHOD();
-      dirty=true;
-      filled = false;
+      dirty = true;
+      fill_color.reset();
    }
 
    bool isStroked() const {
       DEBUG_METHOD();
-      return stroked;
+      return !!stroke_color;
    }
 
    bool isFilled() const {
       DEBUG_METHOD();
-      return filled;
+      return !!fill_color;
    }
 
    void tint(float r,float g,  float b, float a) {
       DEBUG_METHOD();
-      dirty=true;
+      dirty = true;
       tint_color = {r,g,b,a};
-      gl_fill_color = flatten_color_mode( tint_color );
+      gl_fill_color = flatten_color_mode( tint_color.value() );
       currentMaterial.ambientColor = gl_fill_color;
    }
 
@@ -741,8 +734,8 @@ public:
    void noTint() {
       DEBUG_METHOD();
       dirty=true;
-      tint_color = WHITE;
-      gl_fill_color = flatten_color_mode( tint_color );
+      tint_color.reset();
+      gl_fill_color = flatten_color_mode( WHITE );
    }
 
    void strokeCap(int cap) {
@@ -753,17 +746,17 @@ public:
 
    void setStroke(bool c) {
       DEBUG_METHOD();
-      dirty=true;
+      dirty = true;
       for (auto &&child : children) {
          child.setStroke(c);
       }
-      stroked = c;
+      stroke_color.reset();
    }
 
    void setStroke(color c) {
       DEBUG_METHOD();
-      dirty=true;
-      stroked = true;
+      dirty = true;
+      stroke_color = c;
       for (auto &&child : children) {
          child.setStroke(c);
       }
@@ -798,7 +791,7 @@ public:
       for (auto &&child : children) {
          child.setFill(z);
       }
-      filled = z;
+      fill_color.reset();
       if (!z ) {
          for ( auto&&v : vertices ) {
             v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
@@ -811,13 +804,12 @@ public:
 
    void setFill(color c) {
       DEBUG_METHOD();
-      dirty=true;
-      filled = true;
+      dirty = true;
       for (auto &&child : children) {
          child.setFill(c);
       }
       fill_color = c;
-      gl::color clr = flatten_color_mode(fill_color);
+      gl::color clr = flatten_color_mode(fill_color.value());
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
@@ -833,7 +825,7 @@ public:
          child.setFill(c);
       }
       tint_color = c;
-      gl::color clr = flatten_color_mode(tint_color);
+      gl::color clr = flatten_color_mode(tint_color.value());
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
