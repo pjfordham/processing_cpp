@@ -1230,7 +1230,8 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { p2 + bisect * w, p2 - bisect * w };
 }
 
-PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform, std::optional<color> override_color, std::optional<float> override_weight)  {
+PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform,
+                        std::optional<color> override_color, std::optional<float> override_weight)  {
    PLine start;
    PLine end;
 
@@ -1412,20 +1413,6 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    triangles.index( i + 3 );
 }
 
-PShapeImpl drawTriangleStrip(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
-   PShapeImpl triangles;
-   triangles.beginShape(TRIANGLES);
-   triangles.transform( transform );
-   _line(triangles, p[0].position, p[1].position,
-         extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
-   for (int i=2;i<points;++i) {
-      _line(triangles, p[i-1].position, p[i].position, extras[i-1].weight, extras[i].weight, extras[i-1].stroke, extras[i].stroke);
-      _line(triangles, p[i].position, p[i-2].position, extras[i].weight, extras[i-2].weight, extras[i].stroke, extras[i-2].stroke);
-   }
-   triangles.endShape();
-   return triangles;
-}
-
 PShapeImpl drawTriangleNormal(const gl::vertex &p0, const gl::vertex &p1, const gl::vertex &p2, const PMatrix &transform) {
    PShapeImpl shape;
    shape.beginShape(TRIANGLES);
@@ -1469,14 +1456,15 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool
 void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
    DEBUG_METHOD();
    std::optional<color> override_color = style.override_stroke_color ? style.override_stroke_color.value() : std::optional<color>();
+   std::optional<float> override_weight = style.override_stroke_weight;
    switch( kind ) {
    case POINTS:
    {
       for (int i = 0; i< vertices.size() ; ++i ) {
          drawUntexturedFilledEllipse(
             vertices[i].position.x, vertices[i].position.y,
-            extras[i].weight, extras[i].weight,
-            extras[i].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            override_weight.value_or(extras[i].weight), override_weight.value_or(extras[i].weight),
+            override_color.value_or(extras[i].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       }
       break;
    }
@@ -1492,12 +1480,12 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
          PVector p0 = vertices[indices[i]].position;
          PVector p1 = vertices[indices[i+1]].position;
          PVector p2 = vertices[indices[i+2]].position;
-         float w0 = extras[indices[i]].weight;
-         float w1 = extras[indices[i+1]].weight;
-         float w2 = extras[indices[i+2]].weight;
-         color c0 =  extras[indices[i]].stroke;
-         color c1 =  extras[indices[i+1]].stroke;
-         color c2 =  extras[indices[i+2]].stroke;
+         float w0 = override_weight.value_or(extras[indices[i]].weight);
+         float w1 = override_weight.value_or(extras[indices[i+1]].weight);
+         float w2 = override_weight.value_or(extras[indices[i+2]].weight);
+         color c0 = override_color.value_or(extras[indices[i]].stroke);
+         color c1 = override_color.value_or(extras[indices[i+1]].stroke);
+         color c2 = override_color.value_or(extras[indices[i+2]].stroke);
 
          _line(shape, p0, p1, w0, w1, c0, c1 );
          _line(shape, p1, p2, w1, w2, c1, c2 );
@@ -1516,10 +1504,10 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       for (int i = 0; i < vertices.size(); i+=2 ) {
          PVector p0 = vertices[i].position;
          PVector p1 = vertices[i+1].position;
-         float w0 = extras[i].weight;
-         float w1 = extras[i+1].weight;
-         color c0 =  extras[i].stroke;
-         color c1 =  extras[i+1].stroke;
+         float w0 = override_weight.value_or(extras[i].weight);
+         float w1 = override_weight.value_or(extras[i+1].weight);
+         color c0 = override_color.value_or(extras[i].stroke);
+         color c1 = override_color.value_or(extras[i+1].stroke);
          _line(shape, p0, p1, w0, w1, c0, c1 );
       }
       shape.endShape();
@@ -1531,13 +1519,13 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
          } else {
             if ( contour.empty() ) {
-               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
+               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
             } else {
                if (contour[0] != 0) {
-                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
+                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
                }
                auto q = contour;
                q.push_back(vertices.size());
@@ -1545,7 +1533,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
                   drawLinePoly( q[i+1] - q[i],
                                 vertices.data() + q[i],
                                 extras.data() + q[i],
-                                type == CLOSE, shape_matrix, override_color, style.override_stroke_weight ).draw_fill( batch, transform, flatten_transforms);
+                                type == CLOSE, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
                }
             }
          }
@@ -1553,18 +1541,18 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
          switch(style.line_end_cap) {
          case ROUND:
             drawRoundLine( vertices[0].position, vertices[1].position,
-                           extras[0].weight, extras[1].weight,
-                           extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+                           override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
+                           override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
             break;
          case PROJECT:
             drawCappedLine( vertices[0].position, vertices[1].position,
-                            extras[0].weight, extras[1].weight,
-                            extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+                            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
+                            override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
             break;
          case SQUARE:
             drawLine( vertices[0].position, vertices[1].position,
-                      extras[0].weight, extras[1].weight,
-                      extras[0].stroke, extras[1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+                      override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
+                      override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
             break;
          default:
             abort();
@@ -1572,8 +1560,8 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       } else if (vertices.size() == 1) {
          drawUntexturedFilledEllipse(
             vertices[0].position.x, vertices[0].position.y,
-            extras[0].weight, extras[0].weight,
-            extras[0].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[0].weight),
+            override_color.value_or(extras[0].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       }
       break;
    }
@@ -1589,14 +1577,14 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
          PVector p1 = vertices[i+1].position;
          PVector p2 = vertices[i+2].position;
          PVector p3 = vertices[i+3].position;
-         float w0 = extras[i].weight;
-         float w1 = extras[i+1].weight;
-         float w2 = extras[i+2].weight;
-         float w3 = extras[i+3].weight;
-         color c0 =  extras[i].stroke;
-         color c1 =  extras[i+1].stroke;
-         color c2 =  extras[i+2].stroke;
-         color c3 =  extras[i+3].stroke;
+         float w0 = override_weight.value_or(extras[i].weight);
+         float w1 = override_weight.value_or(extras[i+1].weight);
+         float w2 = override_weight.value_or(extras[i+2].weight);
+         float w3 = override_weight.value_or(extras[i+3].weight);
+         color c0 = override_color.value_or(extras[i].stroke);
+         color c1 = override_color.value_or(extras[i+1].stroke);
+         color c2 = override_color.value_or(extras[i+2].stroke);
+         color c3 = override_color.value_or(extras[i+3].stroke);
 
          _line(shape, p0, p1, w0, w1, c0, c1 );
          _line(shape, p1, p2, w1, w2, c1, c2 );
@@ -1618,14 +1606,14 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
          PVector p1 = vertices[i+1].position;
          PVector p2 = vertices[i+2].position;
          PVector p3 = vertices[i+3].position;
-         float w0 = extras[i+0].weight;
-         float w1 = extras[i+1].weight;
-         float w2 = extras[i+2].weight;
-         float w3 = extras[i+3].weight;
-         color c0 =  extras[i+0].stroke;
-         color c1 =  extras[i+1].stroke;
-         color c2 =  extras[i+2].stroke;
-         color c3 =  extras[i+3].stroke;
+         float w0 = override_weight.value_or(extras[i+0].weight);
+         float w1 = override_weight.value_or(extras[i+1].weight);
+         float w2 = override_weight.value_or(extras[i+2].weight);
+         float w3 = override_weight.value_or(extras[i+3].weight);
+         color c0 = override_color.value_or(extras[i+0].stroke);
+         color c1 = override_color.value_or(extras[i+1].stroke);
+         color c2 = override_color.value_or(extras[i+2].stroke);
+         color c3 = override_color.value_or(extras[i+3].stroke);
 
          _line(shape, p0, p1, w0, w1, c0, c1 );
          _line(shape, p1, p3, w1, w3, c1, c3 );
@@ -1637,8 +1625,21 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       break;
    }
    case TRIANGLE_STRIP:
-      drawTriangleStrip( vertices.size(),  vertices.data(), extras.data(), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+   {
+      const gl::vertex *p = vertices.data();
+      PShapeImpl triangles;
+      triangles.beginShape(TRIANGLES);
+      triangles.transform( shape_matrix );
+      _line(triangles, p[0].position, p[1].position,
+            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight), override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke));
+      for (int i=2;i<vertices.size();++i) {
+         _line(triangles, p[i-1].position, p[i].position, override_weight.value_or(extras[i-1].weight), override_weight.value_or(extras[i].weight), override_color.value_or(extras[i-1].stroke), override_color.value_or(extras[i].stroke));
+               _line(triangles, p[i].position, p[i-2].position, override_weight.value_or(extras[i].weight), override_weight.value_or(extras[i-2].weight), override_color.value_or(extras[i].stroke), override_color.value_or(extras[i-2].stroke));
+      }
+      triangles.endShape();
+      triangles.draw_fill( batch, transform, flatten_transforms );
       break;
+   }
    case TRIANGLE_FAN:
    {
       // TODO: Proper 3D miters for triangle fan edges
@@ -1656,10 +1657,10 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       for (int i = 1; i < n - 1; ++i) {
          PVector p0 = vertices[i].position;
          PVector p1 = vertices[i + 1].position;
-         float w0 = extras[i].weight;
-         float w1 = extras[i + 1].weight;
-         color c0 = extras[i].stroke;
-         color c1 = extras[i + 1].stroke;
+         float w0 = override_weight.value_or(extras[i].weight);
+         float w1 = override_weight.value_or(extras[i + 1].weight);
+         color c0 = override_color.value_or(extras[i].stroke);
+         color c1 = override_color.value_or(extras[i + 1].stroke);
 
          // Stroke outer edges of each triangle
          _line(shape, center, p0, centerWeight, w0, centerColor, c0);
