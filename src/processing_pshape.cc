@@ -70,6 +70,9 @@ private:
       color tint_color = WHITE;
       int mode = IMAGE;
 
+      std::optional<std::optional<color>> override_fill_color;
+      std::optional<std::optional<color>> override_stroke_color;
+      std::optional<color> override_stroke_weight;
    };
 
    style_t style;
@@ -679,12 +682,14 @@ public:
 
    bool isStroked() const {
       DEBUG_METHOD();
-      return !!style.stroke_color;
+      return (style.override_stroke_color && style.override_stroke_color.value()) ||
+         (!style.override_stroke_color && style.stroke_color);
    }
 
    bool isFilled() const {
       DEBUG_METHOD();
-      return !!style.fill_color;
+      return (style.override_fill_color && style.override_fill_color.value()) ||
+         (!style.override_fill_color && style.fill_color);
    }
 
    void tint(float r,float g,  float b, float a) {
@@ -742,30 +747,24 @@ public:
       for (auto &&child : children) {
          child.setStroke(c);
       }
-      style.stroke_color.reset();
+      style.override_stroke_color = std::optional<color>();
    }
 
    void setStroke(color c) {
       DEBUG_METHOD();
       dirty = true;
-      style.stroke_color = c;
+      style.override_stroke_color = std::optional<color>(c);
       for (auto &&child : children) {
          child.setStroke(c);
-      }
-      for ( auto&&v : extras ) {
-         v.stroke = c;
       }
    }
 
    void setStrokeWeight(float w) {
       DEBUG_METHOD();
       dirty=true;
-      style.stroke_weight = w;
+      style.override_stroke_weight = w;
       for (auto &&child : children) {
          child.setStrokeWeight(w);
-      }
-      for ( auto&&v : extras ) {
-         v.weight = w;
       }
    }
 
@@ -784,15 +783,15 @@ public:
       for (auto &&child : children) {
          child.setFill(z);
       }
-      style.fill_color.reset();
-      if (!z ) {
-         for ( auto&&v : vertices ) {
-            v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
-         }
-         for ( auto&&v : materials ) {
-            v.ambientColor = flatten_color_mode({0.0,0.0,0.0,0.0});
-         }
-      }
+      style.override_fill_color = std::optional<color>();
+      // if (!z ) {
+      //    for ( auto&&v : vertices ) {
+      //       v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
+      //    }
+      //    for ( auto&&v : materials ) {
+      //       v.ambientColor = flatten_color_mode({0.0,0.0,0.0,0.0});
+      //    }
+      // }
    }
 
    void setFill(color c) {
@@ -801,14 +800,14 @@ public:
       for (auto &&child : children) {
          child.setFill(c);
       }
-      style.fill_color = c;
-      gl::color clr = flatten_color_mode(style.fill_color.value());
-      for ( auto&&v : vertices ) {
-         v.fill = clr;
-      }
-      for ( auto&&v : materials ) {
-         v.ambientColor = clr;
-      }
+      style.override_fill_color = std::optional<color>(c);
+      // gl::color clr = flatten_color_mode(style.fill_color.value());
+      // for ( auto&&v : vertices ) {
+      //    v.fill = clr;
+      // }
+      // for ( auto&&v : materials ) {
+      //    v.ambientColor = clr;
+      // }
    }
 
    void setTint(color c) {
@@ -1231,7 +1230,7 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { p2 + bisect * w, p2 - bisect * w };
 }
 
-PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform)  {
+PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform, std::optional<color> override)  {
    PLine start;
    PLine end;
 
@@ -1242,7 +1241,7 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
    triangle_strip.beginShape(TRIANGLE_STRIP);
    triangle_strip.transform( transform );
    triangle_strip.noStroke();
-   triangle_strip.fill(extras[0].stroke);
+   triangle_strip.fill(override.value_or(extras[0].stroke));
    float half_weight = extras[0].weight / 2.0;
    if (closed) {
       start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
@@ -1469,6 +1468,7 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool
 
 void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
    DEBUG_METHOD();
+   std::optional<color> override = style.override_stroke_color ? style.override_stroke_color.value() : std::optional<color>();
    switch( kind ) {
    case POINTS:
    {
@@ -1531,13 +1531,13 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
    {
       if (vertices.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix).draw_fill( batch, transform, flatten_transforms );
+            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
          } else {
             if ( contour.empty() ) {
-               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform, flatten_transforms );
+               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
             } else {
                if (contour[0] != 0) {
-                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix).draw_fill( batch, transform, flatten_transforms );
+                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
                }
                auto q = contour;
                q.push_back(vertices.size());
@@ -1545,7 +1545,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
                   drawLinePoly( q[i+1] - q[i],
                                 vertices.data() + q[i],
                                 extras.data() + q[i],
-                                type == CLOSE, shape_matrix).draw_fill( batch, transform, flatten_transforms );
+                                type == CLOSE, shape_matrix, override ).draw_fill( batch, transform, flatten_transforms);
                }
             }
          }
@@ -1683,14 +1683,15 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
       std::vector<gl::material> m;
       m.reserve( materials.size() );
       for (auto &material : materials ) {
-         m.emplace_back( gl::material{
-               { material.ambientColor.r,  material.ambientColor.g,  material.ambientColor.b,  material.ambientColor.a  },
-               { material.specularColor.r, material.specularColor.g, material.specularColor.b, material.specularColor.a },
-               { material.emissiveColor.r, material.emissiveColor.g, material.emissiveColor.b, material.emissiveColor.a },
-               material.specularExponent
-            } );
+         m.emplace_back(
+            material.ambientColor,
+            material.specularColor,
+            material.emissiveColor,
+            material.specularExponent
+            );
       }
-      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_.value_or(PShape::getBlankTexture()).getTextureID() );
+      std::optional<gl::color> override = style.override_fill_color ? flatten_color_mode(style.override_fill_color.value()) : std::optional<gl::color>();
+      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_.value_or(PShape::getBlankTexture()).getTextureID(), override);
    }
 }
 

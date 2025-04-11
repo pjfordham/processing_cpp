@@ -117,7 +117,7 @@ namespace gl {
       }
    }
 
-   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, texture_ptr texture_ ) {
+   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, texture_ptr texture_, std::optional<color> override ) {
       DEBUG_METHOD();
 
       if (texture_ == texture_t::circle())
@@ -191,7 +191,7 @@ namespace gl {
             flatten_transforms ? transform_ * glm::vec4(v.position,1.0) : v.position,
             v.normal,
             v.coord,
-            v.fill,
+            override.value_or(v.fill),
             tunit,
             currentM);
       }

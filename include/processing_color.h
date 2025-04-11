@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <glm/vec4.hpp>
+#include <optional>
 
 // ----
 // Begin color handling.
@@ -155,6 +156,10 @@ inline gl::color flatten_color_mode(color c) {
       return HSBtoRGB(r,g,b,a);
    }
    return { r, g, b, a };
+}
+
+inline std::optional<gl::color> flatten_color_mode(std::optional<color> c) {
+   return c ? flatten_color_mode(c.value()) : std::optional<gl::color>();
 }
 
 template <>

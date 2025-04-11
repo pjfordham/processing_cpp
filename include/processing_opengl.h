@@ -205,7 +205,7 @@ namespace gl {
       bool usesTextures() const;
 
       void vertices( const std::vector<vertex> &vertices,const std::vector<material> &materials,  const std::vector<unsigned short> &indices,
-                     const glm::mat4 &transform, bool flatten_transform, gl::texture_ptr texture );
+                     const glm::mat4 &transform, bool flatten_transform, gl::texture_ptr texture, std::optional<color> override );
    };
 
    class framebuffer;
