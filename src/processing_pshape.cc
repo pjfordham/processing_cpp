@@ -1236,8 +1236,16 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
 
    float a = angularDifference( l1.heading(), l2.heading() );
 
+   // Check for collinearity (or near-collinearity)
+   const float EPSILON = 0.001f; // Adjust threshold as needed
+   if (fabs(a) < EPSILON || fabs(a - PI) < EPSILON) {
+      // Handle collinear case - use perpendicular direction to l1
+      PVector perpendicular = l1.normal();
+      return { p2 + perpendicular * half_weight, p2 - perpendicular * half_weight };
+   }
+
    // The distance the mitred corners are from the actual line corner position
-   float w = std::max(half_weight, 2 * ( (half_weight / sinf( PI - a )) * sinf ( a / 2)));
+   float w = std::min(half_weight * 2, 2 * ( (half_weight / sinf( PI - a )) * sinf ( a / 2)));
 
    auto bisect = (l1.normal() + l2.normal()).normalize();
    return { p2 + bisect * w, p2 - bisect * w };
