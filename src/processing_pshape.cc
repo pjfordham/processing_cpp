@@ -182,9 +182,9 @@ public:
       return createShape();
    }
 
-   color getStrokeColor() const {
+   std::optional<color> getStrokeColor() const {
       DEBUG_METHOD();
-      return style.stroke_color.value_or( color(0,0,0,0) );
+      return style.stroke_color;
    }
 
    float getStrokeWeight() const {
@@ -192,9 +192,9 @@ public:
       return style.stroke_weight;
    }
 
-   color getFillColor() const {
+   std::optional<color> getFillColor() const {
       DEBUG_METHOD();
-      return style.fill_color.value_or( color(0,0,0,0) );
+      return style.fill_color;
    }
 
    color getTintColor() const {
@@ -403,7 +403,7 @@ public:
       }
       vertices.push_back( { p, n, t, style.gl_fill_color } );
       materials.push_back( style.currentMaterial );
-      extras.push_back( { getStrokeColor(), style.stroke_weight } );
+      extras.push_back( { getStrokeColor().value_or(BLACK), style.stroke_weight } );
    }
 
    void index(unsigned short i) {
@@ -749,10 +749,16 @@ public:
       style.override_stroke_color = std::optional<color>();
    }
 
+   void setStroke(std::optional<color> c) {
+      DEBUG_METHOD();
+      dirty = true;
+      style.override_stroke_color = c;
+   }
+
    void setStroke(color c) {
       DEBUG_METHOD();
       dirty = true;
-      style.override_stroke_color = std::optional<color>(c);
+      style.override_stroke_color = c;
    }
 
    void setStrokeWeight(float w) {
@@ -773,10 +779,16 @@ public:
       style.override_fill_color = std::optional<color>();
    }
 
+   void setFill(std::optional<color> c) {
+      DEBUG_METHOD();
+      dirty = true;
+      style.override_fill_color = c;
+   }
+
    void setFill(color c) {
       DEBUG_METHOD();
       dirty = true;
-      style.override_fill_color = std::optional<color>(c);
+      style.override_fill_color = c;
    }
 
    void setTint(color c) {
@@ -1749,11 +1761,11 @@ PShape PShape::getChild( std::string_view i ) {
    return impl->getChild(i);
 }
 
-color PShape::getFillColor() const {
+std::optional<color> PShape::getFillColor() const {
    return impl->getFillColor();
 }
 
-color PShape::getStrokeColor() const {
+std::optional<color> PShape::getStrokeColor() const {
    return impl->getStrokeColor();
 }
 
@@ -2122,6 +2134,10 @@ void PShape::setStroke(bool c){
 }
 
 
+void PShape::setStroke(std::optional<color> c){
+   return impl->setStroke(c);
+}
+
 void PShape::setStroke(color c){
    return impl->setStroke(c);
 }
@@ -2141,6 +2157,10 @@ void PShape::setFill(bool z){
    return impl->setFill(z);
 }
 
+
+void PShape::setFill(std::optional<color> c){
+   return impl->setFill(c);
+}
 
 void PShape::setFill(color c){
    return impl->setFill(c);

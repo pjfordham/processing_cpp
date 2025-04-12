@@ -81,9 +81,9 @@ class PShape {
 
    float getStrokeWeight() const;
 
-   color getStrokeColor() const;
+   std::optional<color> getStrokeColor() const;
 
-   color getFillColor() const;
+   std::optional<color> getFillColor() const;
 
    color getTintColor() const;
 
@@ -240,6 +240,8 @@ class PShape {
 
    void setStroke(bool c);
 
+   void setStroke(std::optional<color> c);
+
    void setStroke(color c);
 
    void setStrokeWeight(float w);
@@ -247,6 +249,8 @@ class PShape {
    void setTexture( PImage img );
 
    void setFill(bool z);
+
+   void setFill(std::optional<color> c);
 
    void setFill(color c);
 

@@ -399,7 +399,7 @@ public:
 
       auto mode = blendMode(BLEND);
       drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
-                       text_image, _shape.getFillColor() );
+                       text_image, _shape.getFillColor().value_or(BLACK) );
       blendMode(mode);
    }
 
@@ -886,12 +886,12 @@ public:
       }
       if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.getFillColor(), PMatrix::Identity() );
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.getFillColor().value_or(BLACK), PMatrix::Identity() );
          return shape;
       } else if (_shape.isStroked() && _shape.isFilled() &&
                  _shape.getFillColor() == _shape.getStrokeColor() && !_shape.isTextureSet()) {
          PShape shape = drawUntexturedFilledEllipse( x, y, width + _shape.getStrokeWeight(), height + _shape.getStrokeWeight(),
-                                                     _shape.getFillColor(), PMatrix::Identity() );
+                                                     _shape.getFillColor().value_or(BLACK), PMatrix::Identity() );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
@@ -1460,7 +1460,7 @@ void PGraphics::tint(float r, float g, float b){
 }
 
 void PGraphics::tint(float r, float a){
-   return impl->_shape.tint(r,a);
+   return impl->_shape.tint(r,r,r,a);
 }
 
 void PGraphics::tint(float r){
@@ -1472,7 +1472,8 @@ void PGraphics::tint(color c){
 }
 
 void PGraphics::tint(color c, float a){
-   return impl->_shape.tint(c, a);
+   c.a = a;
+   return impl->_shape.tint(c);
 }
 
 void PGraphics::noTint() {
@@ -1536,7 +1537,8 @@ void PGraphics::stroke(color c){
 }
 
 void PGraphics::stroke(color c, float a){
-   return impl->_shape.stroke(c, a);
+   c.a = a;
+   return impl->_shape.stroke(c);
 }
 
 void PGraphics::noStroke() {
