@@ -421,7 +421,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             parseSVGFillColor((char*)xdata, shape, alpha);
          }
          xmlFree(xdata);
-         shape = drawUntexturedFilledEllipse( cx,cy,2*r,2*r, shape.getFillColor(), PMatrix::Identity() );
+         shape = drawUntexturedFilledEllipse( cx,cy,2*r,2*r, shape.getFillColor().value_or(BLACK), PMatrix::Identity() );
       } else if (type == "ellipse") {
          int alpha = 255;
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
@@ -473,7 +473,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             parseSVGTransform((char*)xdata, shape, transform);
          }
          xmlFree(xdata);
-         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.getFillColor(), transform );
+         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.getFillColor().value_or(BLACK), transform );
       } else if (type == "polygon") {
          int alpha = 255;
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
