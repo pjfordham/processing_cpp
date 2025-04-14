@@ -395,9 +395,9 @@ public:
    void vertex(PVector p, PVector2 t) {
       DEBUG_METHOD();
       dirty=true;
-      if (style.mode == IMAGE) {
-         t.x /= style.texture_.value_or(PShape::getBlankTexture()).width;
-         t.y /= style.texture_.value_or(PShape::getBlankTexture()).height;
+      if (style.texture_ && style.mode == IMAGE) {
+         t.x /= style.texture_.value().width;
+         t.y /= style.texture_.value().height;
       }
       vertices.push_back( { p, n, t, style.gl_fill_color } );
       materials.push_back( style.currentMaterial );
