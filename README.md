@@ -69,13 +69,14 @@ Placeholder for detailed list of what you need beyond the git submodules.
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/pfordham/processing_cpp
+   git clone --recurse-submodules https://github.com/pfordham/processing_cpp
    ```
 2. Build with cmake
    ```sh
    mkdir release
    cd release
    cmake ..
+   make
    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
