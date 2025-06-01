@@ -57,22 +57,22 @@ some of the examples unmodified, albeit with a little preprocessor trickery.
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
 
-Placeholder for detailed list of what you need beyond the git submodules.
+Install libcurl and libxml2. Also install ImageMagick if you want to be able to run the tests.
 
 ### Installation
 
 
 1. Clone the repo
    ```sh
-   git clone --recurse-submodules https://github.com/pfordham/processing_cpp
+   git clone --recurse-submodules https://github.com/pjfordham/processing_cpp.git
    ```
 2. Build with cmake
    ```sh
+   cd processing_cpp
    mkdir release
    cd release
    cmake ..
@@ -85,9 +85,45 @@ Placeholder for detailed list of what you need beyond the git submodules.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-After building just run any of the executables built from the examples directories.
+After building just run any of the executables built from the examples directories. Below is some sample output.
 
-To get a taste of what to expect see <a href="https://processing.org/examples/">visit</a>, the original framwork's examples pages. Most of these examples work identically to their Java and Javascript counterparts.
+<table style="width: 100%; border-collapse: separate; border-spacing: 10px;">
+  <tr>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/Atoms-0000.png?raw=true" alt="Atoms" style="width: 100%; height: auto; display: block;">
+    </td>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/DisableStyle-0000.png?raw=true" alt="DisableStyle" style="width: 100%; height: auto; display: block;">
+    </td>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/Graphing2DEquation-0000.png?raw=true" alt="Graphing2DEquation" style="width: 100%; height: auto; display: block;">
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/Koch-0004.png?raw=true" alt="Koch" style="width: 100%; height: auto; display: block;">
+    </td>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/LinearGradient-0000.png?raw=true" alt="LinearGradient" style="width: 100%; height: auto; display: block;">
+    </td>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/Mandelbrot-0000.png?raw=true" alt="Mandelbrot" style="width: 100%; height: auto; display: block;">
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/Monjori-0000.png?raw=true" alt="Monjori" style="width: 100%; height: auto; display: block;">
+    </td>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/Noise3D-0000.png?raw=true" alt="Noise3D" style="width: 100%; height: auto; display: block;">
+    </td>
+    <td style="text-align: center; vertical-align: middle;">
+      <img src="https://github.com/pjfordham/processing_cpp/blob/main/refs/NoiseSphere-0000.png?raw=true" alt="NoiseSphere" style="width: 100%; height: auto; display: block;">
+    </td>
+  </tr>
+</table>
+
+To get more of a taste of what to expect see <a href="https://processing.org/examples/">visit</a>, the original framework's examples pages. Most of these examples work identically to their Java and Javascript counterparts.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
