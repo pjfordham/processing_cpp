@@ -126,15 +126,18 @@ namespace gl {
       }
    }
 
-   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, texture_ptr texture_, std::optional<color> override ) {
+   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_ptr> texture_, std::optional<color> override ) {
       DEBUG_METHOD();
 
-      if (texture_ == texture_t::circle())
+      if (texture_ == texture_t::circle()) {
          uses_circles = true;
-      // This could be a better test, we're just testing
-      // for a single pixel texture.
-      else if (texture_->get_width() != 1 || texture_->get_height() != 1)
-         uses_textures = true;
+      } else {
+         if (texture_) {
+            uses_textures = true;
+         } else {
+            texture_ = texture_t::blank();
+         }
+      }
 
       // Do this better and share somehow with shader and texture unit init
       // code.
@@ -153,7 +156,7 @@ namespace gl {
       if (vaos.size() == 0 || vaos.back()->vertices.size() + vertices.size() > 65536) {
          vaos.emplace_back(std::make_shared<VAO>());
          vaos.back()->transforms.push_back( transform );
-         vaos.back()->textures.push_back(texture_);
+         vaos.back()->textures.push_back(texture_.value());
       }
       // At this point vaos has a back and that back has a transform and a texture.
       // It also has enough capacity for these triangles.
@@ -161,7 +164,7 @@ namespace gl {
       if ( transform != vaos.back()->transforms.back()) {
          if (vaos.back()->transforms.size() == MaxTransformsPerBatch) {
             vaos.emplace_back(std::make_shared<VAO>());
-            vaos.back()->textures.push_back(texture_);
+            vaos.back()->textures.push_back(texture_.value());
          }
          vaos.back()->transforms.push_back(transform);
       }
@@ -175,7 +178,7 @@ namespace gl {
          tunit = -1;
       } else {
          auto &vec = vaos.back()->textures;
-         auto i = std::find(vec.begin(), vec.end(), texture_);
+         auto i = std::find(vec.begin(), vec.end(), texture_.value());
 
          if ( i == vec.end() ) {
             if (vec.size() == MaxTextureImageUnits) {
@@ -184,7 +187,7 @@ namespace gl {
             }
             // Old version of vec might have been invalidated.
             auto &vec = vaos.back()->textures;
-            vec.push_back(texture_);
+            vec.push_back(texture_.value());
             tunit = vec.size() - 1;
          } else {
             tunit = i - vec.begin();

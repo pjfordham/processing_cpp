@@ -150,10 +150,10 @@ int main(int argc, char* argv[]) {
    PShader::close();
    PGraphics::close();
 
+   surface.shutdown();
+
    renderThread.wait_until_nothing_in_flight();
    renderThread.shutdown();
-
-   surface.shutdown();
 
    PSurface::close();
    PFont::close();
