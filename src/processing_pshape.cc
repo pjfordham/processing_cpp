@@ -152,7 +152,7 @@ public:
          gl::color{0.0f,0.0f,0.0f,1.0f},
          gl::color{0.0f,0.0f,0.0f,1.0f},
          gl::color{0.0f,0.0f,0.0f,1.0f},
-         1.0, 1.0, 4, PShape::getBlankTexture() };
+         1.0, 1.0, 4, {} };
    }
 
    PShapeImpl(const PShapeImpl &copy) = default;
@@ -324,7 +324,8 @@ public:
       dirty=true;
       noStroke();
       textureMode( NORMAL );
-      texture( mat.texture );
+      if ( mat.texture )
+         texture( mat.texture.value() );
       style.currentMaterial = mat;
    }
 
@@ -1691,7 +1692,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
             material.specularExponent
             );
       }
-      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_.value_or(PShape::getBlankTexture()).getTextureID(), override);
+      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_ ? style.texture_.value().getTextureID() : std::optional<gl::texture_ptr>(), override );
    }
 }
 
