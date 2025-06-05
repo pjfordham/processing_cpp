@@ -243,6 +243,7 @@ void PSurface::swapBuffers() {
 }
 
 void PSurface::shutdown() {
+   gl::texture_t::blank()->release();
    glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 

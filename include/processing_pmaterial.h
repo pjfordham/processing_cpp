@@ -5,6 +5,7 @@
 #include "processing_pimage.h"
 #include <array>
 #include <unordered_map>
+#include <optional>
 
 struct PMaterial {
    gl::color ambientColor;
@@ -14,7 +15,7 @@ struct PMaterial {
    float specularExponent;
    float alpha;
    int illum;
-   PImage texture;
+   std::optional<PImage> texture;
 };
 
 extern std::unordered_map<std::string, PMaterial> materials;
