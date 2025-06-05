@@ -92,7 +92,6 @@ public:
 };
 
 PImage createImage(int width, int height, int mode);
-PImage createBlankImage();
 PImage createImageFromTexture(gl::texture_ptr textureID);
 PImage loadImage(std::string_view URL);
 PImage requestImage(std::string_view URL);

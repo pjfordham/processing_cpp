@@ -375,12 +375,6 @@ PImage PImage::circle() {
    return a;
 }
 
-PImage createBlankImage() {
-   auto p = PImage( std::make_shared<PImageImpl>(1,1,CLAMP) );
-   p.pixels[0] = color(255.0f);
-   return p;
-}
-
 PImage createImage(int width, int height, int mode) {
    return PImage( std::make_shared<PImageImpl>(width,height,mode) );
 }

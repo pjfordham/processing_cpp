@@ -38,10 +38,9 @@ namespace gl {
       texture_t& operator=(const texture_t&) = delete;
       texture_t& operator=(texture_t&&) = delete;
 
-      static texture_ptr circle() {
-         static texture_ptr t = std::make_shared<texture_t>(-1);
-         return t;
-      }
+      static texture_ptr circle();
+
+      static texture_ptr blank();
 
       void release();
 
