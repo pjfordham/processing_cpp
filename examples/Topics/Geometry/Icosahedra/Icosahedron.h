@@ -33,9 +33,9 @@ public:
   void init(){
     c = dist(cos(0)*radius, sin(0)*radius, cos(radians(72))*radius,  sin(radians(72))*radius);
     b = radius;
-    a = (float)(fsqrt(((c*c)-(b*b))));
+    a = (float)(sqrt(((c*c)-(b*b))));
 
-    triHt = (float)(fsqrt((c*c)-((c/2)*(c/2))));
+    triHt = (float)(sqrt((c*c)-((c/2)*(c/2))));
 
     for (int i=0; i<topPent.size(); i++){
       topPent[i] = PVector(cos(angle)*radius, sin(angle)*radius, triHt/2.0f);

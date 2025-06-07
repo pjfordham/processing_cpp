@@ -24,12 +24,12 @@ void draw()  {
   newYmag = (float)mouseY/float(height) * TWO_PI;
 
   float diff = xmag-newXmag;
-  if (fabs(diff) >  0.01) {
+  if (abs(diff) >  0.01) {
     xmag -= diff/4.0;
   }
 
   diff = ymag-newYmag;
-  if (fabs(diff) >  0.01) {
+  if (abs(diff) >  0.01) {
     ymag -= diff/4.0;
   }
 

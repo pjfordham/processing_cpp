@@ -499,8 +499,8 @@ public:
       sphere.copyStyle( _shape );
       sphere.textureMode(NORMAL);
 
-      float latStep = M_PI / xsphere_ures;
-      float lonStep = 2 * M_PI / xsphere_vres;
+      float latStep = PI / xsphere_ures;
+      float lonStep = 2 * PI / xsphere_vres;
 
       for (int i = 0; i <= xsphere_ures; i++) {
          float lat = i * latStep;

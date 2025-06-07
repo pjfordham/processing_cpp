@@ -242,7 +242,7 @@ float calculateTorsionalAngle(PVector at0, PVector at1, PVector at2, PVector at3
     u = u1 / sqrt(u);
     v = v1 / sqrt(v);
 
-    if (fabs(u) > 0.01 || fabs(v) > 0.01) a = degrees(atan2(v, u));
+    if (abs(u) > 0.01 || abs(v) > 0.01) a = degrees(atan2(v, u));
     else a = 360.0;
   }
   return a;

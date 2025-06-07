@@ -102,7 +102,7 @@ public:
       Vec3f v = path[nPoints-1];
       float dx = v.x - ix;
       float dy = v.y - iy;
-      return fsqrt(dx*dx + dy*dy);
+      return sqrt(dx*dx + dy*dy);
     }
     else {
       return 30;
@@ -168,7 +168,7 @@ public:
         // assumes all segments are roughly the same length...
         dx02 = p2.x - p0.x;
         dy02 = p2.y - p0.y;
-        hp02 = fsqrt(dx02*dx02 + dy02*dy02);
+        hp02 = sqrt(dx02*dx02 + dy02*dy02);
         if (hp02 != 0) {
           hp02 = radius1/hp02;
         }

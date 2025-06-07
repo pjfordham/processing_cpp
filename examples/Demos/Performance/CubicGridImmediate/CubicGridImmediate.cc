@@ -39,7 +39,7 @@ void draw() {
       for (float k =- width+margin; k <= width-margin; k += boxSize){
         // Base fill color on counter values, abs function
         // ensures values stay within legal range
-        boxFill = color(fabs(i), fabs(j), fabs(k), 50);
+        boxFill = color(abs(i), abs(j), abs(k), 50);
         pushMatrix();
         translate(k, j, i);
         fill(boxFill);

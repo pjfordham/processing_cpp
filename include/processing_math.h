@@ -5,6 +5,7 @@
 // graphics, global state  or event loop
 // functionality.
 
+#include <numbers>
 #include <cmath>
 #include <cstdlib>
 #include <random>
@@ -23,11 +24,11 @@ void noiseSeed(int seed);
 void noiseDetail(int lod, float falloff = 0.5);
 float noise(float x, float y = 0, float z = 0);
 
-const float PI = M_PI;
-const float TWO_PI = M_PI * 2.0;
-const float HALF_PI = M_PI / 2.0;
-const float QUARTER_PI = M_PI / 4.0;
-const float DEG_TO_RAD = 0.01745329238474369f;
+constexpr float PI = std::numbers::pi_v<float>;
+constexpr float TWO_PI = PI * 2.0;
+constexpr float HALF_PI = PI / 2.0;
+constexpr float QUARTER_PI = PI / 4.0;
+constexpr float DEG_TO_RAD = 0.01745329238474369f;
 
 inline float random(float min, float max) {
    thread_local static std::mt19937 randomNumbers( 1 );
@@ -63,16 +64,16 @@ inline float bezierPointQuadratic(float a, float b, float c, float t) {
 
 inline float angularDifference(float angle1, float angle2) {
    // Normalize angles to the range [0, 2π)
-   angle1 = fmod(angle1, 2 * M_PI);
-   angle2 = fmod(angle2, 2 * M_PI);
+   angle1 = fmod(angle1, 2 * PI);
+   angle2 = fmod(angle2, 2 * PI);
 
    // Calculate the absolute angular difference, taking wrapping into account
    float angularDifference = fabs(angle1 - angle2);
 
    // Ensure that the angular difference is within the specified tolerance
-   if (angularDifference > M_PI) {
+   if (angularDifference > PI) {
       // If the difference is greater than π, consider the smaller wrapped angle
-      angularDifference = 2 * M_PI - angularDifference;
+      angularDifference = 2 * PI - angularDifference;
    }
    return angularDifference;
 }
@@ -527,11 +528,11 @@ inline float randomGaussian()
 }
 
 inline float radians(float degrees) {
-   return degrees * M_PI / 180.0;
+   return degrees * PI / 180.0;
 }
 
 inline float degrees(float radians) {
-   return (radians * 180) / M_PI;
+   return (radians * 180) / PI;
 }
 
 inline float norm(float value, float start, float stop) {

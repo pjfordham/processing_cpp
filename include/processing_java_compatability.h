@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 // Various hacks to make C++ slightly
 // more like Java to get sketches to
@@ -15,6 +16,8 @@ using FloatArrayList = std::vector<float>;
 
 using std::max;
 using std::min;
+using std::abs;
+using std::sqrt;
 
 typedef bool boolean;
 

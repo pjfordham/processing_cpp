@@ -23,7 +23,7 @@ void draw() {
     direction = direction * -1;
   }
   if (mousePressedb) {
-    signal = fabs(mouseY % img.height);
+    signal = abs(mouseY % img.height);
   }
   else {
     signal += (0.3*direction);

@@ -21,7 +21,7 @@ public:
   }
 
   float length(){
-    return fsqrt(x * x + y * y + z * z);
+    return sqrt(x * x + y * y + z * z);
   }
 
   static Vec3 cross(Vec3 v1, Vec3 v2){
@@ -101,7 +101,7 @@ public:
 
     std::array<float,4> res;
 
-    float sa = fsqrt(1.0f - w * w);
+    float sa = sqrt(1.0f - w * w);
     if (sa < std::numeric_limits<decltype(sa)>::epsilon()){
       sa = 1.0f;
     }

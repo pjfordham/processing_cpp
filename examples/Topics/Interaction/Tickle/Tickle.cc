@@ -30,8 +30,8 @@ void draw() {
   rect(0, 0, width, height);
 
   // If the cursor is over the text, change the position
-  if (fabs(mouseX - x) < hr &&
-      fabs(mouseY - y) < vr) {
+  if (abs(mouseX - x) < hr &&
+      abs(mouseY - y) < vr) {
     x += random(-5, 5);
     y += random(-5, 5);
   }
