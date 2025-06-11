@@ -205,7 +205,7 @@ static void parseText(std::string::const_iterator &i, std::string_view text) {
 static void parseSVGTransform(const std::string &data, PShape &pshape,
                               PMatrix &transform) {
    auto i = data.begin();
-   parseText(i , "matrix\(");
+   parseText(i , "matrix(");
    float x1,x2,x3,x4,x5,x6;
    parseFloat( i,x1);
    if ( *i == ',') i++;

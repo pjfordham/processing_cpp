@@ -1,6 +1,15 @@
 #ifndef PROCESSING_ENUM_H
 #define PROCESSING_ENUM_H
 
+#ifdef _WINDOWS_
+// windows.h has conflicting definitions
+#undef DIFFERENCE
+#undef OPAQUE
+#define POINTS PROCESSING_POINTS
+#define GROUP PROCESSING_GROUP
+#endif
+
+
 // All the enums in one place!
 enum {
    CODED = -1,

@@ -220,7 +220,7 @@ void exit() {
    glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-__attribute__((weak)) int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
 
    Profile::Instrumentor::Get().BeginSession("main");
 
@@ -329,6 +329,18 @@ __attribute__((weak)) int main(int argc, char* argv[]) {
    return 0;
 }
 
+#ifdef _MSC_VER
+extern "C" void keyTyped_weak() {}
+extern "C" void keyPressed_weak() {}
+extern "C" void keyReleased_weak() {}
+extern "C" void setup_weak() {}
+extern "C" void draw_weak() {}
+extern "C" void mousePressed_weak() {}
+extern "C" void mouseDragged_weak() {}
+extern "C" void mouseMoved_weak() {}
+extern "C" void mouseReleased_weak() {}
+extern "C" void mouseWheel_weak(const MouseEvent&) {}
+#else
 __attribute__((weak)) void keyTyped() {}
 __attribute__((weak)) void keyPressed() {}
 __attribute__((weak)) void keyReleased() {}
@@ -339,3 +351,5 @@ __attribute__((weak)) void mouseDragged() {}
 __attribute__((weak)) void mouseMoved() {}
 __attribute__((weak)) void mouseReleased() {}
 __attribute__((weak)) void mouseWheel(const MouseEvent&) {}
+#endif
+

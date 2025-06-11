@@ -11,7 +11,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(CURL REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(PkgConfig REQUIRED)
 
 add_subdirectory(external/freetype)
 add_subdirectory(external/libglfw)
@@ -38,6 +37,7 @@ add_library(Processing
   src/processing_pshader.cc
   src/processing_xml.cc
   src/processing_json.cc
+  src/processing_stb_image_impl.cc
   external/glad/src/glad.c
 )
 
@@ -106,9 +106,15 @@ set(skip_examples
   "examples/Demos/Tests/MultipleWindows/MultipleWindows.cc"                            # No multiple windows
   "examples/Demos/Tests/ResizeTest/ResizeTest.cc"                                      # No resize
   "examples/Demos/Tests/SpecsTest/SpecsTest.cc"                                        # Won't support
-  #"examples/Topics/Shaders/GlossyFishEye/GlossyFishEye.cc"                             # Not sure
   "examples/Topics/Shaders/SepBlur/SepBlur.cc"                                         # Not sure
  )
+
+function(target_force_include target file)
+    target_compile_options(${target} PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/FI${file}>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-include${file}>
+    )
+endfunction()
 
 function(ADD_EXAMPLE file_path)
 
@@ -137,19 +143,24 @@ function(ADD_EXAMPLE file_path)
 
   if(file_content)
     add_executable(${base_name} ${file_path})
-    target_link_libraries(${base_name}  PRIVATE Processing)
-    target_compile_options(${base_name} PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/include/processing.h)
   else()
     add_executable(${base_name} sketch.cc)
-    target_link_libraries(${base_name}  PRIVATE Processing)
-    target_compile_options(${base_name} PRIVATE -DFILE_TO_INCLUDE=\"${file_path}\" -include ${CMAKE_CURRENT_SOURCE_DIR}/include/processing.h)
+    target_compile_options(${base_name} PRIVATE -DFILE_TO_INCLUDE=\"${file_path}\")
   endif()
 
-  # If there's a data directory copy it to the target
-  if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data)
-    add_custom_command(TARGET ${base_name} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${base_name}>/data)
+  target_link_libraries(${base_name} PRIVATE Processing)
+  target_force_include(${base_name} "${CMAKE_CURRENT_SOURCE_DIR}/include/processing.h")
 
+  add_custom_command(TARGET ${base_name} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/data)
+
+  add_custom_command(TARGET ${base_name} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/dejavu-fonts-ttf/ttf/DejaVuSans.ttf
+    ${CMAKE_BINARY_DIR}/data)
+
+  # If there's a data directory copy its to the target
+  if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data)
     add_custom_command(TARGET ${base_name} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data/*

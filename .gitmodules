@@ -23,3 +23,6 @@
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
+[submodule "external/dejavu-fonts-ttf"]
+	path = external/dejavu-fonts-ttf
+	url = https://github.com/senotrusov/dejavu-fonts-ttf.git

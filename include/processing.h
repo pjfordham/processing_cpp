@@ -190,15 +190,27 @@ public:
 
 bool dispatchEvents();
 
-void keyPressed();
-void keyReleased();
-void keyTyped();
-void setup();
-void draw();
-void mousePressed();
-void mouseDragged();
-void mouseMoved();
-void mouseReleased();
-void mouseWheel(const MouseEvent &event);
+extern "C" void keyPressed();
+extern "C" void keyReleased();
+extern "C" void keyTyped();
+extern "C" void setup();
+extern "C" void draw();
+extern "C" void mousePressed();
+extern "C" void mouseDragged();
+extern "C" void mouseMoved();
+extern "C" void mouseReleased();
+extern "C" void mouseWheel(const MouseEvent &event);
+#ifdef _MSC_VER
+#pragma comment(linker, "/alternatename:keyTyped=keyTyped_weak")
+#pragma comment(linker, "/alternatename:keyPressed=keyPressed_weak")
+#pragma comment(linker, "/alternatename:keyReleased=keyReleased_weak")
+#pragma comment(linker, "/alternatename:setup=setup_weak")
+#pragma comment(linker, "/alternatename:draw=draw_weak")
+#pragma comment(linker, "/alternatename:mousePressed=mousePressed_weak")
+#pragma comment(linker, "/alternatename:mouseDragged=mouseDragged_weak")
+#pragma comment(linker, "/alternatename:mouseMoved=mouseMoved_weak")
+#pragma comment(linker, "/alternatename:mouseReleased=mouseReleased_weak")
+#pragma comment(linker, "/alternatename:mouseWheel=mouseWheel_weak")
+#endif
 
 #endif

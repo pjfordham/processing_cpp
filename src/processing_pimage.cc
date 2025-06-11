@@ -1,16 +1,16 @@
-#include "processing_pimage.h"
-#include "processing_debug.h"
-#include "processing_opengl_texture.h"
-#include <curl/curl.h>
-#include "glad/glad.h"
-#include <fmt/core.h>
 #include <iostream>
 #include <filesystem>
 
-#define STB_IMAGE_IMPLEMENTATION
+#include <curl/curl.h>
+#include <fmt/core.h>
 #include <stb_image.h>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
+
+#include "processing_pimage.h"
+#include "processing_debug.h"
+#include "processing_opengl_texture.h"
+
+#include "glad/glad.h"
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
@@ -377,7 +377,7 @@ PImage PImage::circle() {
 
 PImage createBlankImage() {
    auto p = PImage( std::make_shared<PImageImpl>(1,1,CLAMP) );
-   p.pixels[0] = color(255.0f);
+   p.set(0,0,color(255.0f));
    return p;
 }
 

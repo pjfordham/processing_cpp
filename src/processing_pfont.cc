@@ -148,7 +148,11 @@ static void search_directory(const std::string& path, const std::string& suffix)
 }
 
 std::vector<std::string>  PFont::list() {
-   std::filesystem::path path_to_search = "/usr/share/fonts/truetype";
+#ifdef _WIN32
+   std::string path_to_search = "C:\\Windows\\Fonts";
+#else
+   std::string path_to_search = "/usr/share/fonts/truetype";
+#endif
    std::string suffix_to_find = ".ttf";
    search_directory(path_to_search, suffix_to_find);
    path_to_search = "data";

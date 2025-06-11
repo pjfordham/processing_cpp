@@ -306,11 +306,11 @@ public:
    }
 
    std::string getName() const {
-      return path.filename();
+      return path.filename().string();
    }
 
    std::string getAbsolutePath() const {
-      return absolute( path );
+      return absolute( path ).string();
    }
 
    bool isDirectory() const {
@@ -332,7 +332,7 @@ public:
       try {
          std::vector<std::string> files;
          for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            files.push_back(entry.path());
+            files.push_back(entry.path().string());
          }
          return files;
       }
@@ -348,7 +348,7 @@ public:
       try {
          std::vector<File> files;
          for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            files.push_back(File(entry.path()));
+            files.push_back(File(entry.path().string()));
          }
          return files;
       }
