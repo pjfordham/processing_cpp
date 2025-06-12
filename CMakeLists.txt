@@ -3,14 +3,38 @@ cmake_minimum_required(VERSION 3.26)
 # set the project name
 project(libProcessing VERSION 1.0)
 
+include(FetchContent)
 include(CTest)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(CURL REQUIRED)
-find_package(LibXml2 REQUIRED)
+set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
+set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
+set(CURL_STATICLIB ON CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  curl
+  GIT_REPOSITORY https://github.com/curl/curl.git
+  GIT_TAG        curl-8_8_0
+)
+FetchContent_MakeAvailable(curl)
+
+set(LIBXML2_WITH_LZMA OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_ICONV OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_PYTHON OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_TESTS OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_DEBUG OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_ZLIB OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  libxml2
+  GIT_REPOSITORY https://gitlab.gnome.org/GNOME/libxml2.git
+  GIT_TAG v2.11.4
+)
+FetchContent_MakeAvailable(libxml2)
 
 add_subdirectory(external/freetype)
 add_subdirectory(external/libglfw)
@@ -81,8 +105,8 @@ target_include_directories(Processing
   external/fmtlib/include
   external/glm/include
   external/json/include
-  ${CURL_INCLUDE_DIRS}
-  ${LIBXML2_INCLUDE_DIR}
+  ${libxml2_SOURCE_DIR}/include
+  ${libxml2_BINARY_DIR}
   )
 
 # Link the libraries
@@ -92,8 +116,8 @@ target_link_libraries(Processing
     glfw
     freetype
     glm
-    ${CURL_LIBRARIES}
-    LibXml2::LibXml2
+    libcurl
+    xml2
     fmt
     )
 
