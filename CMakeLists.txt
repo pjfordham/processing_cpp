@@ -12,6 +12,67 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw.git
+  GIT_TAG        3.3.9
+)
+FetchContent_MakeAvailable(glfw)
+
+set(FMT_TEST OFF CACHE BOOL "" FORCE)
+set(FMT_DOC OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG        10.2.0
+)
+FetchContent_MakeAvailable(fmt)
+
+set(FT_WITH_ZLIB OFF CACHE BOOL "" FORCE)
+set(FT_WITH_BZIP2 OFF CACHE BOOL "" FORCE)
+set(FT_WITH_PNG OFF CACHE BOOL "" FORCE)
+set(FT_WITH_HARFBUZZ OFF CACHE BOOL "" FORCE)
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  freetype
+  GIT_REPOSITORY https://github.com/freetype/freetype.git
+  GIT_TAG        VER-2-13-2
+)
+FetchContent_MakeAvailable(freetype)
+
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm.git
+  GIT_TAG        release-1-0-2
+)
+FetchContent_MakeAvailable(glm)
+
+FetchContent_Declare(
+  stb
+  GIT_REPOSITORY https://github.com/nothings/stb.git
+  GIT_TAG        master
+)
+FetchContent_MakeAvailable(stb)
+
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG        v3.12.0
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+FetchContent_Declare(
+  dejavu_fonts
+  GIT_REPOSITORY https://github.com/senotrusov/dejavu-fonts-ttf.git
+  GIT_TAG        v2.37.3
+)
+FetchContent_MakeAvailable(dejavu_fonts)
+
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
@@ -38,12 +99,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libxml2)
 
-add_subdirectory(external/freetype)
-add_subdirectory(external/libglfw)
-add_subdirectory(external/fmtlib)
-add_subdirectory(external/libtess2)
-add_subdirectory(external/glm)
-add_subdirectory(external/json)
+FetchContent_Declare(
+  libtess2
+  GIT_REPOSITORY https://github.com/pjfordham/libtess2.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(libtess2)
 
 add_library(Processing
   src/processing.cc
@@ -99,14 +160,8 @@ install(FILES
 target_include_directories(Processing
   PUBLIC
   include
-  external/stb
   external/glad/include
-  external/freetype/include
-  external/libglfw/include
-  external/libtess2/Include
-  external/fmtlib/include
-  external/glm/include
-  external/json/include
+  ${stb_SOURCE_DIR}
   ${libxml2_SOURCE_DIR}/include
   ${libxml2_BINARY_DIR}
   )
@@ -114,6 +169,7 @@ target_include_directories(Processing
 # Link the libraries
 target_link_libraries(Processing
     PUBLIC
+    nlohmann_json
     tess2
     glfw
     freetype
@@ -182,7 +238,7 @@ function(ADD_EXAMPLE file_path)
 
   add_custom_command(TARGET ${base_name} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/dejavu-fonts-ttf/ttf/DejaVuSans.ttf
+    ${dejavu_fonts_SOURCE_DIR}/ttf/DejaVuSans.ttf
     ${CMAKE_BINARY_DIR}/data)
 
   # If there's a data directory copy its to the target
