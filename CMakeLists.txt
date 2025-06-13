@@ -105,6 +105,23 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libtess2)
 
+FetchContent_Declare(
+  pixelmatch-cpp
+  GIT_REPOSITORY https://github.com/mapbox/pixelmatch-cpp.git
+  GIT_TAG        v0.10.0
+)
+
+FetchContent_MakeAvailable(pixelmatch-cpp)
+
+# pdiff - simple image diffing tool for testing
+add_executable(pdiff src/pdiff.cc)
+install(TARGETS pdiff DESTINATION bin)
+target_include_directories(pdiff
+  PUBLIC
+  ${stb_SOURCE_DIR}
+  ${pixelmatch-cpp_SOURCE_DIR}/include
+)
+
 add_library(Processing
   src/processing.cc
   src/processing_math.cc
