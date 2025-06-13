@@ -90,6 +90,7 @@ set(LIBXML2_WITH_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(LIBXML2_WITH_TESTS OFF CACHE BOOL "" FORCE)
 set(LIBXML2_WITH_DEBUG OFF CACHE BOOL "" FORCE)
 set(LIBXML2_WITH_ZLIB OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_PROGRAMS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
   libxml2
   GIT_REPOSITORY https://gitlab.gnome.org/GNOME/libxml2.git
@@ -160,21 +161,19 @@ target_include_directories(Processing
   include
   external/glad/include
   ${stb_SOURCE_DIR}
-  ${libxml2_SOURCE_DIR}/include
-  ${libxml2_BINARY_DIR}
   )
 
 # Link the libraries
 target_link_libraries(Processing
     PUBLIC
-    nlohmann_json
+    nlohmann_json::nlohmann_json
     tess2
     glfw
     freetype
-    glm
-    libcurl
-    xml2
-    fmt
+    glm::glm
+    CURL::libcurl
+    LibXml2::LibXml2
+    fmt::fmt
     )
 
 # Define the array of filenames
