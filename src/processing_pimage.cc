@@ -427,6 +427,19 @@ PImage loadImage(std::string_view URL) {
    return image;
 }
 
+PImage _loadImage(std::filesystem::path path ) {
+   int width, height, channels;
+   unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
+
+   if (!data) {
+      abort();
+   }
+
+   PImage image(std::make_shared<PImageImpl>(width, height, (uint32_t*)data, 0));
+   stbi_image_free(data);
+   return image;
+}
+
 PImage requestImage(std::string_view URL) {
    // This should be an async load
    return loadImage(URL);

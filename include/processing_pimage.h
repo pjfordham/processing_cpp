@@ -8,6 +8,7 @@
 #include <vector>
 #include <string_view>
 #include <memory>
+#include <filesystem>
 
 class PImageImpl;
 typedef unsigned int GLuint;
@@ -95,6 +96,7 @@ PImage createImage(int width, int height, int mode);
 PImage createBlankImage();
 PImage createImageFromTexture(gl::texture_ptr textureID);
 PImage loadImage(std::string_view URL);
+PImage _loadImage(std::filesystem::path path);
 PImage requestImage(std::string_view URL);
 
 #endif

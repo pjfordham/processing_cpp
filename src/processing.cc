@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <fmt/core.h>
+#include <filesystem>
 
 #include "processing.h"
 #include "processing_profile.h"
@@ -23,6 +24,7 @@ int pmouseX = 0;
 int pmouseY = 0;
 
 bool test_mode = false;
+std::filesystem::path refDir;
 
 char key = 0;
 int keyCode = 0;
@@ -222,6 +224,7 @@ void exit() {
 
 int main(int argc, char* argv[]) {
 
+   bool tests_failed = false;
    Profile::Instrumentor::Get().BeginSession("main");
 
    int frames = 0; // Default value
@@ -232,6 +235,10 @@ int main(int argc, char* argv[]) {
       if (arg == "--test" && i + 1 < argc) {
          frames = std::stoi(argv[i + 1]); // Convert to integer
          test_mode = true;
+      }
+
+      if (arg == "--refDir" && i + 1 < argc) {
+         refDir = argv[i + 1]; // Convert to integer
       }
    }
 
@@ -296,7 +303,21 @@ int main(int argc, char* argv[]) {
             glfwSwapBuffers(window);
          }
          if (test_mode) {
-            g.saveFrame( std::string(argv[0]) + "-####.png" );
+            std::string ext = ".png";
+            std::string dext = "-diff.png";
+            std::filesystem::path baseName = std::filesystem::path(argv[0]).stem().string() + "-####";
+            static int counter = 0;
+            int c = counter++;
+            std::string fileName = baseName.string();
+            std::size_t pos = fileName.rfind('#');
+            while (pos != std::string::npos) {
+               fileName[pos] = '0' + (c % 10);
+               c /= 10;
+               pos = fileName.rfind('#', pos - 1);
+            }
+            if ( !g.testFrame( fileName + ext, refDir / (fileName + ext), fileName + dext ) ) {
+               tests_failed = true;
+            }
          }
          frameCount++;
          zframeCount++;
@@ -326,7 +347,7 @@ int main(int argc, char* argv[]) {
    PFont::close();
 
    Profile::Instrumentor::Get().EndSession();
-   return 0;
+   return tests_failed ? 1 : 0;
 }
 
 #ifdef _MSC_VER
