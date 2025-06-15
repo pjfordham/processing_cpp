@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # Check if correct number of arguments are provided
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <program> <reference_dir>"
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <program> <reference_dir> <pdiff>"
     exit 2
 fi
 
 PROGRAM="$1"
 REFERENCE_DIR="$2"
+PDIFF="$3"
 
 # Run the program with --test 5
 $PROGRAM --test 5
@@ -35,13 +36,12 @@ for i in {0000..0004}; do
     fi
 
     # Use ImageMagick's compare to check for differences
-    compare -metric RMSE "$GENERATED" "$REFERENCE" "$DIFF" 2>&1 | grep -qE '[1-9]'  # Nonzero difference
+    $PDIFF "$GENERATED" "$REFERENCE" "$DIFF"  # Nonzero difference
     if [ $? -eq 0 ]; then
-        echo "Difference found in $GENERATED!"
-        echo "Run to visualize: display $DIFF"
-        ERR=1
-    else
         rm -f $GENERATED $DIFF
+    else
+        echo "Difference found in $GENERATED!"
+        ERR=1
     fi
 done
 

@@ -257,16 +257,15 @@ function(ADD_EXAMPLE file_path)
     ${dejavu_fonts_SOURCE_DIR}/ttf/DejaVuSans.ttf
     ${CMAKE_BINARY_DIR}/data)
 
-  # If there's a data directory copy its to the target
-  if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data)
-    add_custom_command(TARGET ${base_name} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data/*
-      $<TARGET_FILE_DIR:${base_name}>/data
-      )
-  endif()
+  file(GLOB DATA_FILES "${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data/*")
 
-  add_test(NAME ${base_name} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/pro_test.sh ./${base_name} ${CMAKE_CURRENT_SOURCE_DIR}/refs )
+  # If there are data files copy them to the target
+  foreach(f ${DATA_FILES})
+    add_custom_command(TARGET ${base_name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${f}" ${CMAKE_BINARY_DIR}/data)
+  endforeach()
+
+  add_test(NAME ${base_name} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/pro_test.sh ./${base_name} ${CMAKE_CURRENT_SOURCE_DIR}/refs ${CMAKE_BINARY_DIR}/pdiff)
 
 endfunction()
 
