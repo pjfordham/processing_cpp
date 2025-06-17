@@ -1,6 +1,8 @@
 #include "processing_pgraphics.h"
 #include "processing_utils.h"
 #include "processing_debug.h"
+#include "mapbox/pixelmatch.hpp"
+#include <stb_image.h>
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
@@ -166,6 +168,27 @@ public:
       image.save_as( fileName );
    }
 
+   bool matches( PImage img2, float threshold ) {
+      flush();
+      frame.render( localFrame );
+      localFrame.blit( pixelsFrame );
+      PImage img1 = createImage(width, height, 0);
+      PImage diff_img = createImage(width, height, 0);
+      pixelsFrame.saveFrame( img1.pixels );
+
+      int pixel_count = img1.width * img1.height;
+      int diff_pixels = mapbox::pixelmatch(
+         (unsigned char*)(unsigned int *)img1.pixels,
+         (unsigned char*)(unsigned int *)img2.pixels,
+         img1.width,
+         img1.height,
+         (unsigned char*)(unsigned int *)diff_img.pixels,
+         threshold,
+         false);
+
+      return diff_pixels == 0;
+   }
+
    void saveFrame( std::string fileName = "frame-####.png" ) {
       static int counter = 0;
       int c = counter;
@@ -177,6 +200,23 @@ public:
       }
       save( fileName );
       counter++;
+   }
+
+
+   bool testFrame( std::filesystem::path result, std::filesystem::path reference ) {
+      if (std::filesystem::exists(reference)) {
+         PImage refImage = _loadImage(reference);
+         if ( !matches( refImage, 0.1 ) ) {
+            fmt::print("{} doesn't match reference {}\n", result.c_str(), reference.c_str());
+            saveFrame( result );
+            return false;
+         } else {
+            fmt::print("{} matches reference {}\n", result.c_str(), reference.c_str());
+         }
+      } else {
+         fmt::print("{} has no reference {}\n", result.c_str(), reference.c_str());
+      }
+      return true;
    }
 
    void pushMatrix() {
@@ -1094,6 +1134,10 @@ void PGraphics::save( const std::string &fileName ){
 
 void PGraphics::saveFrame( std::string fileName ){
    return impl->saveFrame(fileName);
+}
+
+bool PGraphics::testFrame( std::filesystem::path result, std::filesystem::path reference ) {
+   return impl->testFrame(result, reference);
 }
 
 void PGraphics::pushMatrix(){
