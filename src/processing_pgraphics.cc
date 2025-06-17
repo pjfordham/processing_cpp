@@ -207,14 +207,14 @@ public:
       if (std::filesystem::exists(reference)) {
          PImage refImage = _loadImage(reference);
          if ( !matches( refImage, 0.1 ) ) {
-            fmt::print("{} doesn't match reference {}\n", result.c_str(), reference.c_str());
-            saveFrame( result );
+            fmt::print("{} doesn't match reference {}\n", result.string(), reference.string());
+            saveFrame( result.string() );
             return false;
          } else {
-            fmt::print("{} matches reference {}\n", result.c_str(), reference.c_str());
+            fmt::print("{} matches reference {}\n", result.string(), reference.string());
          }
       } else {
-         fmt::print("{} has no reference {}\n", result.c_str(), reference.c_str());
+         fmt::print("{} has no reference {}\n", result.string(), reference.string());
       }
       return true;
    }

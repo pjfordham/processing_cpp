@@ -428,9 +428,8 @@ PImage loadImage(std::string_view URL) {
 }
 
 PImage _loadImage(std::filesystem::path path ) {
-   std::string sURL{path};
    int width, height, channels;
-   unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 4);
+   unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
 
    if (!data) {
       abort();
