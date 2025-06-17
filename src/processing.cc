@@ -224,6 +224,7 @@ void exit() {
 
 int main(int argc, char* argv[]) {
 
+   bool tests_failed = false;
    Profile::Instrumentor::Get().BeginSession("main");
 
    int frames = 0; // Default value
@@ -302,18 +303,20 @@ int main(int argc, char* argv[]) {
             glfwSwapBuffers(window);
          }
          if (test_mode) {
-            std::filesystem::path baseName = std::string(std::filesystem::path(argv[0]).stem()) + "-####.png";
+            std::filesystem::path baseName = std::filesystem::path(argv[0]).stem().string() + "-####.png";
             static int counter = 0;
             int c = counter++;
-            std::string fileName = baseName;
+            std::string fileName = baseName.string();
             std::size_t pos = fileName.rfind('#');
             while (pos != std::string::npos) {
                fileName[pos] = '0' + (c % 10);
                c /= 10;
                pos = fileName.rfind('#', pos - 1);
             }
-            g.testFrame( fileName, refDir / fileName );
-          }
+            if ( !g.testFrame( fileName, refDir / fileName ) ) {
+               tests_failed = true;
+            }
+         }
          frameCount++;
          zframeCount++;
       }
@@ -342,7 +345,7 @@ int main(int argc, char* argv[]) {
    PFont::close();
 
    Profile::Instrumentor::Get().EndSession();
-   return 0;
+   return tests_failed ? 1 : 0;
 }
 
 #ifdef _MSC_VER

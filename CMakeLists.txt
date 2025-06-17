@@ -255,7 +255,7 @@ function(ADD_EXAMPLE file_path)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different "${f}" ${CMAKE_BINARY_DIR}/data)
   endforeach()
 
-  add_test(NAME ${base_name} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/pro_test.sh ./${base_name} ${CMAKE_CURRENT_SOURCE_DIR}/refs ${CMAKE_BINARY_DIR}/pdiff)
+  add_test(NAME ${base_name} COMMAND ${CMAKE_BINARY_DIR}/${base_name} --test 5 --refDir ${CMAKE_CURRENT_SOURCE_DIR}/refs)
 
 endfunction()
 
