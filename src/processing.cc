@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <fmt/core.h>
+#include <filesystem>
 
 #include "processing.h"
 #include "processing_profile.h"
@@ -23,6 +24,7 @@ int pmouseX = 0;
 int pmouseY = 0;
 
 bool test_mode = false;
+std::filesystem::path refDir;
 
 char key = 0;
 int keyCode = 0;
@@ -233,6 +235,10 @@ int main(int argc, char* argv[]) {
          frames = std::stoi(argv[i + 1]); // Convert to integer
          test_mode = true;
       }
+
+      if (arg == "--refDir" && i + 1 < argc) {
+         refDir = argv[i + 1]; // Convert to integer
+      }
    }
 
    PFont::init();
@@ -296,8 +302,18 @@ int main(int argc, char* argv[]) {
             glfwSwapBuffers(window);
          }
          if (test_mode) {
-            g.saveFrame( std::string(argv[0]) + "-####.png" );
-         }
+            std::filesystem::path baseName = std::string(std::filesystem::path(argv[0]).stem()) + "-####.png";
+            static int counter = 0;
+            int c = counter++;
+            std::string fileName = baseName;
+            std::size_t pos = fileName.rfind('#');
+            while (pos != std::string::npos) {
+               fileName[pos] = '0' + (c % 10);
+               c /= 10;
+               pos = fileName.rfind('#', pos - 1);
+            }
+            g.testFrame( fileName, refDir / fileName );
+          }
          frameCount++;
          zframeCount++;
       }
