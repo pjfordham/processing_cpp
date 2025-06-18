@@ -149,10 +149,10 @@ public:
    void drawPImageWithCPU( PImage img, int x, int y ) {
       img.loadPixels();
       loadPixels();
-      for (int row = 0; row < img.width; row++) {
-         for (int col = 0; col < img.height; col++) {
+      for (int row = 0; row < img._width(); row++) {
+         for (int col = 0; col < img._height(); col++) {
             // Need to blend properly since font image is alpha only
-            unsigned char fontp = color(img.pixels[(img.height - col-1)*img.width + row]).a;
+            unsigned char fontp = color(img._pixels()[(img._height() - col - 1) * img._width() + row]).a;
             pixels[(col+y)*width+(row+x)] = color(fontp,fontp,fontp);
          }
       }
@@ -164,7 +164,7 @@ public:
       frame.render( localFrame );
       localFrame.blit( pixelsFrame );
       PImage image = createImage(width, height, 0);
-      pixelsFrame.saveFrame( image.pixels );
+      pixelsFrame.saveFrame( image._pixels() );
       image.save_as( fileName );
    }
 
@@ -174,15 +174,15 @@ public:
       localFrame.blit( pixelsFrame );
       PImage img1 = createImage(width, height, 0);
       PImage diff_img = createImage(width, height, 0);
-      pixelsFrame.saveFrame( img1.pixels );
+      pixelsFrame.saveFrame( img1._pixels() );
 
-      int pixel_count = img1.width * img1.height;
+      int pixel_count = img1._width() * img1._height();
       int diff_pixels = mapbox::pixelmatch(
-         (unsigned char*)(unsigned int *)img1.pixels,
-         (unsigned char*)(unsigned int *)img2.pixels,
-         img1.width,
-         img1.height,
-         (unsigned char*)(unsigned int *)diff_img.pixels,
+         (unsigned char*)(unsigned int *)img1._pixels(),
+         (unsigned char*)(unsigned int *)img2._pixels(),
+         img1._width(),
+         img1._height(),
+         (unsigned char*)(unsigned int *)diff_img._pixels(),
          threshold,
          false);
 
@@ -399,8 +399,8 @@ public:
 
       PImage text_image = currentFont.render_as_pimage(text);
 
-      twidth = text_image.width;
-      theight = text_image.height;
+      twidth = text_image._width();
+      theight = text_image._height();
 
       float ascent = currentFont.textAscent();
 
@@ -636,11 +636,11 @@ public:
 
    void image(PImage pimage, float x, float y, bool flip = false) {
       if ( image_mode == CORNER ) {
-         image( pimage, x, y, pimage.width, pimage.height, flip );
+         image( pimage, x, y, pimage._width(), pimage._height(), flip);
     } else if ( image_mode == CORNERS ) {
-         image( pimage, x, y, x + pimage.width, y + pimage.height, flip );
+         image( pimage, x, y, x + pimage._width(), y + pimage._height(), flip);
       } else   if (image_mode == CENTER) {
-         image( pimage, x, y, pimage.width, pimage.height,flip );
+         image( pimage, x, y, pimage._width(), pimage._height(), flip);
       } else {
          abort();
       }

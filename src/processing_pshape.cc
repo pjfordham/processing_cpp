@@ -396,8 +396,8 @@ public:
       DEBUG_METHOD();
       dirty=true;
       if (style.texture_ && style.mode == IMAGE) {
-         t.x /= style.texture_.value().width;
-         t.y /= style.texture_.value().height;
+         t.x /= style.texture_.value()._width();
+         t.y /= style.texture_.value()._height();
       }
       vertices.push_back( { p, n, t, style.gl_fill_color } );
       materials.push_back( style.currentMaterial );

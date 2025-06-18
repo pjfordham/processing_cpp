@@ -31,13 +31,19 @@ constexpr float QUARTER_PI = PI / 4.0;
 constexpr float DEG_TO_RAD = 0.01745329238474369f;
 
 inline float random(float min, float max) {
-   thread_local static std::mt19937 randomNumbers( 1 );
+   if (min == max)
+     return min;
+   if (min > max)
+     std::swap(min, max);
+   thread_local static std::mt19937 randomNumbers(1);
    std::uniform_real_distribution<float> randomLocationRange(min, max);
    return randomLocationRange( randomNumbers );
 }
 
 inline float random(float max) {
-   return random(0,max);
+   if (max == 0)
+     return 0;
+   return random(0, max);
 }
 
 

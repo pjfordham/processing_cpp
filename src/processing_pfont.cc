@@ -220,7 +220,7 @@ float PFontImpl::textDescent() const {
 }
 
 float PFontImpl::textWidth(std::string_view text) {
-  return render_as_pimage(text).width;
+  return render_as_pimage(text)._width();
 }
 
 PImage PFontImpl::render_as_pimage(std::string_view text_) {
@@ -287,7 +287,7 @@ PImage PFontImpl::render_as_pimage(std::string_view text_) {
                int srcIndex = col + row * face->glyph->bitmap.pitch;
                int destIndex = destX + destY * width;
                if (destX < width && destY < height) {
-                  image.pixels[destIndex] = color( 255,255,255, face->glyph->bitmap.buffer[srcIndex]);
+                  image._pixels()[destIndex] = color( 255,255,255, face->glyph->bitmap.buffer[srcIndex]);
                }
             }
          }
