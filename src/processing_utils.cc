@@ -190,7 +190,7 @@ std::vector<std::string> loadStrings(std::string_view fileName) {
    auto i = data.begin();
    auto j = i;
    while (i != data.end() ) {
-      while ( *(++j) != '\n' && j != data.end()) {}
+      while ( ++j, (j != data.end() && *j != '\n')) {}
       if (j == data.end()) {
           strings.push_back({i,j});
           break;

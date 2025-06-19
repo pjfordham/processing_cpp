@@ -9,45 +9,52 @@
 #include <libxml/tree.h>
 
 
-static bool isDigit(std::string::const_iterator x) {
-   return (*x >= '0' && *x <='9')  || *x == '.';
+static bool isDigit(std::string::const_iterator x, std::string::const_iterator end) {
+   return (x != end) && ( (*x >= '0' && *x <='9')  || *x == '.');
 }
 
-static void parseWhiteSpace(std::string::const_iterator &x) {
-   while( *x == ' ' || *x == '\n' || *x == '\t') {
+static void parseWhiteSpace(std::string::const_iterator &x, std::string::const_iterator end) {
+   while( (x != end) && ( *x == ' ' || *x == '\n' || *x == '\t') ) {
       x++;
    }
 }
 
-static void parseSign(std::string::const_iterator &end, float &value) {
-   if (*end == '-') {
-      end++;
+static void parseSign(std::string::const_iterator &x,  std::string::const_iterator end, float &value) {
+   if (x == end) {
+      abort();
+   }
+   if (*x == '-') {
+      x++;
       value = -1.0;
    } else {
       value = 1.0;
    }
 }
 
-static void parseFloat(std::string::const_iterator &end, float &value) {
-   parseWhiteSpace( end );
-   auto begin = end;
-   parseSign( end, value );
-   while( isDigit( end ) ) { end++; }
-   std::string x(begin,end);
-   value = std::stof(x);
+static void parseFloat(std::string::const_iterator &x, std::string::const_iterator end, float &value) {
+   if (x == end)
+      abort();
+   parseWhiteSpace( x, end );
+   auto begin = x;
+   parseSign( x, end, value );
+   while( isDigit( x, end ) ) { x++; }
+   std::string z(begin,x);
+   if (z.length() == 0)
+      abort();
+   value = std::stof(z);
 }
 
 static float cx, cy, lx, ly;
 
-static void parseMove(std::string::const_iterator &i, PShape& pshape) {
-   parseWhiteSpace( i );
+static void parseMove(std::string::const_iterator &i, std::string::const_iterator end, PShape& pshape) {
+   parseWhiteSpace( i, end );
    if (*i == 'M') {
       i++;
       float x;
-      parseFloat( i, x );
+      parseFloat( i, end, x );
       if ( *i == ',') i++;
       float y;
-      parseFloat( i, y );
+      parseFloat( i, end, y );
       pshape.beginShape();
       pshape.vertex(x,y);
       lx = x;
@@ -55,14 +62,16 @@ static void parseMove(std::string::const_iterator &i, PShape& pshape) {
    }
 }
 
-static void parseLine( std::string::const_iterator &i, PShape &pshape) {
-   parseWhiteSpace( i );
+static void parseLine( std::string::const_iterator &i,  std::string::const_iterator end, PShape &pshape) {
+   parseWhiteSpace( i, end );
+   if (i == end)
+       return;
    if (*i == 'l') {
       i++;
       float x2,y2;
-      parseFloat( i,x2);
+      parseFloat( i, end, x2);
       if ( *i == ',') i++;
-      parseFloat( i,y2);
+      parseFloat( i, end, y2);
       pshape.vertex(lx+x2,ly+y2);
       lx = lx+x2;
       ly = ly+y2;
@@ -70,9 +79,9 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
    else if (*i == 'L') {
       i++;
       float x2,y2;
-      parseFloat( i,x2);
+      parseFloat( i, end, x2);
       if ( *i == ',') i++;
-      parseFloat( i,y2);
+      parseFloat( i, end, y2);
       pshape.vertex(x2,y2);
       lx = x2;
       ly = y2;
@@ -80,15 +89,15 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
    else if (*i == 'h') {
       i++;
       float x2;
-      parseFloat( i,x2);
-      pshape.vertex(lx+x2,ly);
+      parseFloat( i, end, x2);
+      pshape.vertex(lx+x2, ly);
       lx = lx + x2;
       ly = ly;
    }
    else if (*i == 'H') {
       i++;
       float x2;
-      parseFloat( i,x2);
+      parseFloat( i,end,x2);
       pshape.vertex(x2,ly);
       lx = x2;
       ly = ly;
@@ -96,7 +105,7 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
    else if (*i == 'v') {
       i++;
       float y2;
-      parseFloat( i,y2);
+      parseFloat( i,end,y2);
       pshape.vertex(lx,ly+y2);
       lx = lx;
       ly = ly +y2;
@@ -104,29 +113,29 @@ static void parseLine( std::string::const_iterator &i, PShape &pshape) {
    else if (*i == 'V') {
       i++;
       float y2;
-      parseFloat( i,y2);
+      parseFloat( i,end,y2);
       pshape.vertex(lx,y2);
       lx = lx;
       ly = y2;
    }
 }
 
-static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
-   parseWhiteSpace( i );
+static void parseCurve(std::string::const_iterator &i, std::string::const_iterator end, PShape& pshape) {
+   parseWhiteSpace( i, end );
    if (*i == 'c') {
       i++;
       float x2,y2,x3,y3,x4,y4;
-      parseFloat( i,x2);
+      parseFloat( i, end,x2);
       if ( *i == ',') i++;
-      parseFloat( i,y2);
+      parseFloat( i, end,y2);
       if ( *i == ',') i++;
-      parseFloat( i,x3);
+      parseFloat( i, end,x3);
       if ( *i == ',') i++;
-      parseFloat( i,y3);
+      parseFloat( i, end,y3);
       if ( *i == ',') i++;
-      parseFloat( i,x4);
+      parseFloat( i, end,x4);
       if ( *i == ',') i++;
-      parseFloat( i,y4);
+      parseFloat( i, end,y4);
 
       pshape.bezierVertex(lx+x2,ly+y2,lx+x3,ly+y3,lx+x4,ly+y4);
       cx = lx+x3;
@@ -137,17 +146,17 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
    else if (*i == 'C') {
       i++;
       float x2,y2,x3,y3,x4,y4;
-      parseFloat( i,x2);
+      parseFloat( i, end,x2);
       if ( *i == ',') i++;
-      parseFloat( i,y2);
+      parseFloat( i, end,y2);
       if ( *i == ',') i++;
-      parseFloat( i,x3);
+      parseFloat( i, end,x3);
       if ( *i == ',') i++;
-      parseFloat( i,y3);
+      parseFloat( i, end,y3);
       if ( *i == ',') i++;
-      parseFloat( i,x4);
+      parseFloat( i, end,x4);
       if ( *i == ',') i++;
-      parseFloat( i,y4);
+      parseFloat( i, end,y4);
 
       pshape.bezierVertex(x2,y2,x3,y3,x4,y4);
       cx = x3;
@@ -160,13 +169,13 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
       float x2,y2,x3,y3,x4,y4;
       x2 = (lx - cx);
       y2 = (ly - cy);
-      parseFloat( i,x3);
+      parseFloat( i,end,x3);
       if ( *i == ',') i++;
-      parseFloat( i,y3);
+      parseFloat( i, end,y3);
       if ( *i == ',') i++;
-      parseFloat( i,x4);
+      parseFloat( i, end,x4);
       if ( *i == ',') i++;
-      parseFloat( i,y4);
+      parseFloat( i, end,y4);
 
       pshape.bezierVertex(lx+x2,ly+y2,lx+x3,ly+y3,lx+x4,ly+y4);
       cx = lx+x3;
@@ -179,13 +188,13 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
       float x2,y2,x3,y3,x4,y4;
       x2 = lx - (cx - lx);
       y2 = ly - (cy - ly);
-      parseFloat( i,x3);
+      parseFloat( i, end,x3);
       if ( *i == ',') i++;
-      parseFloat( i,y3);
+      parseFloat( i, end,y3);
       if ( *i == ',') i++;
-      parseFloat( i,x4);
+      parseFloat( i, end,x4);
       if ( *i == ',') i++;
-      parseFloat( i,y4);
+      parseFloat( i, end,y4);
 
       pshape.bezierVertex(x2,y2,x3,y3,x4,y4);
       cx = x3;
@@ -195,9 +204,11 @@ static void parseCurve(std::string::const_iterator &i, PShape& pshape) {
    }
 }
 
-static void parseText(std::string::const_iterator &i, std::string_view text) {
-   parseWhiteSpace( i );
+static void parseText(std::string::const_iterator &i, std::string::const_iterator end, std::string_view text) {
+   parseWhiteSpace( i, end );
    for( char x : text ) {
+      if ( i == end )
+         abort();
       if (x != *i++) abort();
    }
 }
@@ -205,20 +216,21 @@ static void parseText(std::string::const_iterator &i, std::string_view text) {
 static void parseSVGTransform(const std::string &data, PShape &pshape,
                               PMatrix &transform) {
    auto i = data.begin();
-   parseText(i , "matrix(");
+   auto end = data.end();
+   parseText(i ,end, "matrix(");
    float x1,x2,x3,x4,x5,x6;
-   parseFloat( i,x1);
+   parseFloat( i,end,x1);
    if ( *i == ',') i++;
-   parseFloat( i,x2);
+   parseFloat( i,end,x2);
    if ( *i == ',') i++;
-   parseFloat( i,x3);
+   parseFloat( i,end,x3);
    if ( *i == ',') i++;
-   parseFloat( i,x4);
+   parseFloat( i,end,x4);
    if ( *i == ',') i++;
-   parseFloat( i,x5);
+   parseFloat( i,end,x5);
    if ( *i == ',') i++;
-   parseFloat( i,x6);
-   parseText(i , ")");
+   parseFloat( i,end,x6);
+   parseText(i ,end, ")");
 
    transform = PMatrix{ glm::mat4( x1, x2, 0, 0,
                                    x3, x4, 0, 0,
@@ -265,29 +277,30 @@ static void parseSVGID(const std::string &data, PShape& pshape) {
 
 static void parseSVGPath(const std::string &data, PShape& pshape) {
    std::string::const_iterator i = data.begin();
+   std::string::const_iterator end = data.end();
    pshape.beginShape();
 
-   parseWhiteSpace(i) ;
+   parseWhiteSpace(i, end) ;
    bool open = true;
-   while ( *i == 'M') {
+   while ( i != end && *i == 'M') {
       pshape.beginContour();
       i++;
       float x;
-      parseFloat( i, x );
+      parseFloat( i, end, x );
       if ( *i == ',') i++;
       float y;
-      parseFloat( i, y );
+      parseFloat( i, end, y );
       pshape.vertex(x,y);
       lx = x;
       ly = y;
-      parseWhiteSpace(i);
-      while (*i == 'c' || *i == 'C' || *i == 's' || *i == 'S'|| *i == 'l' || *i == 'L'
-             || *i == 'h' || *i == 'H'|| *i == 'v' || *i == 'V') {
-         parseCurve(i, pshape );
-         parseLine( i, pshape );
-         parseWhiteSpace(i);
+      parseWhiteSpace(i, end);
+      while ( i != end && (*i == 'c' || *i == 'C' || *i == 's' || *i == 'S'|| *i == 'l' || *i == 'L'
+             || *i == 'h' || *i == 'H'|| *i == 'v' || *i == 'V') ) {
+         parseCurve(i, end,pshape );
+         parseLine( i, end, pshape );
+         parseWhiteSpace(i, end);
       }
-      if (*i == 'z' || *i == 'Z')
+      if (i != end && ( *i == 'z' || *i == 'Z') )
       {
          open = false;
          pshape.endContour( );
@@ -298,7 +311,7 @@ static void parseSVGPath(const std::string &data, PShape& pshape) {
          open = true;
          pshape.endContour();
       }
-      parseWhiteSpace(i);
+      parseWhiteSpace(i, end);
    }
    if (open) {
       pshape.endShape( OPEN );
@@ -310,16 +323,17 @@ static void parseSVGPath(const std::string &data, PShape& pshape) {
 
 static void parseSVGPolygon(const std::string &data, PShape& pshape) {
    std::string::const_iterator i = data.begin();
+   std::string::const_iterator end = data.end();
    pshape.beginShape();
-   parseWhiteSpace(i);
+   parseWhiteSpace(i, end);
    while ( i != data.end() ) {
       float x;
-      parseFloat( i, x );
+      parseFloat( i, end, x );
       if ( *i == ',') i++;
       float y;
-      parseFloat( i, y );
+      parseFloat( i, end, y );
       pshape.vertex(x,y);
-      parseWhiteSpace(i);
+      parseWhiteSpace(i, end);
    }
    pshape.endShape(CLOSE);
    return;
@@ -342,7 +356,8 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, width);
+            auto end = x.cend();
+            parseFloat(y, end, width);
             pshape.width = width;
          }
          xmlFree(xdata);
@@ -350,7 +365,8 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, height);
+            auto end = x.cend();
+            parseFloat(y, end,height);
             pshape.height = height;
          }
          xmlFree(xdata);
@@ -380,21 +396,24 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, cx);
+            auto end = x.cend();
+            parseFloat(y, end, cx);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"cy");
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, cy);
+            auto end = x.cend();
+            parseFloat(y, end, cy);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"r");
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, r);
+            auto end = x.cend();
+            parseFloat(y,end, r);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"fill");
@@ -415,28 +434,32 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, cx);
+            auto end = x.cend();
+            parseFloat(y, end,cx);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"cy");
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, cy);
+            auto end = x.cend();
+            parseFloat(y,end,  cy);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"rx");
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, rx);
+            auto end = x.cend();
+            parseFloat(y,end, rx);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"ry");
          if (xdata) {
             auto x = std::string((char*)xdata);
             auto y = x.cbegin();
-            parseFloat(y, ry);
+            auto end = x.cend();
+            parseFloat(y, end, ry);
          }
          xmlFree(xdata);
          xdata = xmlGetProp(node, (xmlChar*)"fill");
