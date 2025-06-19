@@ -8,10 +8,12 @@
 template <typename T, typename V, V& (T::*first)(), const V& (T::*cfirst)() const, std::size_t (*offset)() >
 class property_t {
    constexpr const T &cref() const {
-      return *(reinterpret_cast<const T *>(this) - offset());
+      const char *ptr = reinterpret_cast<const char*>(this) - offset();
+      return *(reinterpret_cast<const T *>(ptr));
    }
    constexpr T &ref() {
-      return *(reinterpret_cast<T *>(this) - offset());
+      char *ptr = reinterpret_cast<char*>(this) - offset();
+      return *(reinterpret_cast<T *>(ptr));
    }
 public:
    constexpr operator V& () {
