@@ -1108,10 +1108,11 @@ void PShapeImpl::populateIndices() {
     }
    }
    else if (kind == QUAD_STRIP) {
-     for (int i = 0; i < vertices.size() - 2; i += 2) {
-        glm::vec2 A2D, B2D, C2D, D2D;
-        projectTo2D(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position, vertices[i + 3].position,
-                    A2D, B2D, C2D, D2D);
+      for (int i = 0; i + 3 < vertices.size(); i += 2) {
+         // Just discard any trailing odd vertex
+         glm::vec2 A2D, B2D, C2D, D2D;
+         projectTo2D(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position, vertices[i + 3].position,
+                     A2D, B2D, C2D, D2D);
 
          auto diag = chooseValidDiagonal(A2D, B2D, C2D, D2D);
          int d1 = diag.first;
