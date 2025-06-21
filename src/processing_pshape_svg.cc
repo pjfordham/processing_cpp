@@ -64,6 +64,8 @@ static void parseMove(std::string::const_iterator &i, std::string::const_iterato
 
 static void parseLine( std::string::const_iterator &i,  std::string::const_iterator end, PShape &pshape) {
    parseWhiteSpace( i, end );
+   if (i == end)
+       return;
    if (*i == 'l') {
       i++;
       float x2,y2;
@@ -280,7 +282,7 @@ static void parseSVGPath(const std::string &data, PShape& pshape) {
 
    parseWhiteSpace(i, end) ;
    bool open = true;
-   while ( *i == 'M') {
+   while ( i != end && *i == 'M') {
       pshape.beginContour();
       i++;
       float x;
@@ -292,13 +294,13 @@ static void parseSVGPath(const std::string &data, PShape& pshape) {
       lx = x;
       ly = y;
       parseWhiteSpace(i, end);
-      while (*i == 'c' || *i == 'C' || *i == 's' || *i == 'S'|| *i == 'l' || *i == 'L'
-             || *i == 'h' || *i == 'H'|| *i == 'v' || *i == 'V') {
+      while ( i != end && (*i == 'c' || *i == 'C' || *i == 's' || *i == 'S'|| *i == 'l' || *i == 'L'
+             || *i == 'h' || *i == 'H'|| *i == 'v' || *i == 'V') ) {
          parseCurve(i, end,pshape );
          parseLine( i, end, pshape );
          parseWhiteSpace(i, end);
       }
-      if (*i == 'z' || *i == 'Z')
+      if (i != end && ( *i == 'z' || *i == 'Z') )
       {
          open = false;
          pshape.endContour( );

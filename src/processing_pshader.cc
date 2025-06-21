@@ -431,8 +431,9 @@ PShader loadShader(const char *fragShader) {
    buffer << inputFile.rdbuf();
 
    inputFile.close();
-
-   return { 0, defaultVertexShader, buffer.str().c_str() };
+   std::string fragmentShader = (buffer.str().find("#version") == std::string::npos) ?
+       (std::string("#version 400\n") + buffer.str()) : buffer.str();
+   return { 0, defaultVertexShader, fragmentShader.c_str()};
 }
 
 PShader loadShader(const char *fragShader, const char *vertShader) {
@@ -459,5 +460,10 @@ PShader loadShader(const char *fragShader, const char *vertShader) {
 
    inputFile2.close();
 
-   return { 0, buffer2.str().c_str(), buffer.str().c_str() };
+   std::string vertexShader = (buffer2.str().find("#version") == std::string::npos) ?
+       (std::string("#version 400\n") + buffer2.str()) : buffer2.str();
+   std::string fragmentShader = (buffer.str().find("#version") == std::string::npos) ?
+       (std::string("#version 400\n") + buffer.str()) : buffer.str();
+
+   return {0, vertexShader.c_str(), fragmentShader.c_str()};
 }
