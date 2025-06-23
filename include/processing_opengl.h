@@ -65,6 +65,7 @@ namespace gl {
 
    public:
       int blendMode( int b );
+      int getBlendMode() const;
       void hint(int type);
 
       std::vector<light> lights;
