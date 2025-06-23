@@ -30,14 +30,49 @@ constexpr float HALF_PI = PI / 2.0;
 constexpr float QUARTER_PI = PI / 4.0;
 constexpr float DEG_TO_RAD = 0.01745329238474369f;
 
+namespace portable_random {
+
+   inline float uniform_float_01(std::mt19937 &rng) {
+      // Generate 23-bit mantissa (float has 23 bits)
+      uint32_t mantissa = rng() >> 9; // 32 - 23 = 9
+      uint32_t bits = (127 << 23) | mantissa; // exponent = 127 (2^0 = 1.0)
+      float result;
+      std::memcpy(&result, &bits, sizeof(result));
+      return result - 1.0f; // result in [0.0, 1.0)
+   }
+
+   inline float uniform_float(std::mt19937 &rng, float a, float b) {
+      // Generate uniform float in [a, b)
+      return a + (b - a) * uniform_float_01(rng);
+   }
+
+   inline float normal_float(std::mt19937 &rng, float mean = 0.0f, float stddev = 1.0f) {
+      // Generate two independent uniform floats in (0,1]
+      float u1 = 1.0f - uniform_float_01(rng); // avoid log(0)
+      float u2 = uniform_float_01(rng);
+
+      // Box-Muller transform: standard normal ~ N(0,1)
+      float mag = std::sqrt(-2.0f * std::log(u1));
+      float z0 = mag * std::cos(2.0f * 3.14159265f * u2);
+
+      // Scale and shift to mean/stddev
+      return mean + z0 * stddev;
+   }
+}
+
 inline float random(float min, float max) {
-   thread_local static std::mt19937 randomNumbers( 1 );
-   std::uniform_real_distribution<float> randomLocationRange(min, max);
-   return randomLocationRange( randomNumbers );
+   if (min == max)
+      return min;
+   if (min > max)
+      std::swap(min, max);
+   thread_local static std::mt19937 randomNumbers(1);
+   return portable_random::uniform_float(randomNumbers, min, max);
 }
 
 inline float random(float max) {
-   return random(0,max);
+   if (max == 0)
+     return 0;
+   return random(0, max);
 }
 
 
@@ -523,8 +558,7 @@ inline float dist(float x1, float y1, float x2, float y2) {
 inline float randomGaussian()
 {
    thread_local static std::mt19937 randomNumbers( 1 );
-   thread_local static std::normal_distribution<float> dist(0.0f, 1.0f);
-   return dist(randomNumbers);
+   return portable_random::normal_float(randomNumbers, 0.0f, 1.0f);
 }
 
 inline float radians(float degrees) {
