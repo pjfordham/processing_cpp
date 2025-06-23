@@ -79,6 +79,10 @@ namespace gl {
       }
    }
 
+   int scene_t::getBlendMode() const {
+       return currentBlendMode;
+   }
+
    scene_t::scene_t() {}
 
    void scene_t::setup( const shader_t &shader) {
