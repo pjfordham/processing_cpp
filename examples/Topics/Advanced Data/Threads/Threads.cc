@@ -80,13 +80,14 @@ void draw() {
 }
 
 void mousePressed() {
-   if( finished )
-      myThread = std::jthread (loadData);
+   if (finished) {
+      // The thread is not completed
+      finished = false;
+      myThread = std::jthread(loadData);
+   }
 }
 
 void loadData() {
-  // The thread is not completed
-  finished = false;
   // Reset the data to empty
   allData = "";
 
