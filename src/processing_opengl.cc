@@ -73,6 +73,10 @@ namespace gl {
       return std::exchange(currentBlendMode,b);
    }
 
+   int scene_t::getBlendMode() const {
+       return currentBlendMode;
+   }
+
    void batch_t::setup( const shader_t &shader ) {
       Position = shader.get_attribute("position");
       Normal = shader.get_attribute("normal");

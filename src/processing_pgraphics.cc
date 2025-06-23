@@ -401,8 +401,13 @@ public:
    }
 
    int blendMode(int b) {
-      flush();
-      return scene.blendMode(b);
+      // Only flush if we're actaully changing blendMode.
+      if (scene.getBlendMode() == b) {
+         return b;
+      } else {
+         flush();
+         return scene.blendMode(b);
+      }
    }
 
    void hint(int type) {
