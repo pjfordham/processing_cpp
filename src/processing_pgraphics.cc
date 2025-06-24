@@ -168,12 +168,11 @@ public:
       image.save_as( fileName );
    }
 
-   bool matches( PImage img2, float threshold ) {
+   bool matches( PImage img2, float threshold, PImage diff_img ) {
       flush();
       frame.render( localFrame );
       localFrame.blit( pixelsFrame );
       PImage img1 = createImage(width, height, 0);
-      PImage diff_img = createImage(width, height, 0);
       pixelsFrame.saveFrame( img1.pixels );
 
       int pixel_count = img1.width * img1.height;
@@ -203,12 +202,14 @@ public:
    }
 
 
-   bool testFrame( std::filesystem::path result, std::filesystem::path reference ) {
+   bool testFrame( std::filesystem::path result, std::filesystem::path reference, std::filesystem::path diff ) {
       if (std::filesystem::exists(reference)) {
+         PImage diffImage = createImage(width, height, 0);;
          PImage refImage = _loadImage(reference);
-         if ( !matches( refImage, 0.1 ) ) {
+         if ( !matches( refImage, 0.1, diffImage ) ) {
             fmt::print("{} doesn't match reference {}\n", result.string(), reference.string());
             saveFrame( result.string() );
+            diffImage.save_as( diff.string() );
             return false;
          } else {
             fmt::print("{} matches reference {}\n", result.string(), reference.string());
@@ -1136,8 +1137,8 @@ void PGraphics::saveFrame( std::string fileName ){
    return impl->saveFrame(fileName);
 }
 
-bool PGraphics::testFrame( std::filesystem::path result, std::filesystem::path reference ) {
-   return impl->testFrame(result, reference);
+bool PGraphics::testFrame( std::filesystem::path result, std::filesystem::path reference, std::filesystem::path diff ) {
+   return impl->testFrame(result, reference, diff);
 }
 
 void PGraphics::pushMatrix(){

@@ -303,7 +303,9 @@ int main(int argc, char* argv[]) {
             glfwSwapBuffers(window);
          }
          if (test_mode) {
-            std::filesystem::path baseName = std::filesystem::path(argv[0]).stem().string() + "-####.png";
+            std::string ext = ".png";
+            std::string dext = "-diff.png";
+            std::filesystem::path baseName = std::filesystem::path(argv[0]).stem().string() + "-####";
             static int counter = 0;
             int c = counter++;
             std::string fileName = baseName.string();
@@ -313,7 +315,7 @@ int main(int argc, char* argv[]) {
                c /= 10;
                pos = fileName.rfind('#', pos - 1);
             }
-            if ( !g.testFrame( fileName, refDir / fileName ) ) {
+            if ( !g.testFrame( fileName + ext, refDir / (fileName + ext), fileName + dext ) ) {
                tests_failed = true;
             }
          }
