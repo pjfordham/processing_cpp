@@ -73,11 +73,49 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(dejavu_fonts)
 
-set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
-set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+if(WIN32)
+    # Use Windows native SSL (Schannel)
+    set(CURL_USE_SCHANNEL ON)
+    set(CURL_USE_MBEDTLS OFF)
+    message(STATUS "Using Schannel (Windows native SSL)")
+else()
+    set(CURL_USE_SCHANNEL OFF)
+    set(CURL_USE_MBEDTLS ON)
+
+    # Fetch mbedTLS
+    FetchContent_Declare(
+        mbedtls
+        GIT_REPOSITORY https://github.com/Mbed-TLS/mbedtls.git
+        GIT_TAG v3.5.1  # Use latest stable version
+    )
+
+    # Configure mbedTLS options before fetching
+    set(ENABLE_PROGRAMS OFF CACHE BOOL "Build mbedTLS programs")
+    set(ENABLE_TESTING OFF CACHE BOOL "Build mbedTLS tests")
+    set(INSTALL_MBEDTLS_HEADERS ON CACHE BOOL "Install mbedTLS headers")
+
+    # Make mbedTLS available first
+    FetchContent_MakeAvailable(mbedtls)
+
+    # Set variables that libcurl's FindMbedTLS.cmake expects
+    set(MBEDTLS_INCLUDE_DIRS ${mbedtls_SOURCE_DIR}/include)
+    set(MBEDTLS_LIBRARY mbedtls)
+    set(MBEDX509_LIBRARY mbedx509)
+    set(MBEDCRYPTO_LIBRARY mbedcrypto)
+
+    # Configure libcurl to use mbedTLS
+    set(CURL_USE_MBEDTLS ON CACHE BOOL "Enable mbedTLS support")
+
+    message(STATUS "Using mbedTLS")
+endif()
+
+set(CURL_ENABLE_EXPORT_TARGET OFF CACHE BOOL "Disable curl export target")
+set(BUILD_CURL_EXE OFF CACHE BOOL "Don't build curl executable" FORCE)
 set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
 set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
 set(CURL_STATICLIB ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_INSTALL ON CACHE BOOL "Disable install rules")
+
 FetchContent_Declare(
   curl
   GIT_REPOSITORY https://github.com/curl/curl.git
