@@ -74,11 +74,16 @@ void setup() {
 }
 
 void draw() {
-   if ((frameCount%30) == 0)
-      balls.emplace_back(Vertlet( {700, 300}, 10 + random(20), RANDOM_COLOR() ) );
    background(BLACK);
    noStroke();
    fill(WHITE);
+
+   if ( (frameCount % 30) == 0 && balls.size() < 100) {
+      auto size = 10 + random(20);
+      auto color = RANDOM_COLOR();
+      PVector pos{700,300};
+      balls.emplace_back( pos, size, color);
+   }
 
    Vertlet::draw_constraint();
 
@@ -95,5 +100,5 @@ void draw() {
 
    for (auto &ball : balls) {
       ball.draw();
-  }
-  }
+   }
+}
