@@ -25,6 +25,8 @@ namespace gl {
       int width = 0;
       int height = 0;
       shader_t direct;
+      uniform texture1;
+      GLuint directVAO = 0;
    public:
       mainframe(int width_, int height_);
       mainframe() noexcept;

@@ -244,6 +244,8 @@ namespace gl {
       std::swap(width,x.width);
       std::swap(height,x.height);
       std::swap(direct,x.direct);
+      std::swap(texture1,x.texture1);
+      std::swap(directVAO, x.directVAO);
       return *this;
    }
 
@@ -253,6 +255,9 @@ namespace gl {
 
    mainframe::~mainframe() noexcept {
       DEBUG_METHOD();
+      if ( directVAO ) {
+         glDeleteVertexArrays(1, &directVAO);
+      }
    }
 
    mainframe::mainframe(mainframe &&x) noexcept : mainframe()  {
@@ -265,27 +270,24 @@ namespace gl {
       // work
       width = width_;
       height = height_;
-  }
+      texture1 = direct.get_uniform("texture1");
+      glGenVertexArrays(1, &directVAO);
+   }
 
    void mainframe::invert( texture_ptr textureID ) {
-      GLuint directVAO;
-      glGenVertexArrays(1, &directVAO);
       glBindVertexArray(directVAO);
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       glViewport(0, 0, width, height);
       glClearColor(0, 0, 0, 1);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       direct.bind();
-      // Can probably remove this from fast path
-      uniform texture1 = direct.get_uniform("texture1");
-      texture1.set( 0 );
-      glActiveTexture(GL_TEXTURE0);
+      texture1.set( 15 );
+      glActiveTexture(GL_TEXTURE0+15);
       glDisable(GL_DEPTH_TEST);
       glBindTexture(GL_TEXTURE_2D, textureID->get_id());
       glDrawArrays(GL_TRIANGLES, 0, 6);  // Draw fullscreen quad
       glEnable(GL_DEPTH_TEST);
       glBindVertexArray(0);
-      glDeleteVertexArrays(1, &directVAO);
    }
 
 } // namespace gl
