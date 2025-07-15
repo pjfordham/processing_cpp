@@ -1,0 +1,2 @@
+CompileFlags:
+  CompilationDatabase: release/compile_commands.json
