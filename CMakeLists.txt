@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.26)
 # set the project name
 project(libProcessing VERSION 1.0)
 
+include(FetchContent)
 include(CTest)
 
 enable_testing()
@@ -11,15 +12,101 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(CURL REQUIRED)
-find_package(LibXml2 REQUIRED)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw.git
+  GIT_TAG        3.3.9
+)
+FetchContent_MakeAvailable(glfw)
 
-add_subdirectory(external/freetype)
-add_subdirectory(external/libglfw)
-add_subdirectory(external/fmtlib)
-add_subdirectory(external/libtess2)
-add_subdirectory(external/glm)
-add_subdirectory(external/json)
+set(FMT_TEST OFF CACHE BOOL "" FORCE)
+set(FMT_DOC OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG        10.2.0
+)
+FetchContent_MakeAvailable(fmt)
+
+set(FT_WITH_ZLIB OFF CACHE BOOL "" FORCE)
+set(FT_WITH_BZIP2 OFF CACHE BOOL "" FORCE)
+set(FT_WITH_PNG OFF CACHE BOOL "" FORCE)
+set(FT_WITH_HARFBUZZ OFF CACHE BOOL "" FORCE)
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  freetype
+  GIT_REPOSITORY https://github.com/freetype/freetype.git
+  GIT_TAG        VER-2-13-2
+)
+FetchContent_MakeAvailable(freetype)
+
+FetchContent_Declare(
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm.git
+  GIT_TAG        release-1-0-2
+)
+FetchContent_MakeAvailable(glm)
+
+FetchContent_Declare(
+  stb
+  GIT_REPOSITORY https://github.com/nothings/stb.git
+  GIT_TAG        master
+)
+FetchContent_MakeAvailable(stb)
+
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG        v3.12.0
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+FetchContent_Declare(
+  dejavu_fonts
+  GIT_REPOSITORY https://github.com/senotrusov/dejavu-fonts-ttf.git
+  GIT_TAG        v2.37.3
+)
+FetchContent_MakeAvailable(dejavu_fonts)
+
+set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
+set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
+set(CURL_STATICLIB ON CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  curl
+  GIT_REPOSITORY https://github.com/curl/curl.git
+  GIT_TAG        curl-8_8_0
+)
+FetchContent_MakeAvailable(curl)
+
+set(LIBXML2_WITH_LZMA OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_ICONV OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_PYTHON OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_TESTS OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_DEBUG OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_ZLIB OFF CACHE BOOL "" FORCE)
+set(LIBXML2_WITH_PROGRAMS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+  libxml2
+  GIT_REPOSITORY https://gitlab.gnome.org/GNOME/libxml2.git
+  GIT_TAG v2.11.4
+)
+FetchContent_MakeAvailable(libxml2)
+
+FetchContent_Declare(
+  libtess2
+  GIT_REPOSITORY https://github.com/pjfordham/libtess2.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(libtess2)
+
 
 add_library(Processing
   src/processing.cc
@@ -75,28 +162,21 @@ install(FILES
 target_include_directories(Processing
   PUBLIC
   include
-  external/stb
   external/glad/include
-  external/freetype/include
-  external/libglfw/include
-  external/libtess2/Include
-  external/fmtlib/include
-  external/glm/include
-  external/json/include
-  ${CURL_INCLUDE_DIRS}
-  ${LIBXML2_INCLUDE_DIR}
+  ${stb_SOURCE_DIR}
   )
 
 # Link the libraries
 target_link_libraries(Processing
     PUBLIC
+    nlohmann_json::nlohmann_json
     tess2
     glfw
     freetype
-    glm
-    ${CURL_LIBRARIES}
+    glm::glm
+    CURL::libcurl
     LibXml2::LibXml2
-    fmt
+    fmt::fmt
     )
 
 # Define the array of filenames
@@ -158,19 +238,18 @@ function(ADD_EXAMPLE file_path)
 
   add_custom_command(TARGET ${base_name} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/dejavu-fonts-ttf/ttf/DejaVuSans.ttf
+    ${dejavu_fonts_SOURCE_DIR}/ttf/DejaVuSans.ttf
     ${CMAKE_BINARY_DIR}/data)
 
-  # If there's a data directory copy its to the target
-  if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data)
-    add_custom_command(TARGET ${base_name} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      ${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data/*
-      $<TARGET_FILE_DIR:${base_name}>/data
-      )
-  endif()
+  file(GLOB DATA_FILES "${CMAKE_CURRENT_SOURCE_DIR}/${dir_path}/data/*")
 
-  add_test(NAME ${base_name} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/pro_test.sh ./${base_name} ${CMAKE_CURRENT_SOURCE_DIR}/refs )
+  # If there are data files copy them to the target
+  foreach(f ${DATA_FILES})
+    add_custom_command(TARGET ${base_name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${f}" ${CMAKE_BINARY_DIR}/data)
+  endforeach()
+
+  add_test(NAME ${base_name} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/pro_test.sh ./${base_name} ${CMAKE_CURRENT_SOURCE_DIR}/refs)
 
 endfunction()
 

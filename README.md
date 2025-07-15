@@ -57,18 +57,18 @@ some of the examples unmodified, albeit with a little preprocessor trickery.
 <!-- GETTING STARTED -->
 ## Getting Started
 
-To get a local copy up and running follow these simple example steps.
+To get a local copy up and running follow these simple example steps. Tested on Windows 10 and Ubuntu 24.04 LTS.
 
 ### Prerequisites
 
-Install libcurl and libxml2. Also install ImageMagick if you want to be able to run the tests.
+Everything needed should be pulled in by cmake with FetchContent.
 
 ### Installation
 
 
 1. Clone the repo
    ```sh
-   git clone --recurse-submodules https://github.com/pjfordham/processing_cpp.git
+   git clone https://github.com/pjfordham/processing_cpp.git
    ```
 2. Build with cmake
    ```sh
@@ -76,7 +76,7 @@ Install libcurl and libxml2. Also install ImageMagick if you want to be able to 
    mkdir release
    cd release
    cmake ..
-   make
+   cmake --build . --config release
    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -85,7 +85,7 @@ Install libcurl and libxml2. Also install ImageMagick if you want to be able to 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-After building just run any of the executables built from the examples directories. Below is some sample output.
+After building just run any of the executables built from the examples, e.g. for Linux just run ./Mandelbrot, or Windows release\Mandelbrot.exe.  Below is some sample output.
 
 <table style="width: 100%; border-collapse: separate; border-spacing: 10px;">
   <tr>
