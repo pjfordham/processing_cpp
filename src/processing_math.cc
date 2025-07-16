@@ -4,10 +4,6 @@
 
 #include <fmt/core.h>
 #include <cmath>
-#include <random>
-#include <algorithm>
-#include <numeric>
-#include <vector>
 
 int perlin_noise_seed = 0;
 int perlin_octaves = 4 ;
@@ -28,7 +24,7 @@ float noise(float x, float y, float z) {
    float amplitude = 1;
    float maxValue = 0;  // Used for normalizing result to 0.0 - 1.0
    for(int i=0;i<perlin_octaves;i++) {
-      total += ((stb_perlin_noise3_seed(x * frequency, y * frequency, z * frequency, 0, 0, 0, perlin_noise_seed) + 1.0) / 2.0) * amplitude;
+      total += ((stb_perlin_noise3_seed(x * frequency, y * frequency, z * frequency, 0, 0, 0, perlin_noise_seed) + 1.0F) / 2.0F) * amplitude;
 
       maxValue += amplitude;
 
