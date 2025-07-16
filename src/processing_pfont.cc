@@ -11,7 +11,7 @@
 
 static FT_Library ft;
 
-static PShape buildPShapeFromFace(FT_Face face, char x);
+static PShape buildPShapeFromFace(FT_Face face, char c);
 
 class PFontImpl {
 
@@ -158,6 +158,7 @@ std::vector<std::string>  PFont::list() {
    path_to_search = "data";
    search_directory(path_to_search, suffix_to_find);
    std::vector<std::string> keys;
+   keys.reserve(fontFileMap.size());
    for (auto const& [key, value] : fontFileMap) {
       keys.push_back(key);
    }
@@ -172,7 +173,7 @@ PFontImpl::PFontImpl(const char *name_, int size_) : name(name_), size(size_) {
    if (fontFileMap.size() == 0) {
       PFont::list();
    }
-   auto fontPath = fontFileMap[name].c_str();
+   const auto *const fontPath = fontFileMap[name].c_str();
    if (FT_New_Face(ft, fontPath, 0, &face) != 0) {
       fmt::print("Failed to load face\n");
       fmt::print("FT_New_Face failed: {},{}\n", name, size);
@@ -317,7 +318,7 @@ static std::vector<std::weak_ptr<PFontImpl>> &fontHandles() {
 }
 
 static void PFont_releaseAllFonts() {
-   for (auto i : fontHandles()) {
+   for (const auto &i : fontHandles()) {
       if (auto p = i.lock()) {
          p->releaseFace();
       }
@@ -340,11 +341,9 @@ void PFont::close() {
    FT_Done_FreeType(ft);
 }
 
-PFont::PFont(){
-}
+PFont::PFont() = default;
 
-PFont::~PFont() {
-}
+PFont::~PFont() = default;
 
 PFont::PFont(const char *name_, int size_)
    : impl(std::make_shared<PFontImpl>(name_,size_)) {
