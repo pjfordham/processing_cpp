@@ -237,19 +237,19 @@ public:
 
    void set_uniforms();
 
-   void set(const char *uniform, gl::texture_ptr image);
+   void set(const char *id, gl::texture_ptr img);
 
-   void set(const char *uniform, PImage image);
+   void set(const char *id, PImage img);
 
-   void set(const char *uniform, float value);
+   void set(const char *id, float value);
 
-   void set(const char *uniform, float v1, float v2);
+   void set(const char *id, float v1, float v2);
 
-   void set(const char *uniform, float v1, float v2, float v3);
+   void set(const char *id, float v1, float v2, float v3);
 
-   void set(const char *uniform, int v1, int v2);
+   void set(const char *id, int v1, int v2);
 
-   void set(const char *uniform, int v1, int v2, int v3, int v4);
+   void set(const char *id, int v1, int v2, int v3, int v4);
 
    friend struct fmt::formatter<PShaderImpl>;
 
@@ -261,7 +261,7 @@ static std::vector<std::weak_ptr<PShaderImpl>> &shaderHandles() {
 }
 
 static void PShader_releaseAllShaders() {
-   for (auto i : shaderHandles()) {
+   for (const auto &i : shaderHandles()) {
       if (auto p = i.lock()) {
          p->releaseShaders();
       }
