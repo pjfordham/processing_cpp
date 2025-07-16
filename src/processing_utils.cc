@@ -1,8 +1,9 @@
 #include "processing_utils.h"
 #include <fstream>
 #include <curl/curl.h>
+#include <charconv>
 
-TableRow::TableRow() {}
+TableRow::TableRow() = default;
 TableRow::TableRow(const std::map<std::string, std::string>& rowData) : data(rowData) {}
 
 std::string TableRow::getString(const std::string& column) const {
@@ -11,7 +12,15 @@ std::string TableRow::getString(const std::string& column) const {
 }
 
 float TableRow::getFloat(const std::string& column) const {
-   return atof(getString(column).c_str());
+    const std::string& str = getString(column);
+    float value;
+    auto result = std::from_chars(str.data(), str.data() + str.size(), value);
+
+    if (result.ec != std::errc()) {
+       abort();
+    }
+
+    return value;
 }
 
 void TableRow::setString(const std::string& column, const std::string& value) {
@@ -26,7 +35,7 @@ const std::map<std::string, std::string>& TableRow::getData() const {
       return data;
 }
 
-Table::Table() {}
+Table::Table() = default;
 
 std::vector<TableRow> Table::rows() { return _rows; }
 
@@ -50,7 +59,9 @@ bool Table::loadCSV(const std::string& filename) {
       std::string value;
       std::map<std::string, std::string> rowData;
       for (const auto& header : headers) {
-         if (!std::getline(ss, value, ',')) break;
+         if (!std::getline(ss, value, ',')) {
+            break;
+         }
          rowData[header] = value;
       }
       _rows.emplace_back(rowData);
@@ -104,8 +115,9 @@ bool Table::saveCSV(const std::string& filename) {
 
 Table loadTable(const std::string& file, const std::string& header) {
    Table table;
-   if ( header != "header" )
+   if ( header != "header" ) {
       abort();
+   }
    table.loadCSV(file);
    return table;
 }
@@ -115,7 +127,7 @@ void saveTable(Table &t, const std::string &file ) {
 }
 
 void link(std::string_view link) {
-   (void)!system(fmt::format("xdg-open {} >nul 2>nul",link).c_str());
+   (void)system(fmt::format("xdg-open {} >nul 2>nul",link).c_str());
 }
 
 // Trim leading and trailing whitespace from a string
@@ -163,23 +175,22 @@ std::vector<char> loadURL(std::string_view URL) {
 
    if (res == CURLE_OK) {
       return response_body;
-   } else {
-      // If it didn't download check the local filesystem
-      using namespace std::literals;
-      std::ifstream file(("data/"s + sURL), std::ios::binary);
-      if (file.is_open()) {
-         // Read the local file into a vector
-         file.seekg(0, std::ios::end);
-         std::streampos file_size = file.tellg();
-         file.seekg(0, std::ios::beg);
-
-         std::vector<char> local_data(file_size);
-         file.read(local_data.data(), local_data.size());
-         file.close();
-         return local_data;
-      }
-      return {};
    }
+   // If it didn't download check the local filesystem
+   using namespace std::literals;
+   std::ifstream file(("data/"s + sURL), std::ios::binary);
+   if (file.is_open()) {
+      // Read the local file into a vector
+      file.seekg(0, std::ios::end);
+      std::streampos file_size = file.tellg();
+      file.seekg(0, std::ios::beg);
+
+      std::vector<char> local_data(file_size);
+      file.read(local_data.data(), local_data.size());
+      file.close();
+      return local_data;
+   }
+   return {};
 }
 
 
@@ -192,11 +203,10 @@ std::vector<std::string> loadStrings(std::string_view fileName) {
    while (i != data.end() ) {
       while ( ++j, (j != data.end() && *j != '\n')) {}
       if (j == data.end()) {
-          strings.push_back({i,j});
+          strings.emplace_back(i,j);
           break;
-      } else {
-          strings.push_back({i,++j});
       }
+      strings.emplace_back(i,++j);
       i = j;
    }
    return strings;
@@ -215,7 +225,6 @@ void saveStrings(std::string_view fileName, std::vector<std::string> &data) {
    }
 
    outputFile.close();
-   return;
 }
 
 std::vector<std::string> split(std::string_view str, char delimiter) {
@@ -313,7 +322,6 @@ std::string toLowerCase(std::string_view input) {
 bool endsWith(std::string_view fullString, std::string_view ending) {
    if (fullString.length() >= ending.length()) {
       return (fullString.compare(fullString.length() - ending.length(), ending.length(), ending) == 0);
-   } else {
-      return false;
    }
+   return false;
 }
