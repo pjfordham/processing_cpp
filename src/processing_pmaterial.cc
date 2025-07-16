@@ -21,6 +21,7 @@ void loadMaterials(const char *objPath) {
       std::istringstream lineSS( lineStr );
       std::string lineType;
       lineSS >> lineType;
+      float x = 0, y = 0, z = 0;
 
       if( lineType == "newmtl" ) {
          std::string name;
@@ -31,20 +32,16 @@ void loadMaterials(const char *objPath) {
          lineSS >> light;
          materials[currentName].illum = light;
       } else if( lineType == "Ka" ) {
-         float x = 0, y = 0, z = 0;
          lineSS >> x >> y >> z;
          materials[currentName].ambientColor = {x,y,z,1};
       } else if( lineType == "Kd" ) {
-         float x = 0, y = 0, z = 0;
          lineSS >> x >> y >> z;
          materials[currentName].diffuseColor = {x,y,z,1};
       } else if( lineType == "Ks" ) {
-         float x = 0, y = 0, z = 0;
          lineSS >> x >> y >> z;
          materials[currentName].specularColor = {x,y,z,1};
       } else if( lineType == "#" || lineType == ""  ) {
       } else if( lineType == "Ns" ) {
-         float x = 0;
          lineSS >> x;
          materials[currentName].specularExponent = x;
       } else if( lineType == "map_Kd" ) {
