@@ -5,7 +5,6 @@
 #include <tesselator_cpp.h>
 #include <unordered_map>
 
-#include "processing_math.h"
 #include "processing_color.h"
 #include "processing_enum.h"
 #include "processing_opengl.h"
@@ -107,7 +106,7 @@ public:
 
    PShapeImpl& operator=(const PShapeImpl&) = delete;
 
-   PShapeImpl(PShapeImpl&& x) {
+   PShapeImpl(PShapeImpl&& x) noexcept {
       *this = std::move(x);
    }
 
@@ -159,7 +158,7 @@ public:
       DEBUG_METHOD();
    }
 
-   void addChild( const PShape shape ) {
+   void addChild( const PShape &shape ) {
       DEBUG_METHOD();
       dirty=true;
       children.push_back( shape );
@@ -868,7 +867,6 @@ public:
             draw_stroke(batch, currentTransform, flatten_transforms);
       }
       dirty = false;
-      return;
    }
 
    void draw_normals(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const;
@@ -1209,9 +1207,10 @@ const constexpr float xsincos[32][2] = {
    { 0.980785, -0.195090 } };
 
 PVector fast_ellipse_point(const PVector &center, int index, float xradius, float yradius) {
-   return PVector( center.x + xradius * xsincos[index][0],
-                   center.y + yradius * xsincos[index][1],
-                   center.z);
+   return {
+      center.x + xradius * xsincos[index][0],
+      center.y + yradius * xsincos[index][1],
+      center.z };
 }
 
 bool anglesWithinTolerance(float angle1, float angle2, float tolerance) {
@@ -1296,14 +1295,14 @@ PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, c
    shape.noStroke();
    shape.fill(color1);
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p1.x + cos(i + start_angle) * weight1/2, p1.y + sin(i+start_angle) * weight1/2, p1.z);
+      shape.vertex(p1.x + cosf(i + start_angle) * weight1/2, p1.y + sinf(i+start_angle) * weight1/2, p1.z);
    }
 
    start_angle += PI;
 
    shape.fill(color2);
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p2.x + cos(i+start_angle) * weight2/2, p2.y + sin(i+start_angle) * weight2/2, p2.z);
+      shape.vertex(p2.x + cosf(i+start_angle) * weight2/2, p2.y + sinf(i+start_angle) * weight2/2, p2.z);
    }
    shape.endShape(CLOSE);
    return shape;
@@ -1695,7 +1694,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
    if (vertices.size() > 2 && kind != POINTS && kind != LINES) {
       std::vector<gl::material> m;
       m.reserve( materials.size() );
-      for (auto &material : materials ) {
+      for (const auto &material : materials ) {
          m.emplace_back(
             material.ambientColor,
             material.specularColor,
@@ -1714,7 +1713,7 @@ static std::vector<std::weak_ptr<PShapeImpl>> &shapeHandles() {
 }
 
 static void PShape_releaseAllVAOs() {
-   for (auto i : shapeHandles()) {
+   for (const auto &i : shapeHandles()) {
       if (auto p = i.lock()) {
          p->clear();
       }
