@@ -3,11 +3,11 @@
 #include <fmt/core.h>
 
 int color::mode = RGB;
-float color::scaleR = 255.0f;
-float color::scaleG = 255.0f;
-float color::scaleB = 255.0f;
-float color::scaleA = 255.0f;
+float color::scaleR = 255.0F;
+float color::scaleG = 255.0F;
+float color::scaleB = 255.0F;
+float color::scaleA = 255.0F;
 
 color RANDOM_COLOR() {
-   return color(random(255),random(255),random(255),255);
+   return { random(255),random(255),random(255),255 };
 }
