@@ -1,7 +1,6 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <array>
 #include <fmt/core.h>
 
 #include "glad/glad.h"
@@ -47,8 +46,8 @@ namespace gl {
       glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
       if ( InfoLogLength > 0 ){
          std::vector<char> VertexShaderErrorMessage(InfoLogLength+1);
-         glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-         fmt::print("{}\n", &VertexShaderErrorMessage[0]);
+         glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, VertexShaderErrorMessage.data());
+         fmt::print("{}\n", VertexShaderErrorMessage.data());
       }
 
       // Check Fragment Shader
@@ -56,8 +55,8 @@ namespace gl {
       glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
       if ( InfoLogLength > 0 ){
          std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
-         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
-         fmt::print("{}\n", &FragmentShaderErrorMessage[0]);
+         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, FragmentShaderErrorMessage.data());
+         fmt::print("{}\n", FragmentShaderErrorMessage.data());
       }
 
       // Link the program
@@ -70,8 +69,8 @@ namespace gl {
       glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &InfoLogLength);
       if ( InfoLogLength > 0 ){
          std::vector<char> ProgramErrorMessage(InfoLogLength+1);
-         glGetProgramInfoLog(programID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-         fmt::print("{}\n", &ProgramErrorMessage[0]);
+         glGetProgramInfoLog(programID, InfoLogLength, NULL, ProgramErrorMessage.data());
+         fmt::print("{}\n", ProgramErrorMessage.data());
       }
 
       glDetachShader(programID, VertexShaderID);
@@ -95,30 +94,30 @@ namespace gl {
    void shader_t::set_uniforms() const {
       DEBUG_METHOD();
       for (const auto& [id, value] : uniforms1f) {
-         gl::uniform loc = get_uniform( id.c_str() );
+         gl::uniform loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms2fv) {
-         gl::uniform loc = get_uniform( id.c_str() );
+         gl::uniform loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms3fv) {
-         gl::uniform loc = get_uniform( id.c_str() );
+         gl::uniform loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms2i) {
-         gl::uniform loc = get_uniform( id.c_str() );
+         gl::uniform loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms4i) {
-         gl::uniform loc = get_uniform( id.c_str() );
+         gl::uniform loc = get_uniform( id );
          loc.set( value );
       }
       // TODO fix to make sure we don't collides with
       // other textures.
       int i = 15;
-      for (auto& [id, value] : uniformsSampler) {
-         gl::uniform loc = get_uniform( id.c_str() );
+      for (const auto& [id, value] : uniformsSampler) {
+         gl::uniform loc = get_uniform( id );
          glActiveTexture(GL_TEXTURE0 + i);
          glBindTexture(GL_TEXTURE_2D, value->get_id());
          loc.set( i-- );

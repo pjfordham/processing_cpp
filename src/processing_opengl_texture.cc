@@ -2,7 +2,6 @@
 #include "processing_opengl_texture.h"
 #include "processing_task_queue.h"
 #include "processing_debug.h"
-#include "processing_task_queue.h"
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)

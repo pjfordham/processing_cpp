@@ -48,7 +48,8 @@ public:
 
    void saveFrame( std::string fileName = "frame-####.png" );
 
-   bool testFrame( std::filesystem::path result, std::filesystem::path reference, std::filesystem::path diff );
+   bool testFrame( const std::filesystem::path &result, const std::filesystem::path &reference,
+                   const std::filesystem::path &diff );
 
    void pushMatrix();
    void popMatrix();

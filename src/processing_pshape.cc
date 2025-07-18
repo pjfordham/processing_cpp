@@ -50,7 +50,7 @@ private:
    mutable bool dirty = true;
 
    int type = OPEN;
-   float tightness = 0.0f;
+   float tightness = 0.0F;
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
 
@@ -60,7 +60,7 @@ private:
       gl::color gl_fill_color = flatten_color_mode(WHITE);
 
       std::optional<color> stroke_color = BLACK;
-      float stroke_weight = 1.0f;
+      float stroke_weight = 1.0F;
       int line_end_cap = ROUND;
 
       PMaterial currentMaterial;
@@ -1243,7 +1243,7 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
    triangle_strip.transform( transform );
    triangle_strip.noStroke();
    triangle_strip.fill(override_color.value_or(extras[0].stroke));
-   float half_weight = override_weight.value_or(extras[0].weight) / 2.0;
+   float half_weight = override_weight.value_or(extras[0].weight) / 2.0F;
    if (closed) {
       start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
       end = start;
@@ -1315,10 +1315,10 @@ PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color 
    shape.transform( transform );
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
-   normal1.mult(weight1/2.0);
+   normal1.mult(weight1/2.0F);
    PVector normal2 = (p2 - p1).normal();
    normal2.normalize();
-   normal2.mult(weight2/2.0);
+   normal2.mult(weight2/2.0F);
 
    shape.noStroke();
 
@@ -1341,18 +1341,18 @@ PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, 
    shape.transform( transform );
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
-   normal1.mult(weight1/2.0);
+   normal1.mult(weight1/2.0F);
 
    PVector normal2 = (p2 - p1).normal();
    normal2.normalize();
-   normal2.mult(weight2/2.0);
+   normal2.mult(weight2/2.0F);
 
    PVector end_offset1 = (p2 - p1);
    end_offset1.normalize();
-   end_offset1.mult(weight1/2.0);
+   end_offset1.mult(weight1/2.0F);
    PVector end_offset2 = (p2 - p1);
    end_offset2.normalize();
-   end_offset2.mult(weight2/2.0);
+   end_offset2.mult(weight2/2.0F);
 
    shape.noStroke();
 
@@ -1375,12 +1375,12 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.noStroke();
    shape.fill(color);
    shape.transform( transform );
-   x = x - width / 2.0;
-   y = y - height / 2.0;
+   x = x - width / 2.0F;
+   y = y - height / 2.0F;
    shape.vertex(x,y,0,0);
-   shape.vertex(x+width,y,1.0,0);
-   shape.vertex(x+width,y+height,1.0,1.0);
-   shape.vertex(x,y+height,0,1.0);
+   shape.vertex(x+width,y,1.0F,0);
+   shape.vertex(x+width,y+height,1.0F,1.0F);
+   shape.vertex(x,y+height,0,1.0F);
    shape.populateIndices( { 0,2,1,0,3,2 } );
    shape.endShape(CLOSE);
    return shape;
@@ -1390,11 +1390,11 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
 
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
-   normal1.mult(weight1/2.0);
+   normal1.mult(weight1/2.0F);
 
    PVector normal2 = (p2 - p1).normal();
    normal2.normalize();
-   normal2.mult(weight2/2.0);
+   normal2.mult(weight2/2.0F);
 
    unsigned short i = triangles.getCurrentIndex();
    triangles.fill( color1 );
@@ -1726,7 +1726,7 @@ void PShape::init() {
 void PShape::optimize() {
    PShape::gc();
    auto &handles = shapeHandles();
-   for (auto i : handles) {
+   for (const auto &i : handles) {
       if (auto p = i.lock()) {
          if (p->getChildCount() > 0) {
             p->compile();
@@ -1740,7 +1740,7 @@ void PShape::gc() {
    auto &oldHandles = shapeHandles();
    if (oldHandles.size() > lastSize + 200 ) {
       std::vector<std::weak_ptr<PShapeImpl>> newHandles;
-      for (auto i : oldHandles) {
+      for (const auto &i : oldHandles) {
          if (auto p = i.lock()) {
             newHandles.push_back(p);
          }
@@ -2330,7 +2330,7 @@ PShape loadShapeOBJ( std::string_view objPath ) {
 
             for(auto & j : p) {
                obj_shape.normal( j->vn != 0 ? normals[ j->vn ] : faceNormal );
-               obj_shape.vertex( glm::vec3( positions[ j->v ] ), {coords[ j->vt].x,1.0f-coords[ j->vt].y}  );
+               obj_shape.vertex( glm::vec3( positions[ j->v ] ), {coords[ j->vt].x,1.0F-coords[ j->vt].y}  );
             }
          }
       } else if( lineType == "g" ) {

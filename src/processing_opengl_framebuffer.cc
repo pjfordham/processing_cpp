@@ -1,11 +1,7 @@
 #include "glad/glad.h"
 
-#include <fstream>     // For std::ifstream
-#include <sstream>     // For std::stringstream
-
 #include <fmt/core.h>
 #include <GLFW/glfw3.h>
-#include <thread>
 
 #include "processing_enum.h"
 #include "processing_opengl.h"
