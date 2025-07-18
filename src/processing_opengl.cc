@@ -1,14 +1,11 @@
 #include <utility>
-#include <thread>
 
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
 #include "processing_opengl.h"
 #include "processing_opengl_framebuffer.h"
-#include "processing_math.h"
 #include "processing_debug.h"
-#include <thread>
 #include "processing_task_queue.h"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -119,7 +116,7 @@ namespace gl {
       std::vector<glm::mat4> transforms;
       std::vector<glm::mat3> normals;
       transforms.push_back(transform);
-      normals.push_back( glm::mat3(glm::transpose(glm::inverse(transform))) );
+      normals.emplace_back( glm::transpose(glm::inverse(transform)) );
       Mmatrix.set( transforms );
       Nmatrix.set( normals );
 
@@ -198,7 +195,7 @@ namespace gl {
       int currentM = vao.transforms.size() - 1;
       int offset = vao.vertices.size();
 
-      for (auto &v : vertices) {
+      for (const auto &v : vertices) {
          vao.vertices.emplace_back(
             flatten_transforms ? transform_ * glm::vec4(v.position,1.0) : v.position,
             v.normal,
@@ -208,17 +205,17 @@ namespace gl {
             currentM);
       }
 
-      for (auto &m : materials ) {
+      for (const auto &m : materials ) {
          vao.materials.push_back( m );
       }
 
-      for (auto index : indices) {
+      for (const auto index : indices) {
          vao.indices.push_back( offset + index );
       }
    }
 
    void VAO::debugPrint() const {
-      for (auto &m : transforms) {
+      for (const auto &m : transforms) {
          fmt::print("{}\n",m);
       }
       fmt::print("Vertices: {}, Materials: {}\n", vertices.size(), materials.size() );
@@ -245,7 +242,7 @@ namespace gl {
       for (auto &draw: vaos ) {
          std::vector<glm::mat3> normals;
          for ( const auto &transform : draw->transforms ) {
-            normals.push_back( glm::mat3(glm::transpose(glm::inverse(transform))) );
+            normals.emplace_back( glm::transpose(glm::inverse(transform)) );
          }
 
          Mmatrix.set( draw->transforms );
@@ -309,8 +306,7 @@ namespace gl {
          std::vector<glm::vec4> position;
          std::vector<glm::vec3> normal, ambient, diffuse, specular, falloff;
          std::vector<glm::vec2> spot;
-         for (auto i = lights.begin() ; i != lights.end() ; ++i) {
-            auto &light = *i;
+         for (const auto &light : lights){
             // fmt::print("L{} P{}  N{}  A{}  D{}  S{}  F{}  S{}\n",
             //            i - lights.begin(),
             //            light.position,
@@ -634,17 +630,17 @@ namespace gl {
 
    void uniform::set(const std::vector<glm::mat4> &value) const {
       if ( id != -1 )
-         glUniformMatrix4fv(id, value.size(), false, glm::value_ptr(value[0]) );
+         glUniformMatrix4fv(id, value.size(), GL_FALSE, glm::value_ptr(value[0]) );
    }
 
    void uniform::set(const std::vector<glm::mat3> &value) const {
       if ( id != -1 )
-         glUniformMatrix3fv(id, value.size(), false, glm::value_ptr(value[0]) );
+         glUniformMatrix3fv(id, value.size(), GL_FALSE, glm::value_ptr(value[0]) );
    }
 
    void uniform::set(const glm::mat4 &value) const {
       if ( id != -1 )
-         glUniformMatrix4fv(id, 1, false, glm::value_ptr(value) );
+         glUniformMatrix4fv(id, 1, GL_FALSE, glm::value_ptr(value) );
    }
 
    void enumerateUniforms(GLuint programID) {

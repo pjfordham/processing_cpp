@@ -193,14 +193,14 @@ PShape PFontImpl::render_as_pshape(std::string_view text) {
    group.translate( 0, size, 0);
    // Font is font.em_size() virtual units tall and
    // we want it to be size units tall.
-   float scale_factor = (0.0 + size) / em_size();
+   float scale_factor = (0.0F + size) / em_size();
    group.scale( scale_factor );
    float x = 0;
    float y = 0;
    for ( auto c : text ) {
       if (c == '\n') {
          x = 0;
-         y += face->size->metrics.height/64.0 / ( scale_factor );
+         y += face->size->metrics.height/64.0F / ( scale_factor );
       } else {
          auto shape = glyph(c).copy();
          shape.translate( x, y, 0 );
@@ -213,11 +213,11 @@ PShape PFontImpl::render_as_pshape(std::string_view text) {
 }
 
 float PFontImpl::textAscent() const {
-   return face->size->metrics.ascender / 64.0;
+   return face->size->metrics.ascender / 64.0F;
 }
 
 float PFontImpl::textDescent() const {
-   return face->size->metrics.descender / 64.0;
+   return face->size->metrics.descender / 64.0F;
 }
 
 float PFontImpl::textWidth(std::string_view text) {

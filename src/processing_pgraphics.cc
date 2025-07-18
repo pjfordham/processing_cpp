@@ -1,7 +1,7 @@
 #include "processing_pgraphics.h"
-#include "processing_utils.h"
 #include "processing_debug.h"
 #include "mapbox/pixelmatch.hpp"
+#include <cmath>
 #include <stb_image.h>
 
 #undef DEBUG_METHOD
@@ -13,8 +13,8 @@ static std::vector<std::weak_ptr<PGraphicsImpl>> &graphicsHandles() {
 }
 
 static PVector posOnUnitSquare( float angle ) {
-   float x = 2 * sin(-angle + HALF_PI);
-   float y = 2 * cos(-angle + HALF_PI);
+   float x = 2 * sinf(-angle + HALF_PI);
+   float y = 2 * cosf(-angle + HALF_PI);
    if ( x > 1.0 ) {
       y = y / x;
       x = 1.0;
@@ -142,7 +142,7 @@ public:
       // If we're using the default shader and there are no lights, no textures and no circles
       // then use the flat shader for performance.
       return (currentShader == defaultShader && scene.lights.size() == 0 &&
-              batch.usesTextures() == false && batch.usesCircles() == false) ? flatShader : currentShader;
+              !batch.usesTextures() && !batch.usesCircles()) ? flatShader : currentShader;
    }
 
    void flush() {
@@ -188,7 +188,7 @@ public:
       pixelsFrame.saveFrame( img1.pixels );
 
       int pixel_count = img1.width * img1.height;
-      int diff_pixels = mapbox::pixelmatch(
+      auto diff_pixels = mapbox::pixelmatch(
          (unsigned char*)(unsigned int *)img1.pixels,
          (unsigned char*)(unsigned int *)img2.pixels,
          img1.width,
@@ -214,7 +214,8 @@ public:
    }
 
 
-   bool testFrame( std::filesystem::path result, std::filesystem::path reference, std::filesystem::path diff ) {
+   bool testFrame( const std::filesystem::path &result, const std::filesystem::path &reference,
+                   const std::filesystem::path &diff ) {
       if (std::filesystem::exists(reference)) {
          PImage diffImage = createImage(width, height, 0);;
          PImage refImage = _loadImage(reference);
@@ -253,8 +254,8 @@ public:
          {              0,               0,             0,  1}};
 
       // Compute pixel size in normalized device coordinates (NDC)
-      float pixel_size_x = 2.0f / width;
-      float pixel_size_y = 2.0f / height;
+      float pixel_size_x = 2.0F / width;
+      float pixel_size_y = 2.0F / height;
 
       // Modify the projection matrix to shift rendering right and down by 1 pixel
       projection[0][3] -= pixel_size_x; // Shift right
@@ -269,12 +270,12 @@ public:
    }
 
    void ortho() {
-      ortho(-width / 2.0, width / 2.0, -height / 2.0, height / 2.0);
+      ortho(-width / 2.0F, width / 2.0F, -height / 2.0F, height / 2.0F);
    }
 
    void perspective(float fov, float a, float near, float far) {
-      float f = 1 / tan(0.5 * fov);
-      float rangeInv = 1.0 / (near - far);
+      float f = 1 / tanf(0.5F * fov);
+      float rangeInv = 1.0F / (near - far);
       float A = (near + far) * rangeInv;
       float B = near * far * rangeInv * 2;
       glm::mat4 projection{
@@ -285,8 +286,8 @@ public:
       };
 
       // Compute pixel size in normalized device coordinates (NDC)
-      float pixel_size_x = 2.0f / width;
-      float pixel_size_y = 2.0f / height;
+      float pixel_size_x = 2.0F / width;
+      float pixel_size_y = 2.0F / height;
 
       // Modify the projection matrix to shift rendering right and down by 1 pixel
       projection[0][3] -= pixel_size_x; // Shift right
@@ -296,9 +297,9 @@ public:
    }
 
    void perspective() {
-      float fov = PI/3.0;
-      float cameraZ = (height/2.0) / tan(fov/2.0);
-      perspective( fov, (float)width/(float)height, cameraZ/10.0,  cameraZ*10.0);
+      float fov = PI/3.0F;
+      float cameraZ = (height/2.0F) / tanf(fov/2.0F);
+      perspective( fov, (float)width/(float)height, cameraZ/10.0F,  cameraZ*10.0F);
    }
 
    void camera( float eyeX, float eyeY, float eyeZ,
@@ -314,17 +315,17 @@ public:
       PVector up = side.cross(forward).normalize();
 
       glm::mat4 view{
-         {     side.x,     side.y,     side.z, 0.0f},
-         {       up.x,       up.y,       up.z, 0.0f},
-         { -forward.x, -forward.y, -forward.z, 0.0f},
-         {       0.0f,       0.0f,       0.0f, 1.0f} };
+         {     side.x,     side.y,     side.z, 0.0F},
+         {       up.x,       up.y,       up.z, 0.0F},
+         { -forward.x, -forward.y, -forward.z, 0.0F},
+         {       0.0F,       0.0F,       0.0F, 1.0F} };
       view = glm::transpose( view );
 
       glm::mat4 translate{
-         {1.0,    0,     0,    -eyeX},
-         {0,    1.0,     0,    -eyeY},
-         {0,      0,   1.0,    -eyeZ},
-         {0.0f, 0.0f,  0.0f,    1.0f} };
+         {1.0F,    0,     0,    -eyeX},
+         {0,    1.0F,     0,    -eyeY},
+         {0,       0,  1.0F,    -eyeZ},
+         {0.0F, 0.0F,  0.0F,    1.0F} };
       translate = glm::transpose( translate );
 
       // Translate the camera to the origin
@@ -333,8 +334,8 @@ public:
    }
 
    void camera() {
-      camera(width / 2.0, height / 2.0, (height / 2.0) / tan(PI * 30.0 / 180.0),
-             width / 2.0, height / 2.0, 0, 0, 1, 0);
+      camera(width / 2.0F, height / 2.0F, (height / 2.0F) / tanf(PI * 30.0F / 180.0F),
+             width / 2.0F, height / 2.0F, 0, 0, 1, 0);
    }
 
    void directionalLight(float r, float g, float b, float nx, float ny, float nz) {
@@ -419,10 +420,10 @@ public:
 
       // this works well enough for the Letters.cc example but it's not really general
       if ( xTextAlign == CENTER ) {
-         x = x - twidth / 2.0;
+         x = x - twidth / 2.0F;
       }
       if ( yTextAlign == CENTER ) {
-         y = y - ascent / 2.0;
+         y = y - ascent / 2.0F;
       } else {
          y = y - ascent;
       }
@@ -597,7 +598,6 @@ public:
    void sphere(float radius) {
       PShape sphere = createSphere(radius);
       shape( sphere );
-      return;
    }
 
    // // Doesn't work becuase we need to flip the texture on Y axis
@@ -633,8 +633,8 @@ public:
       } else if ( image_mode == CENTER ) {
          float iwidth = right;
          float iheight = bottom;
-         left = left - ( iwidth / 2.0 );
-         top = top - ( iheight / 2.0 );
+         left = left - ( iwidth / 2.0F );
+         top = top - ( iheight / 2.0F );
          right = left + iwidth;
          bottom = top + iheight;
       }
@@ -648,12 +648,10 @@ public:
    }
 
    void image(PImage pimage, float x, float y, bool flip = false) {
-      if ( image_mode == CORNER ) {
+      if ( image_mode == CORNER || image_mode == CENTER ) {
          image( pimage, x, y, pimage.width, pimage.height, flip );
-    } else if ( image_mode == CORNERS ) {
+      } else if ( image_mode == CORNERS ) {
          image( pimage, x, y, x + pimage.width, y + pimage.height, flip );
-      } else   if (image_mode == CENTER) {
-         image( pimage, x, y, pimage.width, pimage.height,flip );
       } else {
          abort();
       }
@@ -671,7 +669,7 @@ public:
    }
 
    void loadPixels() {
-      if ( pixels_current == false ) {
+      if ( !pixels_current ) {
          flush();
          frame.render( localFrame );
          localFrame.blit( pixelsFrame );
@@ -906,12 +904,12 @@ public:
       case CENTER:
          break;
       case RADIUS:
-         width = width * 2.0;
-         height = height * 2.0;
+         width = width * 2.0F;
+         height = height * 2.0F;
          break;
       case CORNER:
-         x = x - width / 2.0;
-         y = y - height / 2.0;
+         x = x - width / 2.0F;
+         y = y - height / 2.0F;
          break;
       case CORNERS:
          width = width - x;
@@ -934,11 +932,11 @@ public:
          PShape shape = createShape();
          shape.beginShape(CONVEX_POLYGON);
          shape.copyStyle( _shape );
-         shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0, height /2.0) );
+         shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0F, height /2.0F) );
          for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
-            shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0, height /2.0) );
+            shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0F, height /2.0F) );
          }
-         shape.vertex( fast_ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, width / 2.0, height /2.0) );
+         shape.vertex( fast_ellipse_point( {x,y}, NUMBER_OF_VERTICES-1, width / 2.0F, height /2.0F) );
          shape.endShape(CLOSE);
          return shape;
       }
@@ -981,7 +979,7 @@ public:
             // it will fill ok with a traingle fan
             shape.beginShape(CONVEX_POLYGON);
             shape.copyStyle( _shape );
-            shape.vertex(x,y,0.5,0.5);
+            shape.vertex(x,y,0.5F,0.5F);
          } else {
             // We could probably do better here to avoid the
             // triangulation pass but this works.
@@ -994,13 +992,13 @@ public:
             shape.vertex(
                x + pos.x * width,
                y + pos.y * height,
-               0.5 + pos.x/2.0, 0.5 + pos.y/2.0 );
+               0.5F + pos.x/2.0F, 0.5F + pos.y/2.0F );
          }
          PVector pos = posOnUnitSquare( stop );
          shape.vertex(
             x + pos.x * width,
             y + pos.y * height,
-            0.5 + pos.x/2.0, 0.5 + pos.y/2.0);
+            0.5F + pos.x/2.0F, 0.5F + pos.y/2.0F);
          if (fillMode == CHORD) {
             // For Chord mode we need to add two extra vertices at the radius at
             // begining and end.
@@ -1008,12 +1006,12 @@ public:
             shape.vertex(
                x + pos.x * width,
                y + pos.y * height,
-               0.5 + pos.x/2.0, 0.5 + pos.y/2.0 );
+               0.5F + pos.x/2.0F, 0.5F + pos.y/2.0F );
             pos = posOnUnitCircle( start );
             shape.vertex(
                x + pos.x * width,
                y + pos.y * height,
-               0.5 + pos.x/2.0, 0.5 + pos.y/2.0 );
+               0.5F + pos.x/2.0F, 0.5F + pos.y/2.0F );
          }
          shape.endShape(strokeMode);
          return shape;
@@ -1170,7 +1168,8 @@ void PGraphics::saveFrame( std::string fileName ){
    return impl->saveFrame(fileName);
 }
 
-bool PGraphics::testFrame( std::filesystem::path result, std::filesystem::path reference, std::filesystem::path diff ) {
+bool PGraphics::testFrame( const std::filesystem::path &result, const std::filesystem::path &reference,
+                           const std::filesystem::path &diff ) {
    return impl->testFrame(result, reference, diff);
 }
 
@@ -1735,7 +1734,7 @@ void PGraphics::resetMatrix(){
 }
 
 static void PGraphics_releaseAllFrameBuffers() {
-   for (auto i : graphicsHandles()) {
+   for (const auto &i : graphicsHandles()) {
       if (auto p = i.lock()) {
          p->releaseResources();
       }
