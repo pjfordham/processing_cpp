@@ -8,12 +8,12 @@
 
 namespace gl {
 
-   texture_ptr texture_t::circle() {
+   const texture_ptr &texture_t::circle() {
       static texture_ptr t = std::make_shared<texture_t>(-1);
       return t;
    }
 
-   texture_ptr texture_t::blank() {
+   const texture_ptr &texture_t::blank() {
       static texture_ptr t = [] {
          auto t = std::make_shared<texture_t>();
          unsigned int f = 0xFFFFFFFF;
