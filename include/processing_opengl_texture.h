@@ -38,9 +38,9 @@ namespace gl {
       texture_t& operator=(const texture_t&) = delete;
       texture_t& operator=(texture_t&&) = delete;
 
-      static texture_ptr circle();
+      static const texture_ptr &circle();
 
-      static texture_ptr blank();
+      static const texture_ptr &blank();
 
       void release();
 
