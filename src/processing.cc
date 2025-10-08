@@ -11,7 +11,7 @@
 int setFrameRate = 60;
 int frameRateb = 0;
 int frameCount = 0;
-bool xloop = true;
+int xloop = -1;;
 bool test_mode = false;
 std::filesystem::path refDir;
 
@@ -126,6 +126,9 @@ int main(int argc, char* argv[]) {
          }
          frameCount++;
          zframeCount++;
+         if (xloop > 0) {
+            xloop--;
+         }
       }
       PShape::gc();
       auto endTicks = std::chrono::high_resolution_clock::now();

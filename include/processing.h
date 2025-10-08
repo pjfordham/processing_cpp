@@ -165,14 +165,14 @@ inline void frameRate(int rate) {
 
 inline void orientation(int o) {}
 
-extern bool xloop;
+extern int xloop;
 
-inline void noLoop() {
-   xloop = false;
+inline void loop(int i = -1) {
+   xloop = i;
 }
 
-inline void loop() {
-   xloop = true;
+inline void noLoop() {
+   loop(1);
 }
 
 void exit();
