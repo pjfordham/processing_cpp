@@ -136,6 +136,8 @@ class PShape {
 
    void index(unsigned short i);
 
+   void index( std::vector<unsigned short> &&i );
+
    void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4);
 
    void bezierVertex(PVector v2, PVector v3, PVector v4);
@@ -156,10 +158,6 @@ class PShape {
    void endShape(int type_ = OPEN);
 
    unsigned short getCurrentIndex();
-
-   void populateIndices();
-
-   void populateIndices( std::vector<unsigned short> &&i );
 
    void ambient(float r,float g, float b);
 
