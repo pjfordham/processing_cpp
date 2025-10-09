@@ -641,10 +641,10 @@ public:
       }
       if (flip) {
          drawTexturedQuad({left,bottom},{right,bottom},{right,top}, {left,top},
-                       pimage, _shape.getTintColor()  );
+                       pimage, _shape.getTintColor() );
       } else {
          drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
-                       pimage, _shape.getTintColor()  );
+                       pimage, _shape.getTintColor() );
       }
    }
 
@@ -720,12 +720,12 @@ public:
    }
 
    void drawTexturedQuad(PVector p0, PVector p1, PVector p2, PVector p3,
-                         PImage texture, color tint, bool flipY = false ) {
+                         PImage texture, color tint = WHITE, bool flipY = false ) {
       PShape quad = createShape();
-      quad.beginShape(TRIANGLES_NOSTROKE);
-      quad.tint( tint );
       quad.textureMode(NORMAL);
       quad.texture(texture);
+      quad.tint( tint );
+      quad.beginShape(TRIANGLES_NOSTROKE);
       if (flipY) {
          quad.vertex( p0, {0.0, 1.0} );
          quad.vertex( p1, {1.0, 1.0} );
@@ -975,19 +975,19 @@ public:
       if (!_shape.isStroked() && !_shape.isTextureSet()) {
          // If there's no stroke and no texture use circle optimization here
          PShape shape = createShape();
+         shape.copyStyle( _shape );
+         shape.circleTexture();
+         shape.tint( shape.getFillColor() );
          if (fillMode == PIE) {
             // This isn't really a CONVEX_POLYGON but I know
             // it will fill ok with a traingle fan
             shape.beginShape(CONVEX_POLYGON);
-            shape.copyStyle( _shape );
             shape.vertex(x,y,0.5F,0.5F);
          } else {
             // We could probably do better here to avoid the
             // triangulation pass but this works.
             shape.beginShape(POLYGON);
-            shape.copyStyle( _shape );
          }
-         shape.circleTexture();
          for(float i = start; i < stop; i = i + (TWO_PI / 8) ) {
             PVector pos = posOnUnitSquare( i );
             shape.vertex(
