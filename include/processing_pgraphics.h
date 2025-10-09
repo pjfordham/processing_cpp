@@ -217,6 +217,8 @@ public:
    void tint(color c, float a);
    void noTint();
 
+   void ambient(float r,float g, float b);
+   void emissive(float r,float g, float b);
    void specular(float r,float g, float b, float a = 1.0);
    void shininess(float r);
 

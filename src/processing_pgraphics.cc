@@ -1522,6 +1522,14 @@ void PGraphics::shininess(float r) {
    return impl->_shape.shininess(r);
 }
 
+void PGraphics::ambient(float r, float g, float b) {
+   return impl->_shape.ambient(r,g,b);
+}
+
+void PGraphics::emissive(float r, float g, float b) {
+   return impl->_shape.emissive(r,g,b);
+}
+
 void PGraphics::fill(float r, float g, float b, float a){
    return impl->_shape.fill(r,g,b,a);
 }

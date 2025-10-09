@@ -33,7 +33,7 @@ void draw() {
   pg.endDraw();
 
   trefoil.texture(pg);
-  //ambient(250, 250, 250);
+  ambient(250, 250, 250);
   pointLight(255, 255, 255, 0, 0, 200);
 
   pushMatrix();

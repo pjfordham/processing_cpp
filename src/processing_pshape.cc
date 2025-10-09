@@ -587,6 +587,18 @@ public:
       style.currentMaterial.specularExponent = r;
    }
 
+   void ambient(float r, float g, float b) {
+      DEBUG_METHOD();
+      dirty=true;
+      style.currentMaterial.ambientColor = flatten_color_mode( {r,g,b } );
+   }
+
+   void emissive(float r, float g, float b) {
+      DEBUG_METHOD();
+      dirty=true;
+      style.currentMaterial.emissiveColor = flatten_color_mode( {r,g,b } );
+   }
+
    void fill(float r,float g,  float b, float a) {
       DEBUG_METHOD();
       dirty = true;
@@ -2025,6 +2037,14 @@ void PShape::populateIndices( std::vector<unsigned short> &&i ){
 
 void PShape::shininess(float r) {
    return impl->shininess(r);
+}
+
+void PShape::ambient(float r, float g, float b) {
+   return impl->ambient(r,g,b);
+}
+
+void PShape::emissive(float r, float g, float b) {
+   return impl->emissive(r,g,b);
 }
 
 void PShape::specular(float r,float g,  float b, float a){
