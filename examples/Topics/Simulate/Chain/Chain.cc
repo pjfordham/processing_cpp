@@ -9,7 +9,7 @@
 
 class Spring2D {
 public:
-  float vx, vy; // The x- and y-axis velocities
+  float vx = 0, vy = 0; // The x- and y-axis velocities
   float x, y; // The x- and y-coordinates
   float gravity;
   float mass;
