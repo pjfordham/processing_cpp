@@ -567,7 +567,7 @@ public:
 
    void populateIndices();
 
-   void populateIndices( std::vector<unsigned short> &&i ) {
+   void index( std::vector<unsigned short> &&i ) {
       DEBUG_METHOD();
       dirty=true;
       indices = i;
@@ -1394,7 +1394,7 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    shape.vertex(x+width,y,1.0F,0);
    shape.vertex(x+width,y+height,1.0F,1.0F);
    shape.vertex(x,y+height,0,1.0F);
-   shape.populateIndices( { 0,2,1,0,3,2 } );
+   shape.index( { 0,2,1,0,3,2 } );
    shape.endShape(CLOSE);
    return shape;
 }
@@ -2025,13 +2025,8 @@ unsigned short PShape::getCurrentIndex(){
 }
 
 
-void PShape::populateIndices(){
-   return impl->populateIndices();
-}
-
-
-void PShape::populateIndices( std::vector<unsigned short> &&i ){
-   return impl->populateIndices(std::move(i));
+void PShape::index( std::vector<unsigned short> &&i ){
+   return impl->index(std::move(i));
 }
 
 

@@ -527,7 +527,7 @@ public:
       cube.vertex( -w,  h,  d, 1.0, 1.0 );
       cube.vertex( -w,  h, -d, 0.0, 1.0 );
 
-      cube.populateIndices( {
+      cube.index( {
             0,1,2, 0,2,3, 4,5,6, 4,6,7,
             8,9,10, 8,10,11, 12,13,14, 12,14,15,
             16,17,18, 16,18,19, 20,21,22, 20,22,23
@@ -736,7 +736,7 @@ public:
          quad.vertex( p2, {1.0, 1.0} );
          quad.vertex( p3, {0.0, 1.0} );
       }
-      quad.populateIndices( { 0,1,2, 0,2,3 } );
+      quad.index( { 0,1,2, 0,2,3 } );
       quad.endShape();
 
       shape( quad );
@@ -853,7 +853,7 @@ public:
       shape.vertex(x+width,y);
       shape.vertex(x+width,y+height);
       shape.vertex(x,y+height);
-      shape.populateIndices( { 0,1,2,0,2,3 } );
+      shape.index( { 0,1,2,0,2,3 } );
       shape.endShape(CLOSE);
       return shape;
    }
@@ -887,7 +887,7 @@ public:
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
-      shape.populateIndices( { 0,1,2 } );
+      shape.index( { 0,1,2 } );
       shape.endShape(CLOSE);
       return shape;
    }
