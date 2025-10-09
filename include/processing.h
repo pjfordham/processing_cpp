@@ -56,6 +56,7 @@ class PSurfaceMain : public PSurface {
 };
 extern PSurfaceMain surface;
 
+MAKE_GLOBAL(createShape, surface.g);
 MAKE_GLOBAL(shader, surface.g);
 MAKE_GLOBAL(resetShader, surface.g);
 MAKE_GLOBAL(hint, surface.g);
@@ -108,6 +109,7 @@ MAKE_GLOBAL(ambient, surface.g);
 MAKE_GLOBAL(emissive, surface.g);
 MAKE_GLOBAL(specular, surface.g);
 MAKE_GLOBAL(shininess, surface.g);
+MAKE_GLOBAL(showNormals, surface.g);
 MAKE_GLOBAL(fill, surface.g);
 MAKE_GLOBAL(noFill, surface.g);
 MAKE_GLOBAL(noStroke, surface.g);

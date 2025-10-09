@@ -322,8 +322,8 @@ void PSurface::setupFrame() {
       // Draw anything from setup.
       g.endDraw();
       g.commit_draw();
+      PShape::optimize( g.getGlobalShape().getStyle() );
    }
-   PShape::optimize();
 }
 
 void PSurface::loadPixels() {

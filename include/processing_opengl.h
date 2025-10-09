@@ -25,9 +25,6 @@ namespace gl {
       color fill;
       int tunit;
       int mindex;
-   };
-
-   struct material {
       glm::vec4 ambient;
       glm::vec4 specular;
       glm::vec4 emissive;
@@ -136,12 +133,10 @@ namespace gl {
       GLuint vao = 0;
       GLuint indexId = 0;
       GLuint vertexId = 0;
-      GLuint materialId= 0;
    public:
       friend struct fmt::formatter<gl::VAO>;
 
       std::vector<vertex> vertices;
-      std::vector<material> materials;
       std::vector<unsigned short> indices;
       std::vector<gl::texture_ptr> textures;
       std::vector<glm::mat4> transforms;
@@ -186,6 +181,78 @@ namespace gl {
    public:
       batch_t() noexcept {}
 
+      struct sub_batch_t {
+         int vertex;
+         int index;
+         int vertex_count;
+         int index_count;
+         std::vector<gl::vertex> &_vertices;
+         std::vector<unsigned short> &_indices;
+         int trID;
+         int txID;
+         bool flatten_transform;
+         const glm::mat4 &transform;
+         int reservation;
+
+         ~sub_batch_t() {
+            if (reservation != vertex_count) {
+               fmt::print("Reservation {} and vertext_count was {}\n", reservation, vertex_count);
+            }
+         }
+
+         struct vertex &verticesByIndex(int i) {
+            return _vertices[ _indices[index + i] ];
+         }
+
+         struct vertex &vertices(int i) {
+            return _vertices[ vertex + i ];
+         }
+
+         struct vertex *vertices_data() {
+            return _vertices.data() + vertex;
+         }
+
+         int add_stroke_vertex( const glm::vec3 &position, const color &fill ) {
+            return add_vertex(position, {0,0,0}, {0,0}, fill, {}, {}, fill, {});
+         }
+
+         int add_vertex( const glm::vec3 &position, const glm::vec3 &normal, const glm::vec2& coord,
+                         const color &fill, const glm::vec4 &ambient, const glm::vec4 &specular,
+                         const glm::vec4 &emissive, float shininess ) {
+            if (flatten_transform) {
+               _vertices.emplace_back( transform * position,
+                                       normal,
+                                       coord, fill, txID, 0,
+                                       ambient, specular, emissive, shininess);
+            } else {
+               _vertices.emplace_back( position,
+                                       normal,
+                                       coord, fill, txID, trID,
+                                       ambient, specular, emissive, shininess);
+            }
+            return vertex_count++;
+         }
+
+         unsigned short indices(int i) {
+            return _indices[ index + i ] - vertex;
+         }
+
+         void add_index(int i) {
+            _indices.push_back( vertex + i );
+            index_count++;
+         }
+
+         void drop() {
+            _indices.erase( _indices.end() - index_count, _indices.end());
+            _vertices.erase( _vertices.end() - vertex_count, _vertices.end());
+            index_count = 0;
+            vertex_count = 0;
+            reservation = 0; // Supresss warning message about wrong reservation.
+         }
+     };
+
+      sub_batch_t create_sub_batch(int reservation, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_ptr> texture_);
+
       batch_t(const batch_t& x) noexcept = default;
       batch_t& operator=(const batch_t&) = delete;
 
@@ -205,8 +272,10 @@ namespace gl {
       bool usesCircles() const;
       bool usesTextures() const;
 
-      void vertices( const std::vector<vertex> &vertices,const std::vector<material> &materials,  const std::vector<unsigned short> &indices,
-                     const glm::mat4 &transform, bool flatten_transform, std::optional<gl::texture_ptr> texture, std::optional<color> override );
+      void reserve(int count);
+      int set_transform( const glm::mat4 &transform_ , bool flatten_transforms);
+      int set_texture( std::optional<texture_ptr> texture_ );
+
    };
 
    typedef std::shared_ptr<batch_t>  batch_t_ptr;
@@ -228,7 +297,7 @@ namespace gl {
          background_ = b;
       }
 
-      void add(batch_t_ptr &b, scene_t sc, const shader_t &sh) {
+      void add(batch_t_ptr b, scene_t sc, const shader_t &sh) {
          geometries.emplace_back( b, sc, sh );
 
       }
@@ -260,26 +329,7 @@ namespace gl {
 // };
 
 template <>
-struct fmt::formatter<gl::material> {
-   // Format the MyClass object
-   template <typename ParseContext>
-   constexpr auto parse(ParseContext& ctx) {
-      return ctx.begin();
-   }
-
-   template <typename FormatContext>
-   auto format(const gl::material& v, FormatContext& ctx) {
-      return fmt::format_to(ctx.out(), "A{} S{} E{} Shine{}",
-                            v.ambient,
-                            v.specular,
-                            v.emissive,
-                            v.shininess);
-   }
-};
-
-template <>
 struct fmt::formatter<gl::vertex> {
-   // Format the MyClass object
    template <typename ParseContext>
    constexpr auto parse(ParseContext& ctx) {
       return ctx.begin();
@@ -287,13 +337,17 @@ struct fmt::formatter<gl::vertex> {
 
    template <typename FormatContext>
    auto format(const gl::vertex& v, FormatContext& ctx) {
-      return fmt::format_to(ctx.out(), "P{} N{} M{} Tu{} Tc{} C{}",
+      return fmt::format_to(ctx.out(), "P{} N{} M{} Tu{} Tc{} C{} A{} S{} E{} Shine{}",
                             v.position,
                             v.normal,
                             v.mindex,
                             v.tunit,
                             v.coord,
-                            v.fill);
+                            v.fill,
+                            v.ambient,
+                            v.specular,
+                            v.emissive,
+                            v.shininess);
    }
 };
 

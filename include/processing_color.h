@@ -38,6 +38,13 @@ public:
    static float scaleB;
    static float scaleA;
 
+   bool operator<(const color& other) const {
+      if (r != other.r) return r < other.r;
+      if (g != other.g) return g < other.g;
+      if (b != other.b) return b < other.b;
+      return a < other.a;
+   }
+
    operator unsigned int() const {
       return
          ((unsigned char)r) << 0|
