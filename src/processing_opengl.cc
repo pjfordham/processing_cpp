@@ -17,6 +17,8 @@
 
 progschj::ThreadPool renderThread(1);
 
+static bool enable_debug = false;
+
 namespace gl {
    void renderDirect( framebuffer &fb, gl::batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
       renderThread.enqueue( [&fb, &shader, batch, transform, scene] () mutable {
@@ -103,15 +105,16 @@ namespace gl {
    }
 
    void batch_t::draw( const glm::mat4 &transform ) {
-#if 0
-      fmt::print("### FLAT GEOMETRY DUMP START ###\n");
-      int i = 0;
-      for (auto &vao : vaos) {
-         fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-         vao->debugPrint();
+
+      if (enable_debug) {
+         fmt::print("### FLAT GEOMETRY DUMP START ###\n");
+         int i = 0;
+         for (auto &vao : vaos) {
+            fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
+            vao->debugPrint();
+         }
+         fmt::print("\n### GEOMETRY DUMP END   ###\n");
       }
-      fmt::print("\n### GEOMETRY DUMP END   ###\n");
-#endif
 
       std::vector<glm::mat4> transforms;
       std::vector<glm::mat3> normals;
@@ -232,15 +235,15 @@ namespace gl {
     }
 
    void batch_t::draw() {
-#if 0
-      fmt::print("### GEOMETRY DUMP START ###\n");
-      int i = 0;
-      for (auto &vao : vaos) {
-         fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-         vao->debugPrint();
+      if (enable_debug) {
+         fmt::print("### GEOMETRY DUMP START ###\n");
+         int i = 0;
+         for (auto &vao : vaos) {
+            fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
+            vao->debugPrint();
+         }
+         fmt::print("\n### GEOMETRY DUMP END   ###\n");
       }
-      fmt::print("\n### GEOMETRY DUMP END   ###\n");
-#endif
 
       for (auto &draw: vaos ) {
          std::vector<glm::mat3> normals;
