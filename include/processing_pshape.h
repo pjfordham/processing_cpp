@@ -16,6 +16,7 @@ class PShapeImpl;
 
 namespace gl {
    class batch_t;
+   typedef std::shared_ptr<batch_t> batch_t_ptr;
 }
 
 class PShape {
@@ -231,15 +232,15 @@ class PShape {
 
    bool isCompiled() const;
 
-   gl::batch_t &getBatch() ;
+   gl::batch_t_ptr getBatch();
 
-   void flatten(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   void flatten(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
 
-   void draw_normals(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_normals(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
 
-   void draw_stroke(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_stroke(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
 
-   void draw_fill(gl::batch_t &parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_fill(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
 
    int getChildCount() const;
 

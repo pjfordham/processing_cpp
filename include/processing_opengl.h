@@ -209,10 +209,12 @@ namespace gl {
                      const glm::mat4 &transform, bool flatten_transform, std::optional<gl::texture_ptr> texture, std::optional<color> override );
    };
 
+   typedef std::shared_ptr<batch_t>  batch_t_ptr;
+
    class framebuffer;
    class frame_t {
       struct geometry_t {
-         batch_t batch;
+         batch_t_ptr batch;
          scene_t scene;
          const shader_t &shader;
       };
@@ -226,8 +228,8 @@ namespace gl {
          background_ = b;
       }
 
-      void add(batch_t &&b, scene_t sc, const shader_t &sh) {
-         geometries.emplace_back( std::move(b), sc, sh );
+      void add(batch_t_ptr &b, scene_t sc, const shader_t &sh) {
+         geometries.emplace_back( b, sc, sh );
 
       }
 
@@ -239,7 +241,7 @@ namespace gl {
       void render(framebuffer &fb);
    };
 
-   void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader );
+   void renderDirect( framebuffer &fb, gl::batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader );
 
 } // namespace gl
 
