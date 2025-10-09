@@ -161,6 +161,10 @@ class PShape {
 
    void populateIndices( std::vector<unsigned short> &&i );
 
+   void ambient(float r,float g, float b);
+
+   void emissive(float r,float g, float b);
+
    void shininess(float r);
 
    void specular(float r,float g,  float b, float a);

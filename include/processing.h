@@ -104,6 +104,8 @@ MAKE_GLOBAL(createSphere, surface.g);
 MAKE_GLOBAL(createBox, surface.g);
 MAKE_GLOBAL(createPoint, surface.g);
 MAKE_GLOBAL(createGroup, surface.g);
+MAKE_GLOBAL(ambient, surface.g);
+MAKE_GLOBAL(emissive, surface.g);
 MAKE_GLOBAL(specular, surface.g);
 MAKE_GLOBAL(shininess, surface.g);
 MAKE_GLOBAL(fill, surface.g);
