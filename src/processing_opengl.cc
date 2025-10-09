@@ -18,19 +18,19 @@
 progschj::ThreadPool renderThread(1);
 
 namespace gl {
-   void renderDirect( framebuffer &fb, gl::batch_t &batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
-      renderThread.enqueue( [&fb, &shader, &batch, transform, scene] () mutable {
+   void renderDirect( framebuffer &fb, gl::batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
+      renderThread.enqueue( [&fb, &shader, batch, transform, scene] () mutable {
          fb.bind();
          shader.bind();
          uniform uSampler = shader.get_uniform("texture");
          uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
          scene.setup( shader );
-         batch.setup( shader );
+         batch->setup( shader );
          shader.set_uniforms();
          scene.set();
-         batch.bind();
-         batch.draw( transform );
+         batch->bind();
+         batch->draw( transform );
       } );
    }
 
@@ -52,14 +52,14 @@ namespace gl {
             uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
             g.scene.setup( g.shader );
-            g.batch.setup( g.shader );
+            g.batch->setup( g.shader );
 
             g.shader.set_uniforms();
             g.scene.set();
-            g.batch.bind();
-            g.batch._load();
-            g.batch.draw();
-            g.batch.clear();
+            g.batch->bind();
+            g.batch->_load();
+            g.batch->draw();
+            g.batch->clear();
          }
       });
 

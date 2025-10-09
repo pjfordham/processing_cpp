@@ -78,7 +78,7 @@ private:
 
    int kind = POLYGON;
    bool compiled = false;
-   gl::batch_t batch;
+   gl::batch_t_ptr batch;
 
 public:
 
@@ -218,7 +218,7 @@ public:
       extras.clear();
       indices.clear();
       children.clear();
-      batch.clear();
+      batch = std::make_shared<gl::batch_t>();
    }
 
    void rotate(float angle, float x, float y, float z) {
@@ -850,10 +850,10 @@ public:
 
    void compile() {
       if (!isCompiled()) {
-         batch.clear();
+         batch = std::make_shared<gl::batch_t>();
          compiled = true;
          flatten( batch, PMatrix::Identity(), true );
-         batch.load();
+         batch->load();
       }
    }
 
@@ -861,11 +861,11 @@ public:
       return compiled && !is_dirty();
    }
 
-   gl::batch_t &getBatch() {
+   gl::batch_t_ptr getBatch() {
       return batch;
    }
 
-   void flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
+   void flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const {
       DEBUG_METHOD();
       auto currentTransform = transform * shape_matrix;
       if ( kind == GROUP ) {
@@ -882,9 +882,9 @@ public:
       dirty = false;
    }
 
-   void draw_normals(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const;
-   void draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const;
-   void draw_fill(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_normals(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_stroke(gl::batch_t_ptr batchr, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_fill(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const;
 
    int getChildCount() const {
       DEBUG_METHOD();
@@ -1439,7 +1439,7 @@ PShapeImpl drawTriangleNormal(const gl::vertex &p0, const gl::vertex &p1, const 
    return shape;
 }
 
-void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool flatten_transforms) const {
+void PShapeImpl::draw_normals(gl::batch_t_ptr batch, const PMatrix &transform, bool flatten_transforms) const {
    DEBUG_METHOD();
    switch( kind ) {
    case TRIANGLE_STRIP_NOSTROKE:
@@ -1467,7 +1467,7 @@ void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool
    }
 }
 
-void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const {
+void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const {
    DEBUG_METHOD();
    std::optional<color> override_color = style.override_stroke_color ? style.override_stroke_color.value() : std::optional<color>();
    std::optional<float> override_weight = style.override_stroke_weight;
@@ -1704,7 +1704,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
    }
 }
 
-void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool flatten_transforms) const {
+void PShapeImpl::draw_fill(gl::batch_t_ptr batch, const PMatrix& transform_, bool flatten_transforms) const {
    DEBUG_METHOD();
    if (vertices.size() > 2 && kind != POINTS && kind != LINES) {
       std::vector<gl::material> m;
@@ -1718,7 +1718,7 @@ void PShapeImpl::draw_fill(gl::batch_t &batch, const PMatrix& transform_, bool f
             );
       }
       std::optional<gl::color> override = style.override_fill_color ? flatten_color_mode(style.override_fill_color.value()) : std::optional<gl::color>();
-      batch.vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_ ? style.texture_.value().getTextureID() : std::optional<gl::texture_ptr>(), override );
+      batch->vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_ ? style.texture_.value().getTextureID() : std::optional<gl::texture_ptr>(), override );
    }
 }
 
@@ -2203,23 +2203,23 @@ bool PShape::isCompiled() const {
    return impl->isCompiled();
 }
 
-gl::batch_t &PShape::getBatch() {
+gl::batch_t_ptr PShape::getBatch() {
    return impl->getBatch();
 }
 
-void PShape::flatten(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+void PShape::flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
    return impl->flatten(batch, transform, flatten_transforms);
 }
 
-void PShape::draw_normals(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+void PShape::draw_normals(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
    return impl->draw_normals(batch,transform, flatten_transforms);
 }
 
-void PShape::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+void PShape::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
    return impl->draw_stroke(batch,transform, flatten_transforms);
 }
 
-void PShape::draw_fill(gl::batch_t &batch, const PMatrix& transform, bool flatten_transforms) const{
+void PShape::draw_fill(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
    return impl->draw_fill(batch,transform, flatten_transforms);
 }
 

@@ -51,7 +51,7 @@ public:
    gl::framebuffer pixelsFrame;
    gl::frame_t frame;
    gl::scene_t scene;
-   gl::batch_t batch;
+   gl::batch_t_ptr batch;
 
    int ellipse_mode = CENTER;
    int rect_mode = CORNER;
@@ -107,6 +107,7 @@ public:
       windowFrame( width, height ),
       _shape( createShape() ) {
 
+      batch = std::make_shared<gl::batch_t>();
       DEBUG_METHOD();
       this->width = width;
       this->height = height;
@@ -146,16 +147,16 @@ public:
    }
 
    void flush() {
-      if ( batch.size() > 0 ) {
-         frame.add( std::move(batch), scene, getBestShader(batch).getShader() );
-         batch.clear();
+      if ( batch->size() > 0 ) {
+         frame.add( batch, scene, getBestShader(*batch).getShader() );
+         batch = std::make_shared<gl::batch_t>();
       }
    }
 
-   void directDraw( gl::batch_t &batch, const PMatrix &transform ) {
+   void directDraw( gl::batch_t_ptr batch, const PMatrix &transform ) {
       flush();
       frame.render( localFrame );
-      gl::renderDirect( localFrame, batch, transform.glm_data(), scene, getBestShader(batch).getShader() );
+      gl::renderDirect( localFrame, batch, transform.glm_data(), scene, getBestShader(*batch).getShader() );
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -760,7 +761,7 @@ public:
    void shape(PShape &pshape) {
       if( pshape.isCompiled() ) {
          flush();
-         auto &local = pshape.getBatch();
+         auto local = pshape.getBatch();
          if (pshape == _shape) {
             directDraw( local, PMatrix::Identity() );
          } else {
