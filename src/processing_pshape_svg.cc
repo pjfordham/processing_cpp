@@ -371,11 +371,9 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          }
          xmlFree(xdata);
 
-         pshape.beginShape( GROUP );
          for (xmlNode* child = node->children; child; child = child->next) {
             parseNode(child, pshape);
          }
-         pshape.endShape();
          return;
       }
 
