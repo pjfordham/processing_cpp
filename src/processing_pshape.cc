@@ -1130,7 +1130,7 @@ void PShapeImpl::populateIndices() {
          indices.push_back(i + s(d2));
          indices.push_back(i + s((d2 + 1) % 4));
      }
-   } else if (kind == TRIANGLE_STRIP) {
+   } else if (kind == TRIANGLE_STRIP || kind == TRIANGLE_STRIP_NOSTROKE) {
    bool reverse = false;
       for (int i = 0; i < vertices.size() - 2; i++ ){
          if (reverse) {
@@ -1240,7 +1240,7 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
       abort();
 
    PShapeImpl triangle_strip;
-   triangle_strip.beginShape(TRIANGLE_STRIP);
+   triangle_strip.beginShape(TRIANGLE_STRIP_NOSTROKE);
    triangle_strip.transform( transform );
    triangle_strip.noStroke();
    triangle_strip.fill(override_color.value_or(extras[0].stroke));
@@ -1430,6 +1430,7 @@ PShapeImpl drawTriangleNormal(const gl::vertex &p0, const gl::vertex &p1, const 
 void PShapeImpl::draw_normals(gl::batch_t &batch, const PMatrix &transform, bool flatten_transforms) const {
    DEBUG_METHOD();
    switch( kind ) {
+   case TRIANGLE_STRIP_NOSTROKE:
    case TRIANGLES_NOSTROKE:
    case TRIANGLES:
    case TRIANGLE_STRIP:
@@ -1470,13 +1471,14 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       break;
    }
    case TRIANGLES_NOSTROKE:
+   case TRIANGLE_STRIP_NOSTROKE:
       break;
    case TRIANGLES:
    {
       // TODO: Fix mitred lines to somehow work in 3D
       PShapeImpl shape;
       shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES);
+      shape.beginShape(TRIANGLES_NOSTROKE);
       for (int i = 0; i < indices.size(); i+=3 ) {
          PVector p0 = vertices[indices[i]].position;
          PVector p1 = vertices[indices[i+1]].position;
@@ -1501,7 +1503,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       // TODO: Fix mitred lines to somehow work in 3D
       PShapeImpl shape;
       shape.reserve(2*vertices.size(), 3 * vertices.size());
-      shape.beginShape(TRIANGLES);
+      shape.beginShape(TRIANGLES_NOSTROKE);
       for (int i = 0; i < vertices.size(); i+=2 ) {
          PVector p0 = vertices[i].position;
          PVector p1 = vertices[i+1].position;
@@ -1572,7 +1574,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       // TODO: Fix mitred lines to somehow work in 3D
       PShapeImpl shape;
       shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES);
+      shape.beginShape(TRIANGLES_NOSTROKE);
       for (int i = 0; i < vertices.size(); i+=4 ) {
          PVector p0 = vertices[i].position;
          PVector p1 = vertices[i+1].position;
@@ -1601,7 +1603,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       // TODO: Fix mitred lines to somehow work in 3D
       PShapeImpl shape;
       shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES);
+      shape.beginShape(TRIANGLES_NOSTROKE);
       for (int i = 0; i < vertices.size()-2; i+=2 ) {
          PVector p0 = vertices[i+0].position;
          PVector p1 = vertices[i+1].position;
@@ -1628,7 +1630,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
    case TRIANGLE_STRIP:
    {
       PShapeImpl triangles;
-      triangles.beginShape(TRIANGLES);
+      triangles.beginShape(TRIANGLES_NOSTROKE);
       triangles.transform( shape_matrix );
       _line(triangles,
             vertices[0].position, vertices[1].position,
@@ -1660,7 +1662,7 @@ void PShapeImpl::draw_stroke(gl::batch_t &batch, const PMatrix& transform, bool 
       if (n < 3) break;
 
       shape.reserve(3 * (n-2), 3 * (n-2));
-      shape.beginShape(TRIANGLES);
+      shape.beginShape(TRIANGLES_NOSTROKE);
 
       PVector center = vertices[0].position;
       float centerWeight = extras[0].weight;
@@ -2387,6 +2389,8 @@ const char *kindToTxt(int kind) {
       return "QUADS";
    case QUAD_STRIP:
       return "QUAD_STRIP";
+   case TRIANGLE_STRIP_NOSTROKE:
+      return "TRIANGLE_STRIP_NOSTROKE";
    case TRIANGLE_STRIP:
       return "TRIANGLE_STRIP";
    case TRIANGLE_FAN:
