@@ -25,15 +25,15 @@ std::vector<XML> XML::getChildren(std::string_view name) {
 XML XML::getChild(std::string_view name) {
    for (xmlNode *child = element->children; child; child = child->next) {
       if (child->type == XML_ELEMENT_NODE && name == (const char *)child->name) {
-         return XML(doc, child);
+         return {doc, child};
       }
    }
-   return XML(doc, nullptr);
+   return {doc, nullptr};
 }
 
 XML XML::addChild(std::string_view name) {
    xmlNode *child = xmlNewChild(element, nullptr, BAD_CAST std::string(name).c_str(), nullptr);
-   return XML(doc, child);
+   return {doc, child};
 }
 
 void XML::removeChild(XML x) {
@@ -53,7 +53,7 @@ int XML::getInt(std::string_view attrName) {
 
 std::string XML::getString(std::string_view attrName) {
    xmlChar *val = xmlGetProp(element, BAD_CAST std::string(attrName).c_str());
-   if (!val) return 0;
+   if (!val) return {};
    std::string result((char*)val);
    xmlFree(val);
    return result;
@@ -96,7 +96,7 @@ void XML::setIntContent(int f) {
    xmlNodeSetContent(element, BAD_CAST str.c_str());
 }
 
-void XML::setContent(std::string content) {
+void XML::setContent(const std::string &content) {
    xmlNodeSetContent(element, BAD_CAST content.c_str());
 }
 
@@ -105,7 +105,7 @@ XML loadXML(std::string_view filename) {
    xmlDoc *doc = xmlReadMemory(buffer.data(), buffer.size(), nullptr, nullptr, 0);
    if (!doc) return {};
    xmlNode *root = xmlDocGetRootElement(doc);
-   return XML(std::shared_ptr<xmlDoc>(doc, xmlFreeDoc), root);
+   return {std::shared_ptr<xmlDoc>(doc, xmlFreeDoc), root};
 }
 
 void saveXML(XML xml, std::string_view filename) {

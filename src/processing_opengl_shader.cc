@@ -32,10 +32,10 @@ namespace gl {
       GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
       GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
-      glShaderSource(VertexShaderID, 1, &vertex , NULL);
+      glShaderSource(VertexShaderID, 1, &vertex , nullptr);
       glCompileShader(VertexShaderID);
 
-      glShaderSource(FragmentShaderID, 1, &fragment , NULL);
+      glShaderSource(FragmentShaderID, 1, &fragment , nullptr);
       glCompileShader(FragmentShaderID);
 
       GLint Result = GL_FALSE;
@@ -46,7 +46,7 @@ namespace gl {
       glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
       if ( InfoLogLength > 0 ){
          std::vector<char> VertexShaderErrorMessage(InfoLogLength+1);
-         glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, VertexShaderErrorMessage.data());
+         glGetShaderInfoLog(VertexShaderID, InfoLogLength, nullptr, VertexShaderErrorMessage.data());
          fmt::print("{}\n", VertexShaderErrorMessage.data());
       }
 
@@ -55,7 +55,7 @@ namespace gl {
       glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
       if ( InfoLogLength > 0 ){
          std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
-         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, FragmentShaderErrorMessage.data());
+         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, nullptr, FragmentShaderErrorMessage.data());
          fmt::print("{}\n", FragmentShaderErrorMessage.data());
       }
 
@@ -69,7 +69,7 @@ namespace gl {
       glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &InfoLogLength);
       if ( InfoLogLength > 0 ){
          std::vector<char> ProgramErrorMessage(InfoLogLength+1);
-         glGetProgramInfoLog(programID, InfoLogLength, NULL, ProgramErrorMessage.data());
+         glGetProgramInfoLog(programID, InfoLogLength, nullptr, ProgramErrorMessage.data());
          fmt::print("{}\n", ProgramErrorMessage.data());
       }
 

@@ -11,6 +11,8 @@ Checks: >
   -readability-named-parameter,
   -readability-else-after-return,
   -readability-else-after-break,
+  -readability-uppercase-literal-suffix,
+  -readability-isolate-declaration,
   -bugprone-easily-swappable-parameters
 
 WarningsAsErrors: ''

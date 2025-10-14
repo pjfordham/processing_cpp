@@ -318,7 +318,6 @@ static void parseSVGPath(const std::string &data, PShape& pshape) {
    } else {
       pshape.endShape( CLOSE );
    }
-   return;
 }
 
 static void parseSVGPolygon(const std::string &data, PShape& pshape) {
@@ -336,7 +335,6 @@ static void parseSVGPolygon(const std::string &data, PShape& pshape) {
       parseWhiteSpace(i, end);
    }
    pshape.endShape(CLOSE);
-   return;
 }
 
 static void parseNode(xmlNode* node, PShape& pshape) {
