@@ -122,7 +122,7 @@ public:
       return texture;
    }
 
-   bool isDirty() {
+   [[nodiscard]] bool isDirty() const {
       DEBUG_METHOD();
       return dirty;
    }
@@ -138,7 +138,7 @@ public:
       dirty = true;
    }
 
-   int pixels_length() const {
+   [[nodiscard]] int pixels_length() const {
       DEBUG_METHOD();
       return width * height;
    }
@@ -221,7 +221,7 @@ public:
       DEBUG_METHOD();
       loadPixels();
       // Create a new image of the same size as the original surface
-      auto blurred = new uint32_t[width*height];
+      auto *blurred = new uint32_t[width*height];
 
       for (int y = 0; y < height; y++) {
          for (int x = 0; x < width; x++) {
@@ -376,15 +376,15 @@ PImage PImage::circle() {
 }
 
 PImage createImage(int width, int height, int mode) {
-   return PImage( std::make_shared<PImageImpl>(width,height,mode) );
+   return { std::make_shared<PImageImpl>(width,height,mode) };
 }
 
 PImage createImageFromTexture(gl::texture_ptr textureID) {
-   return PImage( std::make_shared<PImageImpl>(textureID) );
+   return { std::make_shared<PImageImpl>(textureID) };
 }
 
 size_t write_callback(char* contents, size_t size, size_t nmemb, void* userp) {
-    std::vector<unsigned char>* buffer = static_cast<std::vector<unsigned char>*>(userp);
+    auto  *buffer = static_cast<std::vector<unsigned char>*>(userp);
     size_t total_size = size * nmemb;
     buffer->insert(buffer->end(), (unsigned char*)contents, (unsigned char*)contents + total_size);
     return total_size;
@@ -398,7 +398,7 @@ PImage loadImage(std::string_view URL) {
    if (!data) {
       // If local load fails, try downloading with CURL
       CURL* curl = curl_easy_init();
-      if (!curl) return PImage(nullptr);
+      if (!curl) return {};
 
       curl_easy_setopt(curl, CURLOPT_URL, sURL.c_str());
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -421,7 +421,7 @@ PImage loadImage(std::string_view URL) {
    return image;
 }
 
-PImage _loadImage(std::filesystem::path path ) {
+PImage _loadImage( const std::filesystem::path &path ) {
    int width, height, channels;
    unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
 

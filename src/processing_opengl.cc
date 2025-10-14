@@ -504,7 +504,7 @@ namespace gl {
    void VAO::draw() const {
       DEBUG_METHOD();
       glBindVertexArray(vao);
-      glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
+      glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
       glBindVertexArray(0);
    }
 

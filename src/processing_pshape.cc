@@ -1751,7 +1751,7 @@ void PShape::optimize() {
 }
 
 void PShape::gc() {
-   static int lastSize = 0;
+   static std::size_t lastSize = 0;
    auto &oldHandles = shapeHandles();
    if (oldHandles.size() > lastSize + 200 ) {
       std::vector<std::weak_ptr<PShapeImpl>> newHandles;
@@ -2324,7 +2324,7 @@ PShape loadShapeOBJ( std::string_view objPath ) {
          // texture coordinate
          float i = 0, j = 0;
          lineSS >> i >> j;
-         coords.push_back( glm::vec2( i, j ) );
+         coords.emplace_back( i, j );
       } else if( lineType == "f" ) {
          // polygon
          std::vector< VertRef > refs;

@@ -21,7 +21,7 @@ void PSurface_setup() {
       i->makeContextCurrent();
    } );
    psurface->setupFrame();
-   for (auto i : surfaceHandles()) {
+   for (auto *i : surfaceHandles()) {
       if (i == psurface) continue;
       i->construct(psurface);
       renderThread.enqueue( [i] {
@@ -32,7 +32,7 @@ void PSurface_setup() {
 }
 
 void PSurface_draw() {
-   for (auto i : surfaceHandles()) {
+   for (auto *i : surfaceHandles()) {
       if (i->width) {
          renderThread.enqueue( [i] {
             i->makeContextCurrent();
@@ -65,7 +65,7 @@ static void character_callback(GLFWwindow* window, unsigned int codepoint) {
 }
 
 static void key_callback(GLFWwindow* window, int key_, int scancode, int action, int mods) {
-   auto surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
+   auto *surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
    if (action == GLFW_PRESS || action == GLFW_REPEAT || action == GLFW_RELEASE) {
       switch(key_) {
       case GLFW_KEY_ESCAPE:
@@ -153,7 +153,7 @@ static void key_callback(GLFWwindow* window, int key_, int scancode, int action,
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-   auto surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
+   auto *surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
       surface->mousePressed();
       surface->mousePressedb = true;
@@ -165,12 +165,12 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 }
 
 static void scroll_callback(GLFWwindow* window, double offsetX, double offsetY) {
-   auto surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
+   auto *surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
    surface->mouseWheel({MouseEvent::WHEEL, 0,0,0,-(float)offsetY});
 }
 
 static void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-   auto surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
+   auto *surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
    surface->mouseX = xpos;
    surface->mouseY = ypos;
    if (surface->mousePressedb) {
@@ -181,7 +181,7 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int _width, int _height) {
-   auto surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
+   auto *surface = static_cast<PSurface*>(glfwGetWindowUserPointer(window));
    surface->dispatch_size_callback(_width,_height);
 }
 
@@ -277,7 +277,7 @@ void PSurface::construct(PSurface *main) {
       glfwSetScrollCallback(window, scroll_callback);
       glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
    }
-   glfwMakeContextCurrent(NULL);
+   glfwMakeContextCurrent(nullptr);
    glfwSetWindowUserPointer(window, this);
 }
 

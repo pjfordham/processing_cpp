@@ -91,9 +91,9 @@ public:
       }
    }
 
-   int getWidth() const { return width; }
-   int getHeight() const {return height; }
-   unsigned int *getPixels() { return pixels.data(); }
+   [[nodiscard]] int getWidth()  const { return width; }
+   [[nodiscard]] int getHeight() const { return height; }
+   [[nodiscard]] unsigned int *getPixels() { return pixels.data(); }
    gl::texture_ptr getAsTexture() { return localFrame.getColorBufferID(); }
    PImage getAsPImage() { return createImageFromTexture(localFrame.getColorBufferID()); }
 

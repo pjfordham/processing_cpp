@@ -95,7 +95,7 @@ public:
 PImage createImage(int width, int height, int mode);
 PImage createImageFromTexture(gl::texture_ptr textureID);
 PImage loadImage(std::string_view URL);
-PImage _loadImage(std::filesystem::path path);
+PImage _loadImage(const std::filesystem::path &path);
 PImage requestImage(std::string_view URL);
 
 #endif

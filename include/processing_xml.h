@@ -31,7 +31,7 @@ public:
    std::string getContent();
    void setFloatContent(float f);
    void setIntContent(int f);
-   void setContent(std::string content);
+   void setContent(const std::string &content);
 };
 
 XML loadXML(std::string_view filename);
