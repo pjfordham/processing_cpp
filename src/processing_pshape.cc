@@ -1255,7 +1255,11 @@ PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfo
    triangle_strip.beginShape(TRIANGLE_STRIP_NOSTROKE);
    triangle_strip.transform( transform );
    triangle_strip.noStroke();
-   triangle_strip.fill(override_color.value_or(extras[0].stroke));
+   triangle_strip.normal( 0,0,0 );
+   auto color1 = override_color.value_or(extras[0].stroke);
+   triangle_strip.fill(color1);
+   triangle_strip.ambient( 0,0,0 );
+   triangle_strip.emissive( color1.r, color1.g, color1.b );
    float half_weight = override_weight.value_or(extras[0].weight) / 2.0F;
    if (closed) {
       start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
@@ -1306,7 +1310,11 @@ PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, c
    float start_angle = (p2 - p1).heading() + HALF_PI;
 
    shape.noStroke();
+   shape.normal( 0,0,0 );
+
    shape.fill(color1);
+   shape.ambient( 0,0,0 );
+   shape.emissive( color1.r, color1.g, color1.b );
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
       shape.vertex(p1.x + cosf(i + start_angle) * weight1/2, p1.y + sinf(i+start_angle) * weight1/2, p1.z);
    }
@@ -1314,6 +1322,8 @@ PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, c
    start_angle += PI;
 
    shape.fill(color2);
+   shape.ambient( 0,0,0 );
+   shape.emissive( color2.r, color2.g, color2.b );
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
       shape.vertex(p2.x + cosf(i+start_angle) * weight2/2, p2.y + sinf(i+start_angle) * weight2/2, p2.z);
    }
@@ -1334,12 +1344,18 @@ PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color 
    normal2.mult(weight2/2.0F);
 
    shape.noStroke();
+   shape.normal( 0,0,0 );
 
    shape.fill(color1);
+   shape.ambient( 0,0,0 );
+   shape.emissive( color1.r, color1.g, color1.b );
+
    shape.vertex(p1 + normal1);
    shape.vertex(p1 - normal1);
 
    shape.fill(color2);
+   shape.ambient( 0,0,0 );
+   shape.emissive( color2.r, color2.g, color2.b );
    shape.vertex(p2 - normal2);
    shape.vertex(p2 + normal2);
 
@@ -1368,12 +1384,17 @@ PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, 
    end_offset2.mult(weight2/2.0F);
 
    shape.noStroke();
+   shape.normal( 0,0,0 );
 
    shape.fill(color1);
+   shape.ambient( 0,0,0 );
+   shape.emissive( color1.r, color1.g, color1.b );
    shape.vertex(p1 + normal1 - end_offset1);
    shape.vertex(p1 - normal1 - end_offset1);
 
    shape.fill(color2);
+   shape.ambient( 0,0,0 );
+   shape.emissive( color2.r, color2.g, color2.b );
    shape.vertex(p2 - normal2 + end_offset2);
    shape.vertex(p2 + normal2 + end_offset2);
 
@@ -1410,10 +1431,15 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    normal2.mult(weight2/2.0F);
 
    unsigned short i = triangles.getCurrentIndex();
+   triangles.normal( 0,0,0 );
    triangles.fill( color1 );
+   triangles.ambient( 0,0,0 );
+   triangles.emissive( color1.r,color1.g, color1.b );
    triangles.vertex( p1 + normal1 );
    triangles.vertex( p1 - normal1 );
    triangles.fill( color2 );
+   triangles.ambient( 0,0,0 );
+   triangles.emissive( color2.r,color2.g, color2.b );
    triangles.vertex( p2 - normal2 );
    triangles.vertex( p2 + normal2 );
 
