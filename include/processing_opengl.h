@@ -260,6 +260,24 @@ namespace gl {
 // };
 
 template <>
+struct fmt::formatter<gl::material> {
+   // Format the MyClass object
+   template <typename ParseContext>
+   constexpr auto parse(ParseContext& ctx) {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const gl::material& v, FormatContext& ctx) {
+      return fmt::format_to(ctx.out(), "A{} S{} E{} Shine{}",
+                            v.ambient,
+                            v.specular,
+                            v.emissive,
+                            v.shininess);
+   }
+};
+
+template <>
 struct fmt::formatter<gl::vertex> {
    // Format the MyClass object
    template <typename ParseContext>
@@ -269,12 +287,13 @@ struct fmt::formatter<gl::vertex> {
 
    template <typename FormatContext>
    auto format(const gl::vertex& v, FormatContext& ctx) {
-      return fmt::format_to(ctx.out(), "P{} N{} Tu{} Tc{} C{}",
-                       v.position,
-                       v.normal,
-                       v.tunit,
-                       v.coord,
-                       v.fill);
+      return fmt::format_to(ctx.out(), "P{} N{} M{} Tu{} Tc{} C{}",
+                            v.position,
+                            v.normal,
+                            v.mindex,
+                            v.tunit,
+                            v.coord,
+                            v.fill);
    }
 };
 

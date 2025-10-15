@@ -224,9 +224,9 @@ namespace gl {
       for (const auto &m : transforms) {
          fmt::print("{}\n",m);
       }
-      fmt::print("Vertices: {}, Materials: {}\n", vertices.size(), materials.size() );
+      fmt::print("Vertices: {}\n", vertices.size() );
       for ( int i = 0; i < vertices.size(); ++i ) {
-         fmt::print("{:3}: {}\n", i, vertices[i]);
+         fmt::print("{:3}: {} {}\n", i, vertices[i], materials[i]);
       }
       fmt::print("Triangles: {}\n", indices.size() );
       for ( int i = 0; i < indices.size(); i+=3 ) {
