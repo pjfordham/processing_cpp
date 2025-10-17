@@ -64,7 +64,8 @@ private:
 
    std::vector<style_t> style_stack;
    style_t style;
-
+   std::optional<gl::batch_t::sub_batch_t> sub_batch;
+   
    int kind = POLYGON;
    int ci = 0;
    int qi = 0;
@@ -960,7 +961,7 @@ public:
       }
       if (cache.contains(local_style)) {
          return cache[local_style];
-      } else if ( should_compile ) {
+      } else if ( true ||  should_compile ) {
          cache.emplace(local_style, std::make_shared<gl::batch_t>());
          auto batch = cache[local_style];
          flatten( batch, PMatrix::Identity(), true, global_style );
@@ -1052,7 +1053,7 @@ public:
             child.impl->flatten(batch, currentTransform, flatten_transforms, local_style);
          }
       } else {
-         auto sb = batch->create_sub_batch( ci, currentTransform.glm_data(), flatten_transforms,  style.texture_img ? style.texture_img.value().getTextureID() : std::optional<gl::texture_ptr>());
+         auto sb =batch->create_sub_batch( ci, currentTransform.glm_data(), flatten_transforms,  style.texture_img ? style.texture_img.value().getTextureID() : std::optional<gl::texture_ptr>());
 
          std::vector<int> contour; // TODO: reserve amount for this.
          std::vector<vInfoExtra> extras;
@@ -1233,6 +1234,7 @@ public:
          if (stroke) {
             draw_stroke( batch, currentTransform.glm_data(), flatten_transforms, local_style.stroke_end_cap.value(), contour, extras, idx );
          }
+         sub_batch = sb;
 
       }
       dirty = false;
@@ -1265,8 +1267,24 @@ public:
       return {};
    }
 
+   void reloadSubBatch(gl::batch_t::sub_batch_t *sb) {
+      if (parent.impl) {
+         parent.impl->reloadSubBatch(sb);
+      } else {
+         for (auto& [key, batch] : cache) {
+            batch->reload(*sb);
+         }
+      }
+   }
+
    void setVertex(int i, PVector v) {
       DEBUG_METHOD();
+      if (sub_batch) {
+         sub_batch->vertices(i).position = v;
+         reloadSubBatch(&sub_batch.value());
+      }
+      return;
+
       setDirty();
       int j = 0;
       for (auto &cmd : cmds ) {

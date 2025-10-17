@@ -205,9 +205,9 @@ namespace gl {
       reserve(reservation);
       int trID = set_transform( transform_, flatten_transforms );
       int txID = set_texture( texture_ );
-      return { (int)vaos.back()->vertices.size(), (int)vaos.back()->indices.size(), 0, 0,
-         vaos.back()->vertices, vaos.back()->indices,
-         trID, txID, flatten_transforms, transform_, reservation };
+      return { (int)vaos.size()-1, (int)vaos.back()->vertices.size(), (int)vaos.back()->indices.size(), 0, 0,
+         &(vaos.back()->vertices), &(vaos.back()->indices),
+         trID, txID, flatten_transforms, &transform_, reservation };
    }
 
    void VAO::debugPrint() const {
@@ -263,6 +263,17 @@ namespace gl {
          for (auto &draw: vaos ) {
             draw->loadBuffers();
          }
+   }
+
+   void batch_t::reload(const sub_batch_t &s) {
+      renderThread.enqueue( [&] {
+         vaos[s.vao]->bind();
+         glBufferSubData(GL_ARRAY_BUFFER, s.vertex * sizeof(gl::vertex),
+                         s.vertex_count * sizeof(gl::vertex), s._vertices->data() + s.vertex);
+         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, s.index * sizeof(unsigned short),
+                         s.index_count * sizeof(unsigned short), s._indices->data() + s.index);
+      } );
+      renderThread.wait_until_nothing_in_flight();
    }
 
    void batch_t::load() {
@@ -448,16 +459,21 @@ namespace gl {
       return *this;
    }
 
-   void VAO::bind( attribute Position, attribute Normal, attribute Color,
-                   attribute Coord,  attribute TUnit, attribute MIndex,
-                   attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess) {
+   void VAO::bind() {
       DEBUG_METHOD();
-
       if (!vao)
          glGenVertexArrays(1, &vao);
       glBindVertexArray(vao);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
+   }
+
+   void VAO::bind( attribute Position, attribute Normal, attribute Color,
+                   attribute Coord,  attribute TUnit, attribute MIndex,
+                   attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess) {
+      DEBUG_METHOD();
+
+      bind();
       Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
       Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
       Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
@@ -480,8 +496,8 @@ namespace gl {
 
    void VAO::loadBuffers() const {
       DEBUG_METHOD();
-      loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
-      loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
+      loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_DYNAMIC_DRAW);
+      loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_DYNAMIC_DRAW);
    }
 
    void VAO::draw() const {

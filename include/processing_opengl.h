@@ -151,6 +151,7 @@ namespace gl {
 
       VAO& operator=(VAO&& other) noexcept;
 
+      void bind();
       void bind( attribute Position, attribute Normal, attribute Color,
                  attribute Coord,    attribute TUnit,  attribute MIndex,
                  attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess);
@@ -182,16 +183,17 @@ namespace gl {
       batch_t() noexcept {}
 
       struct sub_batch_t {
+         int vao;
          int vertex;
          int index;
          int vertex_count;
          int index_count;
-         std::vector<gl::vertex> &_vertices;
-         std::vector<unsigned short> &_indices;
+         std::vector<gl::vertex> *_vertices;
+         std::vector<unsigned short> *_indices;
          int trID;
          int txID;
          bool flatten_transform;
-         const glm::mat4 &transform;
+         const glm::mat4 *transform;
          int reservation;
 
          ~sub_batch_t() {
@@ -201,50 +203,75 @@ namespace gl {
          }
 
          struct vertex &verticesByIndex(int i) {
-            return _vertices[ _indices[index + i] ];
+            return (*_vertices)[ (*_indices)[index + i] ];
          }
 
          struct vertex &vertices(int i) {
-            return _vertices[ vertex + i ];
+            return (*_vertices)[ vertex + i ];
          }
 
          struct vertex *vertices_data() {
-            return _vertices.data() + vertex;
+            return (*_vertices).data() + vertex;
+         }
+
+         void update_stroke_vertex( int i, const glm::vec3 &position, const color &fill ) {
+            return update_vertex(i, position, {0,0,0}, {0,0}, fill, {}, {}, fill, {});
          }
 
          int add_stroke_vertex( const glm::vec3 &position, const color &fill ) {
             return add_vertex(position, {0,0,0}, {0,0}, fill, {}, {}, fill, {});
          }
 
+         void update_vertex( int i,
+                             const glm::vec3 &position, const glm::vec3 &normal, const glm::vec2& coord,
+                             const color &fill, const glm::vec4 &ambient, const glm::vec4 &specular,
+                             const glm::vec4 &emissive, float shininess ) {
+            if (flatten_transform) {
+               vertices(i) = {
+                  (*transform) * position,
+                  normal,
+                  coord, fill, txID, 0,
+                  ambient, specular, emissive, shininess
+               };
+            } else {
+               vertices(i) = {
+                  position,
+                  normal,
+                  coord, fill, txID, trID,
+                  ambient, specular, emissive, shininess
+               };
+            }
+         }
+
          int add_vertex( const glm::vec3 &position, const glm::vec3 &normal, const glm::vec2& coord,
                          const color &fill, const glm::vec4 &ambient, const glm::vec4 &specular,
                          const glm::vec4 &emissive, float shininess ) {
             if (flatten_transform) {
-               _vertices.emplace_back( transform * position,
-                                       normal,
-                                       coord, fill, txID, 0,
-                                       ambient, specular, emissive, shininess);
+               (*_vertices).emplace_back( (*transform) * position,
+                                          normal,
+                                          coord, fill, txID, 0,
+                                          ambient, specular, emissive, shininess);
             } else {
-               _vertices.emplace_back( position,
-                                       normal,
-                                       coord, fill, txID, trID,
-                                       ambient, specular, emissive, shininess);
+               (*_vertices).emplace_back( position,
+                                          normal,
+                                          coord, fill, txID, trID,
+                                          ambient, specular, emissive, shininess);
             }
             return vertex_count++;
          }
 
          unsigned short indices(int i) {
-            return _indices[ index + i ] - vertex;
+            return (*_indices)[ index + i ] - vertex;
          }
 
          void add_index(int i) {
-            _indices.push_back( vertex + i );
+            (*_indices).push_back( vertex + i );
             index_count++;
          }
 
          void drop() {
-            _indices.erase( _indices.end() - index_count, _indices.end());
-            _vertices.erase( _vertices.end() - vertex_count, _vertices.end());
+            (*_indices).erase( (*_indices).end() - index_count, (*_indices).end());
+            (*_vertices).erase( (*_vertices).end() - vertex_count, (*_vertices).end());
             index_count = 0;
             vertex_count = 0;
             reservation = 0; // Supresss warning message about wrong reservation.
@@ -264,7 +291,7 @@ namespace gl {
       void _load();
       void load();
       void bind();
-
+      void reload(const sub_batch_t &s);
       void setupTextures(VAO_ptr);
       void draw();
       void draw(const glm::mat4& transform);
