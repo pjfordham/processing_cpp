@@ -933,22 +933,38 @@ public:
 
    void setFill(color c) {
       DEBUG_METHOD();
-      setParentDirty();
-      fill(c);
-      for ( auto &cmd : cmds) {
-         if (cmd.type == command_t::type_t::FILL || cmd.type == command_t::type_t::NOFILL) {
-            cmd.type = command_t::type_t::NOP;
+      if (sub_batch) {
+         gl::color gl_color = flatten_color_mode(c);
+         for (int i = 0; i < sub_batch->vertex_count; ++i) {
+            sub_batch->vertices(i).fill = gl_color;
+         }
+         reloadSubBatch(&sub_batch.value());
+      } else {
+         setParentDirty();
+         fill(c);
+         for ( auto &cmd : cmds) {
+            if (cmd.type == command_t::type_t::FILL || cmd.type == command_t::type_t::NOFILL) {
+               cmd.type = command_t::type_t::NOP;
+            }
          }
       }
    }
 
    void setTint(color c) {
       DEBUG_METHOD();
-      setParentDirty();
-      tint(c);
-      for ( auto &cmd : cmds) {
-         if (cmd.type == command_t::type_t::TINT) {
-            cmd.type = command_t::type_t::NOP;
+      if (sub_batch) {
+         gl::color gl_color = flatten_color_mode(c);
+         for (int i = 0; i < sub_batch->vertex_count; ++i) {
+            sub_batch->vertices(i).fill = gl_color;
+         }
+         reloadSubBatch(&sub_batch.value());
+      } else {
+         setParentDirty();
+         tint(c);
+         for ( auto &cmd : cmds) {
+            if (cmd.type == command_t::type_t::TINT) {
+               cmd.type = command_t::type_t::NOP;
+            }
          }
       }
    }
@@ -1282,21 +1298,20 @@ public:
       if (sub_batch) {
          sub_batch->vertices(i).position = v;
          reloadSubBatch(&sub_batch.value());
-      }
-      return;
-
-      setDirty();
-      int j = 0;
-      for (auto &cmd : cmds ) {
-         if (cmd.type ==  command_t::type_t::VERTEX ) {
-            if (j == i) {
-               cmd.a = v.x;
-               cmd.b = v.y;
-               cmd.c = v.z;
-            }
-            j++;
-         }
-      }
+      } // else {
+      //    setDirty();
+      //    int j = 0;
+      //    for (auto &cmd : cmds ) {
+      //       if (cmd.type ==  command_t::type_t::VERTEX ) {
+      //          if (j == i) {
+      //             cmd.a = v.x;
+      //             cmd.b = v.y;
+      //             cmd.c = v.z;
+      //          }
+      //          j++;
+      //       }
+      //    }
+      // }
    }
 
    void setVertex(int i, float x, float y , float z = 0) {
