@@ -56,10 +56,15 @@ void draw() {
          return 0;
       } );
    }
-   pool.wait_until_empty();
+   pool.wait_until_nothing_in_flight();
    updatePixels();
 
    zoff += zincrement; // Increment zoff
-
-
 }
+   // std::vector<std::future<void>> futures;
+   // for (...) {
+   //     futures.push_back(pool.enqueue([...] { /* work */ }));
+   // }
+   // for (auto& f : futures) {
+   //     f.wait();  // Just wait, no return value
+   // }
