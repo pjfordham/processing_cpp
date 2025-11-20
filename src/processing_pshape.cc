@@ -248,8 +248,7 @@ public:
 
    void rotate(float angle, PVector axis) {
       DEBUG_METHOD();
-      dirty=true;
-      shape_matrix = shape_matrix * RotateMatrix(angle,axis);
+      transform( RotateMatrix( angle, axis ) );
    }
 
    void translate(float x, float y, float z=0) {
@@ -259,14 +258,12 @@ public:
 
    void translate(PVector t) {
       DEBUG_METHOD();
-      dirty=true;
-      shape_matrix = shape_matrix * TranslateMatrix(t);
+      transform( TranslateMatrix(t) );
    }
 
    void scale(float x, float y,float z = 1) {
       DEBUG_METHOD();
-      dirty=true;
-      shape_matrix = shape_matrix * ScaleMatrix(PVector{x,y,z});
+      transform( ScaleMatrix( PVector{x,y,z} ) );
    }
 
    void scale(float x) {
