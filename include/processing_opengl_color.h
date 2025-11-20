@@ -5,7 +5,7 @@
 
 namespace gl {
 
-   typedef glm::vec4 color;
+   typedef glm::vec4 color_t;
 
 };
 

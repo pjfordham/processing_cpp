@@ -46,9 +46,9 @@ public:
    bool pixels_to_update = false;
    int textureMode_ = IMAGE;
 
-   gl::framebuffer localFrame;
-   gl::mainframe windowFrame;
-   gl::framebuffer pixelsFrame;
+   gl::framebuffer_t localFrame;
+   gl::mainframe_t windowFrame;
+   gl::framebuffer_t pixelsFrame;
    gl::frame_t frame;
    gl::scene_t scene;
    gl::batch_t_ptr batch;
@@ -94,7 +94,7 @@ public:
    [[nodiscard]] int getWidth()  const { return width; }
    [[nodiscard]] int getHeight() const { return height; }
    [[nodiscard]] unsigned int *getPixels() { return pixels.data(); }
-   gl::texture_ptr getAsTexture() { return localFrame.getColorBufferID(); }
+   gl::texture_t_ptr getAsTexture() { return localFrame.getColorBufferID(); }
    PImage getAsPImage() { return createImageFromTexture(localFrame.getColorBufferID()); }
 
    ~PGraphicsImpl() {
@@ -131,7 +131,7 @@ public:
       currentShader = {};
       flatShader = {};
       windowFrame.release_shader();
-      windowFrame = gl::mainframe();;
+      windowFrame = gl::mainframe_t();;
       localFrame = {};
       pixelsFrame = {};
       scene = {};
@@ -1043,11 +1043,11 @@ public:
    }
 
    void smooth(int aaFactor=2, int aaMode=MSAA) {
-      localFrame = gl::framebuffer(width, height, aaMode, aaFactor);
+      localFrame = gl::framebuffer_t(width, height, aaMode, aaFactor);
    }
 
    void noSmooth() {
-      localFrame = gl::framebuffer(width, height, SSAA, 1);
+      localFrame = gl::framebuffer_t(width, height, SSAA, 1);
    }
 
    void beginDraw() {
@@ -1072,9 +1072,9 @@ public:
          width = resize_width;
          height = resize_height;
 
-         localFrame = gl::framebuffer(width, height, aaMode, aaFactor);
-         pixelsFrame = gl::framebuffer(width, height, SSAA, 1);
-         windowFrame = gl::mainframe( width, height );
+         localFrame = gl::framebuffer_t(width, height, aaMode, aaFactor);
+         pixelsFrame = gl::framebuffer_t(width, height, SSAA, 1);
+         windowFrame = gl::mainframe_t( width, height );
          resize_width = 0;
          resize_height = 0;
          camera();
@@ -1145,7 +1145,7 @@ PGraphics::PGraphics(int width, int height, int mode, int aaMode, int aaFactor)
    graphicsHandles().push_back(impl);
 }
 
-gl::texture_ptr PGraphics::getAsTexture() {
+gl::texture_t_ptr PGraphics::getAsTexture() {
    return impl->getAsTexture();
 }
 

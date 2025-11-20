@@ -18,23 +18,23 @@ typedef unsigned int GLuint;
 
 namespace gl {
 
-   struct vertex {
+   struct vertex_t {
       glm::vec3 position;
       glm::vec3 normal;
       glm::vec2 coord;
-      color fill;
+      color_t fill;
       int tunit;
       int mindex;
    };
 
-   struct material {
+   struct material_t {
       glm::vec4 ambient;
       glm::vec4 specular;
       glm::vec4 emissive;
       float shininess;
    };
 
-   struct light {
+   struct light_t {
       glm::vec4 position =  { 0.0, 0.0, 0.0, 0.0 };
       glm::vec3 normal =  { 0.0, 0.0, 0.0 };;
       glm::vec3 ambient =  { 1.0, 1.0, 1.0 };;
@@ -48,16 +48,16 @@ namespace gl {
       glm::mat4 projection_matrix;
       glm::mat4 view_matrix;
 
-      uniform LightCount;
-      uniform LightPosition;
-      uniform LightNormal;
-      uniform LightAmbient;
-      uniform LightDiffuse;
-      uniform LightSpecular;
-      uniform LightFalloff;
-      uniform LightSpot;
-      uniform PVmatrix;
-      uniform Eye;
+      uniform_t LightCount;
+      uniform_t LightPosition;
+      uniform_t LightNormal;
+      uniform_t LightAmbient;
+      uniform_t LightDiffuse;
+      uniform_t LightSpecular;
+      uniform_t LightFalloff;
+      uniform_t LightSpot;
+      uniform_t PVmatrix;
+      uniform_t Eye;
 
       int currentBlendMode = BLEND;
       bool depth_test = true;
@@ -67,7 +67,7 @@ namespace gl {
       int blendMode( int b );
       void hint(int type);
 
-      std::vector<light> lights;
+      std::vector<light_t> lights;
       scene_t() {}
       void setup( const shader_t &shader) {
          LightCount = shader.get_uniform("lightCount");
@@ -107,19 +107,19 @@ namespace gl {
       }
 
       void pushAmbientLight( glm::vec3 color ) {
-         lights.emplace_back( light{{0.0f,0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
+         lights.emplace_back( light_t{{0.0f,0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
       }
 
       void pushDirectionalLight( glm::vec3 color, glm::vec3 vector, glm::vec3 specular ) {
-         lights.emplace_back( light{{0.0f,0.0f,0.0f,0.0f}, vector, {0,0,0}, color, specular, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
+         lights.emplace_back( light_t{{0.0f,0.0f,0.0f,0.0f}, vector, {0,0,0}, color, specular, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
       }
 
       void pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 specular, glm::vec3 falloff) {
-         lights.emplace_back( light{position, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, specular, falloff, {0.0f,0.0f}} );
+         lights.emplace_back( light_t{position, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, specular, falloff, {0.0f,0.0f}} );
       }
 
       void pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 specular, glm::vec3 falloff, glm::vec2 spot) {
-         lights.emplace_back( light{position, direction, {0.0f,0.0f,0.0f}, color, specular, falloff, spot });
+         lights.emplace_back( light_t{position, direction, {0.0f,0.0f,0.0f}, color, specular, falloff, spot });
       }
 
       void clearLights() {
@@ -132,54 +132,54 @@ namespace gl {
       }
    };
 
-   class VAO {
+   class VAO_t {
       GLuint vao = 0;
       GLuint indexId = 0;
       GLuint vertexId = 0;
       GLuint materialId= 0;
    public:
-      friend struct fmt::formatter<gl::VAO>;
+      friend struct fmt::formatter<gl::VAO_t>;
 
-      std::vector<vertex> vertices;
-      std::vector<material> materials;
+      std::vector<vertex_t> vertices;
+      std::vector<material_t> materials;
       std::vector<unsigned short> indices;
-      std::vector<gl::texture_ptr> textures;
+      std::vector<texture_t_ptr> textures;
       std::vector<glm::mat4> transforms;
 
-      VAO() noexcept;
+      VAO_t() noexcept;
 
-      VAO(const VAO& x) noexcept;
+      VAO_t(const VAO_t& x) noexcept;
 
-      VAO(VAO&& x) noexcept;
+      VAO_t(VAO_t&& x) noexcept;
 
-      VAO& operator=(const VAO&) = delete;
+      VAO_t& operator=(const VAO_t&) = delete;
 
-      VAO& operator=(VAO&& other) noexcept;
+      VAO_t& operator=(VAO_t&& other) noexcept;
 
-      void bind( attribute Position, attribute Normal, attribute Color,
-                 attribute Coord,    attribute TUnit,  attribute MIndex,
-                 attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess);
-      int hasTexture(gl::texture_ptr texture);
+      void bind( attribute_t Position, attribute_t Normal, attribute_t Color,
+                 attribute_t Coord,    attribute_t TUnit,  attribute_t MIndex,
+                 attribute_t Ambient,  attribute_t Specular, attribute_t Emissive, attribute_t Shininess);
+      int hasTexture(texture_t_ptr texture);
       void loadBuffers() const;
       void draw() const;
       void debugPrint() const;
-      ~VAO();
+      ~VAO_t();
    };
 
-   typedef std::shared_ptr<VAO>  VAO_ptr;
+   typedef std::shared_ptr<VAO_t>  VAO_t_ptr;
 
    class batch_t {
-      attribute Position;
-      attribute Normal;
-      attribute Color;
-      attribute Coord;
-      attribute TUnit;
-      attribute MIndex;
-      uniform Mmatrix;
-      uniform Nmatrix;
-      uniform TexOffset;
-      attribute Ambient, Specular, Emissive, Shininess;
-      std::vector<VAO_ptr> vaos;
+      attribute_t Position;
+      attribute_t Normal;
+      attribute_t Color;
+      attribute_t Coord;
+      attribute_t TUnit;
+      attribute_t MIndex;
+      uniform_t Mmatrix;
+      uniform_t Nmatrix;
+      uniform_t TexOffset;
+      attribute_t Ambient, Specular, Emissive, Shininess;
+      std::vector<VAO_t_ptr> vaos;
       bool uses_textures = false;
       bool uses_circles = false;
 
@@ -198,20 +198,20 @@ namespace gl {
       void load();
       void bind();
 
-      void setupTextures(VAO_ptr);
+      void setupTextures(VAO_t_ptr);
       void draw();
       void draw(const glm::mat4& transform);
       void clear();
       bool usesCircles() const;
       bool usesTextures() const;
 
-      void vertices( const std::vector<vertex> &vertices,const std::vector<material> &materials,  const std::vector<unsigned short> &indices,
-                     const glm::mat4 &transform, bool flatten_transform, std::optional<gl::texture_ptr> texture, std::optional<color> override );
+      void vertices( const std::vector<vertex_t> &vertices,const std::vector<material_t> &materials,  const std::vector<unsigned short> &indices,
+                     const glm::mat4 &transform, bool flatten_transform, std::optional<texture_t_ptr> texture, std::optional<color_t> override );
    };
 
    typedef std::shared_ptr<batch_t>  batch_t_ptr;
 
-   class framebuffer;
+   class framebuffer_t;
    class frame_t {
       struct geometry_t {
          batch_t_ptr batch;
@@ -219,11 +219,11 @@ namespace gl {
          const shader_t &shader;
       };
       std::vector<geometry_t> geometries;
-      color background_={0,0,0,1};
+      color_t background_={0,0,0,1};
       bool c = false;
 
    public:
-      void background(color b) {
+      void background(color_t b) {
          c = true;
          background_ = b;
       }
@@ -238,10 +238,10 @@ namespace gl {
          geometries.clear();
       }
 
-      void render(framebuffer &fb);
+      void render(framebuffer_t &fb);
    };
 
-   void renderDirect( framebuffer &fb, gl::batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader );
+   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader );
 
 } // namespace gl
 
@@ -260,7 +260,7 @@ namespace gl {
 // };
 
 template <>
-struct fmt::formatter<gl::material> {
+struct fmt::formatter<gl::material_t> {
    // Format the MyClass object
    template <typename ParseContext>
    constexpr auto parse(ParseContext& ctx) {
@@ -268,7 +268,7 @@ struct fmt::formatter<gl::material> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::material& v, FormatContext& ctx) {
+   auto format(const gl::material_t& v, FormatContext& ctx) {
       return fmt::format_to(ctx.out(), "A{} S{} E{} Shine{}",
                             v.ambient,
                             v.specular,
@@ -278,7 +278,7 @@ struct fmt::formatter<gl::material> {
 };
 
 template <>
-struct fmt::formatter<gl::vertex> {
+struct fmt::formatter<gl::vertex_t> {
    // Format the MyClass object
    template <typename ParseContext>
    constexpr auto parse(ParseContext& ctx) {
@@ -286,7 +286,7 @@ struct fmt::formatter<gl::vertex> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::vertex& v, FormatContext& ctx) {
+   auto format(const gl::vertex_t& v, FormatContext& ctx) {
       return fmt::format_to(ctx.out(), "P{} N{} M{} Tu{} Tc{} C{}",
                             v.position,
                             v.normal,

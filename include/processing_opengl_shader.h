@@ -17,12 +17,12 @@ typedef int GLint;
 
 namespace gl {
 
-    class attribute {
+    class attribute_t {
       GLint id = -1;
       GLint shaderId = -1;
    public:
-      attribute() {}
-      attribute(GLuint shaderID, const std::string &attribute);
+      attribute_t() {}
+      attribute_t(GLuint shaderID, const std::string &attribute);
       void bind_vec2(std::size_t stride, void *offset);
       void bind_vec3(std::size_t stride, void *offset);
       void bind_vec4(std::size_t stride, void *offset);
@@ -30,11 +30,11 @@ namespace gl {
       void bind_float(std::size_t stride, void *offset);
    };
 
-   class uniform {
+   class uniform_t {
       GLint id = -1;
    public:
-      uniform() {}
-      uniform(GLuint shaderID, const std::string &uniform);
+      uniform_t() {}
+      uniform_t(GLuint shaderID, const std::string &uniform);
       void set(float value) const;
       void set(int value) const;
       void set(const glm::vec2 &value) const;
@@ -57,7 +57,7 @@ namespace gl {
       std::map<std::string, std::array<int,2>> uniforms2i;
       std::map<std::string, std::array<int,4>> uniforms4i;
       std::map<std::string, float>       uniforms1f;
-      std::map<std::string, texture_ptr> uniformsSampler;
+      std::map<std::string, texture_t_ptr> uniformsSampler;
 
    public:
       bool operator!=(const shader_t &other) {
@@ -68,14 +68,14 @@ namespace gl {
       shader_t(const char *vertSource, const char *fragSource);
       ~shader_t();
       void bind() const;
-      uniform get_uniform(const std::string &uniform_name) const {
+      uniform_t get_uniform(const std::string &uniform_name) const {
          return {programID, uniform_name};
       }
-      attribute get_attribute(const std::string &attribute_name) const {
+      attribute_t get_attribute(const std::string &attribute_name) const {
          return {programID, attribute_name};
       }
       void set_uniforms() const;
-      void set(const char *id, gl::texture_ptr textureID);
+      void set(const char *id, gl::texture_t_ptr textureID);
       void set(const char *id, float value);
       void set(const char *id, float v1, float v2);
       void set(const char *id, float v1, float v2, float v3);
