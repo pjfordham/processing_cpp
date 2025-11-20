@@ -26,12 +26,16 @@ public:
    static void close();
 
    explicit operator bool() const;
+   bool operator<(const PImage& x) {
+      return impl < x.impl;
+   }
    bool operator==(const PImage &x) const {
       return impl == x.impl;
    };
    bool operator!=(const PImage &x) const {
       return !(x==*this);
    };
+   auto operator<=>(const PImage &other) const noexcept = default;
 
    //
    // Supply width, height and pixels as properties for compatability.
