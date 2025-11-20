@@ -1089,6 +1089,7 @@ public:
       flush();
       currentShader = pshader;
       // ??? not sure when this should happen now?
+      currentShader.set("resolution", width, height);
       currentShader.set_uniforms();
    }
 

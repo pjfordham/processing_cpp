@@ -193,6 +193,7 @@ static const char *defaultFragmentShader = R"glsl(
       #version 400
 
       uniform sampler2D texture[16];
+      uniform vec2 resolution;
       flat in int vertTindex;
 
       in vec4 vertColor;
@@ -204,8 +205,16 @@ static const char *defaultFragmentShader = R"glsl(
       void main() {
 
          if ( vertTindex == -1 ) { // It's a circle
-            vec2 pos = vertTexCoord.xy;
-            vec2 centre = vec2(0.5,0.5);
+            // Convert texture coordinates [0,1] to pixel space
+            vec2 pixelPos = vertTexCoord.xy * resolution;
+
+            // Snap to nearest pixel center
+            pixelPos = floor(pixelPos) + 0.5;
+
+            // Back to normalized coordinates [0,1]
+            vec2 pos = pixelPos / resolution;
+
+            vec2 centre = vec2(0.5, 0.5);
             if (distance(pos,centre) > 0.5)
                discard;
             else
