@@ -142,7 +142,7 @@ public:
    PShader &getBestShader(gl::batch_t &batch) {
       // If we're using the default shader and there are no lights, no textures and no circles
       // then use the flat shader for performance.
-      return (currentShader == defaultShader && scene.lights.size() == 0 &&
+      return (currentShader == defaultShader && !scene.anyLights() &&
               !batch.usesTextures() && !batch.usesCircles()) ? flatShader : currentShader;
    }
 
