@@ -8,10 +8,10 @@
 #include <optional>
 
 struct PMaterial {
-   gl::color_t ambientColor;
-   gl::color_t diffuseColor;
-   gl::color_t specularColor;
-   gl::color_t emissiveColor;
+   color ambientColor;
+   color diffuseColor;
+   color specularColor;
+   color emissiveColor;
    float specularExponent;
    float alpha;
    int illum;

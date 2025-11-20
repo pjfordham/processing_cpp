@@ -35,6 +35,8 @@ public:
 
    PGraphics(int width, int height, int mode, int aaMode = MSAA, int aaFactor = 2);
 
+   PShape createShape();
+
    int getWidth() const;
    int getHeight() const;
    unsigned int *getPixels();
@@ -222,6 +224,7 @@ public:
    void specular(float r,float g, float b, float a = 1.0);
    void shininess(float r);
 
+   void showNormals(bool x);
    void fill(float r,float g, float b, float a);
    void fill(float r,float g, float b);
    void fill(float r,float a);

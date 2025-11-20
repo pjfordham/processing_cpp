@@ -25,12 +25,10 @@ namespace gl {
       GLuint vao = 0;
       GLuint indexId = 0;
       GLuint vertexId = 0;
-      GLuint materialId= 0;
    public:
       friend struct fmt::formatter<VAO_t>;
 
       std::vector<vertex_t> vertices;
-      std::vector<material_t> materials;
       std::vector<unsigned short> indices;
       std::vector<texture_t_ptr> textures;
       std::vector<glm::mat4> transforms;
@@ -55,6 +53,50 @@ namespace gl {
       void debugPrint() const;
       ~VAO_t();
    };
+
+   static std::vector<range_t> sort_and_merge(std::vector<range_t> ranges) {
+      if (ranges.empty())
+         return {};
+
+      std::sort(ranges.begin(), ranges.end(),
+                [](const range_t& a, const range_t& b) {
+                   return a.vao < b.vao ||
+                      (a.vao == b.vao && a.start < b.start);
+                });
+
+      std::vector<range_t> out;
+      out.reserve(ranges.size());
+
+      range_t cur = ranges[0];
+
+      for (size_t i = 1; i < ranges.size(); ++i) {
+         const auto& r = ranges[i];
+
+         if (r.vao != cur.vao) {
+            out.push_back(cur);
+            cur = r;
+            continue;
+         }
+
+         int cur_end = cur.start + cur.size;  // exclusive
+         int r_end   = r.start + r.size;      // exclusive
+
+         if (r.start <= cur_end) {
+            // overlap or touching
+            int new_end = std::max(cur_end, r_end);
+            cur.size = new_end - cur.start;
+         } else {
+            // gap -> finalize
+            out.push_back(cur);
+            cur = r;
+         }
+      }
+
+      out.push_back(cur);
+
+      return out;
+   }
+
 
    int scene_t::blendMode(int b ) {
       return std::exchange(currentBlendMode,b);
@@ -241,6 +283,7 @@ namespace gl {
    }
 
    void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
+      batch->reload();
       renderThread.enqueue( [&fb, &shader, batch, transform, scene] () mutable {
          fb.bind();
          shader.bind();
@@ -303,6 +346,14 @@ namespace gl {
       c = false;
    }
 
+   batch_t::batch_t() noexcept {}
+
+   batch_t::~batch_t() {}
+
+   batch_t::batch_t(batch_t&& x) noexcept = default;
+
+   batch_t& batch_t::operator=(batch_t&& other) noexcept = default;
+
    void batch_t::setup( const shader_t &shader ) {
       Position = shader.get_attribute("position");
       Normal = shader.get_attribute("normal");
@@ -319,10 +370,10 @@ namespace gl {
       Shininess = shader.get_attribute("shininess");
    }
 
-   void batch_t::setupTextures(VAO_t_ptr draw) {
+   void batch_t::setupTextures(VAO_t &draw) {
       std::vector<glm::vec2> textureOffsets(16);
-      for ( int i = 0; i < draw->textures.size() ; ++i ) {
-         auto &img = draw->textures[i];
+      for ( int i = 0; i < draw.textures.size() ; ++i ) {
+         auto &img = draw.textures[i];
          if (img != texture_t::circle()) {
             // Set this here so get_width and get_height don't mess up
             // previously bound textures.
@@ -332,6 +383,34 @@ namespace gl {
          }
       }
       TexOffset.set(textureOffsets);
+   }
+
+   void batch_t::reload() {
+      // If we have iterms in list to reupload, reupload them now.
+      if (!vertices_to_reload.empty()) {
+         auto merged = sort_and_merge(std::move(vertices_to_reload));
+         vertices_to_reload.clear();
+
+         for (const auto& r : merged) {
+
+            renderThread.enqueue( [
+                                   batch = shared_from_this(),
+                                   vao = r.vao,
+                                   start = r.start,
+                                   size  = r.size] ()
+               {
+                  // Bind correct VAO
+                  auto &it = batch->vaos[vao];
+                  it->bind();
+                  glBufferSubData(
+                     GL_ARRAY_BUFFER,
+                     start * sizeof(vertex_t),
+                     size  * sizeof(vertex_t),
+                     it->vertices.data() + start
+                     );
+               });
+         }
+      }
    }
 
    void batch_t::draw( const glm::mat4 &transform ) {
@@ -346,24 +425,53 @@ namespace gl {
          fmt::print("\n### GEOMETRY DUMP END   ###\n");
       }
 
-      std::vector<glm::mat4> transforms;
-      std::vector<glm::mat3> normals;
-      transforms.push_back(transform);
-      normals.emplace_back( glm::transpose(glm::inverse(transform)) );
-      Mmatrix.set( transforms );
-      Nmatrix.set( normals );
-
       for (auto &draw: vaos ) {
-         setupTextures( draw );
+         std::vector<glm::mat3> normals;
+         std::vector<glm::mat4> transforms;
+         for ( const auto &t : draw->transforms ) {
+            transforms.push_back( transform * t );
+            normals.emplace_back( glm::transpose(glm::inverse(transforms.back())) );
+         }
+
+         Mmatrix.set( transforms );
+         Nmatrix.set( normals );
+         setupTextures( *draw );
          draw->draw();
       }
    }
 
-   void batch_t::vertices(const std::vector<vertex_t> &vertices, const std::vector<material_t> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_, std::optional<color_t> override ) {
-      DEBUG_METHOD();
+   void batch_t::reserve( int count ) {
+      if (vaos.size() == 0) {
+         vaos.emplace_back(std::make_unique<VAO_t>());
+      } else if ( vaos.back()->vertices.size() + count > 65536 ) {
+         auto texture = vaos.back()->textures.back();
+         auto transform = vaos.back()->transforms.back();
+         vaos.emplace_back(std::make_unique<VAO_t>());
+         vaos.back()->transforms.push_back(transform);
+         vaos.back()->textures.push_back(texture);
+      }
+   }
 
+   void batch_t::add_transform( const glm::mat4 &transform ) {
+      if (vaos.size() == 0 ) {
+         vaos.emplace_back(std::make_unique<VAO_t>());
+      }
+      const int MaxTransformsPerBatch = 16;
+      if (vaos.back()->transforms.size() == MaxTransformsPerBatch) {
+         vaos.emplace_back(std::make_unique<VAO_t>());
+      }
+      vaos.back()->transforms.push_back(transform);
+   }
+
+   void batch_t::set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID) {
+      auto &it = vaos[existing_vao];
+      it->transforms[existing_trID] = transform_;
+   }
+
+   void batch_t::set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID) {
       if (texture_ == texture_t::circle()) {
-         uses_circles = true;
+         fmt::print("Unexpect reset of circle texture\n");
+         abort();
       } else {
          if (texture_) {
             uses_textures = true;
@@ -371,83 +479,72 @@ namespace gl {
             texture_ = texture_t::blank();
          }
       }
+      auto &it = vaos[existing_vao];
+      it->textures[existing_txID] = texture_;
+   }
 
-      // Do this better and share somehow with shader and texture unit init
-      // code.
-      // glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &MaxTextureImageUnits);
-
-      const int MaxTextureImageUnits = 15; // keep one spare
-      const int MaxTransformsPerBatch = 16;
-
-      if (vertices.size() > 65536)
-         abort();
-
-      glm::mat4 I = glm::identity<glm::mat4>();
-      const glm::mat4 &transform =
-         flatten_transforms ? I : transform_;
-
-      if (vaos.size() == 0 || vaos.back()->vertices.size() + vertices.size() > 65536) {
-         vaos.emplace_back(std::make_shared<VAO_t>());
-         vaos.back()->transforms.push_back( transform );
-         vaos.back()->textures.push_back(texture_.value());
-      }
-      // At this point vaos has a back and that back has a transform and a texture.
-      // It also has enough capacity for these triangles.
-
-      if ( transform != vaos.back()->transforms.back()) {
-         if (vaos.back()->transforms.size() == MaxTransformsPerBatch) {
-            vaos.emplace_back(std::make_shared<VAO_t>());
-            vaos.back()->textures.push_back(texture_.value());
-         }
-         vaos.back()->transforms.push_back(transform);
-      }
-
-      // Try to reused existing textures if they are the same. Hopefully the
-      // search will be minimal cost since N<15 but we could use a hashmap
-      // if need-be. Could apply to transforms too but comparision cost is
-      // much higher.
-      int tunit;
-      if(texture_ == texture_t::circle()) {
-         tunit = -1;
-      } else {
+   void batch_t::add_texture( texture_t_ptr texture ) {
+      {
          auto &vec = vaos.back()->textures;
-         auto i = std::find(vec.begin(), vec.end(), texture_.value());
-
-         if ( i == vec.end() ) {
-            if (vec.size() == MaxTextureImageUnits) {
-               vaos.emplace_back(std::make_shared<VAO_t>());
-               vaos.back()->transforms.push_back( transform );
-            }
-            // Old version of vec might have been invalidated.
-            auto &vec = vaos.back()->textures;
-            vec.push_back(texture_.value());
-            tunit = vec.size() - 1;
-         } else {
-            tunit = i - vec.begin();
+         const int MaxTextureImageUnits = 15; // keep one spare
+         if (vec.size() == MaxTextureImageUnits) {
+            auto t = vaos.back()->transforms.back();
+            vaos.emplace_back(std::make_unique<VAO_t>());
+            vaos.back()->transforms.push_back( t );
          }
       }
+      // Old version of vec might have been invalidated.
+      auto &vec = vaos.back()->textures;
+      vec.push_back(texture);
+   }
 
-      auto &vao = *(vaos.back());
-      int currentM = vao.transforms.size() - 1;
-      int offset = vao.vertices.size();
+   batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_) {
 
-      for (const auto &v : vertices) {
-         vao.vertices.emplace_back(
-            flatten_transforms ? transform_ * glm::vec4(v.position,1.0) : v.position,
-            v.normal,
-            v.coord,
-            override.value_or(v.fill),
-            tunit,
-            currentM);
+      transform = &transform_;
+      reservation = reservation_;
+
+      // Ensure current VAO has everything we need for this sub_batch
+      batch.reserve(reservation);
+      batch.add_transform( transform_ );
+
+      if (texture_ == texture_t::circle()) {
+         batch.uses_circles = true;
+         txID = -1;
+      } else {
+         if (texture_) {
+            batch.uses_textures = true;
+         } else {
+            texture_ = texture_t::blank();
+         }
+         texture_t_ptr texture = texture_.value();
+         batch.add_texture( texture );
+         txID = batch.vaos.back()->textures.size() - 1;
       }
 
-      for (const auto &m : materials ) {
-         vao.materials.push_back( m );
-      }
+      trID = batch.vaos.back()->transforms.size() - 1;
 
-      for (const auto index : indices) {
-         vao.indices.push_back( offset + index );
-      }
+      vao = (int)batch.vaos.size()-1;
+
+      auto &cvao = *batch.vaos.back();
+      vertex = (int)cvao.vertices.size();
+      index = (int)cvao.indices.size();
+      _vertices = &(cvao.vertices);
+      _indices = &(cvao.indices);
+
+      vertex_count = 0;
+      index_count = 0;
+      batch_ptr = &batch;
+   }
+
+   void batch_t::sub_batch_t::upload(batch_t &batch) const {
+      renderThread.enqueue( [self = *this, batch = batch.shared_from_this() ] {
+         auto &it = batch->vaos[ self.vao ];
+         it->bind();
+         glBufferSubData(GL_ARRAY_BUFFER, self.vertex * sizeof(vertex_t),
+                         self.getVertexCount() * sizeof(vertex_t), self.vertices_data());
+         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, self.index * sizeof(unsigned short),
+                         self.getIndexCount() * sizeof(unsigned short), self.indices_data());
+      } );
    }
 
    void VAO_t::debugPrint() const {
@@ -456,13 +553,13 @@ namespace gl {
       }
       fmt::print("Vertices: {}\n", vertices.size() );
       for ( int i = 0; i < vertices.size(); ++i ) {
-         fmt::print("{:3}: {} {}\n", i, vertices[i], materials[i]);
+         fmt::print("{:3}: {}\n", i, vertices[i]);
       }
       fmt::print("Triangles: {}\n", indices.size() );
       for ( int i = 0; i < indices.size(); i+=3 ) {
          fmt::print("{},{},{} ", indices[i], indices[i+1], indices[i+2]);
       }
-    }
+   }
 
    void batch_t::draw() {
       if (enable_debug) {
@@ -484,7 +581,7 @@ namespace gl {
          Mmatrix.set( draw->transforms );
          Nmatrix.set(normals);
 
-         setupTextures( draw );
+         setupTextures( *draw );
          draw->draw();
       }
    }
@@ -505,11 +602,14 @@ namespace gl {
          }
    }
 
+   void batch_t::reload(const sub_batch_t &s) {
+      vertices_to_reload.push_back( s.getRange() );
+   }
+
    void batch_t::load() {
-      renderThread.enqueue( [&] {
-         _load();
+      renderThread.enqueue( [self = shared_from_this() ] {
+         self->_load();
       } );
-      renderThread.wait_until_nothing_in_flight();
    }
 
    bool batch_t::usesCircles() const {
@@ -531,7 +631,6 @@ namespace gl {
    VAO_t::VAO_t() noexcept {
       DEBUG_METHOD();
       vertices.reserve(65536);
-      materials.reserve(65536);
       indices.reserve(65536);
       textures.reserve(16);
       transforms.reserve(16);
@@ -539,7 +638,6 @@ namespace gl {
          // glGenVertexArrays(1, &vao);
          glGenBuffers(1, &indexId);
          glGenBuffers(1, &vertexId);
-         glGenBuffers(1, &materialId);
       } );
    }
    
@@ -561,10 +659,8 @@ namespace gl {
       std::swap(vao, other.vao);
       std::swap(indexId, other.indexId);
       std::swap(vertexId, other.vertexId);
-      std::swap(materialId, other.materialId);
       std::swap(vertices, other.vertices);
       std::swap(indices, other.indices);
-      std::swap(materials, other.materials);
       std::swap(textures, other.textures);
       std::swap(transforms, other.transforms);
       return *this;
@@ -591,12 +687,10 @@ namespace gl {
       Color.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,fill));
       TUnit.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,tunit));
       MIndex.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,mindex));
-
-      glBindBuffer(GL_ARRAY_BUFFER, materialId);
-      Ambient.bind_vec4( sizeof(material_t), (void*)offsetof(material_t, ambient) );
-      Specular.bind_vec4( sizeof(material_t), (void*)offsetof(material_t, specular) );
-      Emissive.bind_vec4( sizeof(material_t), (void*)offsetof(material_t, emissive) );
-      Shininess.bind_float( sizeof(material_t), (void*)offsetof(material_t, shininess) );
+      Ambient.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,ambient) );
+      Specular.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,specular) );
+      Emissive.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t, emissive) );
+      Shininess.bind_float( sizeof(vertex_t), (void*)offsetof(vertex_t, shininess) );
 
       glBindVertexArray(0);
    }
@@ -610,7 +704,6 @@ namespace gl {
    void VAO_t::loadBuffers() const {
       DEBUG_METHOD();
       loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
-      loadBufferData(GL_ARRAY_BUFFER, materialId, materials, GL_STREAM_DRAW);
       loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
    }
 
@@ -623,7 +716,10 @@ namespace gl {
 
    VAO_t::~VAO_t() {
       DEBUG_METHOD();
-      // renderThread.enqueue( [&] {
+      GLuint vao = this->vao;
+      GLuint indexId = this->indexId;
+      GLuint vertexId = this->vertexId;
+      renderThread.enqueue( [vao, indexId, vertexId ] {
          if (vao) {
             glBindVertexArray(vao);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -635,9 +731,7 @@ namespace gl {
             glDeleteBuffers(1, &indexId);
          if (vertexId)
             glDeleteBuffers(1, &vertexId);
-         if (materialId)
-            glDeleteBuffers(1, &materialId);
-      // } );
+      } );
    }
 
    int VAO_t::hasTexture(texture_t_ptr texture) {

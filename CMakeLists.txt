@@ -170,6 +170,7 @@ add_library(Processing
   src/processing_pshape_svg.cc
   src/processing_pshape.cc
   src/processing_color.cc
+  src/processing_style.cc
   src/processing_opengl.cc
   src/processing_opengl_shader.cc
   src/processing_opengl_framebuffer.cc
@@ -197,6 +198,7 @@ install(FILES
   include/processing_pshape.h
   include/processing_pshape_svg.h
   include/processing_color.h
+  include/processing_style.h
   include/processing_opengl.h
   include/processing_opengl_shader.h
   include/processing_opengl_framebuffer.h

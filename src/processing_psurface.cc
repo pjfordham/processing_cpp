@@ -322,8 +322,8 @@ void PSurface::setupFrame() {
       // Draw anything from setup.
       g.endDraw();
       g.commit_draw();
+      PShape::optimize();
    }
-   PShape::optimize();
 }
 
 void PSurface::loadPixels() {
