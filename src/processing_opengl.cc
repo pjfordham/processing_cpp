@@ -20,6 +20,191 @@ progschj::ThreadPool renderThread(1);
 static bool enable_debug = false;
 
 namespace gl {
+
+   int scene_t::blendMode(int b ) {
+      return std::exchange(currentBlendMode,b);
+   }
+
+   void scene_t::hint(int type) {
+      switch(type) {
+      case DISABLE_DEPTH_TEST:
+         depth_test = false;
+         break;
+      case ENABLE_DEPTH_TEST:
+         depth_test = true;
+         break;
+      case DISABLE_DEPTH_MASK:
+         depth_mask = false;
+         break;
+      case ENABLE_DEPTH_MASK:
+         depth_mask = true;
+         break;
+      default:
+         break;
+      }
+   }
+
+   scene_t::scene_t() {}
+
+   void scene_t::setup( const shader_t &shader) {
+      LightCount = shader.get_uniform("lightCount");
+      LightPosition = shader.get_uniform("lightPosition");
+      LightNormal = shader.get_uniform("lightNormal");
+      LightAmbient = shader.get_uniform("lightAmbient");
+      LightDiffuse = shader.get_uniform("lightDiffuse");
+      LightSpecular = shader.get_uniform("lightSpecular");
+      LightFalloff = shader.get_uniform("lightFalloff");
+      LightSpot = shader.get_uniform("lightSpot");
+      PVmatrix = shader.get_uniform("PVmatrix");
+      Eye = shader.get_uniform("eye");
+   }
+
+   float scene_t::screenX(float x, float y, float z) const {
+      glm::vec4 in = { x, y, z, 1 };
+      return (projection_matrix * (view_matrix * in)).x;
+   }
+
+   float scene_t::screenY(float x, float y, float z) const {
+      glm::vec4 in = { x, y, z, 1 };
+      return (projection_matrix * (view_matrix * in)).y;
+   }
+
+   void scene_t::set() {
+      PVmatrix.set( projection_matrix * view_matrix  );
+      Eye.set( glm::vec3(glm::inverse(view_matrix)[3]));
+      if ( lights.size() == 0 ) {
+         // setup flat light
+         LightCount.set( 1 );
+         LightPosition.set( glm::vec4{ 0,0,0,0} );
+         LightNormal.set( glm::vec3{ 0,0,0} );
+         LightAmbient.set( glm::vec3{ 1,1,1} );
+         LightDiffuse.set( glm::vec3{0,0,0} );
+         LightSpecular.set( glm::vec3{0,0,0} );
+         LightFalloff.set( glm::vec3{1,0,0} );
+         LightSpot.set( glm::vec2{0,0} );
+      } else {
+         LightCount.set( (int) lights.size()  );
+         std::vector<glm::vec4> position;
+         std::vector<glm::vec3> normal, ambient, diffuse, specular, falloff;
+         std::vector<glm::vec2> spot;
+         for (const auto &light : lights){
+            position.push_back( light.position );
+            normal.push_back( light.normal );
+            ambient.push_back( light.ambient );
+            diffuse.push_back( light.diffuse );
+            specular.push_back( light.specular );
+            falloff.push_back( light.falloff );
+            spot.push_back( light.spot );
+         }
+         LightPosition.set( position );
+         LightNormal.set( normal );
+         LightAmbient.set( ambient );
+         LightDiffuse.set( diffuse );
+         LightSpecular.set( specular );
+         LightFalloff.set( falloff );
+         LightSpot.set( spot );
+      }
+
+      glEnable(GL_BLEND);
+      switch (currentBlendMode) {
+      case BLEND:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case ADD:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case SUBTRACT:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+         glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+         break;
+      case DARKEST:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+         glBlendEquation(GL_MIN);
+         break;
+      case LIGHTEST:
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+         glBlendEquation(GL_MAX);
+         break;
+      case DIFFERENCE:
+         // Not supported
+         glDisable(GL_BLEND);
+         break;
+      case EXCLUSION:
+         glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case MULTIPLY:
+         glBlendFunc(GL_DST_COLOR, GL_ZERO);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case SCREEN:
+         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+         glBlendEquation(GL_FUNC_ADD);
+         break;
+      case REPLACE:
+         glDisable(GL_BLEND);
+         break;
+      default:
+         abort();
+      }
+
+      glDepthFunc(GL_LEQUAL);
+      if (depth_test) {
+         glEnable(GL_DEPTH_TEST);
+      } else {
+         glDisable(GL_DEPTH_TEST);
+      }
+      if (depth_mask) {
+         glDepthMask(GL_TRUE);
+      } else {
+         glDepthMask(GL_FALSE);
+      }
+   }
+
+   void scene_t::setProjectionMatrix( const glm::mat4 &PV ) {
+      projection_matrix = PV;
+   }
+
+   void scene_t::setViewMatrix( const glm::mat4 &PV ) {
+      glm::mat4 flipY = {
+         { 1.0f,  0.0f, 0.0f, 0.0f },
+         { 0.0f, -1.0f, 0.0f, 0.0f },
+         { 0.0f,  0.0f, 1.0f, 0.0f } ,
+         { 0.0f,  0.0f, 0.0f, 1.0f } };
+      view_matrix = flipY * PV ;
+   }
+
+   void scene_t::pushAmbientLight( glm::vec3 color ) {
+      lights.emplace_back( light_t{{0.0f,0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
+   }
+
+   void scene_t::pushDirectionalLight( glm::vec3 color, glm::vec3 vector, glm::vec3 specular ) {
+      lights.emplace_back( light_t{{0.0f,0.0f,0.0f,0.0f}, vector, {0,0,0}, color, specular, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
+   }
+
+   void scene_t::pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 specular, glm::vec3 falloff) {
+      lights.emplace_back( light_t{position, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, specular, falloff, {0.0f,0.0f}} );
+   }
+
+   void scene_t::pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 specular, glm::vec3 falloff, glm::vec2 spot) {
+      lights.emplace_back( light_t{position, direction, {0.0f,0.0f,0.0f}, color, specular, falloff, spot });
+   }
+
+   void scene_t::clearLights() {
+      lights.clear();
+   }
+
+   void scene_t::flatLight() {
+      clearLights();
+      pushAmbientLight(glm::vec3{1.0f,1.0f,1.0f});
+   }
+
+   bool scene_t::anyLights() const {
+      return lights.size() != 0;
+   }
+
    void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
       renderThread.enqueue( [&fb, &shader, batch, transform, scene] () mutable {
          fb.bind();
@@ -67,10 +252,6 @@ namespace gl {
 
       geometries.clear();
       c = false;
-   }
-
-   int scene_t::blendMode(int b ) {
-      return std::exchange(currentBlendMode,b);
    }
 
    void batch_t::setup( const shader_t &shader ) {
@@ -294,133 +475,11 @@ namespace gl {
       vaos.clear();
    }
 
-   void scene_t::set() {
-      PVmatrix.set( projection_matrix * view_matrix  );
-      Eye.set( glm::vec3(glm::inverse(view_matrix)[3]));
-      if ( lights.size() == 0 ) {
-         // setup flat light
-         LightCount.set( 1 );
-         LightPosition.set( glm::vec4{ 0,0,0,0} );
-         LightNormal.set( glm::vec3{ 0,0,0} );
-         LightAmbient.set( glm::vec3{ 1,1,1} );
-         LightDiffuse.set( glm::vec3{0,0,0} );
-         LightSpecular.set( glm::vec3{0,0,0} );
-         LightFalloff.set( glm::vec3{1,0,0} );
-         LightSpot.set( glm::vec2{0,0} );
-      } else {
-         LightCount.set( (int) lights.size()  );
-         std::vector<glm::vec4> position;
-         std::vector<glm::vec3> normal, ambient, diffuse, specular, falloff;
-         std::vector<glm::vec2> spot;
-         for (const auto &light : lights){
-            // fmt::print("L{} P{}  N{}  A{}  D{}  S{}  F{}  S{}\n",
-            //            i - lights.begin(),
-            //            light.position,
-            //            light.normal,
-            //            light.ambient,
-            //            light.diffuse,
-            //            light.specular,
-            //            light.falloff,
-            //            light.spot );
-            position.push_back( light.position );
-            normal.push_back( light.normal );
-            ambient.push_back( light.ambient );
-            diffuse.push_back( light.diffuse );
-            specular.push_back( light.specular );
-            falloff.push_back( light.falloff );
-            spot.push_back( light.spot );
-         }
-         LightPosition.set( position );
-         LightNormal.set( normal );
-         LightAmbient.set( ambient );
-         LightDiffuse.set( diffuse );
-         LightSpecular.set( specular );
-         LightFalloff.set( falloff );
-         LightSpot.set( spot );
-      }
-
-      glEnable(GL_BLEND);
-      switch (currentBlendMode) {
-      case BLEND:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case ADD:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case SUBTRACT:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-         glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-         break;
-      case DARKEST:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-         glBlendEquation(GL_MIN);
-         break;
-      case LIGHTEST:
-         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-         glBlendEquation(GL_MAX);
-         break;
-      case DIFFERENCE:
-         // Not supported
-         glDisable(GL_BLEND);
-         break;
-      case EXCLUSION:
-         glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case MULTIPLY:
-         glBlendFunc(GL_DST_COLOR, GL_ZERO);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case SCREEN:
-         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
-         glBlendEquation(GL_FUNC_ADD);
-         break;
-      case REPLACE:
-         glDisable(GL_BLEND);
-         break;
-      default:
-         abort();
-      }
-
-      glDepthFunc(GL_LEQUAL);
-      if (depth_test) {
-         glEnable(GL_DEPTH_TEST);
-      } else {
-         glDisable(GL_DEPTH_TEST);
-      }
-      if (depth_mask) {
-         glDepthMask(GL_TRUE);
-      } else {
-         glDepthMask(GL_FALSE);
-      }
-   }
-
    void shader_t::bind() const {
       glUseProgram(programID);
    }
 
-   void scene_t::hint(int type) {
-      switch(type) {
-      case DISABLE_DEPTH_TEST:
-         depth_test = false;
-         break;
-      case ENABLE_DEPTH_TEST:
-         depth_test = true;
-         break;
-      case DISABLE_DEPTH_MASK:
-         depth_mask = false;
-         break;
-      case ENABLE_DEPTH_MASK:
-         depth_mask = true;
-         break;
-      default:
-         break;
-      }
-   }
-
-  VAO_t::VAO_t() noexcept {
+   VAO_t::VAO_t() noexcept {
       DEBUG_METHOD();
       vertices.reserve(65536);
       materials.reserve(65536);

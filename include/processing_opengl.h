@@ -63,73 +63,26 @@ namespace gl {
       bool depth_test = true;
       bool depth_mask = true;
 
+      std::vector<light_t> lights;
+
    public:
       int blendMode( int b );
       void hint(int type);
 
-      std::vector<light_t> lights;
-      scene_t() {}
-      void setup( const shader_t &shader) {
-         LightCount = shader.get_uniform("lightCount");
-         LightPosition = shader.get_uniform("lightPosition");
-         LightNormal = shader.get_uniform("lightNormal");
-         LightAmbient = shader.get_uniform("lightAmbient");
-         LightDiffuse = shader.get_uniform("lightDiffuse");
-         LightSpecular = shader.get_uniform("lightSpecular");
-         LightFalloff = shader.get_uniform("lightFalloff");
-         LightSpot = shader.get_uniform("lightSpot");
-         PVmatrix = shader.get_uniform("PVmatrix");
-         Eye = shader.get_uniform("eye");
-      }
-
-      float screenX(float x, float y, float z) {
-         glm::vec4 in = { x, y, z, 1 };
-         return (projection_matrix * (view_matrix * in)).x;
-      }
-
-      float screenY(float x, float y, float z) {
-         glm::vec4 in = { x, y, z, 1 };
-         return (projection_matrix * (view_matrix * in)).y;
-      }
-
+      scene_t();
+      void setup( const shader_t &shader);
+      float screenX(float x, float y, float z) const;
+      float screenY(float x, float y, float z) const;
       void set();
-      void setProjectionMatrix( const glm::mat4 &PV ) {
-         projection_matrix = PV;
-      }
-
-      void setViewMatrix( const glm::mat4 &PV ) {
-         glm::mat4 flipY = {
-            { 1.0f,  0.0f, 0.0f, 0.0f },
-            { 0.0f, -1.0f, 0.0f, 0.0f },
-            { 0.0f,  0.0f, 1.0f, 0.0f } ,
-            { 0.0f,  0.0f, 0.0f, 1.0f } };
-         view_matrix = flipY * PV ;
-      }
-
-      void pushAmbientLight( glm::vec3 color ) {
-         lights.emplace_back( light_t{{0.0f,0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
-      }
-
-      void pushDirectionalLight( glm::vec3 color, glm::vec3 vector, glm::vec3 specular ) {
-         lights.emplace_back( light_t{{0.0f,0.0f,0.0f,0.0f}, vector, {0,0,0}, color, specular, {1.0f,0.0f,0.0f}, {0.0f,0.0f}} );
-      }
-
-      void pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 specular, glm::vec3 falloff) {
-         lights.emplace_back( light_t{position, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f}, color, specular, falloff, {0.0f,0.0f}} );
-      }
-
-      void pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 specular, glm::vec3 falloff, glm::vec2 spot) {
-         lights.emplace_back( light_t{position, direction, {0.0f,0.0f,0.0f}, color, specular, falloff, spot });
-      }
-
-      void clearLights() {
-         lights.clear();
-      }
-
-      void flatLight() {
-         clearLights();
-         pushAmbientLight(glm::vec3{1.0f,1.0f,1.0f});
-      }
+      void setProjectionMatrix( const glm::mat4 &PV );
+      void setViewMatrix( const glm::mat4 &PV );
+      void pushAmbientLight( glm::vec3 color );
+      void pushDirectionalLight( glm::vec3 color, glm::vec3 vector, glm::vec3 specular );
+      void pushPointLight( glm::vec3 color, glm::vec4 position, glm::vec3 specular, glm::vec3 falloff);
+      void pushSpotLight(  glm::vec3 color, glm::vec4 position, glm::vec3 direction,  glm::vec3 specular, glm::vec3 falloff, glm::vec2 spot);
+      void clearLights();
+      void flatLight();
+      bool anyLights() const;
    };
 
    class VAO_t {
