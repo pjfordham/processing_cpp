@@ -43,7 +43,7 @@ public:
    int width = 0;
    int height = 0;
    unsigned int *pixels = nullptr;
-   gl::texture_ptr texture;
+   gl::texture_t_ptr texture;
    int textureWrap;
    bool dirty = true;
 
@@ -61,7 +61,7 @@ public:
       std::fill(pixels, pixels+width*height, color(BLACK));
    }
 
-   PImageImpl(gl::texture_ptr textureID_) : texture(textureID_) {
+   PImageImpl(gl::texture_t_ptr textureID_) : texture(textureID_) {
       DEBUG_METHOD();
       width = texture->get_width();
       height = texture->get_height();
@@ -114,7 +114,7 @@ public:
       }
    }
 
-   gl::texture_ptr getTextureID() {
+   gl::texture_t_ptr getTextureID() {
       DEBUG_METHOD();
       if ( dirty ) {
          updatePixels();
@@ -321,7 +321,7 @@ color PImage::get(int x, int y) const {
    return impl->get(x,y);
 }
 
-gl::texture_ptr PImage::getTextureID() const {
+gl::texture_t_ptr PImage::getTextureID() const {
    return impl->getTextureID();
 }
 
@@ -379,7 +379,7 @@ PImage createImage(int width, int height, int mode) {
    return { std::make_shared<PImageImpl>(width,height,mode) };
 }
 
-PImage createImageFromTexture(gl::texture_ptr textureID) {
+PImage createImageFromTexture(gl::texture_t_ptr textureID) {
    return { std::make_shared<PImageImpl>(textureID) };
 }
 

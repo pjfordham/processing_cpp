@@ -20,11 +20,11 @@ progschj::ThreadPool renderThread(1);
 static bool enable_debug = false;
 
 namespace gl {
-   void renderDirect( framebuffer &fb, gl::batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
+   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
       renderThread.enqueue( [&fb, &shader, batch, transform, scene] () mutable {
          fb.bind();
          shader.bind();
-         uniform uSampler = shader.get_uniform("texture");
+         uniform_t uSampler = shader.get_uniform("texture");
          uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
          scene.setup( shader );
@@ -36,7 +36,7 @@ namespace gl {
       } );
    }
 
-   void frame_t::render(framebuffer &fb) {
+   void frame_t::render(framebuffer_t &fb) {
 
       // Stop the main thread getting multiple frames ahead of the render thread.
       renderThread.wait_until_nothing_in_flight();
@@ -50,7 +50,7 @@ namespace gl {
             // Add flat shader optimization
             g.shader.bind();
 
-            uniform uSampler = g.shader.get_uniform("texture");
+            uniform_t uSampler = g.shader.get_uniform("texture");
             uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
             g.scene.setup( g.shader );
@@ -89,7 +89,7 @@ namespace gl {
       Shininess = shader.get_attribute("shininess");
    }
 
-   void batch_t::setupTextures(VAO_ptr draw) {
+   void batch_t::setupTextures(VAO_t_ptr draw) {
       std::vector<glm::vec2> textureOffsets(16);
       for ( int i = 0; i < draw->textures.size() ; ++i ) {
          auto &img = draw->textures[i];
@@ -129,7 +129,7 @@ namespace gl {
       }
    }
 
-   void batch_t::vertices(const std::vector<vertex> &vertices, const std::vector<material> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_ptr> texture_, std::optional<color> override ) {
+   void batch_t::vertices(const std::vector<vertex_t> &vertices, const std::vector<material_t> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_, std::optional<color_t> override ) {
       DEBUG_METHOD();
 
       if (texture_ == texture_t::circle()) {
@@ -157,7 +157,7 @@ namespace gl {
          flatten_transforms ? I : transform_;
 
       if (vaos.size() == 0 || vaos.back()->vertices.size() + vertices.size() > 65536) {
-         vaos.emplace_back(std::make_shared<VAO>());
+         vaos.emplace_back(std::make_shared<VAO_t>());
          vaos.back()->transforms.push_back( transform );
          vaos.back()->textures.push_back(texture_.value());
       }
@@ -166,7 +166,7 @@ namespace gl {
 
       if ( transform != vaos.back()->transforms.back()) {
          if (vaos.back()->transforms.size() == MaxTransformsPerBatch) {
-            vaos.emplace_back(std::make_shared<VAO>());
+            vaos.emplace_back(std::make_shared<VAO_t>());
             vaos.back()->textures.push_back(texture_.value());
          }
          vaos.back()->transforms.push_back(transform);
@@ -185,7 +185,7 @@ namespace gl {
 
          if ( i == vec.end() ) {
             if (vec.size() == MaxTextureImageUnits) {
-               vaos.emplace_back(std::make_shared<VAO>());
+               vaos.emplace_back(std::make_shared<VAO_t>());
                vaos.back()->transforms.push_back( transform );
             }
             // Old version of vec might have been invalidated.
@@ -220,7 +220,7 @@ namespace gl {
       }
    }
 
-   void VAO::debugPrint() const {
+   void VAO_t::debugPrint() const {
       for (const auto &m : transforms) {
          fmt::print("{}\n",m);
       }
@@ -420,7 +420,7 @@ namespace gl {
       }
    }
 
-  VAO::VAO() noexcept {
+  VAO_t::VAO_t() noexcept {
       DEBUG_METHOD();
       vertices.reserve(65536);
       materials.reserve(65536);
@@ -435,7 +435,7 @@ namespace gl {
       } );
    }
 
-   VAO::VAO(const VAO &that) noexcept {
+   VAO_t::VAO_t(const VAO_t &that) noexcept {
       DEBUG_METHOD();
       // Needs to be here for code to compile but should never actually happen becuase only
       // compiled shapes have VAOs and we never copy them.
@@ -443,12 +443,12 @@ namespace gl {
       abort();
    }
 
-   VAO::VAO(VAO&& x) noexcept : VAO() {
+   VAO_t::VAO_t(VAO_t&& x) noexcept : VAO_t() {
       DEBUG_METHOD();
       *this = std::move(x);
    }
 
-   VAO& VAO::operator=(VAO&& other) noexcept {
+   VAO_t& VAO_t::operator=(VAO_t&& other) noexcept {
       DEBUG_METHOD();
       std::swap(vao, other.vao);
       std::swap(indexId, other.indexId);
@@ -462,9 +462,9 @@ namespace gl {
       return *this;
    }
 
-   void VAO::bind( attribute Position, attribute Normal, attribute Color,
-                   attribute Coord,  attribute TUnit, attribute MIndex,
-                   attribute Ambient,  attribute Specular, attribute Emissive, attribute Shininess) {
+   void VAO_t::bind( attribute_t Position, attribute_t Normal, attribute_t Color,
+                   attribute_t Coord,  attribute_t TUnit, attribute_t MIndex,
+                   attribute_t Ambient,  attribute_t Specular, attribute_t Emissive, attribute_t Shininess) {
       DEBUG_METHOD();
 
       if (!vao)
@@ -472,18 +472,18 @@ namespace gl {
       glBindVertexArray(vao);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
-      Position.bind_vec3( sizeof(vertex), (void*)offsetof(vertex,position) );
-      Normal.bind_vec3( sizeof(vertex),  (void*)offsetof(vertex,normal));
-      Coord.bind_vec2( sizeof(vertex), (void*)offsetof(vertex,coord));
-      Color.bind_vec4( sizeof(vertex), (void*)offsetof(vertex,fill));
-      TUnit.bind_int( sizeof(vertex), (void*)offsetof(vertex,tunit));
-      MIndex.bind_int( sizeof(vertex), (void*)offsetof(vertex,mindex));
+      Position.bind_vec3( sizeof(vertex_t), (void*)offsetof(vertex_t,position) );
+      Normal.bind_vec3( sizeof(vertex_t),  (void*)offsetof(vertex_t,normal));
+      Coord.bind_vec2( sizeof(vertex_t), (void*)offsetof(vertex_t,coord));
+      Color.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,fill));
+      TUnit.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,tunit));
+      MIndex.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,mindex));
 
       glBindBuffer(GL_ARRAY_BUFFER, materialId);
-      Ambient.bind_vec4( sizeof(material), (void*)offsetof(material, ambient) );
-      Specular.bind_vec4( sizeof(material), (void*)offsetof(material, specular) );
-      Emissive.bind_vec4( sizeof(material), (void*)offsetof(material, emissive) );
-      Shininess.bind_float( sizeof(material), (void*)offsetof(material, shininess) );
+      Ambient.bind_vec4( sizeof(material_t), (void*)offsetof(material_t, ambient) );
+      Specular.bind_vec4( sizeof(material_t), (void*)offsetof(material_t, specular) );
+      Emissive.bind_vec4( sizeof(material_t), (void*)offsetof(material_t, emissive) );
+      Shininess.bind_float( sizeof(material_t), (void*)offsetof(material_t, shininess) );
 
       glBindVertexArray(0);
    }
@@ -494,21 +494,21 @@ namespace gl {
       glBufferData(target, data.size() * sizeof(T), data.data(), usage);
    }
 
-   void VAO::loadBuffers() const {
+   void VAO_t::loadBuffers() const {
       DEBUG_METHOD();
       loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
       loadBufferData(GL_ARRAY_BUFFER, materialId, materials, GL_STREAM_DRAW);
       loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
    }
 
-   void VAO::draw() const {
+   void VAO_t::draw() const {
       DEBUG_METHOD();
       glBindVertexArray(vao);
       glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, nullptr);
       glBindVertexArray(0);
    }
 
-   VAO::~VAO() {
+   VAO_t::~VAO_t() {
       DEBUG_METHOD();
       // renderThread.enqueue( [&] {
          if (vao) {
@@ -527,7 +527,7 @@ namespace gl {
       // } );
    }
 
-   int VAO::hasTexture(texture_ptr texture) {
+   int VAO_t::hasTexture(texture_t_ptr texture) {
       auto it = std::find(textures.begin(), textures.end(), texture);
       if (it == textures.end())
          return -1;
@@ -535,116 +535,116 @@ namespace gl {
          return std::distance(textures.begin(), it) ;
    }
 
-   attribute::attribute(GLuint shaderID, const std::string &attribute) {
+   attribute_t::attribute_t(GLuint shaderID, const std::string &attribute) {
       id = glGetAttribLocation(shaderID, attribute.c_str());
       shaderId = shaderID;
    }
 
-   void attribute::bind_vec2(std::size_t stride, void *offset) {
+   void attribute_t::bind_vec2(std::size_t stride, void *offset) {
       if ( id != -1 ) {
          glVertexAttribPointer( id, 2, GL_FLOAT, GL_FALSE, stride, (void*)offset );
          glEnableVertexAttribArray(id);
       }
    }
 
-   void attribute::bind_vec3(std::size_t stride, void *offset) {
+   void attribute_t::bind_vec3(std::size_t stride, void *offset) {
       if ( id != -1 ) {
          glVertexAttribPointer( id, 3, GL_FLOAT, GL_FALSE, stride, (void*)offset );
          glEnableVertexAttribArray(id);
       }
    }
 
-   void attribute::bind_vec4(std::size_t stride, void *offset) {
+   void attribute_t::bind_vec4(std::size_t stride, void *offset) {
       if ( id != -1 ) {
          glVertexAttribPointer( id, 4, GL_FLOAT, GL_FALSE, stride, (void*)offset );
          glEnableVertexAttribArray(id);
       }
    }
 
-   void attribute::bind_int(std::size_t stride, void *offset) {
+   void attribute_t::bind_int(std::size_t stride, void *offset) {
       if ( id != -1 ) {
          glVertexAttribIPointer( id, 1, GL_INT, stride, (void*)offset );
          glEnableVertexAttribArray(id);
       }
    }
 
-   void attribute::bind_float(std::size_t stride, void *offset) {
+   void attribute_t::bind_float(std::size_t stride, void *offset) {
       if ( id != -1 ) {
          glVertexAttribPointer( id, 1, GL_FLOAT, GL_FALSE, stride, (void*)offset );
          glEnableVertexAttribArray(id);
       }
    }
 
-   uniform::uniform(GLuint programID, const std::string &uniform) {
+   uniform_t::uniform_t(GLuint programID, const std::string &uniform) {
       id = glGetUniformLocation(programID, uniform.c_str());
    }
 
-   void uniform::set(float value) const {
+   void uniform_t::set(float value) const {
       if ( id != -1 )
          glUniform1f(id,value);
    }
 
-   void uniform::set(int value) const {
+   void uniform_t::set(int value) const {
       if ( id != -1 )
          glUniform1i(id,value);
    }
 
-   void uniform::set(const std::array<int,2> &value) const {
+   void uniform_t::set(const std::array<int,2> &value) const {
       if ( id != -1 )
          glUniform2i(id, value[0], value[1] );
    }
 
-   void uniform::set(const std::array<int,4> &value) const {
+   void uniform_t::set(const std::array<int,4> &value) const {
       if ( id != -1 )
          glUniform4i(id, value[0], value[1], value[2], value[3] );
    }
 
-   void uniform::set(const glm::vec2 &value) const {
+   void uniform_t::set(const glm::vec2 &value) const {
       if ( id != -1 )
          glUniform2fv(id, 1, glm::value_ptr(value) );
    }
 
-   void uniform::set(const glm::vec3 &value) const {
+   void uniform_t::set(const glm::vec3 &value) const {
       if ( id != -1 )
          glUniform3fv(id, 1, glm::value_ptr(value) );
    }
 
-   void uniform::set(const glm::vec4 &value) const {
+   void uniform_t::set(const glm::vec4 &value) const {
       if ( id != -1 )
          glUniform4fv(id, 1, glm::value_ptr(value) );
    }
 
-   void uniform::set(const std::vector<int> &value) const {
+   void uniform_t::set(const std::vector<int> &value) const {
       if ( id != -1 )
          glUniform1iv(id,value.size(),value.data());
    }
 
-   void uniform::set(const std::vector<glm::vec2> &value) const {
+   void uniform_t::set(const std::vector<glm::vec2> &value) const {
       if ( id != -1 )
          glUniform2fv(id, value.size(), glm::value_ptr(value[0]) );
    }
 
-   void uniform::set(const std::vector<glm::vec3> &value) const {
+   void uniform_t::set(const std::vector<glm::vec3> &value) const {
       if ( id != -1 )
          glUniform3fv(id, value.size(), glm::value_ptr(value[0]) );
    }
 
-   void uniform::set(const std::vector<glm::vec4> &value) const {
+   void uniform_t::set(const std::vector<glm::vec4> &value) const {
       if ( id != -1 )
          glUniform4fv(id, value.size(), glm::value_ptr(value[0]) );
    }
 
-   void uniform::set(const std::vector<glm::mat4> &value) const {
+   void uniform_t::set(const std::vector<glm::mat4> &value) const {
       if ( id != -1 )
          glUniformMatrix4fv(id, value.size(), GL_FALSE, glm::value_ptr(value[0]) );
    }
 
-   void uniform::set(const std::vector<glm::mat3> &value) const {
+   void uniform_t::set(const std::vector<glm::mat3> &value) const {
       if ( id != -1 )
          glUniformMatrix3fv(id, value.size(), GL_FALSE, glm::value_ptr(value[0]) );
    }
 
-   void uniform::set(const glm::mat4 &value) const {
+   void uniform_t::set(const glm::mat4 &value) const {
       if ( id != -1 )
          glUniformMatrix4fv(id, 1, GL_FALSE, glm::value_ptr(value) );
    }
@@ -687,7 +687,7 @@ namespace gl {
 } // namespace gl
 
 template <>
-struct fmt::formatter<gl::VAO> {
+struct fmt::formatter<gl::VAO_t> {
    // Format the MyClass object
    template <typename ParseContext>
    constexpr auto parse(ParseContext& ctx) {
@@ -695,7 +695,7 @@ struct fmt::formatter<gl::VAO> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::VAO& v, FormatContext& ctx) {
+   auto format(const gl::VAO_t& v, FormatContext& ctx) {
       return format_to(ctx.out(), "VAO:{:2} VID:{:2} IID:{:2} V{:8} I{:8} Tx{:2} Tr{:2}",
                        v.vao, v.vertexId, v.indexId,
                        v.vertices.size(), v.indices.size(), v.textures.size(), v.transforms.size());

@@ -41,7 +41,7 @@ private:
 
    std::string id;
    std::vector<int> contour;
-   std::vector<gl::vertex> vertices;
+   std::vector<gl::vertex_t> vertices;
    std::vector<PMaterial> materials;
    std::vector<vInfoExtra> extras;
    std::vector<PShape> children;
@@ -57,7 +57,7 @@ private:
    struct style_t {
 
       std::optional<color> fill_color = WHITE;
-      gl::color gl_fill_color = flatten_color_mode(WHITE);
+      gl::color_t gl_fill_color = flatten_color_mode(WHITE);
 
       std::optional<color> stroke_color = BLACK;
       float stroke_weight = 1.0F;
@@ -145,10 +145,10 @@ public:
       DEBUG_METHOD();
       reserve(4,6);
       style.currentMaterial = {
-         gl::color{1.0f,1.0f,1.0f,1.0f},
-         gl::color{0.0f,0.0f,0.0f,1.0f},
-         gl::color{0.0f,0.0f,0.0f,1.0f},
-         gl::color{0.0f,0.0f,0.0f,1.0f},
+         gl::color_t{1.0f,1.0f,1.0f,1.0f},
+         gl::color_t{0.0f,0.0f,0.0f,1.0f},
+         gl::color_t{0.0f,0.0f,0.0f,1.0f},
+         gl::color_t{0.0f,0.0f,0.0f,1.0f},
          1.0, 1.0, 4, {} };
    }
 
@@ -826,7 +826,7 @@ public:
          child.setFill(c);
       }
       style.tint_color = c;
-      gl::color clr = flatten_color_mode(style.tint_color);
+      gl::color_t clr = flatten_color_mode(style.tint_color);
       for ( auto&&v : vertices ) {
          v.fill = clr;
       }
@@ -927,7 +927,7 @@ public:
    }
 };
 
-static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vertex> &vertices,  std::vector<int> contour) {
+static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vertex_t> &vertices,  std::vector<int> contour) {
 
    if (vertices.size() < 3) {
       return {}; // empty vector
@@ -957,15 +957,15 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vert
    const int nvp = 3;
 
    if ( contour.empty() ) {
-      tess.addContour(3, vertices.data(), sizeof(gl::vertex), vertices.size(), offsetof(gl::vertex,position));
+      tess.addContour(3, vertices.data(), sizeof(gl::vertex_t), vertices.size(), offsetof(gl::vertex_t,position));
    } else {
-      tess.addContour(3, vertices.data(), sizeof(gl::vertex), contour[0],      offsetof(gl::vertex,position));
+      tess.addContour(3, vertices.data(), sizeof(gl::vertex_t), contour[0],      offsetof(gl::vertex_t,position));
       contour.push_back(vertices.size());
       for ( int i = 0; i < contour.size() - 1; ++i ) {
          auto &c = contour[i];
          auto start = vertices.data() + c;
          auto size = contour[i+1] - contour[i];
-         tess.addContour(3, start, sizeof(gl::vertex), size, offsetof(gl::vertex,position));
+         tess.addContour(3, start, sizeof(gl::vertex_t), size, offsetof(gl::vertex_t,position));
       }
    }
 
@@ -1240,7 +1240,7 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { p2 + bisect * w, p2 - bisect * w };
 }
 
-PShapeImpl drawLinePoly(int points, const gl::vertex *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform,
+PShapeImpl drawLinePoly(int points, const gl::vertex_t *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform,
                         std::optional<color> override_color, std::optional<float> override_weight)  {
    PLine start;
    PLine end;
@@ -1449,7 +1449,7 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    triangles.index( i + 3 );
 }
 
-PShapeImpl drawTriangleNormal(const gl::vertex &p0, const gl::vertex &p1, const gl::vertex &p2, const PMatrix &transform) {
+PShapeImpl drawTriangleNormal(const gl::vertex_t &p0, const gl::vertex_t &p1, const gl::vertex_t &p2, const PMatrix &transform) {
    PShapeImpl shape;
    shape.beginShape(TRIANGLES);
    shape.fill(RED);
@@ -1730,7 +1730,7 @@ void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bo
 void PShapeImpl::draw_fill(gl::batch_t_ptr batch, const PMatrix& transform_, bool flatten_transforms) const {
    DEBUG_METHOD();
    if (vertices.size() > 2 && kind != POINTS && kind != LINES) {
-      std::vector<gl::material> m;
+      std::vector<gl::material_t> m;
       m.reserve( materials.size() );
       for (const auto &material : materials ) {
          m.emplace_back(
@@ -1740,8 +1740,8 @@ void PShapeImpl::draw_fill(gl::batch_t_ptr batch, const PMatrix& transform_, boo
             material.specularExponent
             );
       }
-      std::optional<gl::color> override = style.override_fill_color ? flatten_color_mode(style.override_fill_color.value()) : std::optional<gl::color>();
-      batch->vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_ ? style.texture_.value().getTextureID() : std::optional<gl::texture_ptr>(), override );
+      std::optional<gl::color_t> override = style.override_fill_color ? flatten_color_mode(style.override_fill_color.value()) : std::optional<gl::color_t>();
+      batch->vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_ ? style.texture_.value().getTextureID() : std::optional<gl::texture_t_ptr>(), override );
    }
 }
 

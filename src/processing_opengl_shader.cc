@@ -94,37 +94,37 @@ namespace gl {
    void shader_t::set_uniforms() const {
       DEBUG_METHOD();
       for (const auto& [id, value] : uniforms1f) {
-         gl::uniform loc = get_uniform( id );
+         uniform_t loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms2fv) {
-         gl::uniform loc = get_uniform( id );
+         uniform_t loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms3fv) {
-         gl::uniform loc = get_uniform( id );
+         uniform_t loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms2i) {
-         gl::uniform loc = get_uniform( id );
+         uniform_t loc = get_uniform( id );
          loc.set( value );
       }
       for (const auto& [id, value] : uniforms4i) {
-         gl::uniform loc = get_uniform( id );
+         uniform_t loc = get_uniform( id );
          loc.set( value );
       }
       // TODO fix to make sure we don't collides with
       // other textures.
       int i = 15;
       for (const auto& [id, value] : uniformsSampler) {
-         gl::uniform loc = get_uniform( id );
+         uniform_t loc = get_uniform( id );
          glActiveTexture(GL_TEXTURE0 + i);
          glBindTexture(GL_TEXTURE_2D, value->get_id());
          loc.set( i-- );
       }
    }
 
-   void shader_t::set(const char *id, texture_ptr textureID) {
+   void shader_t::set(const char *id, texture_t_ptr textureID) {
       DEBUG_METHOD();
       uniformsSampler[id] = textureID;
    }

@@ -54,7 +54,7 @@ static const char *directFragmentShader = R"glsl(
 
 namespace gl {
 
-   framebuffer& framebuffer::operator=(framebuffer&&x) noexcept {
+   framebuffer_t& framebuffer_t::operator=(framebuffer_t&&x) noexcept {
       DEBUG_METHOD();
       std::swap(aaFactor,x.aaFactor);
       std::swap(aaMode,x.aaMode);
@@ -69,15 +69,15 @@ namespace gl {
       return *this;
    }
 
-   framebuffer::framebuffer() noexcept {
+   framebuffer_t::framebuffer_t() noexcept {
       DEBUG_METHOD();
    }
-   framebuffer::framebuffer(framebuffer &&x) noexcept : framebuffer() {
+   framebuffer_t::framebuffer_t(framebuffer_t &&x) noexcept : framebuffer_t() {
       DEBUG_METHOD();
       *this = std::move(x);
    }
 
-   framebuffer::framebuffer(int width_, int height_, int aaMode_, int aaFactor_)  {
+   framebuffer_t::framebuffer_t(int width_, int height_, int aaMode_, int aaFactor_)  {
       DEBUG_METHOD();
 
       aaFactor = aaFactor_;
@@ -173,7 +173,7 @@ namespace gl {
       renderThread.wait_until_nothing_in_flight();
    }
 
-   texture_ptr framebuffer::getColorBufferID() {
+   texture_t_ptr framebuffer_t::getColorBufferID() {
       if (aaMode == MSAA) {
          renderThread.enqueue([width=width, height=height, id=id, did=did] {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, id);
@@ -187,7 +187,7 @@ namespace gl {
       return colorBuffer;
    }
 
-   framebuffer::~framebuffer() {
+   framebuffer_t::~framebuffer_t() {
       DEBUG_METHOD();
 
       if (id) {
@@ -224,7 +224,7 @@ namespace gl {
       }
    }
 
-   void framebuffer::blit(framebuffer &dest) const {
+   void framebuffer_t::blit(framebuffer_t &dest) const {
       DEBUG_METHOD();
       if (id != dest.id) {
          renderThread.enqueue([width=width,height=height,id=id,dwidth=dest.width, dheight=dest.height, did=dest.id] {
@@ -238,7 +238,7 @@ namespace gl {
         }
    }
 
-   void framebuffer::updatePixels( const std::vector<unsigned int> &pixels ) {
+   void framebuffer_t::updatePixels( const std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
       renderThread.enqueue( [&] {
          glActiveTexture(GL_TEXTURE0);
@@ -252,7 +252,7 @@ namespace gl {
       renderThread.wait_until_nothing_in_flight();
    }
 
-   void framebuffer::loadPixels( std::vector<unsigned int> &pixels ) {
+   void framebuffer_t::loadPixels( std::vector<unsigned int> &pixels ) {
       DEBUG_METHOD();
       renderThread.enqueue( [&] {
       pixels.resize(width*height);
@@ -262,7 +262,7 @@ namespace gl {
       renderThread.wait_until_nothing_in_flight();
    }
 
-   void framebuffer::saveFrame(void *surface) {
+   void framebuffer_t::saveFrame(void *surface) {
       DEBUG_METHOD();
       renderThread.enqueue( [&] {
          bind();
@@ -271,20 +271,20 @@ namespace gl {
       renderThread.wait_until_nothing_in_flight();
    }
 
-   void framebuffer::bind() {
+   void framebuffer_t::bind() {
       DEBUG_METHOD();
       glBindFramebuffer(GL_FRAMEBUFFER, id);
       glViewport(0, 0, width, height);
    }
 
-   void framebuffer::clear( float r, float g, float b, float a ) {
+   void framebuffer_t::clear( float r, float g, float b, float a ) {
       DEBUG_METHOD();
       bind();
       glClearColor(r, g, b, a);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    }
 
-   mainframe& mainframe::operator=(mainframe&&x) noexcept {
+   mainframe_t& mainframe_t::operator=(mainframe_t&&x) noexcept {
       DEBUG_METHOD();
       std::swap(width,x.width);
       std::swap(height,x.height);
@@ -294,15 +294,15 @@ namespace gl {
       return *this;
    }
 
-   mainframe::mainframe() noexcept {
+   mainframe_t::mainframe_t() noexcept {
       DEBUG_METHOD();
    }
 
-   mainframe::~mainframe() noexcept {
+   mainframe_t::~mainframe_t() noexcept {
       DEBUG_METHOD();
    }
 
-   void mainframe::release_shader() noexcept {
+   void mainframe_t::release_shader() noexcept {
       direct = {};
       renderThread.enqueue( [&] {
          if ( directVAO ) {
@@ -312,12 +312,12 @@ namespace gl {
       renderThread.wait_until_nothing_in_flight();
    }
 
-   mainframe::mainframe(mainframe &&x) noexcept : mainframe()  {
+   mainframe_t::mainframe_t(mainframe_t &&x) noexcept : mainframe_t()  {
       DEBUG_METHOD();
       *this = std::move(x);
    }
 
-   mainframe::mainframe(int width_, int height_) : direct(directVertexShader, directFragmentShader)  {
+   mainframe_t::mainframe_t(int width_, int height_) : direct(directVertexShader, directFragmentShader)  {
       // Direct needs to be copy constrcted as move assignment doesn't seem to
       // work
       width = width_;
@@ -329,7 +329,7 @@ namespace gl {
       renderThread.wait_until_nothing_in_flight();
    }
 
-   void mainframe::invert( texture_ptr textureID ) {
+   void mainframe_t::invert( texture_t_ptr textureID ) {
       renderThread.enqueue( [directVAO=directVAO, width=width, height=height, textureID,
                              &direct = direct, &texture1 = texture1 ] {
          glBindVertexArray(directVAO);

@@ -17,8 +17,8 @@ class PShaderImpl;
 typedef unsigned int GLuint;
 
 namespace gl{
-   class uniform;
-   class attribute;
+   class uniform_t;
+   class attribute_t;
    class shader_t;
 }
 
@@ -48,9 +48,9 @@ public:
 
    const gl::shader_t &getShader() const;
 
-   gl::uniform get_uniform(const std::string &uniform_name) const;
+   gl::uniform_t get_uniform(const std::string &uniform_name) const;
 
-   gl::attribute get_attribute(const std::string &attribute_name) const;
+   gl::attribute_t get_attribute(const std::string &attribute_name) const;
 
    void bind();
 
@@ -58,7 +58,7 @@ public:
 
    void set(const char *uniform, PImage image);
 
-   void set(const char *uniform, gl::texture_ptr image);
+   void set(const char *uniform, gl::texture_t_ptr image);
 
    void set(const char *uniform, float value);
 

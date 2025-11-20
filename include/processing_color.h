@@ -128,7 +128,7 @@ inline float brightness(color rgb) {
    return 0.299f * rgb.r + 0.587f * rgb.g + 0.114f * rgb.b;
 }
 
-inline gl::color HSBtoRGB(float h, float s, float v, float a) {
+inline gl::color_t HSBtoRGB(float h, float s, float v, float a) {
    int i = floorf(h * 6);
    auto f = h * 6.0 - i;
    auto p = v * (1.0 - s);
@@ -147,7 +147,7 @@ inline gl::color HSBtoRGB(float h, float s, float v, float a) {
    return { r, g, b, a };
 }
 
-inline gl::color flatten_color_mode(color c) {
+inline gl::color_t flatten_color_mode(color c) {
    float r = map(c.r,0,::color::scaleR,0,1);
    float g = map(c.g,0,::color::scaleG,0,1);
    float b = map(c.b,0,::color::scaleB,0,1);
@@ -158,8 +158,8 @@ inline gl::color flatten_color_mode(color c) {
    return { r, g, b, a };
 }
 
-inline std::optional<gl::color> flatten_color_mode(std::optional<color> c) {
-   return c ? flatten_color_mode(c.value()) : std::optional<gl::color>();
+inline std::optional<gl::color_t> flatten_color_mode(std::optional<color> c) {
+   return c ? flatten_color_mode(c.value()) : std::optional<gl::color_t>();
 }
 
 template <>

@@ -17,7 +17,7 @@ template <> struct fmt::formatter<gl::texture_t>;
 namespace gl {
 
    class texture_t;
-   typedef std::shared_ptr<texture_t> texture_ptr;
+   typedef std::shared_ptr<texture_t> texture_t_ptr;
 
    class texture_t {
       GLuint id;
@@ -38,9 +38,9 @@ namespace gl {
       texture_t& operator=(const texture_t&) = delete;
       texture_t& operator=(texture_t&&) = delete;
 
-      static const texture_ptr &circle();
+      static const texture_t_ptr &circle();
 
-      static const texture_ptr &blank();
+      static const texture_t_ptr &blank();
 
       void release();
 

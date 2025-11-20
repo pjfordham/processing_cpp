@@ -69,7 +69,7 @@ public:
 
    color get(int x, int y) const;
 
-   gl::texture_ptr getTextureID() const;
+   gl::texture_t_ptr getTextureID() const;
 
    void set(int x, int y, color c);
 
@@ -93,7 +93,7 @@ public:
 };
 
 PImage createImage(int width, int height, int mode);
-PImage createImageFromTexture(gl::texture_ptr textureID);
+PImage createImageFromTexture(gl::texture_t_ptr textureID);
 PImage loadImage(std::string_view URL);
 PImage _loadImage(const std::filesystem::path &path);
 PImage requestImage(std::string_view URL);
