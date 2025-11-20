@@ -375,8 +375,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
          return;
       }
 
-      PShape shape = createShape();;
-      shape.beginShape();
+      PShape shape = mkShape();
       shape.fill(BLACK);
       shape.noStroke();
 
@@ -417,7 +416,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             parseSVGFillColor((char*)xdata, shape, alpha);
          }
          xmlFree(xdata);
-         shape = drawUntexturedFilledEllipse( cx,cy,2*r,2*r, shape.getFillColor(), PMatrix::Identity() );
+         shape = drawUntexturedFilledEllipse( cx,cy,2*r,2*r, shape.getStyle().fill_color.value_or(BLACK), PMatrix::Identity() );
       } else if (type == "ellipse") {
          int alpha = 255;
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
@@ -469,7 +468,7 @@ static void parseNode(xmlNode* node, PShape& pshape) {
             parseSVGTransform((char*)xdata, shape, transform);
          }
          xmlFree(xdata);
-         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.getFillColor(), transform );
+         shape = drawUntexturedFilledEllipse( cx,cy,2*rx,2*ry, shape.getStyle().fill_color.value_or(BLACK), transform );
       } else if (type == "polygon") {
          int alpha = 255;
          xmlChar* xdata = xmlGetProp(node, (xmlChar*)"opacity");
@@ -547,10 +546,10 @@ PShape loadShapeSVG(std::string_view filename) {
    xmlDoc* doc = xmlReadFile(("data/"s+std::string(filename)).c_str(), nullptr, 0);
    if (doc == nullptr) {
       std::cerr << "Error loading SVG file." << std::endl;
-      return createShape();
+      return mkShape();
    }
 
-   PShape svgShape = createShape();
+   PShape svgShape = mkShape();
    svgShape.beginShape(GROUP);
    parseNode(xmlDocGetRootElement(doc), svgShape);
    svgShape.endShape();

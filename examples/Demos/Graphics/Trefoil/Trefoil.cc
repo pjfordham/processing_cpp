@@ -29,7 +29,9 @@ void draw() {
   background(0);
 
   pg.beginDraw();
-  pg.ellipse(random(pg.getWidth()), random(pg.getHeight()), 4, 4);
+  float h = random(pg.getHeight());
+  float w = random(pg.getWidth());
+  pg.ellipse(w, h, 4, 4);
   pg.endDraw();
 
   trefoil.texture(pg);

@@ -3,15 +3,16 @@
 
 #include "processing_math.h"
 #include "processing_color.h"
+#include "processing_style.h"
 #include "processing_enum.h"
 #include "processing_pimage.h"
 #include "processing_java_compatability.h"
+#include "processing_pmaterial.h"
 
 #include <vector>
 #include <string_view>
 #include <memory>
 
-struct PMaterial;
 class PShapeImpl;
 
 namespace gl {
@@ -19,11 +20,102 @@ namespace gl {
    typedef std::shared_ptr<batch_t> batch_t_ptr;
 }
 
+struct command_t {
+   enum class type_t {
+      NOP,
+      VERTEX,
+      INDEX,
+      CONTOUR,
+      FILL,
+      TINT,
+      NOTINT,
+      STROKE,
+      AMBIENT,
+      SPECULAR,
+      EMISSIVE,
+      SHININESS,
+      NOFILL,
+      NOSTROKE,
+      NORMAL,
+      NONORMAL,
+      STROKE_WEIGHT,
+   } type;
+   float a,b,c,d,e;
+   int f;
+   PImage tex;
+};
+
+template <>
+struct fmt::formatter<command_t::type_t> {
+   // Format the MyClass object
+   template <typename ParseContext>
+   constexpr auto parse(ParseContext& ctx) {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const command_t::type_t& v, FormatContext& ctx) {
+      switch(v) {
+      case command_t::type_t::NOP:
+         return fmt::format_to(ctx.out(), "NOP");
+      case command_t::type_t::VERTEX:
+         return fmt::format_to(ctx.out(), "VERTEX");
+      case command_t::type_t::INDEX:
+         return fmt::format_to(ctx.out(), "INDEX");
+      case command_t::type_t::CONTOUR:
+         return fmt::format_to(ctx.out(), "CONTOUR");
+      case command_t::type_t::FILL:
+         return fmt::format_to(ctx.out(), "FILL");
+      case command_t::type_t::TINT:
+         return fmt::format_to(ctx.out(), "TINT");
+      case command_t::type_t::NOTINT:
+         return fmt::format_to(ctx.out(), "NOTINT");
+      case command_t::type_t::STROKE:
+         return fmt::format_to(ctx.out(), "STROKE");
+      case command_t::type_t::AMBIENT:
+         return fmt::format_to(ctx.out(), "AMBIENT");
+      case command_t::type_t::SPECULAR:
+         return fmt::format_to(ctx.out(), "SPECULAR");
+      case command_t::type_t::EMISSIVE:
+         return fmt::format_to(ctx.out(), "EMISSIVE");
+      case command_t::type_t::SHININESS:
+         return fmt::format_to(ctx.out(), "SHININESS");
+      case command_t::type_t::NOFILL:
+         return fmt::format_to(ctx.out(), "NOFILL");
+      case command_t::type_t::NOSTROKE:
+         return fmt::format_to(ctx.out(), "NOSTROKE");
+      case command_t::type_t::NORMAL:
+         return fmt::format_to(ctx.out(), "NORMAL");
+      case command_t::type_t::NONORMAL:
+         return fmt::format_to(ctx.out(), "NONORMAL");
+      case command_t::type_t::STROKE_WEIGHT:
+         return fmt::format_to(ctx.out(), "STROKE_WEIGHT");
+      }
+      abort();
+      return fmt::format_to(ctx.out(), "ABORT");
+   }
+};
+template <>
+
+struct fmt::formatter<command_t> {
+   // Format the MyClass object
+   template <typename ParseContext>
+   constexpr auto parse(ParseContext& ctx) {
+      return ctx.begin();
+   }
+
+   template <typename FormatContext>
+   auto format(const command_t& v, FormatContext& ctx) {
+      return fmt::format_to(ctx.out(), "{} {} {} {} {} {} {}", v.type, v.a, v.b, v.c, v.d, v.e, v.f);
+   }
+};
+
+
 class PShape {
    friend PShapeImpl;
    std::shared_ptr<PShapeImpl> impl;
    PShape( std::shared_ptr<PShapeImpl> impl_ );
-   friend PShape createShape();
+   friend PShape mkShape();
  public:
    static void init();
    static void optimize();
@@ -55,21 +147,19 @@ class PShape {
 
    PShape getChild( std::string_view i );
 
-   float getStrokeWeight() const;
-
-   color getStrokeColor() const;
-
-   color getFillColor() const;
-
-   color getTintColor() const;
-
    bool isGroup() const;
 
    void setID( std::string_view );
 
+   bool usesGlobalStyle() const;
+
+   void showNormals(bool x);
+
    void enableStyle();
 
    void disableStyle();
+
+   void reserve(int cmds, int vertices);
 
    void copyStyle( const PShape other );
 
@@ -106,8 +196,6 @@ class PShape {
    void endContour();
 
    void textureMode( int mode_ );
-
-   bool isTextureSet() const;
 
    void material(PMaterial &mat);
 
@@ -162,11 +250,15 @@ class PShape {
 
    void ambient(float r,float g, float b);
 
+   void ambient(float r,float g, float b, float a);
+
    void emissive(float r,float g, float b);
+
+   void specular(float r,float g, float b, float a);
 
    void shininess(float r);
 
-   void specular(float r,float g,  float b, float a);
+   void noAmbient();
 
    void fill(float r,float g,  float b, float a);
 
@@ -196,9 +288,9 @@ class PShape {
 
    void noFill();
 
-   bool isStroked() const;
+   bool isStroked(const flat_style_t &parent_style) const;
 
-   bool isFilled() const;
+   bool isFilled(const flat_style_t &parent_style) const;
 
    void tint(float r,float g,  float b, float a);
 
@@ -216,6 +308,8 @@ class PShape {
 
    void setStroke(bool c);
 
+   void setStroke(std::optional<color> c);
+
    void setStroke(color c);
 
    void setStrokeWeight(float w);
@@ -224,23 +318,25 @@ class PShape {
 
    void setFill(bool z);
 
+   void setFill(std::optional<color> c);
+
    void setFill(color c);
 
    void setTint(color c);
 
-   void compile();
+   void compile(const flat_style_t &global_style);
 
-   bool isCompiled() const;
+   bool isCompiled(const flat_style_t &global_style);
 
-   gl::batch_t_ptr getBatch();
+   bool shouldCompile() const;
 
-   void flatten(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   gl::batch_t_ptr getCompiledBatch(const flat_style_t &style);
 
-   void draw_normals(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   style_t getStyle();
 
-   void draw_stroke(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   gl::batch_t_ptr getBatch() ;
 
-   void draw_fill(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms) const;
+   void flatten(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &global_shape) ;
 
    int getChildCount() const;
 
@@ -264,6 +360,6 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
 
 PShape loadShapeOBJ(std::string_view objPath);
 PShape loadShape(std::string_view objPath);
-PShape createShape();
+PShape mkShape();
 
 #endif

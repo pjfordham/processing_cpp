@@ -33,13 +33,13 @@ void loadMaterials(const char *objPath) {
          materials[currentName].illum = light;
       } else if( lineType == "Ka" ) {
          lineSS >> x >> y >> z;
-         materials[currentName].ambientColor = {x,y,z,1};
+         materials[currentName].ambientColor = {x*255,y*255,z*255,255};
       } else if( lineType == "Kd" ) {
          lineSS >> x >> y >> z;
-         materials[currentName].diffuseColor = {x,y,z,1};
+         materials[currentName].diffuseColor = {x*255,y*255,z*255,255};
       } else if( lineType == "Ks" ) {
          lineSS >> x >> y >> z;
-         materials[currentName].specularColor = {x,y,z,1};
+         materials[currentName].specularColor = {x*255,y*255,z*255,255};
       } else if( lineType == "#" || lineType == ""  ) {
       } else if( lineType == "Ns" ) {
          lineSS >> x;
