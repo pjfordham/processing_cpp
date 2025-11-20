@@ -35,13 +35,13 @@ namespace gl {
    };
 
    struct light_t {
-      glm::vec4 position =  { 0.0, 0.0, 0.0, 0.0 };
-      glm::vec3 normal =  { 0.0, 0.0, 0.0 };;
-      glm::vec3 ambient =  { 1.0, 1.0, 1.0 };;
-      glm::vec3 diffuse =  { 0.0, 0.0, 0.0 };;
-      glm::vec3 specular =  { 0.0, 0.0, 0.0 };;
-      glm::vec3 falloff =  { 1.0, 0.0, 0.0 };;
-      glm::vec2 spot =  { 0.0, 0.0 };;
+      glm::vec4 position = { 0.0, 0.0, 0.0, 0.0 };
+      glm::vec3 normal = { 0.0, 0.0, 0.0 };
+      glm::vec3 ambient = { 1.0, 1.0, 1.0 };
+      glm::vec3 diffuse = { 0.0, 0.0, 0.0 };
+      glm::vec3 specular = { 0.0, 0.0, 0.0 };
+      glm::vec3 falloff = { 1.0, 0.0, 0.0 };
+      glm::vec2 spot = { 0.0, 0.0 };
    };
 
    class scene_t {
@@ -172,7 +172,7 @@ namespace gl {
          const shader_t &shader;
       };
       std::vector<geometry_t> geometries;
-      color_t background_={0,0,0,1};
+      color_t background_ = { 0.0F, 0.0F, 0.0F, 1.0F };
       bool c = false;
 
    public:
@@ -185,20 +185,6 @@ namespace gl {
    void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader );
 
 } // namespace gl
-
-// template <>
-// struct fmt::formatter<gl::color> {
-//    // Format the MyClass object
-//    template <typename ParseContext>
-//    constexpr auto parse(ParseContext& ctx) {
-//       return ctx.begin();
-//    }
-
-//    template <typename FormatContext>
-//    auto format(const gl::color& v, FormatContext& ctx) {
-//       return fmt::format_to(ctx.out(), "R{:8.2f},G{:8.2f},B{:8.2f},A{:8.2f}",v.r,v.g,v.b,v.a);
-//    }
-// };
 
 template <>
 struct fmt::formatter<gl::material_t> {
@@ -220,7 +206,6 @@ struct fmt::formatter<gl::material_t> {
 
 template <>
 struct fmt::formatter<gl::vertex_t> {
-   // Format the MyClass object
    template <typename ParseContext>
    constexpr auto parse(ParseContext& ctx) {
       return ctx.begin();

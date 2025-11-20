@@ -47,6 +47,7 @@ namespace gl {
       if ( InfoLogLength > 0 ){
          std::vector<char> VertexShaderErrorMessage(InfoLogLength+1);
          glGetShaderInfoLog(VertexShaderID, InfoLogLength, nullptr, VertexShaderErrorMessage.data());
+         fmt::print("{}\n", vertex);
          fmt::print("{}\n", VertexShaderErrorMessage.data());
       }
 
@@ -56,6 +57,7 @@ namespace gl {
       if ( InfoLogLength > 0 ){
          std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
          glGetShaderInfoLog(FragmentShaderID, InfoLogLength, nullptr, FragmentShaderErrorMessage.data());
+         fmt::print("{}\n", fragment);
          fmt::print("{}\n", FragmentShaderErrorMessage.data());
       }
 
