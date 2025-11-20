@@ -221,6 +221,20 @@ namespace gl {
       } );
    }
 
+   void frame_t::background(color_t b) {
+      c = true;
+      background_ = b;
+   }
+
+   void frame_t::add(batch_t_ptr b, scene_t sc, const shader_t &sh) {
+      geometries.emplace_back( b, sc, sh );
+   }
+
+   void frame_t::clear() {
+      c = false;
+      geometries.clear();
+   }
+
    void frame_t::render(framebuffer_t &fb) {
 
       // Stop the main thread getting multiple frames ahead of the render thread.
