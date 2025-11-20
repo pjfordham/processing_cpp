@@ -176,21 +176,9 @@ namespace gl {
       bool c = false;
 
    public:
-      void background(color_t b) {
-         c = true;
-         background_ = b;
-      }
-
-      void add(batch_t_ptr &b, scene_t sc, const shader_t &sh) {
-         geometries.emplace_back( b, sc, sh );
-
-      }
-
-      void clear() {
-         c = false;
-         geometries.clear();
-      }
-
+      void background(color_t b);
+      void add(batch_t_ptr b, scene_t sc, const shader_t &sh);
+      void clear();
       void render(framebuffer_t &fb);
    };
 
