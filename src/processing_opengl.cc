@@ -324,6 +324,13 @@ namespace gl {
       }
    }
 
+
+   template<typename V>
+   static V snap(const V& v) {
+      constexpr float GRID = 0.1;
+      return glm::round(v / GRID) * GRID;
+   }
+
    void batch_t::vertices(const std::vector<vertex_t> &vertices, const std::vector<material_t> &materials, const std::vector<unsigned short> &indices, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_, std::optional<color_t> override ) {
       DEBUG_METHOD();
 
@@ -398,7 +405,7 @@ namespace gl {
 
       for (const auto &v : vertices) {
          vao.vertices.emplace_back(
-            flatten_transforms ? transform_ * glm::vec4(v.position,1.0) : v.position,
+            snap( flatten_transforms ? transform_ * glm::vec4(v.position,1.0) : v.position ),
             v.normal,
             v.coord,
             override.value_or(v.fill),
