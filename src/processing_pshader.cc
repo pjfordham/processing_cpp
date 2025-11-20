@@ -5,6 +5,7 @@
 #include <string>
 #include <array>
 #include <fmt/core.h>
+#include <fstream>
 
 #include "glad/glad.h"
 #include "processing_opengl.h"

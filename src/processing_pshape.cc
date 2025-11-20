@@ -1,9 +1,12 @@
 #include "processing_pshape.h"
+#include "processing.h"
+#include "processing_opengl_texture.h"
 #include "processing_pshape_svg.h"
 #include "processing_math.h"
+#include <memory>
 #include <vector>
 #include <tesselator_cpp.h>
-#include <unordered_map>
+#include <map>
 
 #include "processing_color.h"
 #include "processing_enum.h"
@@ -20,6 +23,9 @@
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
 
+const char *typeToTxt(int type);
+const char *kindToTxt(int kind);
+
 template <> struct fmt::formatter<PShapeImpl>;
 
 class PShapeImpl {
@@ -27,76 +33,87 @@ class PShapeImpl {
    friend struct std::hash<PShapeImpl>;
 
 public:
+   bool enable_debug = false;
+   bool should_compile = false;
+
    struct vInfoExtra {
-      color stroke;
+      glm::vec3 position;
+      gl::color_t gl_stroke;
       float weight;
    };
 
 private:
 
-   bool useGlobalStyle = false;
+   std::map<flat_style_t, gl::batch_t_ptr> cache;
 
-   bool setNormals = false;
-   PVector n = { 0.0, 0.0, 0.0 };
+   bool immediateMode = true;
 
+   std::optional<PVector> normal_;
+
+   std::vector<command_t> cmds;
    std::string id;
-   std::vector<int> contour;
-   std::vector<gl::vertex_t> vertices;
-   std::vector<PMaterial> materials;
-   std::vector<vInfoExtra> extras;
+   PShape parent;
    std::vector<PShape> children;
-   std::vector<unsigned short> indices;
 
-   mutable bool dirty = true;
+   bool dirty = true;
 
    int type = OPEN;
    float tightness = 0.0F;
    std::vector<PVector> curve_vertices;
    PMatrix shape_matrix = PMatrix::Identity();
 
-   struct style_t {
-
-      std::optional<color> fill_color = WHITE;
-      gl::color_t gl_fill_color = flatten_color_mode(WHITE);
-
-      std::optional<color> stroke_color = BLACK;
-      float stroke_weight = 1.0F;
-      int line_end_cap = ROUND;
-
-      PMaterial currentMaterial;
-
-      std::optional<PImage> texture_;
-      color tint_color = WHITE;
-      int mode = IMAGE;
-
-      std::optional<std::optional<color>> override_fill_color;
-      std::optional<std::optional<color>> override_stroke_color;
-      std::optional<float> override_stroke_weight;
-   };
-
+   std::vector<style_t> style_stack;
    style_t style;
 
-   int kind = POLYGON;
-   bool compiled = false;
-   gl::batch_t_ptr batch;
+   std::optional<gl::batch_t::sub_batch_t> sub_batch_fill;
+   std::optional<gl::batch_t::sub_batch_t> sub_batch_stroke;
 
-public:
+   int kind = POLYGON;
+   int ci = 0;
+   int qi = 0;
 
    float width = 1.0;
    float height = 1.0;
 
+   int reserve_c = 0;
+   int reserved_vertices = 0;
+
+public:
+
+   style_t getStyle() const {
+      DEBUG_METHOD();
+      return style;
+   }
+
+   void pushStyle() {
+      DEBUG_METHOD();
+      style_stack.push_back(style);
+   }
+
+   void popStyle() {
+      DEBUG_METHOD();
+      style = style_stack.back();
+      style_stack.pop_back();
+   }
+
    void setID(std::string_view s) {
+      DEBUG_METHOD();
       id = s;
    }
 
    void enableStyle() {
-      dirty = true;
-      useGlobalStyle = false;
+      DEBUG_METHOD();
+      style.style_enabled = true;
+   }
+
+   void showNormals(bool x) {
+      DEBUG_METHOD();
+      style.draw_normals= x;
    }
 
    void disableStyle() {
-      dirty = true;
-      useGlobalStyle = true;
+      DEBUG_METHOD();
+      style.style_enabled = false;
    }
 
    const PMatrix& getShapeMatrix() const {
@@ -107,49 +124,49 @@ public:
    PShapeImpl& operator=(const PShapeImpl&) = delete;
 
    PShapeImpl(PShapeImpl&& x) noexcept {
+      DEBUG_METHOD();
       *this = std::move(x);
    }
 
    PShapeImpl& operator=(PShapeImpl&& other) noexcept {
-      std::swap(n,other.n);
-      std::swap(setNormals,other.setNormals);
-      std::swap(contour,other.contour);
-      std::swap(vertices,other.vertices);
-      std::swap(materials,other.materials);
-      std::swap(extraAttributes,other.extraAttributes);
-      std::swap(extras,other.extras);
-      std::swap(children,other.children);
-      std::swap(indices,other.indices);
+      DEBUG_METHOD();
+      std::swap(enable_debug, other.enable_debug);
+      std::swap(should_compile, other.should_compile);
+      std::swap(cache, other.cache);
+      std::swap(immediateMode, other.immediateMode);
+      std::swap(normal_,other.normal_);
+      std::swap(cmds,other.cmds);
+      std::swap(id,other.id);
+      std::swap(parent, other.parent);
+      std::swap(children, other.children);
       std::swap(dirty,other.dirty);
       std::swap(type,other.type);
-      std::swap(style,other.style);
       std::swap(tightness,other.tightness);
       std::swap(curve_vertices,other.curve_vertices);
       std::swap(shape_matrix,other.shape_matrix);
+      std::swap(style_stack,other.style_stack);
+      std::swap(style,other.style);
       std::swap(kind,other.kind);
+      std::swap(ci,other.ci);
+      std::swap(qi,other.qi);
       std::swap(width,other.width);
       std::swap(height,other.height);
-      std::swap(useGlobalStyle,other.useGlobalStyle);
+      std::swap(reserve_c, other.reserve_c);
+      std::swap(reserved_vertices, other.reserved_vertices);
+      std::swap(extraAttributes,other.extraAttributes);
       return *this;
    }
 
-   void reserve(int v, int i) {
+   void reserve(int c, int vertices) {
       DEBUG_METHOD();
-      vertices.reserve(v);
-      materials.reserve(v);
-      extras.reserve(v);
-      indices.reserve(i);
+      reserve_c = c;
+      reserved_vertices = vertices;
+      cmds.reserve(c);
    }
 
    PShapeImpl() {
       DEBUG_METHOD();
-      reserve(4,6);
-      style.currentMaterial = {
-         gl::color_t{1.0f,1.0f,1.0f,1.0f},
-         gl::color_t{0.0f,0.0f,0.0f,1.0f},
-         gl::color_t{0.0f,0.0f,0.0f,1.0f},
-         gl::color_t{0.0f,0.0f,0.0f,1.0f},
-         1.0, 1.0, 4, {} };
+      reserve(20,4);
    }
 
    PShapeImpl(const PShapeImpl &copy) = default;
@@ -158,10 +175,40 @@ public:
       DEBUG_METHOD();
    }
 
+   void setParentDirty() {
+      DEBUG_METHOD();
+      if (parent.impl.get() == this)
+         abort();
+      if (parent.impl)
+         parent.impl->setDirty();
+   }
+
+   void setDirty() {
+      DEBUG_METHOD();
+      dirty = true;
+      setParentDirty();
+   }
+
    void addChild( const PShape &shape ) {
       DEBUG_METHOD();
-      dirty=true;
+      setDirty();
       children.push_back( shape );
+   }
+
+   void addChild( const PShapeImpl &shape ) {
+      DEBUG_METHOD();
+      setDirty();
+      children.push_back( std::make_shared<PShapeImpl>(shape) );
+   }
+
+   void setParent(PShape p) {
+      DEBUG_METHOD();
+      parent = p;
+   }
+
+   PShape getParent() const {
+      DEBUG_METHOD();
+      return parent;
    }
 
    PShape getChild( int i ) {
@@ -176,27 +223,7 @@ public:
             return child;
          }
       }
-      return createShape();
-   }
-
-   color getStrokeColor() const {
-      DEBUG_METHOD();
-      return style.stroke_color.value_or( color(0,0,0,0) );
-   }
-
-   float getStrokeWeight() const {
-      DEBUG_METHOD();
-      return style.stroke_weight;
-   }
-
-   color getFillColor() const {
-      DEBUG_METHOD();
-      return style.fill_color.value_or( color(0,0,0,0) );
-   }
-
-   color getTintColor() const {
-      DEBUG_METHOD();
-      return style.tint_color;
+      return mkShape();
    }
 
    bool isGroup() const {
@@ -206,19 +233,20 @@ public:
 
    void copyStyle( const PShapeImpl &other ) {
       DEBUG_METHOD();
-      dirty=true;
       style = other.style;
    }
 
    void clear() {
       DEBUG_METHOD();
-      dirty = true;
-      vertices.clear();
-      materials.clear();
-      extras.clear();
-      indices.clear();
+      setDirty();
+      ci = 0;
+      qi = 0;
+      cmds.clear();
       children.clear();
-      batch = std::make_shared<gl::batch_t>();
+      cache.clear();
+      sub_batch_fill.reset();
+      sub_batch_stroke.reset();
+      immediateMode = false;
    }
 
    void rotate(float angle, float x, float y, float z) {
@@ -268,100 +296,150 @@ public:
 
    void scale(float x) {
       DEBUG_METHOD();
-      dirty=true;
       scale(x,x,x);
+   }
+
+   PMatrix accumulateTransform(PMatrix &global_transform) {
+      if (parent.impl) {
+         return parent.impl->accumulateTransform( global_transform ) * shape_matrix;
+      } else {
+         return global_transform * shape_matrix;
+      }
+   }
+
+   PMatrix global_transform; // How do I get this?
+
+   void setShapeMatrix( const PMatrix &transform ) {
+      DEBUG_METHOD();
+      if (sub_batch_fill) {
+         shape_matrix = transform;
+         PMatrix total = accumulateTransform( global_transform );
+         sub_batch_fill->setTransform( total.glm_data() );
+         // Transforms may be reloaded for each draw call
+         // which maybe we should optimize
+         // reloadTransforms();
+      } else {
+         shape_matrix = transform;
+         setParentDirty();
+      }
    }
 
    void transform(const PMatrix &transform) {
       DEBUG_METHOD();
-      dirty=true;
-      shape_matrix = shape_matrix * transform;
+      setShapeMatrix( shape_matrix * transform );
+      // Calculate appropriate transform, walk parents and rebuild
+      // - walk up to first shape without a parent
+      // - get global transform?, pop off each parent calculign new transform
+      // - update transform in place
+      // - reloead uniform array to GPU
+      // = need to migrate flattened call to same code path as normal call
+      // = break join between flattening transforms and compiling shape
+      // won't work with flatten
+      // - have to regen vertices
+      // - reverse old transform and apply new one, getVerts from somewhere else instaed?
+      // - just force regen of whole shape?
+      // Apply same logic to stroke
+      // If we are a group, just trigger a rebuild in each child and it should work
    }
 
    void resetMatrix() {
       DEBUG_METHOD();
-      dirty=true;
-      shape_matrix = PMatrix::Identity();
+      setShapeMatrix( PMatrix::Identity() );
    }
 
    void beginShape(int kind_ = POLYGON) {
       DEBUG_METHOD();
-      dirty=true;
+      if ( !this->immediateMode ) {
+         fmt::print("beginshape inside beginshape/endShape doesn't make sense.\n");
+         abort();
+      }
       // Supported types, POLYGON, POINTS, TRIANGLES, TRINALGE_STRIP, GROUP
-      kind = kind_;
       clear();
+      kind = kind_;
    }
 
    void beginContour() {
       DEBUG_METHOD();
-      dirty=true;
-      contour.push_back(vertices.size());
+      if ( this->immediateMode ) {
+         fmt::print("beginContour not allowed outside of beginShape/endShape\n");
+         abort();
+      } else {
+         cmds.emplace_back( command_t::type_t::CONTOUR, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, ci );
+      }
    }
 
    void endContour() {
       DEBUG_METHOD();
+      if ( this->immediateMode ) {
+         fmt::print("endContour not allowed outside of beginShape/endShape\n");
+         abort();
+      }
    }
 
-   void textureMode( int mode_ ) {
+   void textureMode( int mode ) {
       DEBUG_METHOD();
-      dirty=true;
-      style.mode = mode_;
-   }
-
-   bool isTextureSet() const {
-      DEBUG_METHOD();
-      return !!style.texture_;
+      style.texture_mode = mode;
    }
 
    void material(PMaterial &mat) {
       DEBUG_METHOD();
-      dirty=true;
       noStroke();
-      textureMode( NORMAL );
-      if ( mat.texture )
+      if ( mat.texture ) {
+         textureMode( NORMAL );
          texture( mat.texture.value() );
-      style.currentMaterial = mat;
+      }
+      ambient(mat.ambientColor.r,mat.ambientColor.g,mat.ambientColor.b,mat.ambientColor.a);
+      fill(mat.diffuseColor);
+      specular(mat.specularColor.r,mat.specularColor.g,mat.specularColor.b,mat.specularColor.a);
+      emissive(mat.emissiveColor.r,mat.emissiveColor.g,mat.emissiveColor.b);
+      shininess(mat.specularExponent);
    }
 
    void texture(PImage img) {
       DEBUG_METHOD();
-      dirty=true;
-      style.texture_ = img;
+      if ( style.texture_enabled && style.texture_enabled.value() && style.texture_img == img )
+         return;
+      style.texture_enabled = true;
+      style.texture_img = img;
    }
 
    void circleTexture() {
       DEBUG_METHOD();
-      dirty=true;
-      style.mode = NORMAL;
-      style.texture_ = PImage::circle();
+      if ( style.texture_enabled && style.texture_enabled.value() && style.texture_img == PImage::circle() )
+         return;
+      style.texture_enabled = true;
+      style.texture_mode = NORMAL;
+      style.texture_img = PImage::circle();
    }
 
    void noTexture() {
       DEBUG_METHOD();
-      dirty = true;
-      style.texture_.reset();
+      if ( style.texture_enabled && !style.texture_enabled.value())
+         return;
+      style.texture_enabled = false;
    }
 
    void noNormal() {
       DEBUG_METHOD();
-      dirty=true;
-      setNormals = false;
+      if ( this->immediateMode ) {
+         normal_.reset();
+      } else {
+         cmds.emplace_back( command_t::type_t::NONORMAL, 0,0,0, 0.0F, 0.0F, 0, PImage{} );
+      }
    }
 
    void normal(PVector p) {
       DEBUG_METHOD();
-      dirty=true;
-      setNormals = true;
-      n = p;
+      if ( this->immediateMode ) {
+         normal_ = p;
+      } else {
+         cmds.emplace_back( command_t::type_t::NORMAL, p.x, p.y, p.z, 0.0F, 0.0F, 0, PImage{} );
+      }
    }
 
    void normal(float x, float y, float z) {
       DEBUG_METHOD();
-      dirty=true;
-      setNormals = true;
-      n.x = x;
-      n.y = y;
-      n.z = z;
+      normal( PVector{x,y,z} );
    }
 
    void vertex(float x, float y, float z) {
@@ -391,20 +469,24 @@ public:
 
    void vertex(PVector p, PVector2 t) {
       DEBUG_METHOD();
-      dirty=true;
-      if (style.texture_ && style.mode == IMAGE) {
-         t.x /= style.texture_.value().width;
-         t.y /= style.texture_.value().height;
+      if ( this->immediateMode ) {
+         fmt::print("vertex not allowed outside of beginShape/endShape\n");
+         abort();
+      } else {
+         cmds.emplace_back( command_t::type_t::VERTEX, p.x, p.y, p.z, t.x, t.y, 0, PImage{} );
+         ci++;
       }
-      vertices.push_back( { p, n, t, style.gl_fill_color } );
-      materials.push_back( style.currentMaterial );
-      extras.push_back( { getStrokeColor(), style.stroke_weight } );
    }
 
    void index(unsigned short i) {
       DEBUG_METHOD();
-      dirty=true;
-      indices.push_back(i);
+      if ( this->immediateMode ) {
+         fmt::print("index not allowed outside of beginShape/endShape\n");
+         abort();
+      } else {
+         cmds.emplace_back( command_t::type_t::INDEX,  0.0F,0.0F, 0.0F,0.0F, 0.0F, i );
+         qi++;
+      }
    }
 
    void bezierVertex(float x2, float y2, float x3, float y3, float x4, float y4) {
@@ -419,8 +501,9 @@ public:
 
    void bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4) {
       DEBUG_METHOD();
-      float x1 = vertices.back().position.x;
-      float y1 = vertices.back().position.y;
+      auto v = getVertex( getVertexCount() - 1 );
+      float x1 = v.x;
+      float y1 = v.y;
       for (float t = 0.01; t <= 1; t += 0.01) {
          // Compute the Bezier curve points
          float x = bezierPointCubic( x1, x2, x3, x4, t );
@@ -431,25 +514,24 @@ public:
 
    void bezierVertexQuadratic(PVector control, PVector anchor2) {
       DEBUG_METHOD();
-      float anchor1_x = vertices.back().position.x;
-      float anchor1_y = vertices.back().position.y;
-      for (float t = 0.01; t <= 1; t += 0.01) {
-         // Compute the Bezier curve points
-         float x = bezierPointQuadratic( anchor1_x, control.x, anchor2.x, t );
-         float y = bezierPointQuadratic( anchor1_y, control.y, anchor2.y, t );
-         vertex(x, y);
+      auto v = getVertex( getVertexCount() - 1 );
+       float anchor1_x = v.x;
+       float anchor1_y = v.y;
+       for (float t = 0.01; t <= 1; t += 0.01) {
+          // Compute the Bezier curve points
+          float x = bezierPointQuadratic( anchor1_x, control.x, anchor2.x, t );
+          float y = bezierPointQuadratic( anchor1_y, control.y, anchor2.y, t );
+          vertex(x, y);
       }
    }
 
    void curveTightness(float alpha) {
       DEBUG_METHOD();
-      dirty=true;
       tightness = alpha;
    }
 
    void curveVertex(PVector c) {
       DEBUG_METHOD();
-      dirty=true;
       curve_vertices.push_back(c);
    }
 
@@ -524,189 +606,150 @@ public:
 
    void endShape(int type_ = OPEN) {
       DEBUG_METHOD();
-      dirty=true;
       // OPEN or CLOSE
       if (curve_vertices.size() > 0) {
          drawCurve();
          curve_vertices.clear();
+      }
+      immediateMode = true;
+
+      if (reserve_c != 0 && reserve_c != 20 && cmds.size() != reserve_c) {
+         fmt::print(stderr, "cmds reservation was {} but actual size was {}\n", reserve_c, cmds.size());
+         //    abort();
+      }
+      if (reserved_vertices != 0 && reserved_vertices != 4 && ci != reserved_vertices) {
+         fmt::print(stderr,"vertices reservation was {} but actual size was {}\n", reserved_vertices, ci);
+         //    abort();
       }
 
       if (kind == POLYGON || kind == LINES)
          type = type_;
       else
          type = CLOSE;
-      populateIndices();
-      if (!setNormals) {
-         // Iterate over all triangles
-         for (int i = 0; i < indices.size()/3; i++) {
-            // Get the vertices of the current triangle
-            PVector v1 = vertices[indices[i * 3]].position;
-            PVector v2 = vertices[indices[i * 3 + 1]].position;
-            PVector v3 = vertices[indices[i * 3 + 2]].position;
-
-            // Calculate the normal vector of the current triangle
-            PVector edge1 = v2 - v1;
-            PVector edge2 = v3 - v1;
-            glm::vec3 normal = (edge1.cross(edge2)).normalize();
-
-            // Add the normal to the normals list for each vertex of the triangle
-            vertices[indices[i * 3]].normal = vertices[indices[i * 3]].normal + normal;
-            vertices[indices[i * 3 + 1]].normal = vertices[indices[i * 3 + 1]].normal + normal;
-            vertices[indices[i * 3 + 2]].normal = vertices[indices[i * 3 + 2]].normal + normal;
-         }
-      }
    }
 
-   unsigned short getCurrentIndex() {
+   unsigned short getCurrentIndex() const {
       DEBUG_METHOD();
-      return vertices.size();
+      return ci;
    }
 
-   void populateIndices();
+   void populateIndices(gl::batch_t::sub_batch_t &sb, const std::vector<int> &contour);
 
    void index( std::vector<unsigned short> &&i ) {
       DEBUG_METHOD();
-      dirty=true;
-      indices = i;
+      for (auto &j : i ) {
+         index( j );
+      }
    }
 
    void specular(float r, float g, float b, float a) {
       DEBUG_METHOD();
-      dirty=true;
-      color specular_color = {r,g,b,a};
-      auto gl_specular_color = flatten_color_mode( specular_color );
-      style.currentMaterial.specularColor = gl_specular_color;
+      if ( this->immediateMode ) {
+         style.specular = {r,g,b,a};
+      } else {
+         cmds.emplace_back( command_t::type_t::SPECULAR, r, g, b, a, 0.0F, 0, PImage{} );
+      }
    }
 
    void shininess(float r) {
       DEBUG_METHOD();
-      dirty=true;
-      style.currentMaterial.specularExponent = r;
+      if ( this->immediateMode ) {
+         style.shininess = r;
+      } else {
+         cmds.emplace_back( command_t::type_t::SHININESS, r, 0.0F, 0.0F, 0.0F, 0.0F, 0, PImage{} );
+      }
    }
 
-   void ambient(float r, float g, float b) {
+   void noAmbient() {
       DEBUG_METHOD();
-      dirty=true;
-      style.currentMaterial.ambientColor = flatten_color_mode( {r,g,b } );
+        if ( this->immediateMode ) {
+           style.ambient_enabled = false;
+        }
+   }
+
+   void ambient(float r, float g, float b, float a) {
+      DEBUG_METHOD();
+        if ( this->immediateMode ) {
+           style.ambient_enabled = true;
+           style.ambient_color = {r,g,b,a};
+        } else {
+           cmds.emplace_back( command_t::type_t::AMBIENT, r, g, b, a, 0.0F, 0, PImage{} );
+        }
    }
 
    void emissive(float r, float g, float b) {
       DEBUG_METHOD();
-      dirty=true;
-      style.currentMaterial.emissiveColor = flatten_color_mode( {r,g,b } );
-   }
-
-   void fill(float r,float g,  float b, float a) {
-      DEBUG_METHOD();
-      dirty = true;
-      style.fill_color = {r,g,b,a};
-      style.gl_fill_color = flatten_color_mode( style.fill_color.value() );
-      style.currentMaterial.ambientColor = style.gl_fill_color;
-   }
-
-   void fill(float r,float g, float b) {
-      DEBUG_METHOD();
-      fill(r,g,b,color::scaleA);
-   }
-
-   void fill(float r,float a) {
-      DEBUG_METHOD();
-      if (color::mode == HSB) {
-         fill(0,0,r,a);
+      if ( this->immediateMode ) {
+         style.emissive =  {r,g,b,255 };
       } else {
-         fill(r,r,r,a);
+         cmds.emplace_back( command_t::type_t::EMISSIVE, r, g, b, 0.0F, 0.0F, 0, PImage{} );
       }
    }
 
-   void fill(float r) {
+   void fill(color c) {
       DEBUG_METHOD();
-      if (color::mode == HSB) {
-         fill(0,0,r,color::scaleA);
+      if ( this->immediateMode ) {
+         style.fill_enabled = true;
+         style.fill_color = c;
       } else {
-         fill(r,r,r,color::scaleA);
-      }
-   }
-
-   void fill(class color color) {
-      DEBUG_METHOD();
-      fill(color.r,color.g,color.b,color.a);
-   }
-
-   void fill(class color color, float a) {
-      DEBUG_METHOD();
-      fill(color.r,color.g,color.b,a);
-   }
-
-   void stroke(float r,float g,  float b, float a) {
-      DEBUG_METHOD();
-      dirty = true;
-      style.stroke_color = {r,g,b,a};
-   }
-
-   void stroke(float r,float g, float b) {
-      DEBUG_METHOD();
-      stroke(r,g,b,color::scaleA);
-   }
-
-   void stroke(float r,float a) {
-      DEBUG_METHOD();
-      if (color::mode == HSB) {
-         stroke(0,0,r,a);
-      } else {
-         stroke(r,r,r,a);
-      }
-   }
-
-   void stroke(float r) {
-      DEBUG_METHOD();
-      if (color::mode == HSB) {
-         stroke(r,0,0,color::scaleA);
-      } else {
-         stroke(r,r,r,color::scaleA);
+         cmds.emplace_back( command_t::type_t::FILL, c.r, c.g, c.b, c.a, 0.0F, 0, PImage{} );
       }
    }
 
    void stroke(color c) {
       DEBUG_METHOD();
-      stroke(c.r,c.g,c.b,c.a);
+      if ( this->immediateMode ) {
+         style.stroke_enabled = true;
+         style.stroke_color = c;
+      } else {
+         cmds.emplace_back( command_t::type_t::STROKE, c.r, c.g, c.b, c.a, 0.0F, 0, PImage{} );
+      }
    }
 
    void strokeWeight(float x) {
       DEBUG_METHOD();
-      dirty=true;
-      style.stroke_weight = x;
+      if ( this->immediateMode ) {
+         style.stroke_weight = x;
+      } else {
+         cmds.emplace_back( command_t::type_t::STROKE_WEIGHT, x, 0.0F, 0.0F, 0.0F, 0.0F, 0, PImage{} );
+      }
    }
 
    void noStroke() {
       DEBUG_METHOD();
-      dirty = true;
-      style.stroke_color.reset();
+      if ( this->immediateMode ) {
+         style.stroke_enabled = false;
+      } else {
+         cmds.emplace_back( command_t::type_t::NOSTROKE, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0, PImage{} );
+      }
    }
 
    void noFill() {
       DEBUG_METHOD();
-      dirty = true;
-      style.fill_color.reset();
+      if ( this->immediateMode ) {
+         style.fill_enabled = false;
+      } else {
+         cmds.emplace_back( command_t::type_t::NOFILL, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0, PImage{} );
+      }
    }
 
-   bool isStroked() const {
+   bool isStroked( const flat_style_t &parent_style ) const {
       DEBUG_METHOD();
-      return (style.override_stroke_color && style.override_stroke_color.value()) ||
-         (!style.override_stroke_color && style.stroke_color);
+      return style.resolve_style( parent_style ).stroke_enabled;
    }
 
-   bool isFilled() const {
+   bool isFilled( const flat_style_t &parent_style ) const {
       DEBUG_METHOD();
-      return (style.override_fill_color && style.override_fill_color.value()) ||
-         (!style.override_fill_color && style.fill_color);
+      return style.resolve_style( parent_style ).fill_enabled;
    }
 
    void tint(float r,float g,  float b, float a) {
       DEBUG_METHOD();
-      dirty = true;
-      style.tint_color = {r,g,b,a};
-      style.gl_fill_color = flatten_color_mode( style.tint_color );
-      style.currentMaterial.ambientColor = style.gl_fill_color;
+      if ( this->immediateMode ) {
+         style.texture_tint = {r,g,b,a};
+      } else {
+         cmds.emplace_back( command_t::type_t::TINT, r, g, b, a, 0.0F, 0, PImage{});
+      }
    }
 
    void tint(float r,float g, float b) {
@@ -739,149 +782,398 @@ public:
 
    void noTint() {
       DEBUG_METHOD();
-      dirty=true;
-      style.tint_color = WHITE;
-      style.gl_fill_color = flatten_color_mode( WHITE );
+      if ( this->immediateMode ) {
+         style.texture_tint = WHITE;
+      } else {
+         cmds.emplace_back( command_t::type_t::NOTINT, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0, PImage{});
+      }
    }
 
    void strokeCap(int cap) {
       DEBUG_METHOD();
-      dirty=true;
-      style.line_end_cap = cap;
+      if ( !this->immediateMode ) {
+         fmt::print("strokeCap in beginShape/endShape doesn't really make sense, but I'll allow it.\n"); 
+      }
+      style.stroke_end_cap = cap;
    }
 
-   void setStroke(bool c) {
+   void setStroke(bool z) {
       DEBUG_METHOD();
-      dirty = true;
-      for (auto &&child : children) {
-         child.setStroke(c);
+      if (sub_batch_stroke) {
+         for (int i = 0; i < sub_batch_stroke->getVertexCount(); ++i) {
+            sub_batch_stroke->vertices(i).fill = {0,0,0,0};
+            sub_batch_stroke->vertices(i).emissive = {0,0,0,0};
+         }
+         reloadSubBatch(&sub_batch_stroke.value());
       }
-      style.override_stroke_color = std::optional<color>();
+      noStroke();
+      for ( auto &cmd : cmds) {
+         if (cmd.type == command_t::type_t::STROKE || cmd.type == command_t::type_t::NOSTROKE) {
+            cmd.type = command_t::type_t::NOP;
+         }
+      }
+   }
+
+   void setStroke(std::optional<color> c) {
+      DEBUG_METHOD();
+      if (c) {
+         setStroke(c.value());
+      } else {
+         setStroke(false);
+      }
    }
 
    void setStroke(color c) {
       DEBUG_METHOD();
-      dirty = true;
-      style.override_stroke_color = std::optional<color>(c);
-      for (auto &&child : children) {
-         child.setStroke(c);
+      if (sub_batch_stroke) {
+         gl::color_t gl_color = flatten_color_mode(c);
+         for (int i = 0; i < sub_batch_stroke->getVertexCount(); ++i) {
+            sub_batch_stroke->vertices(i).fill = gl_color;
+            sub_batch_stroke->vertices(i).emissive = gl_color;
+         }
+         reloadSubBatch(&sub_batch_stroke.value());
+      }
+      stroke(c);
+      for ( auto &cmd : cmds) {
+         if (cmd.type == command_t::type_t::STROKE || cmd.type == command_t::type_t::NOSTROKE) {
+            cmd.type = command_t::type_t::NOP;
+         }
       }
    }
 
    void setStrokeWeight(float w) {
       DEBUG_METHOD();
-      dirty=true;
-      style.override_stroke_weight = w;
-      for (auto &&child : children) {
-         child.setStrokeWeight(w);
+      if (sub_batch_stroke) {
+         setDirty();
+      }
+      strokeWeight(w);
+      for ( auto &cmd : cmds) {
+         if (cmd.type == command_t::type_t::STROKE_WEIGHT) {
+            cmd.type = command_t::type_t::NOP;
+         }
       }
    }
 
    void setTexture( PImage img ) {
       DEBUG_METHOD();
-      dirty=true;
-      for (auto &&child : children) {
-         child.setTexture(img);
+      if (sub_batch_fill) {
+         sub_batch_fill->setTexture( img.getTextureID() );
+      } else {
+         texture( img );
+         setDirty(); // ??
       }
-      texture( img );
    }
 
    void setFill(bool z) {
       DEBUG_METHOD();
-      dirty=true;
-      for (auto &&child : children) {
-         child.setFill(z);
+      // Set fill to transparent, can be restored with setFill( color )
+      if (sub_batch_fill) {
+         for (int i = 0; i < sub_batch_fill->getVertexCount(); ++i) {
+            sub_batch_fill->vertices(i).fill = {0,0,0,0};
+            sub_batch_fill->vertices(i).ambient = {0,0,0,0};
+         }
+         reloadSubBatch(&sub_batch_fill.value());
       }
-      style.override_fill_color = std::optional<color>();
-      // if (!z ) {
-      //    for ( auto&&v : vertices ) {
-      //       v.fill = flatten_color_mode({0.0,0.0,0.0,0.0});
-      //    }
-      //    for ( auto&&v : materials ) {
-      //       v.ambientColor = flatten_color_mode({0.0,0.0,0.0,0.0});
-      //    }
-      // }
+      noFill();
+      for ( auto &cmd : cmds) {
+         if (cmd.type == command_t::type_t::FILL || cmd.type == command_t::type_t::NOFILL) {
+            cmd.type = command_t::type_t::NOP;
+         }
+      }
+   }
+
+   void setFill(std::optional<color> c) {
+      DEBUG_METHOD();
+      if (c) {
+         setFill(c.value());
+      } else {
+         setFill(false);
+      }
    }
 
    void setFill(color c) {
       DEBUG_METHOD();
-      dirty = true;
-      for (auto &&child : children) {
-         child.setFill(c);
+      // If we already have precompiled this shape's fill then just update in place
+      if (sub_batch_fill) {
+         gl::color_t gl_color = flatten_color_mode(c);
+         for (int i = 0; i < sub_batch_fill->getVertexCount(); ++i) {
+            sub_batch_fill->vertices(i).fill = gl_color;
+            // TODO: need to check style to make sure we should do this
+            sub_batch_fill->vertices(i).ambient = gl_color;
+         }
+         reloadSubBatch(&sub_batch_fill.value());
       }
-      style.override_fill_color = std::optional<color>(c);
-      // gl::color clr = flatten_color_mode(style.fill_color.value());
-      // for ( auto&&v : vertices ) {
-      //    v.fill = clr;
-      // }
-      // for ( auto&&v : materials ) {
-      //    v.ambientColor = clr;
-      // }
+      // Update cmds either way
+      fill(c);
+      for ( auto &cmd : cmds) {
+         if (cmd.type == command_t::type_t::FILL || cmd.type == command_t::type_t::NOFILL) {
+            cmd.type = command_t::type_t::NOP;
+         }
+      }
    }
 
    void setTint(color c) {
       DEBUG_METHOD();
-      dirty=true;
-      for (auto &&child : children) {
-         child.setFill(c);
+      if (sub_batch_fill) {
+         gl::color_t gl_color = flatten_color_mode(c);
+         for (int i = 0; i < sub_batch_fill->getVertexCount(); ++i) {
+            sub_batch_fill->vertices(i).fill = gl_color;
+            // TODO: need to check style to make sure we should do this
+            sub_batch_fill->vertices(i).ambient = gl_color;
+         }
+         reloadSubBatch(&sub_batch_fill.value());
       }
-      style.tint_color = c;
-      gl::color_t clr = flatten_color_mode(style.tint_color);
-      for ( auto&&v : vertices ) {
-         v.fill = clr;
-      }
-   }
-
-   bool is_dirty() const {
-      DEBUG_METHOD();
-      if ( dirty ) {
-         return true;
-      } else if ( kind == GROUP ) {
-         for (auto &&child : children) {
-            if (child.impl->is_dirty())
-               return true;
+      tint(c);
+      for ( auto &cmd : cmds) {
+         if (cmd.type == command_t::type_t::TINT) {
+            cmd.type = command_t::type_t::NOP;
          }
       }
-      return false;
    }
 
-   void compile() {
-      if (!isCompiled()) {
-         batch = std::make_shared<gl::batch_t>();
-         compiled = true;
-         flatten( batch, PMatrix::Identity(), true );
+   gl::batch_t_ptr getCompiledBatch(const flat_style_t &global_style) {
+      DEBUG_METHOD();
+      flat_style_t local_style = style.resolve_style( global_style );
+      if (dirty) {
+         cache.clear();
+      }
+      if (cache.contains(local_style)) {
+         return cache[local_style];
+      } else if ( should_compile ) {
+         cache.emplace(local_style, std::make_shared<gl::batch_t>());
+         auto batch = cache[local_style];
+         flatten( batch, PMatrix::Identity(), true, global_style );
          batch->load();
+         dirty = false;
+         return cache[local_style];
+      } else {
+         return {};
       }
    }
 
-   bool isCompiled() const {
-      return compiled && !is_dirty();
+    void populate_normals(gl::batch_t::sub_batch_t &sb) {
+      // Iterate over all triangles
+      for (int i = 0; i < sb.getIndexCount(); i+=3) {
+         // Get the vertices of the current triangle
+         gl::vertex_t &v1 = sb.verticesByIndex(i);
+         gl::vertex_t &v2 = sb.verticesByIndex(i + 1);
+         gl::vertex_t &v3 = sb.verticesByIndex(i + 2);
+
+         // Calculate the normal vector of the current triangle
+         PVector edge1 = v2.position - v1.position;
+         PVector edge2 = v3.position - v1.position;
+         glm::vec3 normal = (edge1.cross(edge2)).normalize();
+
+         // Add the normal to the normals list for each vertex of the triangle
+         v1.normal = v1.normal + normal;
+         v2.normal = v2.normal + normal;
+         v3.normal = v3.normal + normal;
+      }
    }
 
-   gl::batch_t_ptr getBatch() {
-      return batch;
-   }
-
-   void flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const {
+   void flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &parent_style)  {
       DEBUG_METHOD();
-      auto currentTransform = transform * shape_matrix;
+
+      // Resolve accumulated style and transforms
+      flat_style_t local_style = style.resolve_style( parent_style );
+
+      // have stack of GLM matricies for transforms
       if ( kind == GROUP ) {
          for (auto &&child : children) {
-            child.flatten(batch, currentTransform, flatten_transforms);
+            // For all child shapes pass down transform and style from this shape
+            // and continue to flatten.
+            child.impl->flatten(batch, transform * child.getShapeMatrix(), flatten_transforms, local_style);
          }
       } else {
-         if ( isFilled() )
-            draw_fill(batch, currentTransform, flatten_transforms);
-         // draw_normals(batch, currentTransform, flatten_transforms);
-         if ( isStroked() )
-            draw_stroke(batch, currentTransform, flatten_transforms);
+         auto currentTransform = transform;// * shape_matrix;
+         sub_batch_fill.emplace( *batch, ci, currentTransform.glm_data(), flatten_transforms,  style.texture_img ? style.texture_img.value().getTextureID() : std::optional<gl::texture_t_ptr>());
+         auto &sb = sub_batch_fill.value();
+
+         std::vector<int> contour; // TODO: reserve amount for this.
+         std::vector<vInfoExtra> extras;
+         extras.reserve(ci);
+         std::vector<unsigned short> idx;
+         idx.reserve(qi);
+
+         bool fill = false;
+         bool stroke = false;
+         bool indices = false;
+
+         std::optional<glm::vec3> local_normal = normal_;
+
+         gl::color_t gl_stroke_color = flatten_color_mode( local_style.stroke_color );
+         gl::color_t gl_fill_color = flatten_color_mode( local_style.fill_color );
+         gl::color_t gl_tint_color = flatten_color_mode( local_style.texture_tint );
+         gl::color_t gl_ambient_color = local_style.ambient_enabled ? flatten_color_mode( local_style.ambient_color ) : local_style.texture_enabled ? gl_tint_color : gl_fill_color;
+         gl::color_t gl_specular_color = flatten_color_mode( local_style.specular );
+         gl::color_t gl_emissive_color = flatten_color_mode( local_style.emissive );
+
+         if (enable_debug) {
+            fmt::print("SHAPE COMMANDS: {} {} [\n", kindToTxt(kind), typeToTxt(type));
+            for ( const auto &cmd : cmds) {
+               fmt::print("{}\n", cmd);
+            }
+            fmt::print("]\n");
+         }
+         for ( const auto &cmd : cmds) {
+            if ( !local_style.style_enabled ) {
+               // Skip these commands if we are using global
+               // style
+               switch(cmd.type) {
+               case command_t::type_t::FILL:
+               case command_t::type_t::NOFILL:
+               case command_t::type_t::STROKE:
+               case command_t::type_t::NOSTROKE:
+               case command_t::type_t::TINT:
+               case command_t::type_t::NOTINT:
+               case command_t::type_t::STROKE_WEIGHT:
+                  continue;
+               default:
+                  break;
+               }
+            }
+            switch(cmd.type) {
+            case command_t::type_t::VERTEX:
+            {
+               auto d = cmd.d;
+               auto e = cmd.e;
+               // TODO, move inside fill, what about tint? do fill stuff when texture is enabled too
+               if (local_style.texture_enabled && local_style.texture_mode == IMAGE) {
+                  d /= local_style.texture_img.width;
+                  e /= local_style.texture_img.height;
+               }
+               if (local_style.fill_enabled || local_style.texture_enabled) {
+                  fill = true;
+                  sb.add_vertex(
+                     {cmd.a, cmd.b, cmd.c},
+                     local_normal.value_or(PVector{0.0F,0.0F,0.0F}),
+                     {d,e},
+                     local_style.texture_enabled ? gl_tint_color : gl_fill_color,
+                     gl_ambient_color,
+                     gl_specular_color,
+                     gl_emissive_color,
+                     local_style.shininess );
+               }
+               if (local_style.stroke_enabled) {
+                  stroke = true;
+                  extras.emplace_back( glm::vec3{cmd.a,cmd.b, cmd.c}, gl_stroke_color, local_style.stroke_weight );
+               }
+               if (!fill && !stroke) {
+                  fmt::print("Vertex specified but fill, stroke and texture are all off ignoring. Indices will probably be inconsistent.\n");
+               }
+            }
+            break;
+            case command_t::type_t::INDEX:
+               indices = true;
+               // TODO can skip some of these for !fill or !stroke
+               sb.add_index(cmd.f);
+               idx.push_back(cmd.f);
+               break;
+            case command_t::type_t::CONTOUR:
+               contour.push_back(cmd.f);
+               break;
+            case command_t::type_t::FILL:
+               // abort if texture
+               local_style.fill_enabled = true;
+               local_style.fill_color = {cmd.a, cmd.b, cmd.c, cmd.d};
+               if (!local_style.ambient_enabled) {
+                  gl_ambient_color = flatten_color_mode( local_style.fill_color );
+               }
+               gl_fill_color = flatten_color_mode( local_style.fill_color );
+               break;
+            case command_t::type_t::NOP:
+               break;
+            case command_t::type_t::TINT:
+               // abort if no texture
+               local_style.texture_tint = {cmd.a, cmd.b, cmd.c, cmd.d};
+               if (!local_style.ambient_enabled) {
+                  gl_ambient_color = flatten_color_mode( local_style.texture_tint );
+               }
+               gl_tint_color = flatten_color_mode( local_style.texture_tint );
+               break;
+            case command_t::type_t::NOTINT:
+               // abort if no texture
+               local_style.texture_tint = WHITE;
+               if (!local_style.ambient_enabled) {
+                  gl_ambient_color = flatten_color_mode( local_style.texture_tint );
+               }
+               gl_tint_color = flatten_color_mode( local_style.texture_tint );
+               break;
+            case command_t::type_t::STROKE:
+               local_style.stroke_enabled = true;
+               local_style.stroke_color = {cmd.a, cmd.b, cmd.c, cmd.d};
+               gl_stroke_color = flatten_color_mode(local_style.stroke_color);
+               break;
+            case command_t::type_t::AMBIENT:
+               local_style.ambient_enabled = true;
+               local_style.ambient_color = {cmd.a, cmd.b, cmd.c, cmd.d};
+               gl_ambient_color = flatten_color_mode( local_style.ambient_color );
+               break;
+            case command_t::type_t::SPECULAR:
+               local_style.specular = {cmd.a, cmd.b, cmd.c, cmd.d};
+               gl_specular_color = flatten_color_mode( local_style.specular );
+               break;
+            case command_t::type_t::EMISSIVE:
+               local_style.emissive = {cmd.a, cmd.b, cmd.c, cmd.d};
+               gl_emissive_color = flatten_color_mode( local_style.emissive );
+               break;
+            case command_t::type_t::SHININESS:
+               local_style.shininess = cmd.a;
+               break;
+            case command_t::type_t::NOFILL:
+               // set fill color to black?
+               local_style.fill_enabled = false;
+               break;
+            case command_t::type_t::NOSTROKE:
+               local_style.stroke_enabled = false;
+               break;
+            case command_t::type_t::NORMAL:
+               local_normal = {cmd.a, cmd.b, cmd.c};
+               break;
+            case command_t::type_t::NONORMAL:
+               local_normal.reset();
+               break;
+            case command_t::type_t::STROKE_WEIGHT:
+               local_style.stroke_weight = cmd.a;
+               break;
+            }
+         }
+         if ( fill ) {
+
+            // Generate indices, from vertex info, if this shape doesn't have it.
+            if (!indices) {
+               populateIndices(sb, contour);
+            }
+
+            if (!local_normal) {
+               // If no global normal is not set walk over triangles calculating a reasonable nomal.
+               populate_normals(sb);
+            }
+
+            if (local_style.draw_normals) {
+               draw_normals(sb, batch, currentTransform.glm_data(), flatten_transforms);
+            }
+         } else {
+            sb.drop();
+            sub_batch_fill.reset();
+         }
+         if (stroke) {
+            draw_stroke( batch, currentTransform.glm_data(), flatten_transforms, local_style.stroke_end_cap, contour, extras, idx );
+         }
       }
       dirty = false;
+      if (!flatten_transforms) {
+         // If we're compile the base _shape from PGraphics then the batch will
+         // be destroyed every frame so don't save pointers to it. Probably
+         // should use smart pointer in view.
+         sub_batch_fill.reset();
+         sub_batch_stroke.reset();
+      }
    }
 
-   void draw_normals(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const;
-   void draw_stroke(gl::batch_t_ptr batchr, const PMatrix& transform, bool flatten_transforms) const;
-   void draw_fill(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const;
+   void draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms);
+   void draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms, int strokeEndCap,
+                     const std::vector<int> &contour, const std::vector<vInfoExtra> &extras, const std::vector<unsigned short> &idx);
 
    int getChildCount() const {
       DEBUG_METHOD();
@@ -890,24 +1182,57 @@ public:
 
    int getVertexCount() const {
       DEBUG_METHOD();
-      return vertices.size();
+      return ci;
    }
 
    PVector getVertex(int i) const {
       DEBUG_METHOD();
-      return vertices[i].position;
+      int j = 0;
+      for (const auto &cmd : cmds ) {
+         if (cmd.type ==  command_t::type_t::VERTEX ) {
+            if (j == i)
+               return {cmd.a,cmd.b, cmd.c};
+            j++;
+         }
+      }
+      return {};
+   }
+
+   void reloadSubBatch(gl::batch_t::sub_batch_t *sb) {
+      if (parent.impl) {
+         parent.impl->reloadSubBatch(sb);
+      } else {
+         for (auto& [key, batch] : cache) {
+            batch->reload(*sb);
+         }
+      }
    }
 
    void setVertex(int i, PVector v) {
       DEBUG_METHOD();
-      dirty=true;
-      vertices[i].position = v;
+      if (sub_batch_fill) {
+         sub_batch_fill->vertices(i).position = v;
+         reloadSubBatch(&sub_batch_fill.value());
+      }
+      if (sub_batch_stroke) {
+         setDirty();
+      }
+      int j = 0;
+      for (auto &cmd : cmds ) {
+         if (cmd.type ==  command_t::type_t::VERTEX ) {
+            if (j == i) {
+               cmd.a = v.x;
+               cmd.b = v.y;
+               cmd.c = v.z;
+            }
+            j++;
+         }
+      }
    }
 
    void setVertex(int i, float x, float y , float z = 0) {
       DEBUG_METHOD();
-      dirty=true;
-      vertices[i].position = {x,y,z};
+      setVertex(i, {x,y,z});
    }
 
    PVector getVertex(int i, PVector &x) const {
@@ -927,9 +1252,9 @@ public:
    }
 };
 
-static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vertex_t> &vertices,  std::vector<int> contour) {
+static std::vector<unsigned short> triangulatePolygon(gl::batch_t::sub_batch_t &sb,  std::vector<int> contour) {
 
-   if (vertices.size() < 3) {
+   if (sb.getVertexCount() < 3) {
       return {}; // empty vector
    }
 
@@ -957,13 +1282,13 @@ static std::vector<unsigned short> triangulatePolygon(const std::vector<gl::vert
    const int nvp = 3;
 
    if ( contour.empty() ) {
-      tess.addContour(3, vertices.data(), sizeof(gl::vertex_t), vertices.size(), offsetof(gl::vertex_t,position));
+      tess.addContour(3, sb.vertices_data(), sizeof(gl::vertex_t), sb.getVertexCount(), offsetof(gl::vertex_t,position));
    } else {
-      tess.addContour(3, vertices.data(), sizeof(gl::vertex_t), contour[0],      offsetof(gl::vertex_t,position));
-      contour.push_back(vertices.size());
+      tess.addContour(3, sb.vertices_data(), sizeof(gl::vertex_t), contour[0],      offsetof(gl::vertex_t,position));
+      contour.push_back(sb.getVertexCount());
       for ( int i = 0; i < contour.size() - 1; ++i ) {
          auto &c = contour[i];
-         auto start = vertices.data() + c;
+         auto start = sb.vertices_data() + c;
          auto size = contour[i+1] - contour[i];
          tess.addContour(3, start, sizeof(gl::vertex_t), size, offsetof(gl::vertex_t,position));
       }
@@ -1077,49 +1402,49 @@ static std::pair<int, int> chooseValidDiagonal(const glm::vec2& A, const glm::ve
 
 
 
-void PShapeImpl::populateIndices() {
+void PShapeImpl::populateIndices( gl::batch_t::sub_batch_t &sb, const std::vector<int> &contour ) {
    // Becuase we flip the Y-axis to maintain processings coordinate system
    // we have to reverse the triangle winding direction for any geometry
    // we don't create and index ourselves.
    DEBUG_METHOD();
-   if (indices.size() != 0)
-      return;
 
    if (kind == GROUP) return;
 
-   if (vertices.size() == 0) return;
-
-   if ( !isFilled() ) return;
-
-   dirty=true;
+   if (sb.getVertexCount() == 0) return;
 
    if (kind == QUADS || kind == QUAD) {
-      if (vertices.size() % 4 != 0) abort();
-      for (int i = 0; i < vertices.size(); i += 4) {
-        glm::vec2 A2D, B2D, C2D, D2D;
-        projectTo2D(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position, vertices[i + 3].position,
-                    A2D, B2D, C2D, D2D);
+      if (sb.getVertexCount() % 4 != 0) abort();
+      for (int i = 0; i < sb.getVertexCount(); i += 4) {
+         glm::vec2 A2D, B2D, C2D, D2D;
+         projectTo2D(sb.vertices(i).position,
+                     sb.vertices(i+1).position,
+                     sb.vertices(i+2).position,
+                     sb.vertices(i+3).position,
+                     A2D, B2D, C2D, D2D);
 
          auto diag = chooseValidDiagonal(A2D, B2D, C2D, D2D);
          int d1 = diag.first;
          int d2 = diag.second;
 
          // First Triangle
-         indices.push_back(i + d1);
-         indices.push_back(i + ((d1 + 1) % 4));
-         indices.push_back(i + d2);
+         sb.add_index( i + d1);
+         sb.add_index( i + ((d1 + 1) % 4));
+         sb.add_index( i + d2);
 
          // Second Triangle
-         indices.push_back(i + d1);
-         indices.push_back(i + d2);
-         indices.push_back(i + ((d2 + 1) % 4));
-    }
+         sb.add_index( i + d1);
+         sb.add_index( i + d2);
+         sb.add_index( i + ((d2 + 1) % 4));
+      }
    }
    else if (kind == QUAD_STRIP) {
-      for (int i = 0; i + 3 < vertices.size(); i += 2) {
+      for (int i = 0; i + 3 < sb.getVertexCount(); i += 2) {
          // Just discard any trailing odd vertex
          glm::vec2 A2D, B2D, C2D, D2D;
-         projectTo2D(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position, vertices[i + 3].position,
+         projectTo2D(sb.vertices(i).position,
+                     sb.vertices(i+1).position,
+                     sb.vertices(i+2).position,
+                     sb.vertices(i+3).position,
                      A2D, B2D, C2D, D2D);
 
          auto diag = chooseValidDiagonal(A2D, B2D, C2D, D2D);
@@ -1130,50 +1455,46 @@ void PShapeImpl::populateIndices() {
          auto s = [](int i) { return (i == 2) ? 3 : (i == 3) ? 2 : i; };
 
          // First Triangle
-         indices.push_back(i + s(d1));
-         indices.push_back(i + s((d1 + 1) % 4));
-         indices.push_back(i + s(d2));
+         sb.add_index( i + s(d1));
+         sb.add_index( i + s((d1 + 1) % 4));
+         sb.add_index( i + s(d2));
 
          // Second Triangle
-         indices.push_back(i + s(d1));
-         indices.push_back(i + s(d2));
-         indices.push_back(i + s((d2 + 1) % 4));
-     }
+         sb.add_index( i + s(d1));
+         sb.add_index( i + s(d2));
+         sb.add_index( i + s((d2 + 1) % 4));
+      }
    } else if (kind == TRIANGLE_STRIP || kind == TRIANGLE_STRIP_NOSTROKE) {
-   bool reverse = false;
-      for (int i = 0; i < vertices.size() - 2; i++ ){
+      bool reverse = false;
+      for (int i = 0; i < sb.getVertexCount() - 2; i++ ){
          if (reverse) {
-            indices.push_back(i+2);
-            indices.push_back(i+1);
-            indices.push_back(i);
+            sb.add_index(i+2);
+            sb.add_index(i+1);
+            sb.add_index(i);
          } else {
-            indices.push_back(i);
-            indices.push_back(i+1);
-            indices.push_back(i+2);
+            sb.add_index(i);
+            sb.add_index(i+1);
+            sb.add_index(i+2);
          }
          reverse = !reverse;
       }
-   } else if (kind == CONVEX_POLYGON) {
+   } else if (kind == CONVEX_POLYGON || kind == TRIANGLE_FAN) {
       // Fill with triangle fan
-      for (int i = 1; i < vertices.size() - 1 ; i++ ) {
-         indices.push_back( 0 );
-         indices.push_back( i );
-         indices.push_back( i+1 );
-      }
-   }  else if (kind == TRIANGLE_FAN) {
-      // Fill with triangle fan
-      for (int i = 1; i < vertices.size() - 2 ; i++ ) {
-         indices.push_back( 0 );
-         indices.push_back( i );
-         indices.push_back( i+1 );
+      for (int i = 1; i < sb.getVertexCount() - 1 ; i++ ) {
+         sb.add_index( 0 );
+         sb.add_index( i );
+         sb.add_index( i+1 );
       }
    } else if (kind == POLYGON) {
-      indices = triangulatePolygon(vertices, contour);
+      auto indices = triangulatePolygon(sb, contour);
+      for (auto &i : indices ) {
+         sb.add_index( i );
+      }
    } else if (kind == TRIANGLES) {
-      for (int i = 0; i < vertices.size(); i+=3 ) {
-         indices.push_back( i );
-         indices.push_back( i+1 );
-         indices.push_back( i+2 );
+      for (int i = 0; i < sb.getVertexCount(); i+=3 ) {
+         sb.add_index( i );
+         sb.add_index( i+1 );
+         sb.add_index( i+2 );
       }
    } else if (kind == POINTS || kind == LINES) {
       // no indices required for these types.
@@ -1240,131 +1561,91 @@ PLine drawLineMitred(PVector p1, PVector p2, PVector p3, float half_weight) {
    return { p2 + bisect * w, p2 - bisect * w };
 }
 
-PShapeImpl drawLinePoly(int points, const gl::vertex_t *p, const PShapeImpl::vInfoExtra *extras, bool closed, const PMatrix &transform,
-                        std::optional<color> override_color, std::optional<float> override_weight)  {
+void drawLinePoly(gl::batch_t::sub_batch_t &sb, int points, const PShapeImpl::vInfoExtra *extras, bool closed)  {
    PLine start;
    PLine end;
 
    if ( points < 3 )
       abort();
 
-   PShapeImpl triangle_strip;
-   triangle_strip.beginShape(TRIANGLE_STRIP_NOSTROKE);
-   triangle_strip.transform( transform );
-   triangle_strip.noStroke();
-   triangle_strip.normal( 0,0,0 );
-   auto color1 = override_color.value_or(extras[0].stroke);
-   triangle_strip.fill(color1);
-   triangle_strip.ambient( 0,0,0 );
-   triangle_strip.emissive( color1.r, color1.g, color1.b );
-   float half_weight = override_weight.value_or(extras[0].weight) / 2.0F;
+   int vstart = sb.getVertexCount();
+   gl::color_t c0 = extras[0].gl_stroke;
+   float half_weight = extras[0].weight / 2.0F;
+
    if (closed) {
-      start = drawLineMitred(p[points-1].position, p[0].position, p[1].position, half_weight );
+      start = drawLineMitred(extras[points-1].position, extras[0].position, extras[1].position, half_weight );
       end = start;
    } else {
-      PVector normal = PVector{p[1].position - p[0].position}.normal();
+      PVector normal = PVector{extras[1].position - extras[0].position}.normal();
       normal.normalize();
       normal.mult(half_weight);
-      start = {  PVector{p[0].position} + normal, PVector{p[0].position} - normal };
-      normal = PVector{p[points-1].position - p[points-2].position}.normal();
+      start = {  PVector{extras[0].position} + normal, PVector{extras[0].position} - normal };
+      normal = PVector{extras[points-1].position - extras[points-2].position}.normal();
       normal.normalize();
       normal.mult(half_weight);
-      end = { PVector{p[points-1].position} + normal, PVector{p[points-1].position} - normal };
+      end = { PVector{extras[points-1].position} + normal, PVector{extras[points-1].position} - normal };
    }
 
-   triangle_strip.vertex( start.start );
-   triangle_strip.vertex( start.end );
+   sb.add_stroke_vertex( start.start, c0 );
+   sb.add_stroke_vertex( start.end, c0 );
 
    for (int i =0; i<points-2;++i) {
-      PLine next = drawLineMitred(p[i].position, p[i+1].position, p[i+2].position, half_weight);
-      triangle_strip.vertex( next.start );
-      triangle_strip.vertex( next.end );
+      PLine next = drawLineMitred(extras[i].position, extras[i+1].position, extras[i+2].position, half_weight);
+      sb.add_stroke_vertex( next.start, c0 );
+      sb.add_stroke_vertex( next.end, c0 );
    }
    if (closed) {
-      PLine next = drawLineMitred(p[points-2].position, p[points-1].position, p[0].position, half_weight);
-      triangle_strip.vertex( next.start );
-      triangle_strip.vertex( next.end );
+      PLine next = drawLineMitred(extras[points-2].position, extras[points-1].position, extras[0].position, half_weight);
+      sb.add_stroke_vertex( next.start, c0 );
+      sb.add_stroke_vertex( next.end, c0 );
    }
 
-   triangle_strip.vertex( end.start );
-   triangle_strip.vertex( end.end );
+   sb.add_stroke_vertex( end.start, c0 );
+   sb.add_stroke_vertex(end.end, c0 );
 
-   triangle_strip.endShape(CLOSE);
-   return triangle_strip;
+   bool reverse = false;
+   for (int i = 0; i < (sb.getVertexCount() - vstart) - 2; i++ ){
+      if (reverse) {
+         sb.add_index(vstart + i+2);
+         sb.add_index(vstart + i+1);
+         sb.add_index(vstart + i);
+      } else {
+         sb.add_index(vstart + i);
+         sb.add_index(vstart + i+1);
+         sb.add_index(vstart + i+2);
+      }
+      reverse = !reverse;
+   }
 }
 
-PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
-
-   PShapeImpl shape;
+void drawRoundLine(gl::batch_t::sub_batch_t &sb, PVector p1, PVector p2, float weight1, float weight2, gl::color_t color1, gl::color_t color2 ) {
 
    int NUMBER_OF_VERTICES=16;
 
-   shape.reserve(NUMBER_OF_VERTICES * 2, NUMBER_OF_VERTICES * 4);
-
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
-
    float start_angle = (p2 - p1).heading() + HALF_PI;
 
-   shape.noStroke();
-   shape.normal( 0,0,0 );
+   int start = sb.getVertexCount();
 
-   shape.fill(color1);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color1.r, color1.g, color1.b );
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p1.x + cosf(i + start_angle) * weight1/2, p1.y + sinf(i+start_angle) * weight1/2, p1.z);
+      sb.add_stroke_vertex( {p1.x + cosf(i + start_angle) * weight1/2, p1.y + sinf(i+start_angle) * weight1/2, p1.z}, color1);
    }
 
    start_angle += PI;
 
-   shape.fill(color2);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color2.r, color2.g, color2.b );
    for(float i = 0; i < PI; i += TWO_PI / NUMBER_OF_VERTICES){
-      shape.vertex(p2.x + cosf(i+start_angle) * weight2/2, p2.y + sinf(i+start_angle) * weight2/2, p2.z);
+      sb.add_stroke_vertex( {p2.x + cosf(i+start_angle) * weight2/2, p2.y + sinf(i+start_angle) * weight2/2, p2.z}, color2);
    }
-   shape.endShape(CLOSE);
-   return shape;
+
+   // Fill with triangle fan
+   for (int i = 1; i < (sb.getVertexCount() - start) - 1 ; i++ ) {
+      sb.add_index(  start + 0 );
+      sb.add_index(  start + i );
+      sb.add_index(  start + i + 1 );
+   }
 }
 
-PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+void drawCappedLine(gl::batch_t::sub_batch_t &sb, PVector p1, PVector p2, float weight1, float weight2, gl::color_t color1, gl::color_t color2 ) {
 
-   PShapeImpl shape;
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
-   PVector normal1 = (p2 - p1).normal();
-   normal1.normalize();
-   normal1.mult(weight1/2.0F);
-   PVector normal2 = (p2 - p1).normal();
-   normal2.normalize();
-   normal2.mult(weight2/2.0F);
-
-   shape.noStroke();
-   shape.normal( 0,0,0 );
-
-   shape.fill(color1);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color1.r, color1.g, color1.b );
-
-   shape.vertex(p1 + normal1);
-   shape.vertex(p1 - normal1);
-
-   shape.fill(color2);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color2.r, color2.g, color2.b );
-   shape.vertex(p2 - normal2);
-   shape.vertex(p2 + normal2);
-
-   shape.endShape(CLOSE);
-   return shape;
-}
-
-PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
-
-   PShapeImpl shape;
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
    normal1.mult(weight1/2.0F);
@@ -1376,35 +1657,29 @@ PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, 
    PVector end_offset1 = (p2 - p1);
    end_offset1.normalize();
    end_offset1.mult(weight1/2.0F);
+
    PVector end_offset2 = (p2 - p1);
    end_offset2.normalize();
    end_offset2.mult(weight2/2.0F);
 
-   shape.noStroke();
-   shape.normal( 0,0,0 );
-
-   shape.fill(color1);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color1.r, color1.g, color1.b );
-   shape.vertex(p1 + normal1 - end_offset1);
-   shape.vertex(p1 - normal1 - end_offset1);
-
-   shape.fill(color2);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color2.r, color2.g, color2.b );
-   shape.vertex(p2 - normal2 + end_offset2);
-   shape.vertex(p2 + normal2 + end_offset2);
-
-   shape.endShape(CLOSE);
-   return shape;
+   auto i0 = sb.add_stroke_vertex( p1 + normal1 - end_offset1, color1);
+   auto i1 = sb.add_stroke_vertex( p1 - normal1 - end_offset1, color1);
+   auto i2 = sb.add_stroke_vertex( p2 + normal2 + end_offset2, color2);
+   auto i3 = sb.add_stroke_vertex( p2 - normal2 + end_offset2, color2);
+   sb.add_index( i0 );
+   sb.add_index( i1 );
+   sb.add_index( i2 );
+   sb.add_index( i0 );
+   sb.add_index( i2 );
+   sb.add_index( i3 );
 }
 
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform) {
-   PShape shape = createShape();;
-   shape.beginShape(TRIANGLES);
+   PShape shape = mkShape();
    shape.circleTexture();
+   shape.beginShape(TRIANGLES_NOSTROKE);
    shape.noStroke();
-   shape.fill(color);
+   shape.tint(color);
    shape.transform( transform );
    x = x - width / 2.0F;
    y = y - height / 2.0F;
@@ -1417,7 +1692,22 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    return shape;
 }
 
-void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
+void drawUntexturedFilledEllipse_sb(gl::batch_t::sub_batch_t &sb, float x, float y, float width, float height, gl::color_t color) {
+   x = x - width / 2.0F;
+   y = y - height / 2.0F;
+   auto i0 = sb.add_vertex( {x,y,0},              {0,0,1}, {0,0}, color, color, {},{},{} );
+   auto i1 = sb.add_vertex( {x+width,y,0},        {0,0,1}, {1.0F,0}, color, color, {},{},{} );
+   auto i2 = sb.add_vertex( {x+width,y+height,0}, {0,0,1}, {1.0F,1.0F}, color, color, {},{},{} );
+   auto i3 = sb.add_vertex( {x,y+height,0},       {0,0,1}, {0,1.0F}, color, color, {},{},{} );
+   sb.add_index( i0 );
+   sb.add_index( i2 );
+   sb.add_index( i1 );
+   sb.add_index( i0 );
+   sb.add_index( i3 );
+   sb.add_index( i2 );
+}
+
+void drawLine(gl::batch_t::sub_batch_t &sb, PVector p1, PVector p2, float weight1, float weight2, gl::color_t color1, gl::color_t color2 ) {
 
    PVector normal1 = (p2 - p1).normal();
    normal1.normalize();
@@ -1427,43 +1717,30 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    normal2.normalize();
    normal2.mult(weight2/2.0F);
 
-   unsigned short i = triangles.getCurrentIndex();
-   triangles.normal( 0,0,0 );
-   triangles.fill( color1 );
-   triangles.ambient( 0,0,0 );
-   triangles.emissive( color1.r,color1.g, color1.b );
-   triangles.vertex( p1 + normal1 );
-   triangles.vertex( p1 - normal1 );
-   triangles.fill( color2 );
-   triangles.ambient( 0,0,0 );
-   triangles.emissive( color2.r,color2.g, color2.b );
-   triangles.vertex( p2 - normal2 );
-   triangles.vertex( p2 + normal2 );
-
-   triangles.index( i + 0 );
-   triangles.index( i + 1 );
-   triangles.index( i + 2 );
-
-   triangles.index( i + 0 );
-   triangles.index( i + 2 );
-   triangles.index( i + 3 );
+   auto i0 = sb.add_stroke_vertex( p1 + normal1, color1 );
+   auto i1 = sb.add_stroke_vertex( p1 - normal1, color1 );
+   auto i2 = sb.add_stroke_vertex( p2 - normal2, color2 );
+   auto i3 = sb.add_stroke_vertex( p2 + normal2, color2 );
+   sb.add_index( i0 );
+   sb.add_index( i1 );
+   sb.add_index( i2 );
+   sb.add_index( i0 );
+   sb.add_index( i2 );
+   sb.add_index( i3 );
 }
 
-PShapeImpl drawTriangleNormal(const gl::vertex_t &p0, const gl::vertex_t &p1, const gl::vertex_t &p2, const PMatrix &transform) {
-   PShapeImpl shape;
-   shape.beginShape(TRIANGLES);
-   shape.fill(RED);
-   shape.transform( transform );
+void drawTriangleNormal(gl::batch_t::sub_batch_t &ssb, const gl::vertex_t &p0, const gl::vertex_t &p1, const gl::vertex_t &p2) {
    PVector pos = (p0.position + p1.position + p2.position) / 3;
    PVector n = ((p0.normal + p1.normal + p2.normal) / 3).normalize();
+   gl::color_t GL_RED = {1,0,0,1};
    float length = PVector{p0.position - p1.position}.mag() / 10.0f;
-   _line(shape, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
-   shape.endShape();
-   return shape;
+   drawLine(ssb, pos, pos + length * n, length/10.0f,length/10.0f,GL_RED,GL_RED);
 }
 
-void PShapeImpl::draw_normals(gl::batch_t_ptr batch, const PMatrix &transform, bool flatten_transforms) const {
+void PShapeImpl::draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms) {
    DEBUG_METHOD();
+   gl::batch_t::sub_batch_t ssb( *batch, 4 * (sb.getIndexCount() / 3), currentTransform, flatten_transforms, gl::texture_t::circle());
+
    switch( kind ) {
    case TRIANGLE_STRIP_NOSTROKE:
    case TRIANGLES_NOSTROKE:
@@ -1475,12 +1752,12 @@ void PShapeImpl::draw_normals(gl::batch_t_ptr batch, const PMatrix &transform, b
    case POLYGON:
    case CONVEX_POLYGON:
    case TRIANGLE_FAN:
-      // All of these should have just been flattened to triangles
-      for (int i = 0; i < indices.size(); i+=3 ) {
-         drawTriangleNormal( vertices[indices[i]],vertices[indices[i+1]], vertices[indices[i+2]],
-                             shape_matrix).draw_fill( batch, transform, flatten_transforms );
+   {     // All of these should have just been flattened to triangles
+      for (int i = 0; i < sb.getIndexCount(); i+=3 ) {
+         drawTriangleNormal( ssb, sb.verticesByIndex(i), sb.verticesByIndex(i+1), sb.verticesByIndex(i+2) );
       }
-      break;
+   }
+   break;
    case POINTS:
    case LINES:
       break;
@@ -1490,259 +1767,272 @@ void PShapeImpl::draw_normals(gl::batch_t_ptr batch, const PMatrix &transform, b
    }
 }
 
-void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const {
+void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms,
+                              int strokeEndCap, const std::vector<int> &contour, const std::vector<vInfoExtra> &extras, const std::vector<unsigned short> &idx)  {
+
    DEBUG_METHOD();
-   std::optional<color> override_color = style.override_stroke_color ? style.override_stroke_color.value() : std::optional<color>();
-   std::optional<float> override_weight = style.override_stroke_weight;
+
    switch( kind ) {
-   case POINTS:
-   {
-      for (int i = 0; i< vertices.size() ; ++i ) {
-         drawUntexturedFilledEllipse(
-            vertices[i].position.x, vertices[i].position.y,
-            override_weight.value_or(extras[i].weight), override_weight.value_or(extras[i].weight),
-            override_color.value_or(extras[i].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-      }
-      break;
-   }
    case TRIANGLES_NOSTROKE:
    case TRIANGLE_STRIP_NOSTROKE:
+      return;
       break;
+   case POINTS:
+   {
+      sub_batch_stroke.emplace( *batch, 4 * extras.size(), currentTransform, flatten_transforms, gl::texture_t::circle() );
+      for (int i = 0; i< extras.size() ; ++i ) {
+         drawUntexturedFilledEllipse_sb( sub_batch_stroke.value(),
+                                         extras[i].position.x, extras[i].position.y,
+                                         extras[i].weight, extras[i].weight,
+                                         extras[i].gl_stroke );
+      }
+      return;
+      break;
+   }
    case TRIANGLES:
    {
       // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES_NOSTROKE);
-      for (int i = 0; i < indices.size(); i+=3 ) {
-         PVector p0 = vertices[indices[i]].position;
-         PVector p1 = vertices[indices[i+1]].position;
-         PVector p2 = vertices[indices[i+2]].position;
-         float w0 = override_weight.value_or(extras[indices[i]].weight);
-         float w1 = override_weight.value_or(extras[indices[i+1]].weight);
-         float w2 = override_weight.value_or(extras[indices[i+2]].weight);
-         color c0 = override_color.value_or(extras[indices[i]].stroke);
-         color c1 = override_color.value_or(extras[indices[i+1]].stroke);
-         color c2 = override_color.value_or(extras[indices[i+2]].stroke);
+      if (idx.size() > 0) {
+         sub_batch_stroke.emplace( *batch, idx.size() * 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+         for (int i = 0; i < idx.size(); i+=3 ) {
+            unsigned short i0 = idx[i];
+            unsigned short i1 = idx[i+1];
+            unsigned short i2 = idx[i+2];
+            PVector p0 = extras[i0].position;
+            PVector p1 = extras[i1].position;
+            PVector p2 = extras[i2].position;
+            float w0 = extras[i0].weight;
+            float w1 = extras[i1].weight;
+            float w2 = extras[i2].weight;
+            gl::color_t c0 = extras[i0].gl_stroke;
+            gl::color_t c1 = extras[i1].gl_stroke;
+            gl::color_t c2 = extras[i2].gl_stroke;
 
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p2, w1, w2, c1, c2 );
-         _line(shape, p2, p0, w2, w0, c2, c0 );
+            drawLine(sub_batch_stroke.value(), p0, p1, w0, w1, c0, c1 );
+            drawLine(sub_batch_stroke.value(), p1, p2, w1, w2, c1, c2 );
+            drawLine(sub_batch_stroke.value(), p2, p0, w2, w0, c2, c0 );
+         }
+         return;
+      } else {
+         sub_batch_stroke.emplace( *batch,  extras.size() * 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+         for (int i = 0; i < extras.size(); i+=3 ) {
+            PVector p0 = extras[i].position;
+            PVector p1 = extras[i+1].position;
+            PVector p2 = extras[i+2].position;
+            float w0 = extras[i].weight;
+            float w1 = extras[i+1].weight;
+            float w2 = extras[i+2].weight;
+            gl::color_t c0 = extras[i].gl_stroke;
+            gl::color_t c1 = extras[i+1].gl_stroke;
+            gl::color_t c2 = extras[i+2].gl_stroke;
+
+            drawLine(sub_batch_stroke.value(), p0, p1, w0, w1, c0, c1 );
+            drawLine(sub_batch_stroke.value(), p1, p2, w1, w2, c1, c2 );
+            drawLine(sub_batch_stroke.value(), p2, p0, w2, w0, c2, c0 );
+         }
+         return;
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
-      break;
    }
    case LINES:
    {
+      sub_batch_stroke.emplace( *batch,  extras.size() * 2, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
       // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(2*vertices.size(), 3 * vertices.size());
-      shape.beginShape(TRIANGLES_NOSTROKE);
-      for (int i = 0; i < vertices.size(); i+=2 ) {
-         PVector p0 = vertices[i].position;
-         PVector p1 = vertices[i+1].position;
-         float w0 = override_weight.value_or(extras[i].weight);
-         float w1 = override_weight.value_or(extras[i+1].weight);
-         color c0 = override_color.value_or(extras[i].stroke);
-         color c1 = override_color.value_or(extras[i+1].stroke);
-         _line(shape, p0, p1, w0, w1, c0, c1 );
+      for (int i = 0; i < extras.size(); i+=2 ) {
+         PVector p0 = extras[i].position;
+         PVector p1 = extras[i+1].position;
+         float w0 = extras[i].weight;
+         float w1 = extras[i+1].weight;
+         gl::color_t c0 = extras[i].gl_stroke;
+         gl::color_t c1 = extras[i+1].gl_stroke;
+         drawLine(sub_batch_stroke.value(), p0, p1, w0, w1, c0, c1 );
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms );
-      break;
+      return;
    }
    case POLYGON:
    case CONVEX_POLYGON:
    {
-      if (vertices.size() > 2 ) {
+      if (extras.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            drawLinePoly( vertices.size() - 1, vertices.data() + 1, extras.data()+1, false, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
+            sub_batch_stroke.emplace( *batch,  4 + (extras.size() - 3) * 2, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+            drawLinePoly( sub_batch_stroke.value(), extras.size() - 1, extras.data()+1, false );
+            return;
          } else {
             if ( contour.empty() ) {
-               drawLinePoly( vertices.size(), vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
+               sub_batch_stroke.emplace( *batch,  4 + (extras.size() - 2) * 2 + (type == CLOSE ? 2:0), currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+               drawLinePoly( sub_batch_stroke.value(), extras.size(), extras.data(), type == CLOSE );
+               return;
             } else {
+               // TODO: Tidy up this hack to calculate the reservation size
+               int res = 0;
                if (contour[0] != 0) {
-                  drawLinePoly( contour[0], vertices.data(), extras.data(), type == CLOSE, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
+                  res += 4 + (contour[0] - 2) * 2 + (type == CLOSE ? 2:0);
+               }
+               auto qq = contour;
+               qq.push_back(extras.size());
+               for ( int i = 0; i < qq.size() - 1; ++i ) {
+                  res += 4 + ((qq[i+1]-qq[i]) - 2) * 2 + (type == CLOSE ? 2:0);
+               }
+               sub_batch_stroke.emplace( *batch,  res, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+               if (contour[0] != 0) {
+                  drawLinePoly( sub_batch_stroke.value(), contour[0], extras.data(), type == CLOSE);
                }
                auto q = contour;
-               q.push_back(vertices.size());
+               q.push_back(extras.size());
                for ( int i = 0; i < q.size() - 1; ++i ) {
-                  drawLinePoly( q[i+1] - q[i],
-                                vertices.data() + q[i],
-                                extras.data() + q[i],
-                                type == CLOSE, shape_matrix, override_color, override_weight ).draw_fill( batch, transform, flatten_transforms);
+                  drawLinePoly( sub_batch_stroke.value(), q[i+1] - q[i], extras.data() + q[i], type == CLOSE );
                }
+               return;
             }
          }
-      } else if (vertices.size() == 2) {
-         switch(style.line_end_cap) {
-         case ROUND:
-            drawRoundLine( vertices[0].position, vertices[1].position,
-                           override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-                           override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+      } else if (extras.size() == 2) {
+         switch(strokeEndCap) {
+         case ROUND: {
+            sub_batch_stroke.emplace( *batch,  18, currentTransform, flatten_transforms, std::optional<gl::texture_t_ptr>() );
+            drawRoundLine( sub_batch_stroke.value(),
+                           extras[0].position, extras[1].position,
+                           extras[0].weight, extras[1].weight,
+                           extras[0].gl_stroke, extras[1].gl_stroke );
+         }
+            return;
             break;
-         case PROJECT:
-            drawCappedLine( vertices[0].position, vertices[1].position,
-                            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-                            override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+         case PROJECT: {
+            sub_batch_stroke.emplace( *batch,  4, currentTransform, flatten_transforms, std::optional<gl::texture_t_ptr>() );
+            drawCappedLine( sub_batch_stroke.value(),
+                            extras[0].position, extras[1].position,
+                            extras[0].weight, extras[1].weight,
+                            extras[0].gl_stroke, extras[1].gl_stroke );
+            return;
+         }
             break;
-         case SQUARE:
-            drawLine( vertices[0].position, vertices[1].position,
-                      override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-                      override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+         case SQUARE: {
+            sub_batch_stroke.emplace( *batch,  4, currentTransform, flatten_transforms, std::optional<gl::texture_t_ptr>() );
+            drawLine( sub_batch_stroke.value(),
+                      extras[0].position, extras[1].position,
+                      extras[0].weight, extras[1].weight,
+                      extras[0].gl_stroke, extras[1].gl_stroke );
+            return;
+         }
             break;
          default:
             abort();
          }
-      } else if (vertices.size() == 1) {
-         drawUntexturedFilledEllipse(
-            vertices[0].position.x, vertices[0].position.y,
-            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[0].weight),
-            override_color.value_or(extras[0].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+      } else if (extras.size() == 1) {
+         sub_batch_stroke.emplace( *batch,  4, currentTransform, flatten_transforms, gl::texture_t::circle() );
+         drawUntexturedFilledEllipse_sb(sub_batch_stroke.value(),
+                                        sub_batch_stroke.value().vertices(0).position.x, sub_batch_stroke.value().vertices(0).position.y,
+                                        extras[0].weight, extras[0].weight,
+                                        extras[0].gl_stroke );
+         return;
       }
       break;
    }
    case QUAD:
    case QUADS:
    {
+      sub_batch_stroke.emplace( *batch,  extras.size() * 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
       // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES_NOSTROKE);
-      for (int i = 0; i < vertices.size(); i+=4 ) {
-         PVector p0 = vertices[i].position;
-         PVector p1 = vertices[i+1].position;
-         PVector p2 = vertices[i+2].position;
-         PVector p3 = vertices[i+3].position;
-         float w0 = override_weight.value_or(extras[i].weight);
-         float w1 = override_weight.value_or(extras[i+1].weight);
-         float w2 = override_weight.value_or(extras[i+2].weight);
-         float w3 = override_weight.value_or(extras[i+3].weight);
-         color c0 = override_color.value_or(extras[i].stroke);
-         color c1 = override_color.value_or(extras[i+1].stroke);
-         color c2 = override_color.value_or(extras[i+2].stroke);
-         color c3 = override_color.value_or(extras[i+3].stroke);
+      for (int i = 0; i < extras.size(); i+=4 ) {
+         PVector p0 = extras[i].position;
+         PVector p1 = extras[i+1].position;
+         PVector p2 = extras[i+2].position;
+         PVector p3 = extras[i+3].position;
+         float w0 = extras[i].weight;
+         float w1 = extras[i+1].weight;
+         float w2 = extras[i+2].weight;
+         float w3 = extras[i+3].weight;
+         gl::color_t c0 = extras[i].gl_stroke;
+         gl::color_t c1 = extras[i+1].gl_stroke;
+         gl::color_t c2 = extras[i+2].gl_stroke;
+         gl::color_t c3 = extras[i+3].gl_stroke;
 
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p2, w1, w2, c1, c2 );
-         _line(shape, p2, p3, w2, w3, c2, c3 );
-         _line(shape, p3, p0, w3, w0, c3, c0 );
+         drawLine( sub_batch_stroke.value(), p0, p1, w0, w1, c0, c1 );
+         drawLine( sub_batch_stroke.value(), p1, p2, w1, w2, c1, c2 );
+         drawLine( sub_batch_stroke.value(), p2, p3, w2, w3, c2, c3 );
+         drawLine( sub_batch_stroke.value(), p3, p0, w3, w0, c3, c0 );
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
+      return;
       break;
    }
    case QUAD_STRIP:
    {
+      sub_batch_stroke.emplace( *batch,  (extras.size()-2) * 4 * 2, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
       // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES_NOSTROKE);
-      for (int i = 0; i < vertices.size()-2; i+=2 ) {
-         PVector p0 = vertices[i+0].position;
-         PVector p1 = vertices[i+1].position;
-         PVector p2 = vertices[i+2].position;
-         PVector p3 = vertices[i+3].position;
-         float w0 = override_weight.value_or(extras[i+0].weight);
-         float w1 = override_weight.value_or(extras[i+1].weight);
-         float w2 = override_weight.value_or(extras[i+2].weight);
-         float w3 = override_weight.value_or(extras[i+3].weight);
-         color c0 = override_color.value_or(extras[i+0].stroke);
-         color c1 = override_color.value_or(extras[i+1].stroke);
-         color c2 = override_color.value_or(extras[i+2].stroke);
-         color c3 = override_color.value_or(extras[i+3].stroke);
+      for (int i = 0; i < extras.size()-2; i+=2 ) {
+         PVector p0 = extras[i+0].position;
+         PVector p1 = extras[i+1].position;
+         PVector p2 = extras[i+2].position;
+         PVector p3 = extras[i+3].position;
+         float w0 = extras[i+0].weight;
+         float w1 = extras[i+1].weight;
+         float w2 = extras[i+2].weight;
+         float w3 = extras[i+3].weight;
+         gl::color_t c0 = extras[i+0].gl_stroke;
+         gl::color_t c1 = extras[i+1].gl_stroke;
+         gl::color_t c2 = extras[i+2].gl_stroke;
+         gl::color_t c3 = extras[i+3].gl_stroke;
 
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p3, w1, w3, c1, c3 );
-         _line(shape, p3, p2, w3, w2, c3, c2 );
-         _line(shape, p2, p0, w2, w0, c2, c0 );
+         drawLine( sub_batch_stroke.value(), p0, p1, w0, w1, c0, c1 );
+         drawLine( sub_batch_stroke.value(), p1, p3, w1, w3, c1, c3 );
+         drawLine( sub_batch_stroke.value(), p3, p2, w3, w2, c3, c2 );
+         drawLine( sub_batch_stroke.value(), p2, p0, w2, w0, c2, c0 );
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
+      return;
       break;
    }
    case TRIANGLE_STRIP:
    {
-      PShapeImpl triangles;
-      triangles.beginShape(TRIANGLES_NOSTROKE);
-      triangles.transform( shape_matrix );
-      _line(triangles,
-            vertices[0].position, vertices[1].position,
-            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-            override_color.value_or(extras[0].stroke),  override_color.value_or(extras[1].stroke));
-      for (int i=2;i<vertices.size();++i) {
-         PVector p0 = vertices[i-2].position;
-         PVector p1 = vertices[i-1].position;
-         PVector p2 = vertices[i-0].position;
-         float w0 = override_weight.value_or(extras[i-2].weight);
-         float w1 = override_weight.value_or(extras[i-1].weight);
-         float w2 = override_weight.value_or(extras[i-0].weight);
-         color c0 = override_color.value_or(extras[i-2].stroke);
-         color c1 = override_color.value_or(extras[i-1].stroke);
-         color c2 = override_color.value_or(extras[i-0].stroke);
+      sub_batch_stroke.emplace( *batch,  (extras.size()-2) * 8 + 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+      drawLine(sub_batch_stroke.value(),
+               extras[0].position, extras[1].position,
+               extras[0].weight, extras[1].weight,
+               extras[0].gl_stroke, extras[1].gl_stroke);
+      for (int i=2;i<extras.size();++i) {
+         PVector p0 = extras[i-2].position;
+         PVector p1 = extras[i-1].position;
+         PVector p2 = extras[i-0].position;
+         float w0 = extras[i-2].weight;
+         float w1 = extras[i-1].weight;
+         float w2 = extras[i-0].weight;
+         gl::color_t c0 = extras[i-2].gl_stroke;
+         gl::color_t c1 = extras[i-1].gl_stroke;
+         gl::color_t c2 = extras[i-0].gl_stroke;
 
-         _line(triangles, p1, p2, w1, w2, c1, c2);
-         _line(triangles, p2, p0, w1, w0, c2, c0);
+         drawLine(sub_batch_stroke.value(), p1, p2, w1, w2, c1, c2);
+         drawLine(sub_batch_stroke.value(), p2, p0, w1, w0, c2, c0);
       }
-      triangles.endShape();
-      triangles.draw_fill( batch, transform, flatten_transforms );
+      return;
       break;
    }
    case TRIANGLE_FAN:
    {
+      sub_batch_stroke.emplace( *batch,  (extras.size()-1) * 4 * 3, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
       // TODO: Proper 3D miters for triangle fan edges
-      PShapeImpl shape;
-      int n = vertices.size();
+      int n = extras.size();
       if (n < 3) break;
 
-      shape.reserve(3 * (n-2), 3 * (n-2));
-      shape.beginShape(TRIANGLES_NOSTROKE);
-
-      PVector center = vertices[0].position;
+      PVector center = extras[0].position;
       float centerWeight = extras[0].weight;
-      color centerColor = extras[0].stroke;
+      gl::color_t centerColor = extras[0].gl_stroke;
 
       for (int i = 1; i < n - 1; ++i) {
-         PVector p0 = vertices[i].position;
-         PVector p1 = vertices[i + 1].position;
-         float w0 = override_weight.value_or(extras[i].weight);
-         float w1 = override_weight.value_or(extras[i + 1].weight);
-         color c0 = override_color.value_or(extras[i].stroke);
-         color c1 = override_color.value_or(extras[i + 1].stroke);
+         PVector p0 = extras[i].position;
+         PVector p1 = extras[i+1].position;
+         float w0 = extras[i].weight;
+         float w1 = extras[i + 1].weight;
+         gl::color_t c0 = extras[i].gl_stroke;
+         gl::color_t c1 = extras[i + 1].gl_stroke;
 
          // Stroke outer edges of each triangle
-         _line(shape, center, p0, centerWeight, w0, centerColor, c0);
-         _line(shape, p0, p1, w0, w1, c0, c1);
-         _line(shape, p1, center, w1, centerWeight, c1, centerColor);
+         drawLine(sub_batch_stroke.value(), center, p0, centerWeight, w0, centerColor, c0);
+         drawLine(sub_batch_stroke.value(), p0, p1, w0, w1, c0, c1);
+         drawLine(sub_batch_stroke.value(), p1, center, w1, centerWeight, c1, centerColor);
       }
-
-      shape.endShape();
-      shape.draw_fill(batch, transform, flatten_transforms);
+      return;
       break;
    }
-   default:
-      abort();
-      break;
    }
-}
-
-void PShapeImpl::draw_fill(gl::batch_t_ptr batch, const PMatrix& transform_, bool flatten_transforms) const {
-   DEBUG_METHOD();
-   if (vertices.size() > 2 && kind != POINTS && kind != LINES) {
-      std::vector<gl::material_t> m;
-      m.reserve( materials.size() );
-      for (const auto &material : materials ) {
-         m.emplace_back(
-            material.ambientColor,
-            material.specularColor,
-            material.emissiveColor,
-            material.specularExponent
-            );
-      }
-      std::optional<gl::color_t> override = style.override_fill_color ? flatten_color_mode(style.override_fill_color.value()) : std::optional<gl::color_t>();
-      batch->vertices( vertices, m, indices, transform_.glm_data(), flatten_transforms, style.texture_ ? style.texture_.value().getTextureID() : std::optional<gl::texture_t_ptr>(), override );
-   }
+   abort();
+   return;
 }
 
 static std::vector<std::weak_ptr<PShapeImpl>> &shapeHandles() {
@@ -1767,7 +2057,7 @@ void PShape::optimize() {
    for (const auto &i : handles) {
       if (auto p = i.lock()) {
          if (p->getChildCount() > 0) {
-            p->compile();
+            p->should_compile = true;
          }
       }
    }
@@ -1801,6 +2091,7 @@ const PMatrix &PShape::getShapeMatrix() {
 }
 
 void PShape::addChild( const PShape shape ) {
+   shape.impl->setParent( *this );
    return impl->addChild( shape );
 }
 
@@ -1810,22 +2101,6 @@ PShape PShape::getChild( int i ) {
 
 PShape PShape::getChild( std::string_view i ) {
    return impl->getChild(i);
-}
-
-color PShape::getFillColor() const {
-   return impl->getFillColor();
-}
-
-color PShape::getStrokeColor() const {
-   return impl->getStrokeColor();
-}
-
-float PShape::getStrokeWeight() const {
-   return impl->getStrokeWeight();
-}
-
-color PShape::getTintColor() const {
-   return impl->getTintColor();
 }
 
 bool PShape::isGroup() const {
@@ -1900,7 +2175,7 @@ void PShape::beginShape(int kind_){
    return impl->beginShape(kind_);
 }
 
-PShape createShape() {
+PShape mkShape() {
    return {std::make_shared<PShapeImpl>()};
 }
 
@@ -1916,11 +2191,6 @@ void PShape::endContour(){
 
 void PShape::textureMode( int mode_ ){
    return impl->textureMode(mode_);
-}
-
-
-bool PShape::isTextureSet() const{
-   return impl->isTextureSet();
 }
 
 
@@ -2042,23 +2312,28 @@ void PShape::endShape(int type_){
    return impl->endShape( type_ );
 }
 
-
 unsigned short PShape::getCurrentIndex(){
    return impl->getCurrentIndex();
 }
 
-
 void PShape::index( std::vector<unsigned short> &&i ){
    return impl->index(std::move(i));
 }
-
 
 void PShape::shininess(float r) {
    return impl->shininess(r);
 }
 
 void PShape::ambient(float r, float g, float b) {
-   return impl->ambient(r,g,b);
+   return impl->ambient(r,g,b,color::scaleA);
+}
+
+void PShape::ambient(float r, float g, float b, float a) {
+   return impl->ambient(r,g,b,a);
+}
+
+void PShape::noAmbient() {
+   return impl->noAmbient();
 }
 
 void PShape::emissive(float r, float g, float b) {
@@ -2069,54 +2344,63 @@ void PShape::specular(float r,float g,  float b, float a){
    return impl->specular(r,g,b,a);
 }
 
+
 void PShape::fill(float r,float g,  float b, float a){
-   return impl->fill(r,g,b,a);
+   return impl->fill({r,g,b,a});
 }
 
 void PShape::fill(float r,float g, float b){
-   return impl->fill(r,g,b);
+   return impl->fill({r,g,b, color::scaleA});
 }
-
 
 void PShape::fill(float r,float a){
-   return impl->fill(r,a);
+   if (color::mode == HSB) {
+      impl->fill({0,0,r,a});
+   } else {
+      impl->fill({r,r,r,a});
+   }
 }
-
 
 void PShape::fill(float r){
-   return impl->fill(r);
+   if (color::mode == HSB) {
+      impl->fill({0,0,r,color::scaleA});
+   } else {
+      impl->fill({r,r,r,color::scaleA});
+   }
 }
 
-
-void PShape::fill(class color color){
+void PShape::fill(color color){
    return impl->fill(color);
 }
 
-
-void PShape::fill(class color color, float a){
-   return impl->fill(color,a);
+void PShape::fill(color c, float a){
+   return impl->fill({c.r,c.g,c.b,a});
 }
 
 
-void PShape::stroke(float r,float g,  float b, float a){
-   return impl->stroke(r,g,b,a);
+void PShape::stroke(float r,float g, float b, float a){
+   return impl->stroke({r,g,b,a});
 }
-
 
 void PShape::stroke(float r,float g, float b){
-   return impl->stroke(r,g,b);
+   return impl->stroke({r,g,b,color::scaleA});
 }
-
 
 void PShape::stroke(float r,float a){
-   return impl->stroke(r,a);
+   if (color::mode == HSB) {
+      return impl->stroke({0,0,r,a});
+   } else {
+      return stroke({r,r,r,a});
+   }
 }
-
 
 void PShape::stroke(float r){
-   return impl->stroke(r);
+   if (color::mode == HSB) {
+      return impl->stroke({r,0,0,color::scaleA});
+   } else {
+      return impl->stroke({r,r,r,color::scaleA});
+   }
 }
-
 
 void PShape::stroke(color c){
    return impl->stroke(c);
@@ -2138,18 +2422,21 @@ void PShape::noFill(){
 }
 
 
-bool PShape::isStroked() const{
-   return impl->isStroked();
+bool PShape::isStroked(const flat_style_t &parent_style) const{
+   return impl->isStroked(parent_style);
 }
 
-
-bool PShape::isFilled() const{
-   return impl->isFilled();
+bool PShape::isFilled(const flat_style_t &parent_style) const{
+   return impl->isFilled(parent_style);
 }
 
 
 void PShape::tint(float r,float g,  float b, float a){
    return impl->tint(r,g,b,a);
+}
+
+style_t PShape::getStyle() {
+   return impl->getStyle();
 }
 
 
@@ -2188,18 +2475,22 @@ void PShape::setStroke(bool c){
 }
 
 
+void PShape::setStroke(std::optional<color> c){
+   return impl->setStroke(c);
+}
+
 void PShape::setStroke(color c){
    return impl->setStroke(c);
 }
 
 
 void PShape::setStrokeWeight(float w){
-   return impl->setStrokeWeight(w);
+   impl->setStrokeWeight(w);
 }
 
 
 void PShape::setTexture( PImage img ){
-   return impl->setTexture(img);
+   impl->setTexture(img);
 }
 
 
@@ -2207,6 +2498,10 @@ void PShape::setFill(bool z){
    return impl->setFill(z);
 }
 
+
+void PShape::setFill(std::optional<color> c){
+   return impl->setFill(c);
+}
 
 void PShape::setFill(color c){
    return impl->setFill(c);
@@ -2218,34 +2513,13 @@ void PShape::setTint(color c){
 }
 
 
-void PShape::compile() {
-   return impl->compile();
+gl::batch_t_ptr PShape::getCompiledBatch(const flat_style_t &style) {
+   return impl->getCompiledBatch(style);
 }
 
-bool PShape::isCompiled() const {
-   return impl->isCompiled();
+void PShape::flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &style) {
+   return impl->flatten(batch, transform, flatten_transforms, style);
 }
-
-gl::batch_t_ptr PShape::getBatch() {
-   return impl->getBatch();
-}
-
-void PShape::flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
-   return impl->flatten(batch, transform, flatten_transforms);
-}
-
-void PShape::draw_normals(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
-   return impl->draw_normals(batch,transform, flatten_transforms);
-}
-
-void PShape::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
-   return impl->draw_stroke(batch,transform, flatten_transforms);
-}
-
-void PShape::draw_fill(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms) const{
-   return impl->draw_fill(batch,transform, flatten_transforms);
-}
-
 
 int PShape::getChildCount() const{
    return impl->getChildCount();
@@ -2264,8 +2538,16 @@ void PShape::enableStyle() {
    return impl->enableStyle();
 }
 
+void PShape::showNormals(bool x) {
+   return impl->showNormals(x);
+}
+
 void PShape::disableStyle() {
    return impl->disableStyle();
+}
+
+void PShape::reserve(int cmds, int vertices) {
+   return impl->reserve(cmds, vertices);
 }
 
 
@@ -2318,7 +2600,7 @@ PShape loadShapeOBJ( std::string_view objPath ) {
       abort();
    }
 
-   PShape obj_shape = createShape();
+   PShape obj_shape = mkShape();
    obj_shape.beginShape( TRIANGLES );
 
    std::vector< glm::vec4 > positions( 1, glm::vec4( 0, 0, 0, 0 ) );
@@ -2454,8 +2736,8 @@ struct fmt::formatter<PShapeImpl> {
 
    template <typename FormatContext>
    auto format(const PShapeImpl& v, FormatContext& ctx) {
-      return format_to(ctx.out(), "vertices={:<4} indices={:<4} kind={:20} type={:6}",
-                       v.vertices.size(), v.indices.size(),
+      return format_to(ctx.out(), "cmds={:<4} kind={:20} type={:6}",
+                       v.cmds.size(),
                        kindToTxt(v.kind),
                        typeToTxt(v.type)
          );

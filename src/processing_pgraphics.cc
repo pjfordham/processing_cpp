@@ -1,5 +1,6 @@
 #include "processing_pgraphics.h"
 #include "processing_debug.h"
+#include "processing_style.h"
 #include "mapbox/pixelmatch.hpp"
 #include <cmath>
 #include <stb_image.h>
@@ -44,7 +45,6 @@ public:
 
    bool pixels_current = false;
    bool pixels_to_update = false;
-   int textureMode_ = IMAGE;
 
    gl::framebuffer_t localFrame;
    gl::mainframe_t windowFrame;
@@ -61,12 +61,14 @@ public:
    int height = 0;
    float aaFactor;
    int aaMode;
-   
+
    int xTextAlign = LEFT;
    int yTextAlign = TOP;
 
    float xsphere_ures = 30;
    float xsphere_vres = 30;
+
+   flat_style_t default_style;
 
    PShape _shape;
    std::vector<unsigned int> pixels;
@@ -94,6 +96,11 @@ public:
    [[nodiscard]] int getWidth()  const { return width; }
    [[nodiscard]] int getHeight() const { return height; }
    [[nodiscard]] unsigned int *getPixels() { return pixels.data(); }
+
+   PShape createShape() {
+      return mkShape();
+   }
+
    gl::texture_t_ptr getAsTexture() { return localFrame.getColorBufferID(); }
    PImage getAsPImage() { return createImageFromTexture(localFrame.getColorBufferID()); }
 
@@ -105,10 +112,11 @@ public:
       localFrame(width, height, aaMode, aaFactor),
       pixelsFrame(width, height, SSAA, 1),
       windowFrame( width, height ),
-      _shape( createShape() ) {
+      _shape( mkShape() ) {
 
       batch = std::make_shared<gl::batch_t>();
       DEBUG_METHOD();
+
       this->width = width;
       this->height = height;
       this->aaFactor = aaFactor;
@@ -131,7 +139,7 @@ public:
       currentShader = {};
       flatShader = {};
       windowFrame.release_shader();
-      windowFrame = gl::mainframe_t();;
+      windowFrame = gl::mainframe_t();
       localFrame = {};
       pixelsFrame = {};
       scene = {};
@@ -438,7 +446,7 @@ public:
 
       auto mode = blendMode(BLEND);
       drawTexturedQuad({x,y},{x+twidth,y},{x+twidth,y+theight},{x,y+theight},
-                       text_image, _shape.getFillColor() );
+                       text_image, _shape.getStyle().resolve_style( default_style ).fill_color );
       blendMode(mode);
    }
 
@@ -483,9 +491,9 @@ public:
       d = d / 2;
 
       PShape cube = createShape();
-      cube.beginShape(QUADS);
-      cube.copyStyle( _shape );
+      cube.reserve(66, 24);
       cube.textureMode(NORMAL);
+      cube.beginShape(QUADS);
 
       // Front face
       cube.normal(0.0,  0.0,  1.0);
@@ -551,9 +559,10 @@ public:
 
    PShape createSphere( float radius ) {
       PShape sphere = createShape();
-      sphere.beginShape(TRIANGLES);
-      sphere.copyStyle( _shape );
       sphere.textureMode(NORMAL);
+      sphere.beginShape(TRIANGLES);
+      sphere.reserve( (xsphere_ures + 1) * (xsphere_vres + 1) * 2 + (xsphere_ures * xsphere_vres * 6),
+                      (xsphere_ures + 1) * (xsphere_vres + 1));
 
       float latStep = PI / xsphere_ures;
       float lonStep = 2 * PI / xsphere_vres;
@@ -623,7 +632,7 @@ public:
                         {right,bottom},
                         {left, bottom},
                         gfx.getAsPImage(),
-                        _shape.getTintColor() );
+                        _shape.getStyle().resolve_style( default_style ).texture_tint );
    }
 
    void image(PImage pimage, float left, float top, float right, float bottom, bool flip = false) {
@@ -642,10 +651,10 @@ public:
       }
       if (flip) {
          drawTexturedQuad({left,bottom},{right,bottom},{right,top}, {left,top},
-                       pimage, _shape.getTintColor() );
+                       pimage, _shape.getStyle().resolve_style( default_style ).texture_tint );
       } else {
          drawTexturedQuad({left,top},{right,top},{right,bottom}, {left,bottom},
-                       pimage, _shape.getTintColor() );
+                          pimage, _shape.getStyle().resolve_style( default_style ).texture_tint );
       }
    }
 
@@ -760,19 +769,22 @@ public:
    }
 
    void shape(PShape &pshape) {
-      if( pshape.isCompiled() ) {
+      flat_style_t style = _shape.getStyle().resolve_style( default_style );
+      gl::batch_t_ptr local = pshape.getCompiledBatch( style );
+      if (local) {
          flush();
-         auto local = pshape.getBatch();
          if (pshape == _shape) {
-            directDraw( local, PMatrix::Identity() );
+            directDraw( local, pshape.getShapeMatrix() );
          } else {
-            directDraw( local, _shape.getShapeMatrix() );
+            directDraw( local, _shape.getShapeMatrix() * pshape.getShapeMatrix());
          }
       } else {
+         // flatten is reposonsible for putting this shapes vertices into the current
+         // batch give the current resolved style.
          if (pshape == _shape) {
-            pshape.flatten( batch, PMatrix::Identity(), false );
+            pshape.flatten( batch, pshape.getShapeMatrix(), false, style );
          } else {
-            pshape.flatten( batch, _shape.getShapeMatrix(), false );
+            pshape.flatten( batch, _shape.getShapeMatrix() * pshape.getShapeMatrix(), false, style );
          }
       }
       pixels_current = false;
@@ -826,7 +838,6 @@ public:
    PShape createBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
       PShape bezier = createShape();
       bezier.beginShape(POLYGON);
-      bezier.copyStyle( _shape );
       bezier.vertex(x1, y1);
       bezier.bezierVertex(x2, y2, x3, y3, x4, y4);
       bezier.endShape(OPEN);
@@ -849,7 +860,6 @@ public:
       }
       PShape shape = createShape();//( std::move(rect_opt) );
       shape.beginShape(CONVEX_POLYGON);
-      shape.copyStyle( _shape );
       shape.normal(0,0,1);
       shape.vertex(x,y);
       shape.vertex(x+width,y);
@@ -863,7 +873,6 @@ public:
    PShape createQuad( float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4 ) {
       PShape shape = createShape();
       shape.beginShape(POLYGON);
-      shape.copyStyle( _shape );
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
@@ -875,7 +884,6 @@ public:
    PShape createLine(float x1, float y1, float z1, float x2, float y2, float z2) {
       PShape shape = createShape();
       shape.beginShape(POLYGON);
-      shape.copyStyle( _shape );
       shape.vertex(x1,y1,z1);
       shape.vertex(x2,y2,z2);
       shape.endShape(OPEN);
@@ -885,7 +893,6 @@ public:
    PShape createTriangle( float x1, float y1, float x2, float y2, float x3, float y3 ) {
       PShape shape = createShape();
       shape.beginShape(TRIANGLES);
-      shape.copyStyle( _shape );
       shape.vertex(x1, y1);
       shape.vertex(x2, y2);
       shape.vertex(x3, y3);
@@ -920,20 +927,24 @@ public:
       default:
          abort();
       }
-      if (!_shape.isStroked() && !_shape.isTextureSet()) {
+      flat_style_t style = _shape.getStyle().resolve_style( default_style );
+
+      if (!style.stroke_enabled && !style.texture_enabled) {
          // If there's no stroke and no texture use circle optimization here
-         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, _shape.getFillColor(), PMatrix::Identity() );
+         PShape shape = drawUntexturedFilledEllipse( x, y, width, height, style.fill_color, PMatrix::Identity() );
          return shape;
-      } else if (_shape.isStroked() && _shape.isFilled() &&
-                 _shape.getFillColor() == _shape.getStrokeColor() && !_shape.isTextureSet()) {
-         PShape shape = drawUntexturedFilledEllipse( x, y, width + _shape.getStrokeWeight(), height + _shape.getStrokeWeight(),
-                                                     _shape.getFillColor(), PMatrix::Identity() );
+      } else if (style.stroke_enabled && style.fill_enabled &&
+                 style.stroke_color == style.fill_color &&
+                 !style.texture_enabled) {
+         PShape shape = drawUntexturedFilledEllipse(x, y, width + style.stroke_weight,
+                                                    height + style.stroke_weight,
+                                                    style.fill_color, PMatrix::Identity() );
          return shape;
       } else {
          int NUMBER_OF_VERTICES=32;
          PShape shape = createShape();
+         shape.reserve(NUMBER_OF_VERTICES, NUMBER_OF_VERTICES);
          shape.beginShape(CONVEX_POLYGON);
-         shape.copyStyle( _shape );
          shape.vertex( fast_ellipse_point( {x,y}, 0, width / 2.0F, height /2.0F) );
          for(int i = 1; i < NUMBER_OF_VERTICES-1; ++i) {
             shape.vertex( fast_ellipse_point( {x,y}, i, width / 2.0F, height /2.0F) );
@@ -973,12 +984,13 @@ public:
          abort();
       }
 
-      if (!_shape.isStroked() && !_shape.isTextureSet()) {
-         // If there's no stroke and no texture use circle optimization here
+      flat_style_t style = _shape.getStyle().resolve_style( default_style );
+
+      if (!style.stroke_enabled && !style.texture_enabled) {
+         // If there's no stroke and no texture use circle optimization
          PShape shape = createShape();
-         shape.copyStyle( _shape );
          shape.circleTexture();
-         shape.tint( shape.getFillColor() );
+         shape.tint(style.fill_color);
          if (fillMode == PIE) {
             // This isn't really a CONVEX_POLYGON but I know
             // it will fill ok with a traingle fan
@@ -1020,7 +1032,6 @@ public:
       } else {
          PShape shape = createShape();
          shape.beginShape(CONVEX_POLYGON);
-         shape.copyStyle( _shape );
          int NUMBER_OF_VERTICES=32;
          if ( fillMode == PIE ) {
             shape.vertex(x,y);
@@ -1037,7 +1048,6 @@ public:
    PShape createPoint(float x, float y) {
       PShape shape = createShape();
       shape.beginShape(POINTS);
-      shape.copyStyle( _shape );
       shape.vertex(x,y);
       shape.endShape();
       return shape;
@@ -1127,6 +1137,10 @@ void PGraphics::filter(int kind) {
 
 void PGraphics::filter(int kind, float param) {
    return impl->filter(kind,param);
+}
+
+PShape PGraphics::createShape() {
+   return impl->createShape();
 }
 
 int PGraphics::getWidth() const {
@@ -1497,7 +1511,7 @@ void PGraphics::tint(float r, float g, float b){
 }
 
 void PGraphics::tint(float r, float a){
-   return impl->_shape.tint(r,a);
+   return impl->_shape.tint(r,r,r,a);
 }
 
 void PGraphics::tint(float r){
@@ -1509,7 +1523,8 @@ void PGraphics::tint(color c){
 }
 
 void PGraphics::tint(color c, float a){
-   return impl->_shape.tint(c, a);
+   c.a = a;
+   return impl->_shape.tint(c);
 }
 
 void PGraphics::noTint() {
@@ -1530,6 +1545,10 @@ void PGraphics::ambient(float r, float g, float b) {
 
 void PGraphics::emissive(float r, float g, float b) {
    return impl->_shape.emissive(r,g,b);
+}
+
+void PGraphics::showNormals(bool x){
+   return impl->_shape.showNormals(x);
 }
 
 void PGraphics::fill(float r, float g, float b, float a){
@@ -1581,7 +1600,8 @@ void PGraphics::stroke(color c){
 }
 
 void PGraphics::stroke(color c, float a){
-   return impl->_shape.stroke(c, a);
+   c.a = a;
+   return impl->_shape.stroke(c);
 }
 
 void PGraphics::noStroke() {
