@@ -85,39 +85,7 @@ namespace gl {
       bool anyLights() const;
    };
 
-   class VAO_t {
-      GLuint vao = 0;
-      GLuint indexId = 0;
-      GLuint vertexId = 0;
-      GLuint materialId= 0;
-   public:
-      friend struct fmt::formatter<gl::VAO_t>;
-
-      std::vector<vertex_t> vertices;
-      std::vector<material_t> materials;
-      std::vector<unsigned short> indices;
-      std::vector<texture_t_ptr> textures;
-      std::vector<glm::mat4> transforms;
-
-      VAO_t() noexcept;
-
-      VAO_t(const VAO_t& x) noexcept;
-
-      VAO_t(VAO_t&& x) noexcept;
-
-      VAO_t& operator=(const VAO_t&) = delete;
-
-      VAO_t& operator=(VAO_t&& other) noexcept;
-
-      void bind( attribute_t Position, attribute_t Normal, attribute_t Color,
-                 attribute_t Coord,    attribute_t TUnit,  attribute_t MIndex,
-                 attribute_t Ambient,  attribute_t Specular, attribute_t Emissive, attribute_t Shininess);
-      int hasTexture(texture_t_ptr texture);
-      void loadBuffers() const;
-      void draw() const;
-      void debugPrint() const;
-      ~VAO_t();
-   };
+   class VAO_t;
 
    typedef std::shared_ptr<VAO_t>  VAO_t_ptr;
 

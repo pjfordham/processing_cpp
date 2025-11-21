@@ -75,7 +75,7 @@ namespace gl {
          return {programID, attribute_name};
       }
       void set_uniforms() const;
-      void set(const char *id, gl::texture_t_ptr textureID);
+      void set(const char *id, texture_t_ptr textureID);
       void set(const char *id, float value);
       void set(const char *id, float v1, float v2);
       void set(const char *id, float v1, float v2, float v3);
