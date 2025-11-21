@@ -77,7 +77,7 @@ void draw () {
         velocities[n].y += gravity;
       }
     } else {
-      part.setTint(BLACK);
+      part.setTint(color(0,0));
     }
   }
 
