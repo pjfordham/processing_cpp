@@ -27,7 +27,7 @@ namespace gl {
       GLuint vertexId = 0;
       GLuint materialId= 0;
    public:
-      friend struct fmt::formatter<gl::VAO_t>;
+      friend struct fmt::formatter<VAO_t>;
 
       std::vector<vertex_t> vertices;
       std::vector<material_t> materials;
