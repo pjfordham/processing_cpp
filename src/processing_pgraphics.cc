@@ -769,6 +769,7 @@ public:
    }
 
    void shape(PShape &pshape) {
+      // If shape has a parent refuse to draw it!
       flat_style_t style = _shape.getStyle().resolve_style( default_style );
       gl::batch_t_ptr local = pshape.getCompiledBatch( style );
       if (local) {

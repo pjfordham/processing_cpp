@@ -44,7 +44,8 @@ public:
 
 private:
 
-   std::map<flat_style_t, gl::batch_t_ptr> cache;
+   gl::batch_t_ptr cached_batch;
+   flat_style_t cached_style;
 
    bool immediateMode = true;
 
@@ -132,7 +133,8 @@ public:
       DEBUG_METHOD();
       std::swap(enable_debug, other.enable_debug);
       std::swap(should_compile, other.should_compile);
-      std::swap(cache, other.cache);
+      std::swap(cached_batch, other.cached_batch);
+      std::swap(cached_style, other.cached_style);
       std::swap(immediateMode, other.immediateMode);
       std::swap(normal_,other.normal_);
       std::swap(cmds,other.cmds);
@@ -243,7 +245,7 @@ public:
       qi = 0;
       cmds.clear();
       children.clear();
-      cache.clear();
+      cached_batch.reset();
       sub_batch_fill.reset();
       sub_batch_stroke.reset();
       immediateMode = false;
@@ -934,18 +936,15 @@ public:
    gl::batch_t_ptr getCompiledBatch(const flat_style_t &global_style) {
       DEBUG_METHOD();
       flat_style_t local_style = style.resolve_style( global_style );
-      if (dirty) {
-         cache.clear();
+      if ( local_style == cached_style && cached_batch ) {
+         return cached_batch;
       }
-      if (cache.contains(local_style)) {
-         return cache[local_style];
-      } else if ( should_compile ) {
-         cache.emplace(local_style, std::make_shared<gl::batch_t>());
-         auto batch = cache[local_style];
-         flatten( batch, PMatrix::Identity(), true, global_style );
-         batch->load();
-         dirty = false;
-         return cache[local_style];
+      if ( should_compile ) {
+         cached_batch = std::make_shared<gl::batch_t>();
+         cached_style = local_style;
+         flatten( cached_batch, PMatrix::Identity(), true, global_style );
+         cached_batch->load();
+         return cached_batch;
       } else {
          return {};
       }
@@ -1202,9 +1201,7 @@ public:
       if (parent.impl) {
          parent.impl->reloadSubBatch(sb);
       } else {
-         for (auto& [key, batch] : cache) {
-            batch->reload(*sb);
-         }
+         cached_batch->reload(*sb);
       }
    }
 
