@@ -302,6 +302,7 @@ public:
    }
 
    void setTransforms(PMatrix t) {
+      // NEED TO HANDLE TEXTURES AS WELL
       if ( kind == GROUP ) {
          for (auto &&child : children) {
             child.impl->setTransforms(t * shape_matrix);
@@ -1001,7 +1002,7 @@ public:
          }
       } else {
          auto currentTransform = transform;// * shape_matrix;
-         sub_batch_fill.emplace( *batch, ci, currentTransform.glm_data(), flatten_transforms,  style.texture_img ? style.texture_img.value().getTextureID() : std::optional<gl::texture_t_ptr>());
+         sub_batch_fill.emplace( *batch, ci );
          auto &sb = sub_batch_fill.value();
 
          std::vector<int> contour; // TODO: reserve amount for this.

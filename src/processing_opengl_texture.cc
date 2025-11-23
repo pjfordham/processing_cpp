@@ -83,7 +83,7 @@ namespace gl {
    void texture_t::bind() const {
       DEBUG_METHOD();
      // renderThread.enqueue( [id=id] {
-        glBindTexture(GL_TEXTURE_2D, id);
+      //  glBindTexture(GL_TEXTURE_2D, id);
      // } );
    }
 
