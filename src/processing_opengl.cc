@@ -450,17 +450,15 @@ namespace gl {
          vaos.back()->transforms.push_back(transform);
          vaos.back()->textures.push_back(texture);
       }
-   }
 
-   void batch_t::add_transform( const glm::mat4 &transform ) {
-      if (vaos.size() == 0 ) {
-         vaos.emplace_back(std::make_unique<VAO_t>());
-      }
+      const int MaxTextureImageUnits = 15; // keep one spare
       const int MaxTransformsPerBatch = 16;
-      if (vaos.back()->transforms.size() == MaxTransformsPerBatch) {
+      if (vaos.back()->transforms.size() == MaxTransformsPerBatch ||
+          vaos.back()->textures.size() == MaxTextureImageUnits) {
          vaos.emplace_back(std::make_unique<VAO_t>());
       }
-      vaos.back()->transforms.push_back(transform);
+      vaos.back()->transforms.emplace_back();
+      vaos.back()->textures.emplace_back();
    }
 
    void batch_t::set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID) {
@@ -483,19 +481,36 @@ namespace gl {
       it->textures[existing_txID] = texture_;
    }
 
-   void batch_t::add_texture( texture_t_ptr texture ) {
-      {
-         auto &vec = vaos.back()->textures;
-         const int MaxTextureImageUnits = 15; // keep one spare
-         if (vec.size() == MaxTextureImageUnits) {
-            auto t = vaos.back()->transforms.back();
-            vaos.emplace_back(std::make_unique<VAO_t>());
-            vaos.back()->transforms.push_back( t );
-         }
-      }
-      // Old version of vec might have been invalidated.
-      auto &vec = vaos.back()->textures;
-      vec.push_back(texture);
+   batch_t::new_sub_batch_t::new_sub_batch_t(batch_t &batch, int reservation_)
+      : batch_ptr(&batch), reservation( reservation_ ), vertex_count(0), index_count(0) {
+
+      // Ensure current VAO has everything we need for this sub_batch
+      batch.reserve(reservation);
+      // batch.add_transform();
+      // batch.add_texture();
+
+      // handle circle
+      txID = batch.vaos.back()->textures.size() - 1;
+      trID = batch.vaos.back()->transforms.size() - 1;
+
+      vao = (int)batch.vaos.size()-1;
+
+      auto &cvao = *batch.vaos.back();
+      vertex = (int)cvao.vertices.size();
+      index = (int)cvao.indices.size();
+      _vertices = &(cvao.vertices);
+      _indices = &(cvao.indices);
+
+   }
+   void batch_t::new_sub_batch_t::upload(batch_t &batch) const {
+      renderThread.enqueue( [self = *this, batch = batch.shared_from_this() ] {
+         auto &it = batch->vaos[ self.vao ];
+         it->bind();
+         glBufferSubData(GL_ARRAY_BUFFER, self.vertex * sizeof(vertex_t),
+                         self.getVertexCount() * sizeof(vertex_t), self.vertices_data());
+         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, self.index * sizeof(unsigned short),
+                         self.getIndexCount() * sizeof(unsigned short), self.indices_data());
+      } );
    }
 
    batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_) {
@@ -505,25 +520,28 @@ namespace gl {
 
       // Ensure current VAO has everything we need for this sub_batch
       batch.reserve(reservation);
-      batch.add_transform( transform_ );
 
-      if (texture_ == texture_t::circle()) {
-         batch.uses_circles = true;
-         txID = -1;
-      } else {
-         if (texture_) {
-            batch.uses_textures = true;
-         } else {
-            texture_ = texture_t::blank();
-         }
-         texture_t_ptr texture = texture_.value();
-         batch.add_texture( texture );
-         txID = batch.vaos.back()->textures.size() - 1;
-      }
-
+      txID = batch.vaos.back()->textures.size() - 1;
       trID = batch.vaos.back()->transforms.size() - 1;
-
       vao = (int)batch.vaos.size()-1;
+
+      if (texture_) {
+         batch.uses_textures = true;
+      } else {
+         texture_ = texture_t::blank();
+      }
+      texture_t_ptr texture = texture_.value();
+
+      batch.set_texture( texture, vao, txID);
+      batch.set_transform( transform_, vao, trID);
+
+      // if (texture_ == texture_t::circle()) {
+      //    batch.uses_circles = true;
+      //    txID = -1;
+      // } else {
+      //    batch.add_texture( texture );
+      //    txID = batch.vaos.back()->textures.size() - 1;
+      // }
 
       auto &cvao = *batch.vaos.back();
       vertex = (int)cvao.vertices.size();
