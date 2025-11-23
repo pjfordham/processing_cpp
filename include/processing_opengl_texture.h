@@ -53,6 +53,7 @@ namespace gl {
       GLuint get_id() const;
 
       void bind() const;
+      void _bind() const;
 
       operator bool() const;
 

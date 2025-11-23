@@ -301,17 +301,26 @@ public:
       scale(x,x,x);
    }
 
-   void setTransforms(PMatrix t) {
-      // NEED TO HANDLE TEXTURES AS WELL
+   void setTransforms(PMatrix t, const flat_style_t &parent_style) {
+      auto local_style = style.resolve_style( parent_style );
+      auto local_transform = t * shape_matrix;
       if ( kind == GROUP ) {
          for (auto &&child : children) {
-            child.impl->setTransforms(t * shape_matrix);
+            child.impl->setTransforms( local_transform, local_style );
          }
       } else {
-         if (sub_batch_fill)
-            sub_batch_fill->setTransform( (t * shape_matrix).glm_data() );
-         if (sub_batch_stroke)
-            sub_batch_stroke->setTransform( (t * shape_matrix).glm_data() );
+         if (sub_batch_fill) {
+            sub_batch_fill->setTransform( local_transform.glm_data() );
+            if ( local_style.texture_enabled ) {
+               sub_batch_fill->setTexture( local_style.texture_img.getTextureID() );
+            } else {
+               sub_batch_fill->setTexture( gl::texture_t::blank() );
+            }
+         }
+         if (sub_batch_stroke) {
+            sub_batch_stroke->setTransform( local_transform.glm_data() );
+            sub_batch_stroke->setTexture( gl::texture_t::blank() );
+        }
       }
    }
 
@@ -1178,13 +1187,13 @@ public:
          }
       }
       dirty = false;
-      if (!flatten_transforms) {
-         // If we're compile the base _shape from PGraphics then the batch will
-         // be destroyed every frame so don't save pointers to it. Probably
-         // should use smart pointer in view.
-         sub_batch_fill.reset();
-         sub_batch_stroke.reset();
-      }
+      // if (!flatten_transforms) {
+      //    // If we're compile the base _shape from PGraphics then the batch will
+      //    // be destroyed every frame so don't save pointers to it. Probably
+      //    // should use smart pointer in view.
+      //    sub_batch_fill.reset();
+      //    sub_batch_stroke.reset();
+      // }
    }
 
    void draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms);
@@ -2592,8 +2601,8 @@ PShape PShape::copy() const {
    return { std::make_shared<PShapeImpl>(*impl) };
 }
 
-void PShape::setTransforms(PMatrix t) {
-   return impl->setTransforms(t);
+void PShape::setTransforms(PMatrix t, const flat_style_t &parent_style) {
+   return impl->setTransforms(t, parent_style);
 }
 
 PShape loadShape( std::string_view filename ) {

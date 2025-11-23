@@ -772,24 +772,19 @@ public:
       // If shape has a parent refuse to draw it!
       flat_style_t style = _shape.getStyle().resolve_style( default_style );
       gl::batch_t_ptr local = pshape.getCompiledBatch( style );
+      PMatrix t;
+      if (pshape == _shape) {
+         t = t;
+      } else {
+         t = _shape.getShapeMatrix();
+      }
       if (local) {
          flush();
-         PMatrix t;
-         if (pshape == _shape) {
-            t = t;
-         } else {
-            t = _shape.getShapeMatrix();
-         }
-         pshape.setTransforms( t );
+         pshape.setTransforms( t, style );
          directDraw( local, PMatrix() );
       } else {
-         // flatten is reposonsible for putting this shapes vertices into the current
-         // batch give the current resolved style.
-         if (pshape == _shape) {
-            pshape.flatten( batch, pshape.getShapeMatrix(), false, style );
-         } else {
-            pshape.flatten( batch, _shape.getShapeMatrix() * pshape.getShapeMatrix(), false, style );
-         }
+         pshape.flatten( batch, PMatrix(), false, style );
+         pshape.setTransforms( t, style );
       }
       pixels_current = false;
       blitPixels();
