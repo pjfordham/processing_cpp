@@ -116,6 +116,118 @@ namespace gl {
 
       ~batch_t();
 
+      class new_sub_batch_t {
+         int vao;
+         int vertex;
+         int index;
+         int vertex_count;
+         int index_count;
+         std::vector<vertex_t> *_vertices;
+         std::vector<unsigned short> *_indices;
+         int trID;
+         int txID;
+         int reservation;
+         batch_t *batch_ptr; // maybe smart pointer?
+
+         public:
+         new_sub_batch_t(batch_t &batch, int reservation);
+
+         ~new_sub_batch_t() {
+            if (reservation != vertex_count) {
+               fmt::print("Reservation {} and vertext_count was {}\n", reservation, vertex_count);
+            }
+         }
+
+         range_t getRange() const {
+            return { vao, vertex, vertex_count };
+         }
+
+         void upload(batch_t &batch) const ;
+
+         void setTransform( const glm::mat4 &transform ) {
+            batch_ptr->set_transform( transform, vao, trID );
+         }
+
+         void setTexture( texture_t_ptr texture ) {
+            batch_ptr->set_texture( texture, vao, trID );
+         }
+
+         int getVAO() const {
+            return vao;
+         }
+
+         int getVertexCount() const {
+            return vertex_count;
+         }
+
+         int getIndexCount() const {
+            return index_count;
+         }
+
+         vertex_t &verticesByIndex(int i) {
+            return (*_vertices)[ (*_indices)[index + i] ];
+         }
+
+         vertex_t &vertices(int i) {
+            return (*_vertices)[ vertex + i ];
+         }
+
+         const vertex_t *vertices_data() const {
+            return (*_vertices).data() + vertex;
+         }
+
+         const unsigned short *indices_data() const {
+            return (*_indices).data() + index;
+         }
+
+         void update_stroke_vertex( int i, const glm::vec3 &position, const color_t &fill ) {
+            return update_vertex(i, position, {0,0,0}, {0,0}, fill, {}, {}, fill, {});
+         }
+
+         int add_stroke_vertex( const glm::vec3 &position, const color_t &fill ) {
+            return add_vertex(position, {0,0,0}, {0,0}, fill, {}, {}, fill, {});
+         }
+
+         void update_vertex( int i,
+                             const glm::vec3 &position, const glm::vec3 &normal, const glm::vec2& coord,
+                             const color_t &fill, const glm::vec4 &ambient, const glm::vec4 &specular,
+                             const glm::vec4 &emissive, float shininess ) {
+            vertices(i) = {
+               position,
+               normal,
+               coord, fill, txID, trID,
+               ambient, specular, emissive, shininess
+            };
+         }
+
+         int add_vertex( const glm::vec3 &position, const glm::vec3 &normal, const glm::vec2& coord,
+                         const color_t &fill, const glm::vec4 &ambient, const glm::vec4 &specular,
+                         const glm::vec4 &emissive, float shininess ) {
+            (*_vertices).emplace_back( position,
+                                       normal,
+                                       coord, fill, txID, trID,
+                                       ambient, specular, emissive, shininess);
+            return vertex_count++;
+         }
+
+         unsigned short indices(int i) {
+            return (*_indices)[ index + i ] - vertex;
+         }
+
+         void add_index(int i) {
+            (*_indices).push_back( vertex + i );
+            index_count++;
+         }
+
+         void drop() {
+            (*_indices).erase( (*_indices).end() - index_count, (*_indices).end());
+            (*_vertices).erase( (*_vertices).end() - vertex_count, (*_vertices).end());
+            index_count = 0;
+            vertex_count = 0;
+            reservation = 0; // Supresss warning message about wrong reservation.
+         }
+      };
+
       class sub_batch_t {
          int vao;
          int vertex;
@@ -243,9 +355,7 @@ namespace gl {
       bool usesTextures() const;
 
       void reserve(int count);
-      void add_transform( const glm::mat4 &transform_);
       void set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID);
-      void add_texture( texture_t_ptr texture_ );
       void set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID);
    };
 
