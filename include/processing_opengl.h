@@ -131,7 +131,7 @@ namespace gl {
          batch_t *batch_ptr; // maybe smart pointer?
 
          public:
-         sub_batch_t(batch_t &batch, int reservation);
+         sub_batch_t(batch_t &batch, int reservation, bool circle);
          sub_batch_t(batch_t &batch, int reservation, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_);
          ~sub_batch_t() {
             if (reservation != vertex_count) {
@@ -243,7 +243,7 @@ namespace gl {
       bool usesCircles() const;
       bool usesTextures() const;
 
-      void reserve(int count);
+      void reserve(int count, bool circle);
       void set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID);
       void set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID);
    };

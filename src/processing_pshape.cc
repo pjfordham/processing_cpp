@@ -324,50 +324,14 @@ public:
       }
    }
 
-   PMatrix accumulateTransform(PMatrix &transform) {
-      if (parent.impl) {
-         return parent.impl->accumulateTransform( transform ) * shape_matrix;
-      } else {
-         return transform * shape_matrix;
-      }
-   }
-
-   PMatrix global_transform; // How do I get this?
-
    void setShapeMatrix( const PMatrix &transform ) {
       DEBUG_METHOD();
-      // if (sub_batch_fill || sub_batch_stroke) {
-      //    shape_matrix = transform;
-      //    PMatrix total = accumulateTransform( global_transform );
-      //    if (sub_batch_fill)
-      //       sub_batch_fill->setTransform( total.glm_data() );
-      //    if (sub_batch_stroke)
-      //       sub_batch_stroke->setTransform( total.glm_data() );
-      //    // Transforms may be reloaded for each draw call
-      //    // which maybe we should optimize
-      //    // reloadTransforms();
-      // } else {
-         shape_matrix = transform;
-         // setParentDirty();
-         // }
+      shape_matrix = transform;
    }
 
    void transform(const PMatrix &transform) {
       DEBUG_METHOD();
       setShapeMatrix( shape_matrix * transform );
-      // Calculate appropriate transform, walk parents and rebuild
-      // - walk up to first shape without a parent
-      // - get global transform?, pop off each parent calculign new transform
-      // - update transform in place
-      // - reloead uniform array to GPU
-      // = need to migrate flattened call to same code path as normal call
-      // = break join between flattening transforms and compiling shape
-      // won't work with flatten
-      // - have to regen vertices
-      // - reverse old transform and apply new one, getVerts from somewhere else instaed?
-      // - just force regen of whole shape?
-      // Apply same logic to stroke
-      // If we are a group, just trigger a rebuild in each child and it should work
    }
 
    void resetMatrix() {
@@ -1011,7 +975,8 @@ public:
          }
       } else {
          auto currentTransform = transform;// * shape_matrix;
-         sub_batch_fill.emplace( *batch, ci );
+         bool circle = local_style.texture_enabled && local_style.texture_img == PImage::circle();
+         sub_batch_fill.emplace( *batch, ci, circle );
          auto &sb = sub_batch_fill.value();
 
          std::vector<int> contour; // TODO: reserve amount for this.
