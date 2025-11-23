@@ -441,20 +441,13 @@ namespace gl {
    }
 
    void batch_t::reserve( int count ) {
-      if (vaos.size() == 0) {
-         vaos.emplace_back(std::make_unique<VAO_t>());
-      } else if ( vaos.back()->vertices.size() + count > 65536 ) {
-         auto texture = vaos.back()->textures.back();
-         auto transform = vaos.back()->transforms.back();
-         vaos.emplace_back(std::make_unique<VAO_t>());
-         vaos.back()->transforms.push_back(transform);
-         vaos.back()->textures.push_back(texture);
-      }
-
+      // Ensure current VAO has everything we need for this sub_batch
       const int MaxTextureImageUnits = 15; // keep one spare
       const int MaxTransformsPerBatch = 16;
-      if (vaos.back()->transforms.size() == MaxTransformsPerBatch ||
-          vaos.back()->textures.size() == MaxTextureImageUnits) {
+      if ( (vaos.size() == 0) ||
+           (vaos.back()->vertices.size() + count > 65536) ||
+           (vaos.back()->transforms.size() == MaxTransformsPerBatch) ||
+           (vaos.back()->textures.size() == MaxTextureImageUnits) ) {
          vaos.emplace_back(std::make_unique<VAO_t>());
       }
       vaos.back()->transforms.emplace_back();
@@ -484,16 +477,12 @@ namespace gl {
    batch_t::new_sub_batch_t::new_sub_batch_t(batch_t &batch, int reservation_)
       : batch_ptr(&batch), reservation( reservation_ ), vertex_count(0), index_count(0) {
 
-      // Ensure current VAO has everything we need for this sub_batch
-      batch.reserve(reservation);
-      // batch.add_transform();
-      // batch.add_texture();
-
       // handle circle
+      batch.reserve(reservation);
+
       txID = batch.vaos.back()->textures.size() - 1;
       trID = batch.vaos.back()->transforms.size() - 1;
-
-      vao = (int)batch.vaos.size()-1;
+      vao = (int)batch.vaos.size() - 1;
 
       auto &cvao = *batch.vaos.back();
       vertex = (int)cvao.vertices.size();
@@ -502,6 +491,7 @@ namespace gl {
       _indices = &(cvao.indices);
 
    }
+
    void batch_t::new_sub_batch_t::upload(batch_t &batch) const {
       renderThread.enqueue( [self = *this, batch = batch.shared_from_this() ] {
          auto &it = batch->vaos[ self.vao ];
