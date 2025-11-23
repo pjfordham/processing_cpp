@@ -346,7 +346,7 @@ class PShape {
 
    PShape copy() const;
 
-   void setTransforms(PMatrix t);
+   void setTransforms(PMatrix t,  const flat_style_t &parent_style);
    
    void setVertex(int i, PVector v);
 

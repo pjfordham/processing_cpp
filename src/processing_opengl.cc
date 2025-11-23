@@ -379,7 +379,7 @@ namespace gl {
             // previously bound textures.
             glActiveTexture(GL_TEXTURE0 + i);
             textureOffsets[i] = glm::vec2(1.0 / img->get_width(), 1.0 / img->get_height());
-            img->bind();
+            img->_bind();
          }
       }
       TexOffset.set(textureOffsets);
@@ -459,19 +459,19 @@ namespace gl {
       it->transforms[existing_trID] = transform_;
    }
 
-   void batch_t::set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID) {
+   void batch_t::set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID ) {
       if (texture_ == texture_t::circle()) {
-         fmt::print("Unexpect reset of circle texture\n");
-         abort();
+         // txID should already be set to -1 so no update here
+         // is necessary.
       } else {
          if (texture_) {
             uses_textures = true;
          } else {
             texture_ = texture_t::blank();
          }
+         auto &it = vaos[existing_vao];
+         it->textures[existing_txID] = texture_;
       }
-      auto &it = vaos[existing_vao];
-      it->textures[existing_txID] = texture_;
    }
 
    batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_)
