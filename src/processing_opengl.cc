@@ -474,7 +474,7 @@ namespace gl {
       it->textures[existing_txID] = texture_;
    }
 
-   batch_t::new_sub_batch_t::new_sub_batch_t(batch_t &batch, int reservation_)
+   batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_)
       : batch_ptr(&batch), reservation( reservation_ ), vertex_count(0), index_count(0) {
 
       // handle circle
@@ -490,17 +490,6 @@ namespace gl {
       _vertices = &(cvao.vertices);
       _indices = &(cvao.indices);
 
-   }
-
-   void batch_t::new_sub_batch_t::upload(batch_t &batch) const {
-      renderThread.enqueue( [self = *this, batch = batch.shared_from_this() ] {
-         auto &it = batch->vaos[ self.vao ];
-         it->bind();
-         glBufferSubData(GL_ARRAY_BUFFER, self.vertex * sizeof(vertex_t),
-                         self.getVertexCount() * sizeof(vertex_t), self.vertices_data());
-         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, self.index * sizeof(unsigned short),
-                         self.getIndexCount() * sizeof(unsigned short), self.indices_data());
-      } );
    }
 
    batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_) {
