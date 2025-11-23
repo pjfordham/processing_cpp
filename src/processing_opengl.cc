@@ -440,18 +440,30 @@ namespace gl {
       }
    }
 
-   void batch_t::reserve( int count ) {
-      // Ensure current VAO has everything we need for this sub_batch
-      const int MaxTextureImageUnits = 15; // keep one spare
-      const int MaxTransformsPerBatch = 16;
-      if ( (vaos.size() == 0) ||
-           (vaos.back()->vertices.size() + count > 65536) ||
-           (vaos.back()->transforms.size() == MaxTransformsPerBatch) ||
-           (vaos.back()->textures.size() == MaxTextureImageUnits) ) {
-         vaos.emplace_back(std::make_unique<VAO_t>());
+   void batch_t::reserve( int count, bool circle ) {
+      if ( circle ) {
+         // Ensure current VAO has everything we need for this sub_batch
+         const int MaxTextureImageUnits = 15; // keep one spare
+         const int MaxTransformsPerBatch = 16;
+         if ( (vaos.size() == 0) ||
+              (vaos.back()->vertices.size() + count > 65536) ||
+              (vaos.back()->transforms.size() == MaxTransformsPerBatch) ) {
+            vaos.emplace_back(std::make_unique<VAO_t>());
+         }
+         vaos.back()->transforms.emplace_back();
+      } else {
+         // Ensure current VAO has everything we need for this sub_batch
+         const int MaxTextureImageUnits = 15; // keep one spare
+         const int MaxTransformsPerBatch = 16;
+         if ( (vaos.size() == 0) ||
+              (vaos.back()->vertices.size() + count > 65536) ||
+              (vaos.back()->transforms.size() == MaxTransformsPerBatch) ||
+              (vaos.back()->textures.size() == MaxTextureImageUnits) ) {
+            vaos.emplace_back(std::make_unique<VAO_t>());
+         }
+         vaos.back()->transforms.emplace_back();
+         vaos.back()->textures.emplace_back();
       }
-      vaos.back()->transforms.emplace_back();
-      vaos.back()->textures.emplace_back();
    }
 
    void batch_t::set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID) {
@@ -474,13 +486,19 @@ namespace gl {
       }
    }
 
-   batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_)
+   batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_, bool circle)
       : batch_ptr(&batch), reservation( reservation_ ), vertex_count(0), index_count(0) {
 
       // handle circle
-      batch.reserve(reservation);
+      batch.reserve(reservation, circle);
 
-      txID = batch.vaos.back()->textures.size() - 1;
+      if (circle) {
+         txID = -1;
+         batch.uses_circles = true;
+      } else {
+         txID = batch.vaos.back()->textures.size() - 1;
+      }
+
       trID = batch.vaos.back()->transforms.size() - 1;
       vao = (int)batch.vaos.size() - 1;
 
@@ -498,7 +516,7 @@ namespace gl {
       reservation = reservation_;
 
       // Ensure current VAO has everything we need for this sub_batch
-      batch.reserve(reservation);
+      batch.reserve(reservation, false);
 
       txID = batch.vaos.back()->textures.size() - 1;
       trID = batch.vaos.back()->transforms.size() - 1;
