@@ -346,6 +346,8 @@ class PShape {
 
    PShape copy() const;
 
+   void setTransforms(PMatrix t);
+   
    void setVertex(int i, PVector v);
 
    void setVertex(int i, float x, float y , float z = 0);

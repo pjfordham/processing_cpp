@@ -774,11 +774,14 @@ public:
       gl::batch_t_ptr local = pshape.getCompiledBatch( style );
       if (local) {
          flush();
+         PMatrix t;
          if (pshape == _shape) {
-            directDraw( local, pshape.getShapeMatrix() );
+            t = t;
          } else {
-            directDraw( local, _shape.getShapeMatrix() * pshape.getShapeMatrix());
+            t = _shape.getShapeMatrix();
          }
+         pshape.setTransforms( t );
+         directDraw( local, PMatrix() );
       } else {
          // flatten is reposonsible for putting this shapes vertices into the current
          // batch give the current resolved style.

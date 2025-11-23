@@ -301,6 +301,19 @@ public:
       scale(x,x,x);
    }
 
+   void setTransforms(PMatrix t) {
+      if ( kind == GROUP ) {
+         for (auto &&child : children) {
+            child.impl->setTransforms(t * shape_matrix);
+         }
+      } else {
+         if (sub_batch_fill)
+            sub_batch_fill->setTransform( (t * shape_matrix).glm_data() );
+         if (sub_batch_stroke)
+            sub_batch_stroke->setTransform( (t * shape_matrix).glm_data() );
+      }
+   }
+
    PMatrix accumulateTransform(PMatrix &transform) {
       if (parent.impl) {
          return parent.impl->accumulateTransform( transform ) * shape_matrix;
@@ -313,20 +326,20 @@ public:
 
    void setShapeMatrix( const PMatrix &transform ) {
       DEBUG_METHOD();
-      if (sub_batch_fill || sub_batch_stroke) {
+      // if (sub_batch_fill || sub_batch_stroke) {
+      //    shape_matrix = transform;
+      //    PMatrix total = accumulateTransform( global_transform );
+      //    if (sub_batch_fill)
+      //       sub_batch_fill->setTransform( total.glm_data() );
+      //    if (sub_batch_stroke)
+      //       sub_batch_stroke->setTransform( total.glm_data() );
+      //    // Transforms may be reloaded for each draw call
+      //    // which maybe we should optimize
+      //    // reloadTransforms();
+      // } else {
          shape_matrix = transform;
-         PMatrix total = accumulateTransform( global_transform );
-         if (sub_batch_fill)
-            sub_batch_fill->setTransform( total.glm_data() );
-         if (sub_batch_stroke)
-            sub_batch_stroke->setTransform( total.glm_data() );
-         // Transforms may be reloaded for each draw call
-         // which maybe we should optimize
-         // reloadTransforms();
-      } else {
-         shape_matrix = transform;
-         setParentDirty();
-      }
+         // setParentDirty();
+         // }
    }
 
    void transform(const PMatrix &transform) {
@@ -2576,6 +2589,10 @@ void PShape::attribPosition(std::string_view name, float x, float y, float z, fl
 
 PShape PShape::copy() const {
    return { std::make_shared<PShapeImpl>(*impl) };
+}
+
+void PShape::setTransforms(PMatrix t) {
+   return impl->setTransforms(t);
 }
 
 PShape loadShape( std::string_view filename ) {
