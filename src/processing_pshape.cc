@@ -930,6 +930,7 @@ public:
          return cached_batch;
       }
       if ( should_compile ) {
+         clearSubBatches();
          cached_batch = std::make_shared<gl::batch_t>();
          cached_style = local_style;
          flatten( cached_batch, PMatrix::Identity(), true, global_style );
@@ -960,6 +961,19 @@ public:
       }
    }
 
+   void clearSubBatches() {
+      if ( kind == GROUP ) {
+         for (auto &&child : children) {
+            // For all child shapes pass down transform and style from this shape
+            // and continue to flatten.
+            child.impl->clearSubBatches();
+         }
+      } else {
+         sub_batch_fill.reset();
+         sub_batch_stroke.reset();
+      }
+   }
+
    void flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &parent_style)  {
       DEBUG_METHOD();
 
@@ -975,7 +989,7 @@ public:
          }
       } else {
          auto currentTransform = transform;// * shape_matrix;
-         bool circle = local_style.texture_enabled && local_style.texture_img == PImage::circle();
+         bool circle = kind == POINTS || (local_style.texture_enabled && local_style.texture_img == PImage::circle());
          sub_batch_fill.emplace( *batch, ci, circle );
          auto &sb = sub_batch_fill.value();
 
@@ -1128,7 +1142,7 @@ public:
                break;
             }
          }
-         if ( fill ) {
+         if ( fill && kind != POINTS) {
 
             // Generate indices, from vertex info, if this shape doesn't have it.
             if (!indices) {
@@ -1184,16 +1198,11 @@ public:
                return {cmd.a,cmd.b, cmd.c};
             j++;
          }
-      }
-      return {};
+      }      return {};
    }
 
    void reloadSubBatch(gl::batch_t::sub_batch_t *sb) {
-      if (parent.impl) {
-         parent.impl->reloadSubBatch(sb);
-      } else {
-         cached_batch->reload(*sb);
-      }
+      sb->reload();
    }
 
    void setVertex(int i, PVector v) {
@@ -1727,7 +1736,7 @@ void drawTriangleNormal(gl::batch_t::sub_batch_t &ssb, const gl::vertex_t &p0, c
 
 void PShapeImpl::draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms) {
    DEBUG_METHOD();
-   gl::batch_t::sub_batch_t ssb( *batch, 4 * (sb.getIndexCount() / 3), currentTransform, flatten_transforms, gl::texture_t::circle());
+   gl::batch_t::sub_batch_t ssb( *batch, 4 * (sb.getIndexCount() / 3), false);
 
    switch( kind ) {
    case TRIANGLE_STRIP_NOSTROKE:
@@ -1767,7 +1776,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
       break;
    case POINTS:
    {
-      sub_batch_stroke.emplace( *batch, 4 * extras.size(), currentTransform, flatten_transforms, gl::texture_t::circle() );
+      sub_batch_stroke.emplace( *batch, 4 * extras.size(), true );
       for (int i = 0; i< extras.size() ; ++i ) {
          drawUntexturedFilledEllipse_sb( sub_batch_stroke.value(),
                                          extras[i].position.x, extras[i].position.y,
@@ -1781,7 +1790,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
    {
       // TODO: Fix mitred lines to somehow work in 3D
       if (idx.size() > 0) {
-         sub_batch_stroke.emplace( *batch, idx.size() * 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+         sub_batch_stroke.emplace( *batch, idx.size() * 4, false);
          for (int i = 0; i < idx.size(); i+=3 ) {
             unsigned short i0 = idx[i];
             unsigned short i1 = idx[i+1];
@@ -1802,7 +1811,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
          }
          return;
       } else {
-         sub_batch_stroke.emplace( *batch,  extras.size() * 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+         sub_batch_stroke.emplace( *batch,  extras.size() * 4, false);
          for (int i = 0; i < extras.size(); i+=3 ) {
             PVector p0 = extras[i].position;
             PVector p1 = extras[i+1].position;
@@ -1823,7 +1832,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
    }
    case LINES:
    {
-      sub_batch_stroke.emplace( *batch,  extras.size() * 2, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+      sub_batch_stroke.emplace( *batch,  extras.size() * 2, false);
       // TODO: Fix mitred lines to somehow work in 3D
       for (int i = 0; i < extras.size(); i+=2 ) {
          PVector p0 = extras[i].position;
@@ -1841,12 +1850,12 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
    {
       if (extras.size() > 2 ) {
          if (type == OPEN_SKIP_FIRST_VERTEX_FOR_STROKE) {
-            sub_batch_stroke.emplace( *batch,  4 + (extras.size() - 3) * 2, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+            sub_batch_stroke.emplace( *batch,  4 + (extras.size() - 3) * 2, false);
             drawLinePoly( sub_batch_stroke.value(), extras.size() - 1, extras.data()+1, false );
             return;
          } else {
             if ( contour.empty() ) {
-               sub_batch_stroke.emplace( *batch,  4 + (extras.size() - 2) * 2 + (type == CLOSE ? 2:0), currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+               sub_batch_stroke.emplace( *batch,  4 + (extras.size() - 2) * 2 + (type == CLOSE ? 2:0), false);
                drawLinePoly( sub_batch_stroke.value(), extras.size(), extras.data(), type == CLOSE );
                return;
             } else {
@@ -1860,7 +1869,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
                for ( int i = 0; i < qq.size() - 1; ++i ) {
                   res += 4 + ((qq[i+1]-qq[i]) - 2) * 2 + (type == CLOSE ? 2:0);
                }
-               sub_batch_stroke.emplace( *batch,  res, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+               sub_batch_stroke.emplace( *batch,  res, false);
                if (contour[0] != 0) {
                   drawLinePoly( sub_batch_stroke.value(), contour[0], extras.data(), type == CLOSE);
                }
@@ -1875,7 +1884,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
       } else if (extras.size() == 2) {
          switch(strokeEndCap) {
          case ROUND: {
-            sub_batch_stroke.emplace( *batch,  18, currentTransform, flatten_transforms, std::optional<gl::texture_t_ptr>() );
+            sub_batch_stroke.emplace( *batch,  18, false );
             drawRoundLine( sub_batch_stroke.value(),
                            extras[0].position, extras[1].position,
                            extras[0].weight, extras[1].weight,
@@ -1884,7 +1893,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
             return;
             break;
          case PROJECT: {
-            sub_batch_stroke.emplace( *batch,  4, currentTransform, flatten_transforms, std::optional<gl::texture_t_ptr>() );
+            sub_batch_stroke.emplace( *batch,  4, false );
             drawCappedLine( sub_batch_stroke.value(),
                             extras[0].position, extras[1].position,
                             extras[0].weight, extras[1].weight,
@@ -1893,7 +1902,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
          }
             break;
          case SQUARE: {
-            sub_batch_stroke.emplace( *batch,  4, currentTransform, flatten_transforms, std::optional<gl::texture_t_ptr>() );
+            sub_batch_stroke.emplace( *batch,  4, false );
             drawLine( sub_batch_stroke.value(),
                       extras[0].position, extras[1].position,
                       extras[0].weight, extras[1].weight,
@@ -1905,7 +1914,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
             abort();
          }
       } else if (extras.size() == 1) {
-         sub_batch_stroke.emplace( *batch,  4, currentTransform, flatten_transforms, gl::texture_t::circle() );
+         sub_batch_stroke.emplace( *batch,  4, false );
          drawUntexturedFilledEllipse_sb(sub_batch_stroke.value(),
                                         sub_batch_stroke.value().vertices(0).position.x, sub_batch_stroke.value().vertices(0).position.y,
                                         extras[0].weight, extras[0].weight,
@@ -1917,7 +1926,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
    case QUAD:
    case QUADS:
    {
-      sub_batch_stroke.emplace( *batch,  extras.size() * 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+      sub_batch_stroke.emplace( *batch,  extras.size() * 4, false);
       // TODO: Fix mitred lines to somehow work in 3D
       for (int i = 0; i < extras.size(); i+=4 ) {
          PVector p0 = extras[i].position;
@@ -1943,7 +1952,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
    }
    case QUAD_STRIP:
    {
-      sub_batch_stroke.emplace( *batch,  (extras.size()-2) * 4 * 2, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+      sub_batch_stroke.emplace( *batch,  (extras.size()-2) * 4 * 2, false );
       // TODO: Fix mitred lines to somehow work in 3D
       for (int i = 0; i < extras.size()-2; i+=2 ) {
          PVector p0 = extras[i+0].position;
@@ -1969,7 +1978,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
    }
    case TRIANGLE_STRIP:
    {
-      sub_batch_stroke.emplace( *batch,  (extras.size()-2) * 8 + 4, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+      sub_batch_stroke.emplace( *batch,  (extras.size()-2) * 8 + 4, false);
       drawLine(sub_batch_stroke.value(),
                extras[0].position, extras[1].position,
                extras[0].weight, extras[1].weight,
@@ -1993,7 +2002,7 @@ void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTra
    }
    case TRIANGLE_FAN:
    {
-      sub_batch_stroke.emplace( *batch,  (extras.size()-1) * 4 * 3, currentTransform, flatten_transforms,std::optional<gl::texture_t_ptr>());
+      sub_batch_stroke.emplace( *batch,  (extras.size()-1) * 4 * 3, false);
       // TODO: Proper 3D miters for triangle fan edges
       int n = extras.size();
       if (n < 3) break;
@@ -2503,6 +2512,10 @@ void PShape::setTint(color c){
 
 gl::batch_t_ptr PShape::getCompiledBatch(const flat_style_t &style) {
    return impl->getCompiledBatch(style);
+}
+
+void PShape::clearSubBatches() {
+   return impl->clearSubBatches();
 }
 
 void PShape::flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &style) {

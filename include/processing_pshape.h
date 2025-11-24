@@ -336,6 +336,8 @@ class PShape {
 
    gl::batch_t_ptr getBatch() ;
 
+   void clearSubBatches();
+   
    void flatten(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &global_shape) ;
 
    int getChildCount() const;

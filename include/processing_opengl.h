@@ -126,13 +126,11 @@ namespace gl {
          std::vector<unsigned short> *_indices;
          int trID;
          int txID;
-         const glm::mat4 *transform;
          int reservation;
-         batch_t *batch_ptr; // maybe smart pointer?
+         batch_t &batch;
 
          public:
          sub_batch_t(batch_t &batch, int reservation, bool circle);
-         sub_batch_t(batch_t &batch, int reservation, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_);
          ~sub_batch_t() {
             if (reservation != vertex_count) {
                fmt::print("Reservation {} and vertext_count was {}\n", reservation, vertex_count);
@@ -143,14 +141,18 @@ namespace gl {
             return { vao, vertex, vertex_count };
          }
 
-         void upload(batch_t &batch) const ;
+         void upload() const ;
+
+         void reload() {
+            batch.reload(*this);
+         }
 
          void setTransform( const glm::mat4 &transform ) {
-            batch_ptr->set_transform( transform, vao, trID );
+            batch.set_transform( transform, vao, trID );
          }
 
          void setTexture( texture_t_ptr texture ) {
-            batch_ptr->set_texture( texture, vao, trID );
+            batch.set_texture( texture, vao, txID );
          }
 
          int getVAO() const {
@@ -220,13 +222,7 @@ namespace gl {
             index_count++;
          }
 
-         void drop() {
-            (*_indices).erase( (*_indices).end() - index_count, (*_indices).end());
-            (*_vertices).erase( (*_vertices).end() - vertex_count, (*_vertices).end());
-            index_count = 0;
-            vertex_count = 0;
-            reservation = 0; // Supresss warning message about wrong reservation.
-         }
+         void drop();
       };
 
       void setup( const shader_t &shader );

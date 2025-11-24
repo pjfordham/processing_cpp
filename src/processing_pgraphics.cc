@@ -785,6 +785,7 @@ public:
       } else {
          pshape.flatten( batch, PMatrix(), false, style );
          pshape.setTransforms( t, style );
+         pshape.clearSubBatches();
       }
       pixels_current = false;
       blitPixels();
