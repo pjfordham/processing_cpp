@@ -450,7 +450,6 @@ namespace gl {
               (vaos.back()->transforms.size() == MaxTransformsPerBatch) ) {
             vaos.emplace_back(std::make_unique<VAO_t>());
          }
-         vaos.back()->transforms.emplace_back();
       } else {
          // Ensure current VAO has everything we need for this sub_batch
          const int MaxTextureImageUnits = 15; // keep one spare
@@ -461,8 +460,6 @@ namespace gl {
               (vaos.back()->textures.size() == MaxTextureImageUnits) ) {
             vaos.emplace_back(std::make_unique<VAO_t>());
          }
-         vaos.back()->transforms.emplace_back();
-         vaos.back()->textures.emplace_back();
       }
    }
 
@@ -472,22 +469,33 @@ namespace gl {
    }
 
    void batch_t::set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID ) {
+      if (existing_txID == -1)
+         return;
       if (texture_ == texture_t::circle()) {
          // txID should already be set to -1 so no update here
          // is necessary.
-      } else {
-         if (texture_) {
+         return;
+     } else {
+         if (texture_ != texture_t::blank()) {
             uses_textures = true;
-         } else {
-            texture_ = texture_t::blank();
          }
          auto &it = vaos[existing_vao];
          it->textures[existing_txID] = texture_;
       }
    }
 
-   batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_, bool circle)
-      : batch_ptr(&batch), reservation( reservation_ ), vertex_count(0), index_count(0) {
+   void batch_t::sub_batch_t::drop() {
+      (*_indices).erase( (*_indices).end() - index_count, (*_indices).end());
+      (*_vertices).erase( (*_vertices).end() - vertex_count, (*_vertices).end());
+      if (txID != -1) batch.vaos.back()->textures.pop_back();
+      batch.vaos.back()->transforms.pop_back();
+      index_count = 0;
+      vertex_count = 0;
+      reservation = 0; // Supresss warning message about wrong reservation.
+   }
+
+   batch_t::sub_batch_t::sub_batch_t(batch_t &batch_, int reservation_, bool circle)
+      : batch(batch_), reservation( reservation_ ), vertex_count(0), index_count(0) {
 
       // handle circle
       batch.reserve(reservation, circle);
@@ -496,9 +504,11 @@ namespace gl {
          txID = -1;
          batch.uses_circles = true;
       } else {
+         batch.vaos.back()->textures.emplace_back();
          txID = batch.vaos.back()->textures.size() - 1;
       }
 
+      batch.vaos.back()->transforms.emplace_back();
       trID = batch.vaos.back()->transforms.size() - 1;
       vao = (int)batch.vaos.size() - 1;
 
@@ -510,48 +520,7 @@ namespace gl {
 
    }
 
-   batch_t::sub_batch_t::sub_batch_t(batch_t &batch, int reservation_, const glm::mat4 &transform_, bool flatten_transforms, std::optional<texture_t_ptr> texture_) {
-
-      transform = &transform_;
-      reservation = reservation_;
-
-      // Ensure current VAO has everything we need for this sub_batch
-      batch.reserve(reservation, false);
-
-      txID = batch.vaos.back()->textures.size() - 1;
-      trID = batch.vaos.back()->transforms.size() - 1;
-      vao = (int)batch.vaos.size()-1;
-
-      if (texture_) {
-         batch.uses_textures = true;
-      } else {
-         texture_ = texture_t::blank();
-      }
-      texture_t_ptr texture = texture_.value();
-
-      batch.set_texture( texture, vao, txID);
-      batch.set_transform( transform_, vao, trID);
-
-      // if (texture_ == texture_t::circle()) {
-      //    batch.uses_circles = true;
-      //    txID = -1;
-      // } else {
-      //    batch.add_texture( texture );
-      //    txID = batch.vaos.back()->textures.size() - 1;
-      // }
-
-      auto &cvao = *batch.vaos.back();
-      vertex = (int)cvao.vertices.size();
-      index = (int)cvao.indices.size();
-      _vertices = &(cvao.vertices);
-      _indices = &(cvao.indices);
-
-      vertex_count = 0;
-      index_count = 0;
-      batch_ptr = &batch;
-   }
-
-   void batch_t::sub_batch_t::upload(batch_t &batch) const {
+   void batch_t::sub_batch_t::upload() const {
       renderThread.enqueue( [self = *this, batch = batch.shared_from_this() ] {
          auto &it = batch->vaos[ self.vao ];
          it->bind();
