@@ -283,20 +283,24 @@ namespace gl {
    }
 
    void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
-      batch->reload();
+      batch->reload(); // copy the VAO data in here since we know the ranges that have changed???
       renderThread.enqueue( [&fb, &shader, batch, transform, scene] () mutable {
          fb.bind();
          shader.bind();
          uniform_t uSampler = shader.get_uniform("texture");
          uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
-         scene.setup( shader );
-         batch->setup( shader );
-         shader.set_uniforms();
-         scene.set();
-         batch->bind();
-         batch->draw( transform );
+         scene.setup( shader ); // Get attribute data from shader and store in scene
+         batch->setup( shader ); // Get attribute data from shader and store in batch
+         shader.set_uniforms(); // Set extra uniforms stuff for shader
+         scene.set(); // Setup scene attributes and uniforms
+         batch->bind(); // Bind each VAO to the shader uniforms and attributes
+         batch->draw(); // Upload matrices and bind relevant textures to texture units, and issue draw call
       } );
+      // So somehwere in here we need to make sure we copy the VAOs before we submit them to the
+      // renderThread in case we update them before the renderThread runs. This can happen inside
+      // a single frame if we draw the same saved batch with different transforms, or use setVertex etc.
+      // to update the actual geometry. Don't need this on other path becuase we are not reusing a batch.
    }
 
    void frame_t::background(color_t b) {
@@ -395,7 +399,7 @@ namespace gl {
 
             renderThread.enqueue( [
                                    batch = shared_from_this(),
-                                   vao = r.vao,
+                                   vao = r.vao, // COPY DATA HERE
                                    start = r.start,
                                    size  = r.size] ()
                {
@@ -410,33 +414,6 @@ namespace gl {
                      );
                });
          }
-      }
-   }
-
-   void batch_t::draw( const glm::mat4 &transform ) {
-
-      if (enable_debug) {
-         fmt::print("### FLAT GEOMETRY DUMP START ###\n");
-         int i = 0;
-         for (auto &vao : vaos) {
-            fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-            vao->debugPrint();
-         }
-         fmt::print("\n### GEOMETRY DUMP END   ###\n");
-      }
-
-      for (auto &draw: vaos ) {
-         std::vector<glm::mat3> normals;
-         std::vector<glm::mat4> transforms;
-         for ( const auto &t : draw->transforms ) {
-            transforms.push_back( transform * t );
-            normals.emplace_back( glm::transpose(glm::inverse(transforms.back())) );
-         }
-
-         Mmatrix.set( transforms );
-         Nmatrix.set( normals );
-         setupTextures( *draw );
-         draw->draw();
       }
    }
 
