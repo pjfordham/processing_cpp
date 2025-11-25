@@ -234,7 +234,6 @@ namespace gl {
       void bind();
       void setupTextures(VAO_t&);
       void draw();
-      void draw(const glm::mat4& transform);
       void clear();
       bool usesCircles() const;
       bool usesTextures() const;
