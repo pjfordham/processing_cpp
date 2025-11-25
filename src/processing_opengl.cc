@@ -327,7 +327,7 @@ namespace gl {
             // Set this here so get_width and get_height don't mess up
             // previously bound textures.
             glActiveTexture(GL_TEXTURE0 + i);
-            textureOffsets[i] = glm::vec2(1.0 / img->_get_width(), 1.0 / img->_get_height());
+            textureOffsets[i] = glm::vec2(1.0 / img->get_width(), 1.0 / img->get_height());
             img->bind();
          }
       }

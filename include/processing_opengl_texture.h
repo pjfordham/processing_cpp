@@ -23,6 +23,8 @@ namespace gl {
       GLuint id;
       GLint wrap;
       bool owning;
+      int width;
+      int height;
 
    public:
       ~texture_t();
@@ -47,10 +49,6 @@ namespace gl {
       int get_width() const;
 
       int get_height() const;
-
-      int _get_width() const;
-
-      int _get_height() const;
 
       GLuint get_id() const;
 

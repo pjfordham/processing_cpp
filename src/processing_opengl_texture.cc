@@ -35,15 +35,19 @@ namespace gl {
    // Create a non owning texture wrapper
    texture_t::texture_t( GLuint textureID ) : id(textureID), owning(false) {
       DEBUG_METHOD();
-      // renderThread.enqueue( TaskQueue::Mode::Blocking, [&] {
-      //    glBindTexture(GL_TEXTURE_2D, textureID);
-      //    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &wrap);
-      //    glBindTexture(GL_TEXTURE_2D, 0);
-      // } );
+      renderThread.enqueue([&] {
+         glBindTexture(GL_TEXTURE_2D, textureID);
+         glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &wrap);
+         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+         glBindTexture(GL_TEXTURE_2D, 0);
+         glBindTexture(GL_TEXTURE_2D, 0);
+      });
+      renderThread.wait_until_nothing_in_flight();
    }
 
    // Create and manage the texture
-   texture_t::texture_t() : id(0), wrap(GL_CLAMP_TO_EDGE), owning(true) {
+   texture_t::texture_t() : id(0), width(0), height(0), wrap(GL_CLAMP_TO_EDGE), owning(true) {
       DEBUG_METHOD();
    }
 
@@ -55,42 +59,20 @@ namespace gl {
          } );
       }
       id = 0;
+      height = 0;
+      width = 0;
       wrap = GL_CLAMP_TO_EDGE;
       owning = true;
    }
 
-   int texture_t::_get_width() const {
-      DEBUG_METHOD();
-      int width;
-      glBindTexture(GL_TEXTURE_2D, id);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-      glBindTexture(GL_TEXTURE_2D, 0);
-      return width;
-   }
-
-   int texture_t::_get_height() const {
-      DEBUG_METHOD();
-      int height;
-      glBindTexture(GL_TEXTURE_2D, id);
-      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-      glBindTexture(GL_TEXTURE_2D, 0);
-      return height;
-   }
-
    int texture_t::get_width() const {
       DEBUG_METHOD();
-      auto width = renderThread.enqueue( [&] {
-         return _get_width();
-      } );
-      return width.get();
+      return width;
    }
 
    int texture_t::get_height() const {
       DEBUG_METHOD();
-      auto height = renderThread.enqueue( [&] {
-         return _get_height();
-      } );
-      return height.get();
+      return height;
    }
 
    GLuint texture_t::get_id() const {
@@ -110,8 +92,11 @@ namespace gl {
       return id != 0;
    }
 
-   void texture_t::set_pixels(const unsigned int *pixels, int width, int height, GLint wrap_) {
+   void texture_t::set_pixels(const unsigned int *pixels, int width_, int height_, GLint wrap_) {
       DEBUG_METHOD();
+      width = width_;
+      height = height_;
+      wrap = wrap_;
       renderThread.enqueue( [&] {
          if (!id) {
             wrap = wrap_;

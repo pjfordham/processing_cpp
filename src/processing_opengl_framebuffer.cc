@@ -96,7 +96,7 @@ namespace gl {
          abort();
       }
 
-      renderThread.enqueue( [&] {
+      auto colorBufferId = renderThread.enqueue( [&] {
 
       glGenFramebuffers(1, &id);
       bind();
@@ -165,12 +165,12 @@ namespace gl {
          }
          glClearColor(0, 0, 0, 1);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-         colorBuffer = std::make_shared<texture_t>(textureBufferID);
+         return textureBufferID;
       } else {
-         colorBuffer = std::make_shared<texture_t>(colorBufferID);
+         return colorBufferID;
       }
       } );
-      renderThread.wait_until_nothing_in_flight();
+      colorBuffer = std::make_shared<texture_t>(colorBufferId.get());
    }
 
    texture_t_ptr framebuffer_t::getColorBufferID() {
