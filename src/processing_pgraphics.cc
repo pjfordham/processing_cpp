@@ -161,10 +161,10 @@ public:
       }
    }
 
-   void directDraw( gl::batch_t_ptr batch, const PMatrix &transform ) {
+   void directDraw( gl::batch_t_ptr batch, std::vector<glm::mat4> &transforms ) {
       flush();
       frame.render( localFrame );
-      gl::renderDirect( localFrame, batch, transform.glm_data(), scene, getBestShader(*batch).getShader() );
+      gl::renderDirect( localFrame, batch, transforms, scene, getBestShader(*batch).getShader() );
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -780,8 +780,10 @@ public:
       }
       if (local) {
          flush();
+         std::vector<glm::mat4> m;
          pshape.setTransforms( t, style );
-         directDraw( local, PMatrix() );
+         pshape.accumulateTransforms(t.glm_data(),m );
+         directDraw( local, m );
       } else {
          pshape.flatten( batch, PMatrix(), false, style );
          pshape.setTransforms( t, style );

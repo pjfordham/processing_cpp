@@ -349,7 +349,9 @@ class PShape {
    PShape copy() const;
 
    void setTransforms(PMatrix t,  const flat_style_t &parent_style);
-   
+
+   void accumulateTransforms(const glm::mat4 &t, std::vector<glm::mat4> &m);
+
    void setVertex(int i, PVector v);
 
    void setVertex(int i, float x, float y , float z = 0);

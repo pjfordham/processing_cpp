@@ -1,4 +1,6 @@
 #include <utility>
+#include <ranges>
+#include <concepts>
 
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
@@ -282,9 +284,9 @@ namespace gl {
       return lights.size() != 0;
    }
 
-   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader ) {
+   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const std::vector<glm::mat4> &transforms, scene_t scene, const shader_t &shader ) {
       batch->reload(); // copy the VAO data in here since we know the ranges that have changed???
-      renderThread.enqueue( [&fb, &shader, batch, transform, scene] () mutable {
+      renderThread.enqueue( [&fb, &shader, batch, transforms, scene] () mutable {
          fb.bind();
          shader.bind();
          uniform_t uSampler = shader.get_uniform("texture");
@@ -295,7 +297,7 @@ namespace gl {
          shader.set_uniforms(); // Set extra uniforms stuff for shader
          scene.set(); // Setup scene attributes and uniforms
          batch->bind(); // Bind each VAO to the shader uniforms and attributes
-         batch->draw(); // Upload matrices and bind relevant textures to texture units, and issue draw call
+         batch->draw( transforms ); // Upload matrices and bind relevant textures to texture units, and issue draw call
       } );
       // So somehwere in here we need to make sure we copy the VAOs before we submit them to the
       // renderThread in case we update them before the renderThread runs. This can happen inside
@@ -540,6 +542,37 @@ namespace gl {
          }
 
          Mmatrix.set( draw->transforms );
+         Nmatrix.set(normals);
+
+         setupTextures( *draw );
+         draw->draw();
+      }
+   }
+
+   void batch_t::draw(const std::vector<glm::mat4> &transforms ) {
+      if (enable_debug) {
+         fmt::print("### GEOMETRY DUMP START ###\n");
+         int i = 0;
+         for (auto &vao : vaos) {
+            fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
+            vao->debugPrint();
+         }
+         fmt::print("\n### GEOMETRY DUMP END   ###\n");
+      }
+
+      std::size_t i = 0;
+      for (auto &draw: vaos ) {
+
+         std::vector<glm::mat3> normals;
+         auto size = draw->transforms.size();
+         std::span<const glm::mat4> local_transforms(transforms.data() + i, size);
+         for ( const auto &t : local_transforms ) {
+            normals.emplace_back(glm::transpose(glm::inverse(t)));
+         }
+
+         i += size;
+
+         Mmatrix.set( local_transforms );
          Nmatrix.set(normals);
 
          setupTextures( *draw );
@@ -802,9 +835,13 @@ namespace gl {
          glUniform4fv(id, value.size(), glm::value_ptr(value[0]) );
    }
 
-   void uniform_t::set(const std::vector<glm::mat4> &value) const {
-      if ( id != -1 )
-         glUniformMatrix4fv(id, value.size(), GL_FALSE, glm::value_ptr(value[0]) );
+   template <std::ranges::contiguous_range R>
+   requires std::same_as<std::ranges::range_value_t<R>, glm::mat4>
+   void uniform_t::set(const R &value) const {
+      if (id != -1 && !std::ranges::empty(value)) {
+         glUniformMatrix4fv(id, std::ranges::size(value), GL_FALSE,
+                            glm::value_ptr(*std::ranges::data(value)));
+      }
    }
 
    void uniform_t::set(const std::vector<glm::mat3> &value) const {

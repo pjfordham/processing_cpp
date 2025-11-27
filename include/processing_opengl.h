@@ -234,6 +234,7 @@ namespace gl {
       void bind();
       void setupTextures(VAO_t&);
       void draw();
+      void draw( const std::vector<glm::mat4> &transforms);
       void clear();
       bool usesCircles() const;
       bool usesTextures() const;
@@ -263,7 +264,7 @@ namespace gl {
       void render(framebuffer_t &fb);
    };
 
-   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const glm::mat4 &transform, scene_t scene, const shader_t &shader );
+   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const std::vector<glm::mat4> &transforms, scene_t scene, const shader_t &shader );
 
 } // namespace gl
 

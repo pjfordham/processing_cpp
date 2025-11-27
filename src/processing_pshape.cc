@@ -301,6 +301,17 @@ public:
       scale(x,x,x);
    }
 
+   void accumulateTransforms(const glm::mat4 &t, std::vector<glm::mat4> &m) {
+      auto local_transform = t * shape_matrix.glm_data();
+      if ( kind == GROUP ) {
+         for (auto &&child : children) {
+            child.impl->accumulateTransforms(local_transform,m);
+         }
+      } else {
+         m.push_back(local_transform);
+      }
+   }
+
    void setTransforms(PMatrix t, const flat_style_t &parent_style) {
       auto local_style = style.resolve_style( parent_style );
       auto local_transform = t * shape_matrix;
@@ -2581,6 +2592,10 @@ PShape PShape::copy() const {
 
 void PShape::setTransforms(PMatrix t, const flat_style_t &parent_style) {
    return impl->setTransforms(t, parent_style);
+}
+
+void PShape::accumulateTransforms(const glm::mat4 &t, std::vector<glm::mat4> &m) {
+   return impl->accumulateTransforms(t, m);
 }
 
 PShape loadShape( std::string_view filename ) {
