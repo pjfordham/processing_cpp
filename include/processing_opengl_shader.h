@@ -46,7 +46,11 @@ namespace gl {
       void set(const std::vector<glm::vec2> &value) const;
       void set(const std::vector<glm::vec3> &value) const;
       void set(const std::vector<glm::vec4> &value) const;
-      void set(const std::vector<glm::mat4> &value) const;
+
+      template <std::ranges::contiguous_range R>
+      requires std::same_as<std::ranges::range_value_t<R>, glm::mat4>
+      void set(const R &value) const;
+
       void set(const std::vector<glm::mat3> &value) const;
       void set(const glm::mat4 &value) const;
    };
