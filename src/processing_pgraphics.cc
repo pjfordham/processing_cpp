@@ -52,6 +52,8 @@ public:
    gl::frame_t frame;
    gl::scene_t scene;
    gl::batch_t_ptr batch;
+   std::vector<glm::mat4> batch_transforms;
+   std::vector<gl::texture_t_ptr> batch_textures;
 
    int ellipse_mode = CENTER;
    int rect_mode = CORNER;
@@ -156,15 +158,17 @@ public:
 
    void flush() {
       if ( batch->size() > 0 ) {
-         frame.add( batch, scene, getBestShader(*batch).getShader() );
+         frame.add( batch, std::move(batch_transforms), std::move(batch_textures), scene, getBestShader(*batch).getShader() );
+         batch_transforms.clear();
+         batch_textures.clear();
          batch = std::make_shared<gl::batch_t>();
       }
    }
 
-   void directDraw( gl::batch_t_ptr batch, std::vector<glm::mat4> &transforms ) {
+   void directDraw( gl::batch_t_ptr batch, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures ) {
       flush();
       frame.render( localFrame );
-      gl::renderDirect( localFrame, batch, transforms, scene, getBestShader(*batch).getShader() );
+      gl::renderDirect( localFrame, batch, std::move(transforms), std::move(textures), scene, getBestShader(*batch).getShader() );
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -781,12 +785,14 @@ public:
       if (local) {
          flush();
          std::vector<glm::mat4> m;
-         pshape.setTransforms( t, style );
-         pshape.accumulateTransforms(t.glm_data(),m );
-         directDraw( local, m );
+         std::vector<gl::texture_t_ptr> textures;
+         m.reserve(65536);
+         textures.reserve(65536);
+         pshape.accumulateTransformsAndTextures(t.glm_data(), style, m, textures);
+         directDraw( local, std::move(m), std::move(textures) );
       } else {
-         pshape.flatten( batch, PMatrix(), false, style );
-         pshape.setTransforms( t, style );
+         pshape.flatten( batch, style );
+         pshape.accumulateTransformsAndTextures(t.glm_data(), style, batch_transforms, batch_textures);
          pshape.clearSubBatches();
       }
       pixels_current = false;

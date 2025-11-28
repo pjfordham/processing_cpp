@@ -301,37 +301,26 @@ public:
       scale(x,x,x);
    }
 
-   void accumulateTransforms(const glm::mat4 &t, std::vector<glm::mat4> &m) {
-      auto local_transform = t * shape_matrix.glm_data();
-      if ( kind == GROUP ) {
-         for (auto &&child : children) {
-            child.impl->accumulateTransforms(local_transform,m);
-         }
-      } else {
-         m.push_back(local_transform);
-      }
-   }
-
-   void setTransforms(PMatrix t, const flat_style_t &parent_style) {
+   void accumulateTransformsAndTextures(const glm::mat4 &parent_transform, const flat_style_t &parent_style, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures) {
+      auto local_transform = parent_transform * shape_matrix.glm_data();
       auto local_style = style.resolve_style( parent_style );
-      auto local_transform = t * shape_matrix;
       if ( kind == GROUP ) {
          for (auto &&child : children) {
-            child.impl->setTransforms( local_transform, local_style );
+            child.impl->accumulateTransformsAndTextures(local_transform,local_style, transforms, textures);
          }
       } else {
          if (sub_batch_fill) {
-            sub_batch_fill->setTransform( local_transform.glm_data() );
             if ( local_style.texture_enabled ) {
-               sub_batch_fill->setTexture( local_style.texture_img.getTextureID() );
+               textures.push_back(local_style.texture_img.getTextureID());
             } else {
-               sub_batch_fill->setTexture( gl::texture_t::blank() );
+               textures.push_back(gl::texture_t::blank());
             }
+            transforms.push_back(local_transform);
          }
          if (sub_batch_stroke) {
-            sub_batch_stroke->setTransform( local_transform.glm_data() );
-            sub_batch_stroke->setTexture( gl::texture_t::blank() );
-        }
+            textures.push_back(gl::texture_t::blank());
+            transforms.push_back(local_transform);
+         }
       }
    }
 
@@ -944,7 +933,7 @@ public:
          clearSubBatches();
          cached_batch = std::make_shared<gl::batch_t>();
          cached_style = local_style;
-         flatten( cached_batch, PMatrix::Identity(), true, global_style );
+         flatten( cached_batch, global_style );
          cached_batch->load();
          return cached_batch;
       } else {
@@ -985,7 +974,7 @@ public:
       }
    }
 
-   void flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &parent_style)  {
+   void flatten(gl::batch_t_ptr batch, const flat_style_t &parent_style)  {
       DEBUG_METHOD();
 
       // Resolve accumulated style and transforms
@@ -996,10 +985,9 @@ public:
          for (auto &&child : children) {
             // For all child shapes pass down transform and style from this shape
             // and continue to flatten.
-            child.impl->flatten(batch, transform * child.getShapeMatrix(), flatten_transforms, local_style);
+            child.impl->flatten(batch, local_style);
          }
       } else {
-         auto currentTransform = transform;// * shape_matrix;
          bool circle = kind == POINTS || (local_style.texture_enabled && local_style.texture_img == PImage::circle());
          sub_batch_fill.emplace( *batch, ci, circle );
          auto &sb = sub_batch_fill.value();
@@ -1153,8 +1141,8 @@ public:
                break;
             }
          }
-         if ( fill && kind != POINTS) {
-
+         if ( fill && kind != POINTS && kind != LINES && !(kind == POLYGON && type != CLOSE)) {
+            // Need to make sure that anything that doesn't have a fill is dropped here
             // Generate indices, from vertex info, if this shape doesn't have it.
             if (!indices) {
                populateIndices(sb, contour);
@@ -1166,28 +1154,21 @@ public:
             }
 
             if (local_style.draw_normals) {
-               draw_normals(sb, batch, currentTransform.glm_data(), flatten_transforms);
+               draw_normals(sb, batch);
             }
          } else {
             sb.drop();
             sub_batch_fill.reset();
          }
          if (stroke) {
-            draw_stroke( batch, currentTransform.glm_data(), flatten_transforms, local_style.stroke_end_cap, contour, extras, idx );
+            draw_stroke( batch, local_style.stroke_end_cap, contour, extras, idx );
          }
       }
       dirty = false;
-      // if (!flatten_transforms) {
-      //    // If we're compile the base _shape from PGraphics then the batch will
-      //    // be destroyed every frame so don't save pointers to it. Probably
-      //    // should use smart pointer in view.
-      //    sub_batch_fill.reset();
-      //    sub_batch_stroke.reset();
-      // }
    }
 
-   void draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms);
-   void draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms, int strokeEndCap,
+   void draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch);
+   void draw_stroke( gl::batch_t_ptr batch, int strokeEndCap,
                      const std::vector<int> &contour, const std::vector<vInfoExtra> &extras, const std::vector<unsigned short> &idx);
 
    int getChildCount() const {
@@ -1745,7 +1726,7 @@ void drawTriangleNormal(gl::batch_t::sub_batch_t &ssb, const gl::vertex_t &p0, c
    drawLine(ssb, pos, pos + length * n, length/10.0f,length/10.0f,GL_RED,GL_RED);
 }
 
-void PShapeImpl::draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms) {
+void PShapeImpl::draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch) {
    DEBUG_METHOD();
    gl::batch_t::sub_batch_t ssb( *batch, 4 * (sb.getIndexCount() / 3), false);
 
@@ -1775,7 +1756,7 @@ void PShapeImpl::draw_normals(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batc
    }
 }
 
-void PShapeImpl::draw_stroke( gl::batch_t_ptr batch, const glm::mat4 &currentTransform, bool flatten_transforms,
+void PShapeImpl::draw_stroke( gl::batch_t_ptr batch,
                               int strokeEndCap, const std::vector<int> &contour, const std::vector<vInfoExtra> &extras, const std::vector<unsigned short> &idx)  {
 
    DEBUG_METHOD();
@@ -2529,8 +2510,8 @@ void PShape::clearSubBatches() {
    return impl->clearSubBatches();
 }
 
-void PShape::flatten(gl::batch_t_ptr batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &style) {
-   return impl->flatten(batch, transform, flatten_transforms, style);
+void PShape::flatten(gl::batch_t_ptr batch, const flat_style_t &style) {
+   return impl->flatten(batch, style);
 }
 
 int PShape::getChildCount() const{
@@ -2590,12 +2571,8 @@ PShape PShape::copy() const {
    return { std::make_shared<PShapeImpl>(*impl) };
 }
 
-void PShape::setTransforms(PMatrix t, const flat_style_t &parent_style) {
-   return impl->setTransforms(t, parent_style);
-}
-
-void PShape::accumulateTransforms(const glm::mat4 &t, std::vector<glm::mat4> &m) {
-   return impl->accumulateTransforms(t, m);
+void PShape::accumulateTransformsAndTextures(const glm::mat4 &parent_transform, const flat_style_t &parent_style, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures) {
+   return impl->accumulateTransformsAndTextures(parent_transform, parent_style, transforms, textures);
 }
 
 PShape loadShape( std::string_view filename ) {

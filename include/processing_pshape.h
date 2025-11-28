@@ -338,7 +338,7 @@ class PShape {
 
    void clearSubBatches();
    
-   void flatten(gl::batch_t_ptr parent_batch, const PMatrix& transform, bool flatten_transforms, const flat_style_t &global_shape) ;
+   void flatten(gl::batch_t_ptr parent_batch, const flat_style_t &global_shape) ;
 
    int getChildCount() const;
 
@@ -348,9 +348,7 @@ class PShape {
 
    PShape copy() const;
 
-   void setTransforms(PMatrix t,  const flat_style_t &parent_style);
-
-   void accumulateTransforms(const glm::mat4 &t, std::vector<glm::mat4> &m);
+   void accumulateTransformsAndTextures(const glm::mat4 &parent_transform, const flat_style_t &parent_style, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures);
 
    void setVertex(int i, PVector v);
 

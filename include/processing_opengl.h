@@ -234,7 +234,7 @@ namespace gl {
       void bind();
       void setupTextures(VAO_t&);
       void draw();
-      void draw( const std::vector<glm::mat4> &transforms);
+      void draw( const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures);
       void clear();
       bool usesCircles() const;
       bool usesTextures() const;
@@ -250,6 +250,8 @@ namespace gl {
    class frame_t {
       struct geometry_t {
          batch_t_ptr batch;
+         std::vector<glm::mat4> transforms;
+         std::vector<gl::texture_t_ptr> textures;
          scene_t scene;
          const shader_t &shader;
       };
@@ -259,12 +261,12 @@ namespace gl {
 
    public:
       void background(color_t b);
-      void add(batch_t_ptr b, scene_t sc, const shader_t &sh);
+      void add(batch_t_ptr b, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t sc, const shader_t &sh);
       void clear();
       void render(framebuffer_t &fb);
    };
 
-   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, const std::vector<glm::mat4> &transforms, scene_t scene, const shader_t &shader );
+   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t scene, const shader_t &shader );
 
 } // namespace gl
 
