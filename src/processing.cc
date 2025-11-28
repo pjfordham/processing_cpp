@@ -7,6 +7,7 @@
 #include "processing_profile.h"
 #include "processing_task_queue.h"
 #include "processing_psurface.h"
+#include "processing_opengl_texture.h"
 
 int setFrameRate = 60;
 int frameRateb = 0;
@@ -70,6 +71,9 @@ int main(int argc, char* argv[]) {
    PShader::init();
    PImage::init();
    PShape::init();
+
+   gl::texture_t::blank();
+   gl::texture_t::circle();
 
    textFont( createFont("DejaVuSans.ttf",12));
 
