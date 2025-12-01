@@ -350,7 +350,7 @@ class PShape {
 
    PShape copy() const;
 
-   void accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures);
+   void accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles);
 
    void setVertex(int i, PVector v);
 

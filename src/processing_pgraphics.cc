@@ -54,7 +54,8 @@ public:
    gl::batch_t_ptr batch;
    std::vector<PMatrix> batch_transforms;
    std::vector<gl::texture_t_ptr> batch_textures;
-
+   bool batch_uses_textures= false, batch_uses_circles = false;
+   
    int ellipse_mode = CENTER;
    int rect_mode = CORNER;
    int image_mode = CORNER;
@@ -149,11 +150,11 @@ public:
       frame = {};
    }
 
-   PShader &getBestShader(gl::batch_t &batch) {
+   PShader &getBestShader(gl::batch_t &batch, bool uses_textures, bool uses_circles ) {
       // If we're using the default shader and there are no lights, no textures and no circles
       // then use the flat shader for performance.
       return (currentShader == defaultShader && !scene.anyLights() &&
-              !batch.usesTextures() && !batch.usesCircles()) ? flatShader : currentShader;
+              !uses_textures && !uses_circles) ? flatShader : currentShader;
    }
 
    void flush() {
@@ -163,14 +164,16 @@ public:
          for (const auto &t : batch_transforms) {
             transforms.push_back(t.glm_data());
          }
-         frame.add( batch, std::move(transforms), std::move(batch_textures), scene, getBestShader(*batch).getShader() );
+         frame.add( batch, std::move(transforms), std::move(batch_textures), scene, getBestShader(*batch, batch_uses_textures, batch_uses_circles).getShader(), batch_uses_textures, batch_uses_circles );
          batch_transforms.clear();
          batch_textures.clear();
+         batch_uses_textures = false;
+         batch_uses_circles = false;
          batch = std::make_shared<gl::batch_t>();
       }
    }
 
-   void directDraw( gl::batch_t_ptr batch, std::vector<PMatrix> &&ptransforms, std::vector<gl::texture_t_ptr> &&textures ) {
+   void directDraw( gl::batch_t_ptr batch, std::vector<PMatrix> &&ptransforms, std::vector<gl::texture_t_ptr> &&textures, bool uses_textures, bool uses_circles ) {
       flush();
       frame.render( localFrame );
       std::vector<glm::mat4> transforms;
@@ -178,7 +181,7 @@ public:
       for (const auto &t : ptransforms) {
          transforms.push_back(t.glm_data());
       }
-      gl::renderDirect( localFrame, batch, std::move(transforms), std::move(textures), scene, getBestShader(*batch).getShader() );
+      gl::renderDirect( localFrame, batch, std::move(transforms), std::move(textures), scene, getBestShader(*batch, uses_textures, uses_circles).getShader(), uses_textures, uses_circles );
    }
 
    void drawPImageWithCPU( PImage img, int x, int y ) {
@@ -796,14 +799,15 @@ public:
          flush();
          std::vector<PMatrix> m;
          std::vector<gl::texture_t_ptr> textures;
+         bool uses_textures = false, uses_circles = false;
          m.reserve(65536);
          textures.reserve(65536);
-         pshape.accumulateTransformsAndTextures(t.glm_data(), style, m, textures);
-         directDraw( local, std::move(m), std::move(textures) );
+         pshape.accumulateTransformsAndTextures(t.glm_data(), style, m, textures, uses_textures, uses_circles);
+         directDraw( local, std::move(m), std::move(textures), uses_textures, uses_circles );
       } else {
          pshape.clearParentCache();
          pshape.flatten( batch, style );
-         pshape.accumulateTransformsAndTextures(t.glm_data(), style, batch_transforms, batch_textures);
+         pshape.accumulateTransformsAndTextures(t.glm_data(), style, batch_transforms, batch_textures, batch_uses_textures, batch_uses_circles);
          pshape.clearSubBatches();
       }
       pixels_current = false;

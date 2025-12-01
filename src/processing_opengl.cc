@@ -285,9 +285,9 @@ namespace gl {
       return lights.size() != 0;
    }
 
-   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t scene, const shader_t &shader ) {
+   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t scene, const shader_t &shader, bool uses_textures, bool uses_circles ) {
       batch->reload(); // copy the VAO data in here since we know the ranges that have changed???
-      renderThread.enqueue( [&fb, &shader, batch, transforms = std::move(transforms), textures = std::move(textures), scene] () mutable {
+      renderThread.enqueue( [&fb, &shader, batch, transforms = std::move(transforms), textures = std::move(textures), scene, uses_textures, uses_circles] () mutable {
          fb.bind();
          shader.bind();
          uniform_t uSampler = shader.get_uniform("texture");
@@ -298,7 +298,7 @@ namespace gl {
          shader.set_uniforms(); // Set extra uniforms stuff for shader
          scene.set(); // Setup scene attributes and uniforms
          batch->bind(); // Bind each VAO to the shader uniforms and attributes
-         batch->draw( transforms, textures ); // Upload matrices and bind relevant textures to texture units, and issue draw call
+         batch->draw( transforms, textures, uses_textures, uses_circles, scene.anyLights() ); // Upload matrices and bind relevant textures to texture units, and issue draw call
       } );
       // So somehwere in here we need to make sure we copy the VAOs before we submit them to the
       // renderThread in case we update them before the renderThread runs. This can happen inside
@@ -311,8 +311,8 @@ namespace gl {
       background_ = b;
    }
 
-   void frame_t::add(batch_t_ptr b, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t sc, const shader_t &sh) {
-      geometries.emplace_back(b, std::move(transforms), std::move(textures), sc, sh);
+   void frame_t::add(batch_t_ptr b, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t sc, const shader_t &sh, bool uses_textures, bool uses_circles) {
+      geometries.emplace_back(b, std::move(transforms), std::move(textures), sc, sh, uses_textures, uses_circles);
    }
 
    void frame_t::clear() {
@@ -344,7 +344,7 @@ namespace gl {
             g.scene.set();
             g.batch->bind();
             g.batch->_load();
-            g.batch->draw( g.transforms, g.textures );
+            g.batch->draw( g.transforms, g.textures, g.uses_textures, g.uses_circles, g.scene.anyLights() );
             g.batch->clear();
          }
       });
@@ -458,7 +458,6 @@ namespace gl {
 
       if (circle) {
          txID = -1;
-         batch.uses_circles = true;
       } else {
          batch.vaos.back()->textures++;
          txID = batch.vaos.back()->textures - 1;
@@ -502,7 +501,7 @@ namespace gl {
      abort();
    }
 
-   void batch_t::draw(const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures ) {
+   void batch_t::draw(const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures, bool uses_textures, bool uses_circles, bool uses_lights ) {
       if (enable_debug) {
          fmt::print("### GEOMETRY DUMP START ###\n");
        }
@@ -538,28 +537,29 @@ namespace gl {
          i += draw->transforms;
          j += draw->textures;
 
-         // Only do this if we need the normals
-         int k = 0;
-         for ( const auto &t : local_transforms ) {
-           normals.emplace_back(glm::transpose(glm::inverse(t)));
+         if (uses_lights) {
+            // Only do this if we need the normals
+            int k = 0;
+            for ( const auto &t : local_transforms ) {
+               normals.emplace_back(glm::transpose(glm::inverse(t)));
+            }
+            Nmatrix.set( normals );
          }
 
          Mmatrix.set( local_transforms );
-         Nmatrix.set( normals );
 
          if (uses_textures || uses_circles) {
-            // Figure a way to only do this if we need textures
-            k = 0;
-            for (const auto &img : local_textures) {
-               if (img != texture_t::circle()) {
-                  // Set this here so get_width and get_height don't mess up
-                  // previously bound textures.
-                  glActiveTexture(GL_TEXTURE0 + k);
-                  img->_bind();
-                  k++;
-               }
-            }
-         }
+            int k = 0;
+           for (const auto &img : local_textures) {
+              if (img != texture_t::circle()) {
+                 // Set this here so get_width and get_height don't mess up
+                 // previously bound textures.
+                 glActiveTexture(GL_TEXTURE0 + k);
+                 img->_bind();
+                 k++;
+              }
+           }
+         }         
          // setupTextures( *draw );
          draw->draw();
       }
@@ -592,14 +592,6 @@ namespace gl {
       renderThread.enqueue( [self = shared_from_this() ] {
          self->_load();
       } );
-   }
-
-   bool batch_t::usesCircles() const {
-      return uses_circles;
-   }
-
-   bool batch_t::usesTextures() const {
-      return uses_textures;
    }
 
    void batch_t::clear() {

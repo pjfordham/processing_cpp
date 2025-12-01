@@ -314,18 +314,22 @@ public:
       scale(x,x,x);
    }
 
-   void accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures) {
+   void accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles ) {
       auto local_transform = parent_transform * shape_matrix.glm_data();
       auto local_style = style.resolve_style( parent_style );
       if ( kind == GROUP ) {
          for (auto &&child : children) {
-            child.impl->accumulateTransformsAndTextures(local_transform,local_style, transforms, textures);
+            child.impl->accumulateTransformsAndTextures(local_transform,local_style, transforms, textures, uses_textures, uses_circles);
          }
       } else {
         if (sub_batch_fill) {
             if ( local_style.texture_enabled ) {
-               if (local_style.texture_img != PImage::circle())
-                  textures.push_back(local_style.texture_img.getTextureID());
+              if (local_style.texture_img != PImage::circle()) {
+                 uses_textures = true;
+                 textures.push_back(local_style.texture_img.getTextureID());
+              } else {
+                uses_circles = true;
+              }
             } else {
                textures.push_back(gl::texture_t::blank());
             }
@@ -2590,8 +2594,8 @@ PShape PShape::copy() const {
    return { std::make_shared<PShapeImpl>(*impl) };
 }
 
-void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures) {
-   return impl->accumulateTransformsAndTextures(parent_transform, parent_style, transforms, textures);
+void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles) {
+   return impl->accumulateTransformsAndTextures(parent_transform, parent_style, transforms, textures, uses_textures, uses_circles);
 }
 
 PShape loadShape( std::string_view filename ) {

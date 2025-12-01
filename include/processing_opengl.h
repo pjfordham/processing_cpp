@@ -234,10 +234,8 @@ namespace gl {
       void bind();
       void setupTextures(VAO_t&);
       void draw();
-      void draw( const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures);
+      void draw( const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures, bool uses_textures, bool uses_circles, bool uses_lights);
       void clear();
-      bool usesCircles() const;
-      bool usesTextures() const;
 
       void reserve(int count, bool circle);
       void set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID);
@@ -254,6 +252,7 @@ namespace gl {
          std::vector<gl::texture_t_ptr> textures;
          scene_t scene;
          const shader_t &shader;
+         bool uses_textures, uses_circles;
       };
       std::vector<geometry_t> geometries;
       color_t background_ = { 0.0F, 0.0F, 0.0F, 1.0F };
@@ -261,12 +260,12 @@ namespace gl {
 
    public:
       void background(color_t b);
-      void add(batch_t_ptr b, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t sc, const shader_t &sh);
+      void add(batch_t_ptr b, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t sc, const shader_t &sh, bool uses_textures, bool uses_circles);
       void clear();
       void render(framebuffer_t &fb);
    };
 
-   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t scene, const shader_t &shader );
+   void renderDirect( framebuffer_t &fb, batch_t_ptr batch, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t scene, const shader_t &shader, bool uses_textures, bool uses_circles );
 
 } // namespace gl
 
