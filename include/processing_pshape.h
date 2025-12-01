@@ -143,6 +143,8 @@ class PShape {
 
    void addChild( const PShape shape );
 
+   void clearParentCache();
+   
    PShape getChild( int i );
 
    PShape getChild( std::string_view i );
@@ -348,7 +350,7 @@ class PShape {
 
    PShape copy() const;
 
-   void accumulateTransformsAndTextures(const glm::mat4 &parent_transform, const flat_style_t &parent_style, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures);
+   void accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures);
 
    void setVertex(int i, PVector v);
 
