@@ -312,7 +312,7 @@ namespace gl {
    }
 
    void frame_t::add(batch_t_ptr b, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures, scene_t sc, const shader_t &sh) {
-      geometries.emplace_back( b, std::move(transforms), std::move(textures), sc, sh );
+      geometries.emplace_back(b, std::move(transforms), std::move(textures), sc, sh);
    }
 
    void frame_t::clear() {
@@ -488,9 +488,6 @@ namespace gl {
    }
 
    void VAO_t::debugPrint() const {
-      // for (const auto &m : transforms) {
-      //    fmt::print("{}\n",m);
-      // }
       fmt::print("Vertices: {}\n", vertices.size() );
       for ( int i = 0; i < vertices.size(); ++i ) {
          fmt::print("{:3}: {}\n", i, vertices[i]);
@@ -508,24 +505,41 @@ namespace gl {
    void batch_t::draw(const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures ) {
       if (enable_debug) {
          fmt::print("### GEOMETRY DUMP START ###\n");
-         int i = 0;
-         for (auto &vao : vaos) {
-            fmt::print("\n### GEOMETRY DUMP VAO {}   ###\n",i++);
-            vao->debugPrint();
-         }
-         fmt::print("\n### GEOMETRY DUMP END   ###\n");
-      }
+       }
 
       std::size_t i = 0;
       std::size_t j = 0;
+      int z = 0;
+      int total_transforms = 0;
+      int total_textures = 0;
+      for (auto &draw : vaos) {
+        total_transforms += draw->transforms;
+        total_textures += draw->textures;
+      }
+      if (total_transforms != transforms.size()) {
+        fmt::print(stderr, "Transform coutn doens't match {} {}\n",
+                   total_transforms, transforms.size());
+        abort();
+      }
+
       for (auto &draw: vaos ) {
 
          std::vector<glm::mat3> normals;
          std::span<const glm::mat4> local_transforms(transforms.data() + i, draw->transforms);
          std::span<const gl::texture_t_ptr> local_textures(textures.data() + j, draw->textures);
+
+         if (enable_debug) {
+           fmt::print(
+               "\n### GEOMETRY DUMP VAO {}, textures {}, transforms {}   ###\n",
+               z++, draw->textures, draw->transforms);
+            draw->debugPrint();
+         }
+
          i += draw->transforms;
          j += draw->textures;
 
+         // Only do this if we need the normals
+         int k = 0;
          for ( const auto &t : local_transforms ) {
            normals.emplace_back(glm::transpose(glm::inverse(t)));
          }
@@ -533,18 +547,24 @@ namespace gl {
          Mmatrix.set( local_transforms );
          Nmatrix.set( normals );
 
-         int k = 0;
-         for (const auto &img : local_textures) {
-            if (img != texture_t::circle()) {
-               // Set this here so get_width and get_height don't mess up
-               // previously bound textures.
-               glActiveTexture(GL_TEXTURE0 + k);
-               img->_bind();
-               k++;
+         if (uses_textures || uses_circles) {
+            // Figure a way to only do this if we need textures
+            k = 0;
+            for (const auto &img : local_textures) {
+               if (img != texture_t::circle()) {
+                  // Set this here so get_width and get_height don't mess up
+                  // previously bound textures.
+                  glActiveTexture(GL_TEXTURE0 + k);
+                  img->_bind();
+                  k++;
+               }
             }
          }
          // setupTextures( *draw );
          draw->draw();
+      }
+      if (enable_debug) {
+         fmt::print("\n### GEOMETRY DUMP END   ###\n");
       }
    }
 

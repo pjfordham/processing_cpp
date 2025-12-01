@@ -177,6 +177,19 @@ public:
       DEBUG_METHOD();
    }
 
+   void clearParentCache() {
+      DEBUG_METHOD();
+      if (parent.impl.get() == this)
+         abort();
+      if (parent.impl) {
+        parent.impl->clearParentCache();
+      } else {
+         cached_batch.reset();
+         sub_batch_fill.reset();
+         sub_batch_stroke.reset();
+      }
+   }
+
    void setParentDirty() {
       DEBUG_METHOD();
       if (parent.impl.get() == this)
@@ -301,7 +314,7 @@ public:
       scale(x,x,x);
    }
 
-   void accumulateTransformsAndTextures(const glm::mat4 &parent_transform, const flat_style_t &parent_style, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures) {
+   void accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures) {
       auto local_transform = parent_transform * shape_matrix.glm_data();
       auto local_style = style.resolve_style( parent_style );
       if ( kind == GROUP ) {
@@ -309,9 +322,10 @@ public:
             child.impl->accumulateTransformsAndTextures(local_transform,local_style, transforms, textures);
          }
       } else {
-         if (sub_batch_fill) {
+        if (sub_batch_fill) {
             if ( local_style.texture_enabled ) {
-               textures.push_back(local_style.texture_img.getTextureID());
+               if (local_style.texture_img != PImage::circle())
+                  textures.push_back(local_style.texture_img.getTextureID());
             } else {
                textures.push_back(gl::texture_t::blank());
             }
@@ -1141,7 +1155,8 @@ public:
                break;
             }
          }
-         if ( fill && kind != POINTS && kind != LINES && !(kind == POLYGON && type != CLOSE)) {
+//         bool open_polygon = kind == POLYGON && type == OPEN;
+         if ( fill && kind != POINTS && kind != LINES) {
             // Need to make sure that anything that doesn't have a fill is dropped here
             // Generate indices, from vertex info, if this shape doesn't have it.
             if (!indices) {
@@ -2079,6 +2094,10 @@ const PMatrix &PShape::getShapeMatrix() {
    return impl->getShapeMatrix();
 }
 
+void PShape::clearParentCache() {
+   impl->clearParentCache();
+}
+
 void PShape::addChild( const PShape shape ) {
    shape.impl->setParent( *this );
    return impl->addChild( shape );
@@ -2571,7 +2590,7 @@ PShape PShape::copy() const {
    return { std::make_shared<PShapeImpl>(*impl) };
 }
 
-void PShape::accumulateTransformsAndTextures(const glm::mat4 &parent_transform, const flat_style_t &parent_style, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures) {
+void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures) {
    return impl->accumulateTransformsAndTextures(parent_transform, parent_style, transforms, textures);
 }
 

@@ -52,7 +52,7 @@ public:
    gl::frame_t frame;
    gl::scene_t scene;
    gl::batch_t_ptr batch;
-   std::vector<glm::mat4> batch_transforms;
+   std::vector<PMatrix> batch_transforms;
    std::vector<gl::texture_t_ptr> batch_textures;
 
    int ellipse_mode = CENTER;
@@ -158,16 +158,26 @@ public:
 
    void flush() {
       if ( batch->size() > 0 ) {
-         frame.add( batch, std::move(batch_transforms), std::move(batch_textures), scene, getBestShader(*batch).getShader() );
+         std::vector<glm::mat4> transforms;
+         transforms.reserve(batch_transforms.size());
+         for (const auto &t : batch_transforms) {
+            transforms.push_back(t.glm_data());
+         }
+         frame.add( batch, std::move(transforms), std::move(batch_textures), scene, getBestShader(*batch).getShader() );
          batch_transforms.clear();
          batch_textures.clear();
          batch = std::make_shared<gl::batch_t>();
       }
    }
 
-   void directDraw( gl::batch_t_ptr batch, std::vector<glm::mat4> &&transforms, std::vector<gl::texture_t_ptr> &&textures ) {
+   void directDraw( gl::batch_t_ptr batch, std::vector<PMatrix> &&ptransforms, std::vector<gl::texture_t_ptr> &&textures ) {
       flush();
       frame.render( localFrame );
+      std::vector<glm::mat4> transforms;
+      transforms.reserve(ptransforms.size());
+      for (const auto &t : ptransforms) {
+         transforms.push_back(t.glm_data());
+      }
       gl::renderDirect( localFrame, batch, std::move(transforms), std::move(textures), scene, getBestShader(*batch).getShader() );
    }
 
@@ -784,13 +794,14 @@ public:
       }
       if (local) {
          flush();
-         std::vector<glm::mat4> m;
+         std::vector<PMatrix> m;
          std::vector<gl::texture_t_ptr> textures;
          m.reserve(65536);
          textures.reserve(65536);
          pshape.accumulateTransformsAndTextures(t.glm_data(), style, m, textures);
          directDraw( local, std::move(m), std::move(textures) );
       } else {
+         pshape.clearParentCache();
          pshape.flatten( batch, style );
          pshape.accumulateTransformsAndTextures(t.glm_data(), style, batch_transforms, batch_textures);
          pshape.clearSubBatches();
