@@ -12,13 +12,6 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    add_compile_options(-fno-omit-frame-pointer -fno-optimize-sibling-calls)
-    # Correct way to print:
-    get_directory_property(OPTS COMPILE_OPTIONS)
-    message(STATUS "Active COMPILE_OPTIONS = ${OPTS}")
-endif()
-
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
