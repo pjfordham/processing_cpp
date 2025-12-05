@@ -1,6 +1,7 @@
 #include <thread>
 #include <chrono>
 #include <fmt/core.h>
+#include <fmt/std.h>
 #include <filesystem>
 
 #include "processing.h"
@@ -15,6 +16,8 @@ int frameCount = 0;
 int xloop = -1;;
 bool test_mode = false;
 std::filesystem::path refDir;
+
+std::thread::id g_renderThreadId;
 
 PSurfaceMain surface;
 PSurface *psurface = &surface;
@@ -63,7 +66,8 @@ int main(int argc, char* argv[]) {
 
    surface.construct();
 
-   renderThread.enqueue( [&] {
+   renderThread.enqueue([&] {
+      g_renderThreadId = std::this_thread::get_id();
       surface.makeContextCurrent();
    } );
 

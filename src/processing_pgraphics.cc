@@ -802,12 +802,12 @@ public:
          bool uses_textures = false, uses_circles = false;
          m.reserve(65536);
          textures.reserve(65536);
-         pshape.accumulateTransformsAndTextures(t.glm_data(), style, m, textures, uses_textures, uses_circles);
+         pshape.accumulateTransformsAndTextures(t.glm_data(), m, textures, uses_textures, uses_circles);
          directDraw( local, std::move(m), std::move(textures), uses_textures, uses_circles );
       } else {
          pshape.clearParentCache();
          pshape.flatten( batch, style );
-         pshape.accumulateTransformsAndTextures(t.glm_data(), style, batch_transforms, batch_textures, batch_uses_textures, batch_uses_circles);
+         pshape.accumulateTransformsAndTextures(t.glm_data(), batch_transforms, batch_textures, batch_uses_textures, batch_uses_circles);
          pshape.clearSubBatches();
       }
       pixels_current = false;

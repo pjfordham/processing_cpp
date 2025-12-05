@@ -1,3 +1,5 @@
+#include <fmt/std.h>
+
 #include "processing_pshape.h"
 #include "processing.h"
 #include "processing_opengl_texture.h"
@@ -7,6 +9,7 @@
 #include <vector>
 #include <tesselator_cpp.h>
 #include <map>
+#include <thread>
 
 #include "processing_color.h"
 #include "processing_enum.h"
@@ -22,6 +25,8 @@
 
 #undef DEBUG_METHOD
 #define DEBUG_METHOD() do {} while (false)
+
+extern std::thread::id g_renderThreadId;
 
 const char *typeToTxt(int type);
 const char *kindToTxt(int kind);
@@ -204,7 +209,7 @@ public:
       setParentDirty();
    }
 
-   void addChild( const PShape &shape ) {
+   void addChild( PShape shape ) {
       DEBUG_METHOD();
       setDirty();
       children.push_back( shape );
@@ -314,26 +319,25 @@ public:
       scale(x,x,x);
    }
 
-   void accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles ) {
-      auto local_transform = parent_transform * shape_matrix.glm_data();
-      auto local_style = style.resolve_style( parent_style );
+   void accumulateTransformsAndTextures(const PMatrix &parent_transform, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles ) {
+      auto local_transform = parent_transform * shape_matrix;
       if ( kind == GROUP ) {
-         for (auto &&child : children) {
-            child.impl->accumulateTransformsAndTextures(local_transform,local_style, transforms, textures, uses_textures, uses_circles);
+         for (PShape &child : children) {
+            child.impl->accumulateTransformsAndTextures(local_transform, transforms, textures, uses_textures, uses_circles);
          }
       } else {
         if (sub_batch_fill) {
-            if ( local_style.texture_enabled ) {
-              if (local_style.texture_img != PImage::circle()) {
+           if ( style.texture_enabled && style.texture_enabled.value()) {
+              if (style.texture_img.value() != PImage::circle()) {
                  uses_textures = true;
-                 textures.push_back(local_style.texture_img.getTextureID());
+                 textures.push_back(style.texture_img.value().getTextureID());
               } else {
                 uses_circles = true;
               }
             } else {
                textures.push_back(gl::texture_t::blank());
             }
-            transforms.push_back(local_transform);
+           transforms.push_back(local_transform);
          }
          if (sub_batch_stroke) {
             textures.push_back(gl::texture_t::blank());
@@ -2090,9 +2094,16 @@ void PShape::close() {
    PShape_releaseAllVAOs();
 }
 
+// This function causes weirdness with constructors.
+// make this a helper rather than a constructor.
 PShape::PShape(std::shared_ptr<PShapeImpl> impl_) : impl(impl_) {
    shapeHandles().push_back(impl_);
 }
+
+PShape::PShape(const PShape&) = default;
+PShape::PShape(PShape&&) = default;
+PShape& PShape::operator=(const PShape&) = default;
+PShape& PShape::operator=(PShape&&) noexcept = default;
 
 const PMatrix &PShape::getShapeMatrix() {
    return impl->getShapeMatrix();
@@ -2594,8 +2605,8 @@ PShape PShape::copy() const {
    return { std::make_shared<PShapeImpl>(*impl) };
 }
 
-void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, const flat_style_t &parent_style, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles) {
-   return impl->accumulateTransformsAndTextures(parent_transform, parent_style, transforms, textures, uses_textures, uses_circles);
+void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles) {
+   return impl->accumulateTransformsAndTextures(parent_transform, transforms, textures, uses_textures, uses_circles);
 }
 
 PShape loadShape( std::string_view filename ) {
