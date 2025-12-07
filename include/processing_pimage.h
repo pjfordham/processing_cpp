@@ -63,7 +63,7 @@ public:
 
    PImage() {}
 
-   static PImage circle();
+   static PImage &circle();
 
    PImage( std::shared_ptr<PImageImpl> impl_ );
 

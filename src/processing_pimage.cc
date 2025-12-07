@@ -370,7 +370,7 @@ void PImage::close() {
    curl_global_cleanup();
 }
 
-PImage PImage::circle() {
+PImage &PImage::circle() {
    static PImage a = createImageFromTexture( gl::texture_t::circle() );
    return a;
 }

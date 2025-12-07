@@ -31,6 +31,7 @@ namespace gl {
    public:
       friend struct fmt::formatter<VAO_t>;
 
+      bool attributes_bound = false;
       std::vector<vertex_t> vertices;
       std::vector<unsigned short> indices;
       int textures = 0;
@@ -290,13 +291,18 @@ namespace gl {
       renderThread.enqueue( [&fb, &shader, batch, transforms = std::move(transforms), textures = std::move(textures), scene, uses_textures, uses_circles] () mutable {
          fb.bind();
          shader.bind();
-         uniform_t uSampler = shader.get_uniform("texture");
-         uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
+         if (uses_textures || uses_circles) {
+            uniform_t uSampler = shader.get_uniform("texture");
+            uSampler.set(std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+                  12, 13, 14, 15});
+         }
 
+         // could do a bit of optimization here for antLights?
          scene.setup( shader ); // Get attribute data from shader and store in scene
-         batch->setup( shader ); // Get attribute data from shader and store in batch
          shader.set_uniforms(); // Set extra uniforms stuff for shader
          scene.set(); // Setup scene attributes and uniforms
+
+         batch->setup( shader ); // Get attribute data from shader and store in batch
          batch->bind(); // Bind each VAO to the shader uniforms and attributes
          batch->draw( transforms, textures, uses_textures, uses_circles, scene.anyLights() ); // Upload matrices and bind relevant textures to texture units, and issue draw call
       } );
@@ -640,31 +646,33 @@ namespace gl {
 
    void VAO_t::bind() {
       DEBUG_METHOD();
-      if (!vao)
+      if (!vao) {
          glGenVertexArrays(1, &vao);
-      glBindVertexArray(vao);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
-      glBindBuffer(GL_ARRAY_BUFFER, vertexId);
+         glBindVertexArray(vao);
+         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
+         glBindBuffer(GL_ARRAY_BUFFER, vertexId);
+      }
    }
 
    void VAO_t::bind( attribute_t Position, attribute_t Normal, attribute_t Color,
                      attribute_t Coord,  attribute_t TUnit, attribute_t MIndex,
                      attribute_t Ambient,  attribute_t Specular, attribute_t Emissive, attribute_t Shininess) {
       DEBUG_METHOD();
-
-      bind();
-      Position.bind_vec3( sizeof(vertex_t), (void*)offsetof(vertex_t,position) );
-      Normal.bind_vec3( sizeof(vertex_t),  (void*)offsetof(vertex_t,normal));
-      Coord.bind_vec2( sizeof(vertex_t), (void*)offsetof(vertex_t,coord));
-      Color.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,fill));
-      TUnit.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,tunit));
-      MIndex.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,mindex));
-      Ambient.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,ambient) );
-      Specular.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,specular) );
-      Emissive.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t, emissive) );
-      Shininess.bind_float( sizeof(vertex_t), (void*)offsetof(vertex_t, shininess) );
-
-      glBindVertexArray(0);
+      if (!attributes_bound) {
+         bind();
+         Position.bind_vec3( sizeof(vertex_t), (void*)offsetof(vertex_t,position) );
+         Normal.bind_vec3( sizeof(vertex_t),  (void*)offsetof(vertex_t,normal));
+         Coord.bind_vec2( sizeof(vertex_t), (void*)offsetof(vertex_t,coord));
+         Color.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,fill));
+         TUnit.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,tunit));
+         MIndex.bind_int( sizeof(vertex_t), (void*)offsetof(vertex_t,mindex));
+         Ambient.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,ambient) );
+         Specular.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t,specular) );
+         Emissive.bind_vec4( sizeof(vertex_t), (void*)offsetof(vertex_t, emissive) );
+         Shininess.bind_float(sizeof(vertex_t), (void *)offsetof(vertex_t, shininess));
+         attributes_bound = true;
+         glBindVertexArray(0);
+      }
    }
 
    template <typename T>
