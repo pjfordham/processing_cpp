@@ -224,7 +224,6 @@ namespace gl {
       void reload();
       void reload(const sub_batch_t &s);
       void bind();
-      void setupTextures(VAO_t&);
       void draw( const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures, bool uses_textures, bool uses_circles, bool uses_lights);
       void clear();
 
