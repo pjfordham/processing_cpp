@@ -114,7 +114,7 @@ struct fmt::formatter<command_t> {
 class PShape {
    friend PShapeImpl;
    std::shared_ptr<PShapeImpl> impl;
-   PShape( std::shared_ptr<PShapeImpl> impl_ );
+   PShape( std::shared_ptr<PShapeImpl> impl_ , bool );
    friend PShape mkShape();
  public:
    static void init();

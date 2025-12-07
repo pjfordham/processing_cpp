@@ -218,7 +218,7 @@ public:
    void addChild( const PShapeImpl &shape ) {
       DEBUG_METHOD();
       setDirty();
-      children.push_back( std::make_shared<PShapeImpl>(shape) );
+      children.push_back( PShape{std::make_shared<PShapeImpl>(shape), false} );
    }
 
    void setParent(PShape p) {
@@ -2075,14 +2075,39 @@ void PShape::optimize() {
    }
 }
 
+// void PShape::gc() {
+//     static std::size_t lastSize = 0;
+//     auto &handles = shapeHandles();
+
+//     if (handles.size() > lastSize + 200) {
+//         fmt::print("Running GC {} {}\n", handles.size(), lastSize);
+
+//         std::size_t i = 0;
+//         while (i < handles.size()) {
+//             if (handles[i].expired()) {
+//                 // Swap with the last element and pop back
+//                 handles[i] = handles.back();
+//                 handles.pop_back();
+//                 // Don't increment i, need to check the new element at index i
+//             } else {
+//                 ++i;
+//             }
+//         }
+
+//         lastSize = handles.size();
+//     }
+// }
+
 void PShape::gc() {
    static std::size_t lastSize = 0;
    auto &oldHandles = shapeHandles();
    if (oldHandles.size() > lastSize + 200 ) {
+      fmt::print("Running GC {} {}\n", oldHandles.size(), lastSize);
       std::vector<std::weak_ptr<PShapeImpl>> newHandles;
+      newHandles.reserve( lastSize );
       for (const auto &i : oldHandles) {
-         if (auto p = i.lock()) {
-            newHandles.push_back(p);
+         if (!i.expired()) {
+            newHandles.push_back(i);
          }
       }
       lastSize = newHandles.size();
@@ -2096,7 +2121,7 @@ void PShape::close() {
 
 // This function causes weirdness with constructors.
 // make this a helper rather than a constructor.
-PShape::PShape(std::shared_ptr<PShapeImpl> impl_) : impl(impl_) {
+PShape::PShape(std::shared_ptr<PShapeImpl> impl_, bool flag) : impl(impl_) {
    shapeHandles().push_back(impl_);
 }
 
@@ -2199,7 +2224,7 @@ void PShape::beginShape(int kind_){
 }
 
 PShape mkShape() {
-   return {std::make_shared<PShapeImpl>()};
+   return {std::make_shared<PShapeImpl>(), false};
 }
 
 void PShape::beginContour(){
@@ -2602,7 +2627,7 @@ void PShape::attribPosition(std::string_view name, float x, float y, float z, fl
 }
 
 PShape PShape::copy() const {
-   return { std::make_shared<PShapeImpl>(*impl) };
+   return { std::make_shared<PShapeImpl>(*impl), false };
 }
 
 void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles) {
