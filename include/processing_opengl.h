@@ -147,14 +147,6 @@ namespace gl {
             batch.reload(*this);
          }
 
-         void setTransform( const glm::mat4 &transform ) {
-            batch.set_transform( transform, vao, trID );
-         }
-
-         void setTexture( texture_t_ptr texture ) {
-            batch.set_texture( texture, vao, txID );
-         }
-
          int getVAO() const {
             return vao;
          }
@@ -233,7 +225,6 @@ namespace gl {
       void reload(const sub_batch_t &s);
       void bind();
       void setupTextures(VAO_t&);
-      void draw();
       void draw( const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures, bool uses_textures, bool uses_circles, bool uses_lights);
       void clear();
 

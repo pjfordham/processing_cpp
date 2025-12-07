@@ -289,10 +289,6 @@ void PShaderImpl::bind() {
 void PShaderImpl::set_uniforms() {
    DEBUG_METHOD();
    for (auto& [id, value] : uniformsSampler) {
-      // if (value.isDirty()) {
-      //    value.updatePixels();
-      // }
-//      auto textureID = value.getTextureID();
       shader.set(id.c_str(), value);
    }
    shader.set_uniforms();

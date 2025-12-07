@@ -431,14 +431,6 @@ namespace gl {
       }
    }
 
-   void batch_t::set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID) {
-     abort();
-   }
-
-   void batch_t::set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID ) {
-     abort();
-   }
-
    void batch_t::sub_batch_t::drop() {
       (*_indices).erase( (*_indices).end() - index_count, (*_indices).end());
       (*_vertices).erase( (*_vertices).end() - vertex_count, (*_vertices).end());
@@ -496,10 +488,6 @@ namespace gl {
       }
    }
 
-   void batch_t::draw() {
-     abort();
-   }
-
    void batch_t::draw(const std::vector<glm::mat4> &transforms, const std::vector<gl::texture_t_ptr> &textures, bool uses_textures, bool uses_circles, bool uses_lights ) {
       if (enable_debug) {
          fmt::print("### GEOMETRY DUMP START ###\n");
@@ -510,35 +498,31 @@ namespace gl {
       int z = 0;
       int total_transforms = 0;
       int total_textures = 0;
-      for (auto &draw : vaos) {
-        total_transforms += draw->transforms;
-        total_textures += draw->textures;
+      for (auto &vao : vaos) {
+         total_transforms += vao->transforms;
+         total_textures += vao->textures;
       }
       if (total_transforms != transforms.size()) {
-        fmt::print(stderr, "Transform count doens't match {} {}\n",
-                   total_transforms, transforms.size());
-        abort();
+         fmt::print(stderr, "Transform count doens't match {} {}\n",
+                    total_transforms, transforms.size());
+         abort();
       }
 
-      for (auto &draw: vaos ) {
-
-         std::vector<glm::mat3> normals;
-         std::span<const glm::mat4> local_transforms(transforms.data() + i, draw->transforms);
-         std::span<const gl::texture_t_ptr> local_textures(textures.data() + j, draw->textures);
+      for (auto &vao: vaos ) {
 
          if (enable_debug) {
-           fmt::print(
-               "\n### GEOMETRY DUMP VAO {}, textures {}, transforms {}   ###\n",
-               z++, draw->textures, draw->transforms);
-            draw->debugPrint();
+            fmt::print("\n### GEOMETRY DUMP VAO {} ###\n", z++);
+            vao->debugPrint();
          }
 
-         i += draw->transforms;
-         j += draw->textures;
+         std::span<const glm::mat4> local_transforms(transforms.data() + i, vao->transforms);
+         std::span<const gl::texture_t_ptr> local_textures(textures.data() + j, vao->textures);
+         i += vao->transforms;
+         j += vao->textures;
 
          if (uses_lights) {
-            // Only do this if we need the normals
-            int k = 0;
+            std::vector<glm::mat3> normals;
+            normals.reserve(local_transforms.size());
             for ( const auto &t : local_transforms ) {
                normals.emplace_back(glm::transpose(glm::inverse(t)));
             }
@@ -549,18 +533,14 @@ namespace gl {
 
          if (uses_textures || uses_circles) {
             int k = 0;
-           for (const auto &img : local_textures) {
-              if (img != texture_t::circle()) {
-                 // Set this here so get_width and get_height don't mess up
-                 // previously bound textures.
-                 glActiveTexture(GL_TEXTURE0 + k);
-                 img->_bind();
-                 k++;
-              }
-           }
-         }         
-         // setupTextures( *draw );
-         draw->draw();
+            for (const auto &img : local_textures) {
+               if (img != texture_t::circle()) {
+                  glActiveTexture(GL_TEXTURE0 + k++);
+                  img->_bind();
+               }
+            }
+         }
+         vao->draw();
       }
       if (enable_debug) {
          fmt::print("\n### GEOMETRY DUMP END   ###\n");

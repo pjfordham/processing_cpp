@@ -870,12 +870,7 @@ public:
 
    void setTexture( PImage img ) {
       DEBUG_METHOD();
-      if (sub_batch_fill) {
-         sub_batch_fill->setTexture( img.getTextureID() );
-      } else {
-         texture( img );
-         setDirty(); // ??
-      }
+      texture( img );
    }
 
    void setFill(bool z) {
