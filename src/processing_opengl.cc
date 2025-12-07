@@ -291,12 +291,6 @@ namespace gl {
       renderThread.enqueue( [&fb, &shader, batch, transforms = std::move(transforms), textures = std::move(textures), scene, uses_textures, uses_circles] () mutable {
          fb.bind();
          shader.bind();
-         if (uses_textures || uses_circles) {
-            uniform_t uSampler = shader.get_uniform("texture");
-            uSampler.set(std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-                  12, 13, 14, 15});
-         }
-
          // could do a bit of optimization here for antLights?
          scene.setup( shader ); // Get attribute data from shader and store in scene
          shader.set_uniforms(); // Set extra uniforms stuff for shader
