@@ -319,7 +319,7 @@ public:
       scale(x,x,x);
    }
 
-   void accumulateTransformsAndTextures(const PMatrix &parent_transform, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles ) {
+   void accumulateTransformsAndTextures(const PMatrix &parent_transform, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles ) {
       auto local_transform = parent_transform * shape_matrix;
       if ( kind == GROUP ) {
          for (PShape &child : children) {
@@ -337,11 +337,11 @@ public:
             } else {
                textures.push_back(gl::texture_t::blank());
             }
-           transforms.push_back(local_transform);
+           transforms.push_back(local_transform.glm_data());
          }
          if (sub_batch_stroke) {
             textures.push_back(gl::texture_t::blank());
-            transforms.push_back(local_transform);
+            transforms.push_back(local_transform.glm_data());
          }
       }
    }
@@ -2630,7 +2630,7 @@ PShape PShape::copy() const {
    return { std::make_shared<PShapeImpl>(*impl), false };
 }
 
-void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, std::vector<PMatrix> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles) {
+void PShape::accumulateTransformsAndTextures(const PMatrix &parent_transform, std::vector<glm::mat4> &transforms, std::vector<gl::texture_t_ptr> &textures, bool &uses_textures, bool &uses_circles) {
    return impl->accumulateTransformsAndTextures(parent_transform, transforms, textures, uses_textures, uses_circles);
 }
 
