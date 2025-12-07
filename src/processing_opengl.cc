@@ -290,10 +290,12 @@ namespace gl {
       batch->reload(); // copy the VAO data in here since we know the ranges that have changed???
       renderThread.enqueue( [&fb, &shader, batch, transforms = std::move(transforms), textures = std::move(textures), scene, uses_textures, uses_circles] () mutable {
          fb.bind();
+
          shader.bind();
-         // could do a bit of optimization here for antLights?
-         scene.setup( shader ); // Get attribute data from shader and store in scene
          shader.set_uniforms(); // Set extra uniforms stuff for shader
+
+         // Optimize for no lights, fast shader, etc.
+         scene.setup( shader ); // Get attribute data from shader and store in scene
          scene.set(); // Setup scene attributes and uniforms
 
          batch->setup( shader ); // Get attribute data from shader and store in batch
@@ -333,9 +335,6 @@ namespace gl {
          for (auto g : geo) {
             // Add flat shader optimization
             g.shader.bind();
-
-            uniform_t uSampler = g.shader.get_uniform("texture");
-            uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
             g.scene.setup( g.shader );
             g.batch->setup( g.shader );
@@ -516,7 +515,7 @@ namespace gl {
         total_textures += draw->textures;
       }
       if (total_transforms != transforms.size()) {
-        fmt::print(stderr, "Transform coutn doens't match {} {}\n",
+        fmt::print(stderr, "Transform count doens't match {} {}\n",
                    total_transforms, transforms.size());
         abort();
       }
