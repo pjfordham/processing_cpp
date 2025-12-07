@@ -39,11 +39,11 @@ namespace gl {
 
       VAO_t() noexcept;
 
-      VAO_t(const VAO_t& x) noexcept;
+      VAO_t(const VAO_t& x) noexcept = delete;
 
       VAO_t(VAO_t&& x) noexcept;
 
-      VAO_t& operator=(const VAO_t&) = delete;
+      VAO_t& operator=(const VAO_t&) noexcept = delete;
 
       VAO_t& operator=(VAO_t&& other) noexcept;
 
@@ -51,8 +51,7 @@ namespace gl {
       void bind( attribute_t Position, attribute_t Normal, attribute_t Color,
                  attribute_t Coord,    attribute_t TUnit,  attribute_t MIndex,
                  attribute_t Ambient,  attribute_t Specular, attribute_t Emissive, attribute_t Shininess);
-      int hasTexture(texture_t_ptr texture);
-      void loadBuffers() const;
+      void load() const;
       void draw() const;
       void debugPrint() const;
       ~VAO_t();
@@ -125,7 +124,7 @@ namespace gl {
       }
    }
 
-   scene_t::scene_t() {}
+   scene_t::scene_t() = default;
 
    void scene_t::setup( const shader_t &shader) {
       LightCount = shader.get_uniform("lightCount");
@@ -283,6 +282,7 @@ namespace gl {
    }
 
    bool scene_t::anyLights() const {
+      // This might be wrong for flatLight?
       return lights.size() != 0;
    }
 
@@ -352,9 +352,9 @@ namespace gl {
       c = false;
    }
 
-   batch_t::batch_t() noexcept {}
+   batch_t::batch_t() noexcept = default;
 
-   batch_t::~batch_t() {}
+   batch_t::~batch_t() = default;
 
    batch_t::batch_t(batch_t&& x) noexcept = default;
 
@@ -374,10 +374,6 @@ namespace gl {
       Specular = shader.get_attribute("specular");
       Emissive = shader.get_attribute("emissive");
       Shininess = shader.get_attribute("shininess");
-   }
-
-   void batch_t::setupTextures(VAO_t &draw) {
-     abort();
    }
 
    void batch_t::reload() {
@@ -552,15 +548,15 @@ namespace gl {
    }
 
    void batch_t::bind() {
-      for (auto &draw: vaos ) {
-         draw->bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
+      for (auto &vao: vaos ) {
+         vao->bind( Position, Normal, Color, Coord, TUnit, MIndex, Ambient, Specular, Emissive, Shininess );
       }
    }
 
    void batch_t::_load() {
-         for (auto &draw: vaos ) {
-            draw->loadBuffers();
-         }
+      for (auto &vao: vaos ) {
+         vao->load();
+      }
    }
 
    void batch_t::reload(const sub_batch_t &s) {
@@ -590,14 +586,6 @@ namespace gl {
          glGenBuffers(1, &indexId);
          glGenBuffers(1, &vertexId);
       } );
-   }
-
-   VAO_t::VAO_t(const VAO_t &that) noexcept {
-      DEBUG_METHOD();
-      // Needs to be here for code to compile but should never actually happen becuase only
-      // compiled shapes have VAOs and we never copy them.
-      fmt::print(stderr,"Error tried to copy construct a VAO. This should never happen.");
-      abort();
    }
 
    VAO_t::VAO_t(VAO_t&& x) noexcept : VAO_t() {
@@ -654,7 +642,7 @@ namespace gl {
       glBufferData(target, data.size() * sizeof(T), data.data(), usage);
    }
 
-   void VAO_t::loadBuffers() const {
+   void VAO_t::load() const {
       DEBUG_METHOD();
       loadBufferData(GL_ARRAY_BUFFER, vertexId, vertices, GL_STREAM_DRAW);
       loadBufferData(GL_ELEMENT_ARRAY_BUFFER, indexId, indices, GL_STREAM_DRAW);
@@ -685,10 +673,6 @@ namespace gl {
          if (vertexId)
             glDeleteBuffers(1, &vertexId);
       } );
-   }
-
-   int VAO_t::hasTexture(texture_t_ptr texture) {
-     abort();
    }
 
    attribute_t::attribute_t(GLuint shaderID, const std::string &attribute) {
