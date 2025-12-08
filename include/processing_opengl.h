@@ -228,8 +228,6 @@ namespace gl {
       void clear();
 
       void reserve(int count, bool circle);
-      void set_transform( const glm::mat4 &transform_ , int existing_vao, int existing_trID);
-      void set_texture( texture_t_ptr texture_, int existing_vao, int existing_txID);
    };
 
    typedef std::shared_ptr<batch_t>  batch_t_ptr;
