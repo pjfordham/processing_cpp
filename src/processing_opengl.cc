@@ -48,6 +48,7 @@ namespace gl {
       VAO_t& operator=(VAO_t&& other) noexcept;
 
       void bind();
+      void bind_buffers();
       void bind( attribute_t Position, attribute_t Normal, attribute_t Color,
                  attribute_t Coord,    attribute_t TUnit,  attribute_t MIndex,
                  attribute_t Ambient,  attribute_t Specular, attribute_t Emissive, attribute_t Shininess);
@@ -392,7 +393,7 @@ namespace gl {
                {
                   // Bind correct VAO
                   auto &it = batch->vaos[vao];
-                  it->bind();
+                  it->bind_buffers();
                   glBufferSubData(
                      GL_ARRAY_BUFFER,
                      start * sizeof(vertex_t),
@@ -465,7 +466,7 @@ namespace gl {
    void batch_t::sub_batch_t::upload() const {
       renderThread.enqueue( [self = *this, batch = batch.shared_from_this() ] {
          auto &it = batch->vaos[ self.vao ];
-         it->bind();
+         it->bind_buffers();
          glBufferSubData(GL_ARRAY_BUFFER, self.vertex * sizeof(vertex_t),
                          self.getVertexCount() * sizeof(vertex_t), self.vertices_data());
          glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, self.index * sizeof(unsigned short),
@@ -582,7 +583,7 @@ namespace gl {
       vertices.reserve(65536);
       indices.reserve(65536);
       renderThread.enqueue( [&] {
-         // glGenVertexArrays(1, &vao);
+         glGenVertexArrays(1, &vao);
          glGenBuffers(1, &indexId);
          glGenBuffers(1, &vertexId);
       } );
@@ -595,6 +596,7 @@ namespace gl {
 
    VAO_t& VAO_t::operator=(VAO_t&& other) noexcept {
       DEBUG_METHOD();
+      abort();
       std::swap(vao, other.vao);
       std::swap(indexId, other.indexId);
       std::swap(vertexId, other.vertexId);
@@ -607,10 +609,10 @@ namespace gl {
 
    void VAO_t::bind() {
       DEBUG_METHOD();
-      if (!vao) {
-         glGenVertexArrays(1, &vao);
-      }
       glBindVertexArray(vao);
+    }
+
+   void VAO_t::bind_buffers() {
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
       glBindBuffer(GL_ARRAY_BUFFER, vertexId);
    }
@@ -619,8 +621,9 @@ namespace gl {
                      attribute_t Coord,  attribute_t TUnit, attribute_t MIndex,
                      attribute_t Ambient,  attribute_t Specular, attribute_t Emissive, attribute_t Shininess) {
       DEBUG_METHOD();
+      bind();
       if (!attributes_bound) {
-         bind();
+         bind_buffers();
          Position.bind_vec3( sizeof(vertex_t), (void*)offsetof(vertex_t,position) );
          Normal.bind_vec3( sizeof(vertex_t),  (void*)offsetof(vertex_t,normal));
          Coord.bind_vec2( sizeof(vertex_t), (void*)offsetof(vertex_t,coord));
