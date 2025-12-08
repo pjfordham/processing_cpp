@@ -381,27 +381,23 @@ namespace gl {
       // If we have iterms in list to reupload, reupload them now.
       if (!vertices_to_reload.empty()) {
          auto merged = sort_and_merge(std::move(vertices_to_reload));
-         vertices_to_reload.clear();
 
-         for (const auto& r : merged) {
-
-            renderThread.enqueue( [
-                                   batch = shared_from_this(),
-                                   vao = r.vao, // COPY DATA HERE
-                                   start = r.start,
-                                   size  = r.size] ()
-               {
+         renderThread.enqueue( [ merged,
+                                 batch = shared_from_this() ]
+            {
+               for (const auto& r : merged) {
                   // Bind correct VAO
-                  auto &it = batch->vaos[vao];
+                  auto &it = batch->vaos[r.vao];
                   it->bind_buffers();
                   glBufferSubData(
                      GL_ARRAY_BUFFER,
-                     start * sizeof(vertex_t),
-                     size  * sizeof(vertex_t),
-                     it->vertices.data() + start
+                     r.start * sizeof(vertex_t),
+                     r.size  * sizeof(vertex_t),
+                     it->vertices.data() + r.start
                      );
-               });
-         }
+               }
+            });
+         vertices_to_reload.clear();
       }
    }
 
