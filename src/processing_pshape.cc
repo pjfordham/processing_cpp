@@ -2239,7 +2239,7 @@ void PShape::material(PMaterial &mat){
 }
 
 
-void PShape::texture(PImage img){
+void PShape::texture(PImage &img){
    return impl->texture(img);
 }
 
