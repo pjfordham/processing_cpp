@@ -609,10 +609,10 @@ namespace gl {
       DEBUG_METHOD();
       if (!vao) {
          glGenVertexArrays(1, &vao);
-         glBindVertexArray(vao);
-         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
-         glBindBuffer(GL_ARRAY_BUFFER, vertexId);
       }
+      glBindVertexArray(vao);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexId);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexId);
    }
 
    void VAO_t::bind( attribute_t Position, attribute_t Normal, attribute_t Color,
