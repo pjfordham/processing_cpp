@@ -819,7 +819,7 @@ public:
             sub_batch_stroke->vertices(i).fill = {0,0,0,0};
             sub_batch_stroke->vertices(i).emissive = {0,0,0,0};
          }
-         reloadSubBatch(&sub_batch_stroke.value());
+         sub_batch_stroke->reload();
       }
       noStroke();
       for ( auto &cmd : cmds) {
@@ -846,7 +846,7 @@ public:
             sub_batch_stroke->vertices(i).fill = gl_color;
             sub_batch_stroke->vertices(i).emissive = gl_color;
          }
-         reloadSubBatch(&sub_batch_stroke.value());
+         sub_batch_stroke->reload();
       }
       stroke(c);
       for ( auto &cmd : cmds) {
@@ -882,7 +882,7 @@ public:
             sub_batch_fill->vertices(i).fill = {0,0,0,0};
             sub_batch_fill->vertices(i).ambient = {0,0,0,0};
          }
-         reloadSubBatch(&sub_batch_fill.value());
+         sub_batch_fill->reload();
       }
       noFill();
       for ( auto &cmd : cmds) {
@@ -911,7 +911,7 @@ public:
             // TODO: need to check style to make sure we should do this
             sub_batch_fill->vertices(i).ambient = gl_color;
          }
-         reloadSubBatch(&sub_batch_fill.value());
+         sub_batch_fill->reload();
       }
       // Update cmds either way
       fill(c);
@@ -931,7 +931,7 @@ public:
             // TODO: need to check style to make sure we should do this
             sub_batch_fill->vertices(i).ambient = gl_color;
          }
-         reloadSubBatch(&sub_batch_fill.value());
+         sub_batch_fill->reload();
       }
       tint(c);
       for ( auto &cmd : cmds) {
@@ -1212,15 +1212,11 @@ public:
       }      return {};
    }
 
-   void reloadSubBatch(gl::batch_t::sub_batch_t *sb) {
-      sb->reload();
-   }
-
    void setVertex(int i, PVector v) {
       DEBUG_METHOD();
       if (sub_batch_fill) {
          sub_batch_fill->vertices(i).position = v;
-         reloadSubBatch(&sub_batch_fill.value());
+         sub_batch_fill->reload();
       }
       if (sub_batch_stroke) {
          setDirty();
