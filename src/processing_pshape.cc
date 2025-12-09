@@ -2109,7 +2109,7 @@ void PShape::clearParentCache() {
    impl->clearParentCache();
 }
 
-void PShape::addChild( const PShape shape ) {
+void PShape::addChild( const PShape &shape ) {
    shape.impl->setParent( *this );
    return impl->addChild( shape );
 }
@@ -2126,7 +2126,7 @@ bool PShape::isGroup() const {
    return impl->isGroup();
 }
 
-void PShape::copyStyle( const PShape other ) {
+void PShape::copyStyle( const PShape &other ) {
    return impl->copyStyle( *other.impl );
 }
 
