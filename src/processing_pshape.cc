@@ -828,15 +828,6 @@ public:
       }
    }
 
-   void setStroke(std::optional<color> c) {
-      DEBUG_METHOD();
-      if (c) {
-         setStroke(c.value());
-      } else {
-         setStroke(false);
-      }
-   }
-
    void setStroke(color c) {
       DEBUG_METHOD();
       if (sub_batch_stroke) {
@@ -888,15 +879,6 @@ public:
          if (cmd.type == command_t::type_t::FILL || cmd.type == command_t::type_t::NOFILL) {
             cmd.type = command_t::type_t::NOP;
          }
-      }
-   }
-
-   void setFill(std::optional<color> c) {
-      DEBUG_METHOD();
-      if (c) {
-         setFill(c.value());
-      } else {
-         setFill(false);
       }
    }
 
@@ -2511,10 +2493,6 @@ void PShape::setStroke(bool c){
 }
 
 
-void PShape::setStroke(std::optional<color> c){
-   return impl->setStroke(c);
-}
-
 void PShape::setStroke(color c){
    return impl->setStroke(c);
 }
@@ -2534,10 +2512,6 @@ void PShape::setFill(bool z){
    return impl->setFill(z);
 }
 
-
-void PShape::setFill(std::optional<color> c){
-   return impl->setFill(c);
-}
 
 void PShape::setFill(color c){
    return impl->setFill(c);
