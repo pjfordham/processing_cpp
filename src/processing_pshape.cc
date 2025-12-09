@@ -2072,8 +2072,6 @@ void PShape::optimize() {
 //     auto &handles = shapeHandles();
 
 //     if (handles.size() > lastSize + 200) {
-//         fmt::print("Running GC {} {}\n", handles.size(), lastSize);
-
 //         std::size_t i = 0;
 //         while (i < handles.size()) {
 //             if (handles[i].expired()) {
@@ -2094,7 +2092,6 @@ void PShape::gc() {
    static std::size_t lastSize = 0;
    auto &oldHandles = shapeHandles();
    if (oldHandles.size() > lastSize + 200 ) {
-      fmt::print("Running GC {} {}\n", oldHandles.size(), lastSize);
       std::vector<std::weak_ptr<PShapeImpl>> newHandles;
       newHandles.reserve( lastSize );
       for (const auto &i : oldHandles) {
