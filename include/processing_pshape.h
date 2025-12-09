@@ -145,7 +145,7 @@ class PShape {
 
    const PMatrix& getShapeMatrix();
 
-   void addChild( const PShape shape );
+   void addChild( const PShape &shape );
 
    void clearParentCache();
    
@@ -167,7 +167,7 @@ class PShape {
 
    void reserve(int cmds, int vertices);
 
-   void copyStyle( const PShape other );
+   void copyStyle( const PShape &other );
 
    void clear();
 
