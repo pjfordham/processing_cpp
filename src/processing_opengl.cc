@@ -524,7 +524,7 @@ namespace gl {
 
          Mmatrix.set( local_transforms );
 
-         if (uses_textures || uses_circles) {
+         if (uses_textures || uses_circles || uses_lights) {
             int k = 0;
             for (const auto &img : local_textures) {
                if (img != texture_t::circle()) {
