@@ -205,7 +205,7 @@ class PShape {
 
    void material(PMaterial &mat);
 
-   void texture(PImage &img);
+   void texture(const PImage &img);
 
    void circleTexture();
 
