@@ -513,18 +513,17 @@ namespace gl {
          i += vao->transforms;
          j += vao->textures;
 
-         if (uses_lights) {
+         Mmatrix.set( local_transforms );
+
+         if (uses_textures || uses_circles || uses_lights) {
+            // If we're using the full shader?
             std::vector<glm::mat3> normals;
             normals.reserve(local_transforms.size());
             for ( const auto &t : local_transforms ) {
                normals.emplace_back(glm::transpose(glm::inverse(t)));
             }
             Nmatrix.set( normals );
-         }
 
-         Mmatrix.set( local_transforms );
-
-         if (uses_textures || uses_circles || uses_lights) {
             int k = 0;
             for (const auto &img : local_textures) {
                if (img != texture_t::circle()) {
