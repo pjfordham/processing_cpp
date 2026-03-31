@@ -974,6 +974,20 @@ public:
       }
    }
 
+   void flatten_without_subbatches(gl::batch_t_ptr batch,
+                                   const flat_style_t &parent_style, const PMatrix &parent_transform,
+                                   std::vector<glm::mat4> &transforms,
+                                   std::vector<gl::texture_t_ptr> &textures,
+                                   bool &uses_textures,
+                                   bool &uses_circles ) {
+      clearParentCache();
+      flatten( batch, parent_style );
+      accumulateTransformsAndTextures(parent_transform.glm_data(), transforms,
+                                      textures,
+                                      uses_textures, uses_circles);
+      clearSubBatches();
+   }
+
    void flatten(gl::batch_t_ptr batch, const flat_style_t &parent_style)  {
       DEBUG_METHOD();
 
@@ -2534,6 +2548,15 @@ void PShape::clearSubBatches() {
 
 void PShape::flatten(gl::batch_t_ptr batch, const flat_style_t &style) {
    return impl->flatten(batch, style);
+}
+
+void PShape::flatten_without_subbatches(
+   gl::batch_t_ptr batch, const flat_style_t &style, const PMatrix &t,
+   std::vector<glm::mat4> &transforms,
+   std::vector<gl::texture_t_ptr> &textures, bool &uses_textures,
+   bool &uses_circles) {
+   return impl->flatten_without_subbatches(batch, style, t, transforms, textures,
+                                           uses_textures, uses_circles);
 }
 
 int PShape::getChildCount() const{

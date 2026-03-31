@@ -801,10 +801,9 @@ public:
          pshape.accumulateTransformsAndTextures(t.glm_data(), m, textures, uses_textures, uses_circles);
          directDraw( local, std::move(m), std::move(textures), uses_textures, uses_circles );
       } else {
-         pshape.clearParentCache();
-         pshape.flatten( batch, style );
-         pshape.accumulateTransformsAndTextures(t.glm_data(), batch_transforms, batch_textures, batch_uses_textures, batch_uses_circles);
-         pshape.clearSubBatches();
+         pshape.flatten_without_subbatches(batch, style, t, batch_transforms,
+                                           batch_textures, batch_uses_textures,
+                                           batch_uses_circles);
       }
       pixels_current = false;
       blitPixels();

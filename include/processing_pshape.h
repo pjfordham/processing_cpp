@@ -339,8 +339,14 @@ class PShape {
    gl::batch_t_ptr getBatch() ;
 
    void clearSubBatches();
-   
-   void flatten(gl::batch_t_ptr parent_batch, const flat_style_t &global_shape) ;
+
+   void flatten(gl::batch_t_ptr parent_batch, const flat_style_t &global_shape);
+
+   void flatten_without_subbatches(
+      gl::batch_t_ptr batch, const flat_style_t &style, const PMatrix &t,
+      std::vector<glm::mat4> &transforms,
+      std::vector<gl::texture_t_ptr> &textures, bool &uses_textures,
+      bool &uses_circles);
 
    int getChildCount() const;
 
