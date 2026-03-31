@@ -980,6 +980,47 @@ public:
                                    std::vector<gl::texture_t_ptr> &textures,
                                    bool &uses_textures,
                                    bool &uses_circles ) {
+      DEBUG_METHOD();
+
+      // Resolve accumulated style and transforms
+      flat_style_t local_style = style.resolve_style( parent_style );
+      auto local_transform = parent_transform * shape_matrix;
+
+      // have stack of GLM matricies for transforms
+      if ( kind == GROUP ) {
+         for (auto &&child : children) {
+            // For all child shapes pass down transform and style from this shape
+            // and continue to flatten.
+            child.impl->flatten_without_subbatches(batch, local_style,
+                                                   local_transform, transforms,
+                                                   textures,uses_textures,uses_circles);
+         }
+      } else {
+        /* From accumulateTransforms...
+           if (sub_batch_fill) {
+            if ( style.texture_enabled && style.texture_enabled.value()) {
+               if (style.texture_img.value() != PImage::circle()) {
+                  uses_textures = true;
+                  textures.push_back(style.texture_img.value().getTextureID());
+               } else {
+                  uses_circles = true;
+               }
+            } else {
+               textures.push_back(gl::texture_t::blank());
+            }
+            transforms.push_back(local_transform.glm_data());
+         }
+         if (sub_batch_stroke) {
+            textures.push_back(gl::texture_t::blank());
+            transforms.push_back(local_transform.glm_data());
+            }*/
+        // IMPORT CODE FROM flatten(..)
+
+      }
+
+      // Rewrite without subbatches, we should flatten like we used to here
+      // merging textures and transforms on the fly to reduce number of batches
+
       clearParentCache();
       flatten( batch, parent_style );
       accumulateTransformsAndTextures(parent_transform.glm_data(), transforms,
