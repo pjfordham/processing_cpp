@@ -39,11 +39,13 @@ public:
    static float scaleA;
 
    operator unsigned int() const {
+      // Widen to unsigned before shifting: 0xFF << 24 overflows a signed int,
+      // which is undefined behaviour, and alpha is 255 for most colours.
       return
-         ((unsigned char)r) << 0|
-         ((unsigned char)g) << 8 |
-         ((unsigned char)b) << 16 |
-         ((unsigned char)a) << 24;
+         (static_cast<unsigned int>(static_cast<unsigned char>(r)) <<  0) |
+         (static_cast<unsigned int>(static_cast<unsigned char>(g)) <<  8) |
+         (static_cast<unsigned int>(static_cast<unsigned char>(b)) << 16) |
+         (static_cast<unsigned int>(static_cast<unsigned char>(a)) << 24);
    }
    float r,g,b,a;
    color(float _r, float _g, float _b,float _a) : r(_r), g(_g), b(_b), a(_a) {
