@@ -33,7 +33,7 @@ namespace gl {
    }
 
    // Create a non owning texture wrapper
-   texture_t::texture_t( GLuint textureID ) : id(textureID), owning(false) {
+   texture_t::texture_t( GLuint textureID ) : id(textureID), wrap(GL_CLAMP_TO_EDGE), owning(false), width(0), height(0) {
       DEBUG_METHOD();
       renderThread.enqueue([&] {
          glBindTexture(GL_TEXTURE_2D, textureID);
@@ -99,16 +99,13 @@ namespace gl {
       wrap = wrap_;
       renderThread.enqueue( [&] {
          if (!id) {
-            wrap = wrap_;
             glGenTextures(1, &id);
-            glBindTexture(GL_TEXTURE_2D, id);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-            glBindTexture(GL_TEXTURE_2D, 0);
          }
          glBindTexture(GL_TEXTURE_2D, id);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
          glBindTexture(GL_TEXTURE_2D, 0);
       } );
@@ -151,5 +148,3 @@ struct fmt::formatter<gl::texture_t> {
 			    v.id, textureWrapModeToText(v.wrap), v.owning ? "true " : "false" );
    }
 };
-
-

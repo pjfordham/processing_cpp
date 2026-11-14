@@ -706,6 +706,8 @@ public:
    }
 
    void set(int x, int y, color c) {
+      if (!pixels_current)
+         loadPixels();
       pixels[y*width+x] = c;
       pixels_to_update = true;
    }
@@ -1099,7 +1101,8 @@ public:
 
    void resetShader() {
       flush();
-      defaultShader = currentShader;
+      currentShader = defaultShader;
+      currentShader.set_uniforms();
    }
 
    void filter(PShader pshader) {
@@ -1513,7 +1516,7 @@ void PGraphics::tint(color c){
 }
 
 void PGraphics::tint(color c, float a){
-   return impl->_shape.tint(c, a);
+   return impl->_shape.tint(c.r, c.g, c.b, a);
 }
 
 void PGraphics::noTint() {
@@ -1585,7 +1588,7 @@ void PGraphics::stroke(color c){
 }
 
 void PGraphics::stroke(color c, float a){
-   return impl->_shape.stroke(c, a);
+   return impl->_shape.stroke(c.r, c.g, c.b, a);
 }
 
 void PGraphics::noStroke() {

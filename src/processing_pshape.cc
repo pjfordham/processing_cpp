@@ -129,6 +129,9 @@ public:
       std::swap(kind,other.kind);
       std::swap(width,other.width);
       std::swap(height,other.height);
+      std::swap(id,other.id);
+      std::swap(compiled,other.compiled);
+      std::swap(batch,other.batch);
       std::swap(useGlobalStyle,other.useGlobalStyle);
       return *this;
    }
@@ -823,7 +826,7 @@ public:
       DEBUG_METHOD();
       dirty=true;
       for (auto &&child : children) {
-         child.setFill(c);
+         child.setTint(c);
       }
       style.tint_color = c;
       gl::color_t clr = flatten_color_mode(style.tint_color);
@@ -1162,7 +1165,7 @@ void PShapeImpl::populateIndices() {
       }
    }  else if (kind == TRIANGLE_FAN) {
       // Fill with triangle fan
-      for (int i = 1; i < vertices.size() - 2 ; i++ ) {
+      for (int i = 1; i < vertices.size() - 1 ; i++ ) {
          indices.push_back( 0 );
          indices.push_back( i );
          indices.push_back( i+1 );
@@ -1639,7 +1642,7 @@ void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bo
       PShapeImpl shape;
       shape.reserve(4*vertices.size(), 6 * vertices.size());
       shape.beginShape(TRIANGLES_NOSTROKE);
-      for (int i = 0; i < vertices.size()-2; i+=2 ) {
+      for (int i = 0; i + 3 < vertices.size(); i+=2 ) {
          PVector p0 = vertices[i+0].position;
          PVector p1 = vertices[i+1].position;
          PVector p2 = vertices[i+2].position;
@@ -1683,7 +1686,7 @@ void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bo
          color c2 = override_color.value_or(extras[i-0].stroke);
 
          _line(triangles, p1, p2, w1, w2, c1, c2);
-         _line(triangles, p2, p0, w1, w0, c2, c0);
+         _line(triangles, p2, p0, w2, w0, c2, c0);
       }
       triangles.endShape();
       triangles.draw_fill( batch, transform, flatten_transforms );
