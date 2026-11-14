@@ -1335,7 +1335,7 @@ void PGraphics::background(float r, float g, float b){
 }
 
 void PGraphics::background(color c){
-   return impl->background(c.r,c.g,c.b);
+   return impl->background(c);
 }
 
 void PGraphics::background(float gray){
@@ -1608,7 +1608,7 @@ void PGraphics::bezierVertex(float x2, float y2, float x3, float y3, float x4, f
 }
 
 void PGraphics::bezierVertex(PVector v2, PVector v3, PVector v4){
-   return impl->_shape.bezierVertex(v2,v2,v4);
+   return impl->_shape.bezierVertex(v2,v3,v4);
 }
 
 void PGraphics::bezierVertex(float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4){

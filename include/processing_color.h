@@ -68,11 +68,19 @@ public:
         float alpha_a = a.a;
         float alpha_bg = this->a;
 
-        // Calculate the blended color components
-        float result_r = (a.r * alpha_a + this->r * alpha_bg * (1.0 - alpha_a)) / (alpha_a + alpha_bg * (1.0 - alpha_a));
-        float result_g = (a.g * alpha_a + this->g * alpha_bg * (1.0 - alpha_a)) / (alpha_a + alpha_bg * (1.0 - alpha_a));
-        float result_b = (a.b * alpha_a + this->b * alpha_bg * (1.0 - alpha_a)) / (alpha_a + alpha_bg * (1.0 - alpha_a));
+        // Combined alpha of the two colors
         float result_alpha = alpha_a + alpha_bg * (1.0 - alpha_a);
+
+        // Nothing to blend, and the premultiplied divide below would be a
+        // division by zero.
+        if (result_alpha <= 0.0) {
+           return color(0.0f, 0.0f, 0.0f, 0.0f);
+        }
+
+        // Calculate the blended color components
+        float result_r = (a.r * alpha_a + this->r * alpha_bg * (1.0 - alpha_a)) / result_alpha;
+        float result_g = (a.g * alpha_a + this->g * alpha_bg * (1.0 - alpha_a)) / result_alpha;
+        float result_b = (a.b * alpha_a + this->b * alpha_bg * (1.0 - alpha_a)) / result_alpha;
 
         return color(result_r, result_g, result_b, result_alpha);
    }
@@ -80,7 +88,7 @@ public:
       return color(a.r*r,a.g*g, a.b*b, a.a*a);
    }
    glm::vec4 gl_color() {
-      return glm::vec4{r / color::scaleR,  g / color::scaleR, b / color::scaleB, a / color::scaleA};
+      return glm::vec4{r / color::scaleR,  g / color::scaleG, b / color::scaleB, a / color::scaleA};
    }
 };
 
@@ -183,5 +191,3 @@ struct fmt::formatter<color> {
 // ----
 
 #endif
-
-

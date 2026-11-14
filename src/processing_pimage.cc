@@ -44,7 +44,7 @@ public:
    int height = 0;
    unsigned int *pixels = nullptr;
    gl::texture_t_ptr texture;
-   int textureWrap;
+   int textureWrap = CLAMP;
    bool dirty = true;
 
    ~PImageImpl() {
@@ -208,18 +208,33 @@ public:
    }
 
    void loadPixels() {
-       DEBUG_METHOD();
-       if (pixels) return;
-       if (!texture)
-          abort();
-       pixels = new uint32_t[width*height];
-       texture->bind();
-       glGetTexImage( GL_TEXTURE_2D, 0 , GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+      DEBUG_METHOD();
+      if (pixels) return;
+      if (!texture)
+         abort();
+      // The size of the circle sentinel texture is unknown (0x0), so there is
+      // nothing to read back and a buffer must not be sized from it.
+      if (width <= 0 || height <= 0)
+         return;
+      pixels = new uint32_t[width*height];
+      // Readback has to happen on the render thread, and must not leave the
+      // texture bound on the calling thread.
+      texture->get_pixels( pixels );
    }
 
    void convolve(const std::vector<std::vector<float>> &kernel) {
       DEBUG_METHOD();
+      if (kernel.empty() || kernel[0].empty())
+         return;
       loadPixels();
+      if (!pixels)
+         return;
+
+      const int rows = static_cast<int>(kernel.size());
+      const int cols = static_cast<int>(kernel[0].size());
+      const int half_rows = rows / 2;
+      const int half_cols = cols / 2;
+
       // Create a new image of the same size as the original surface
       auto *blurred = new uint32_t[width*height];
 
@@ -228,28 +243,30 @@ public:
             float r = 0, g = 0, b = 0, a = 0;
             float weight_sum = 0;
 
-            for (int j = 0; j < kernel.size(); j++) {
-               for (int i = 0; i < kernel[0].size(); i++) {
-                  int neighbor_x = x + i - ( (kernel.size() - 1 ) / 2 );
-                  int neighbor_y = y + j - ( (kernel[i].size() - 1 ) / 2 );;
+            for (int j = 0; j < rows; j++) {
+               for (int i = 0; i < cols; i++) {
+                  int neighbor_x = x + i - half_cols;
+                  int neighbor_y = y + j - half_rows;
                   if (neighbor_x >= 0 && neighbor_x < width && neighbor_y >= 0 && neighbor_y < height) {
                      uint32_t neighbor_pixel = pixels[neighbor_y * width + neighbor_x];
-                     color color(neighbor_pixel);
-                     float weight = kernel[i][j];
-                     r += weight * color.r;
-                     g += weight * color.g;
-                     b += weight * color.b;
-                     a += weight * color.a;
+                     color neighbor_color(neighbor_pixel);
+                     float weight = kernel[j][i];
+                     r += weight * neighbor_color.r;
+                     g += weight * neighbor_color.g;
+                     b += weight * neighbor_color.b;
+                     a += weight * neighbor_color.a;
                      weight_sum += weight;
                   }
                }
             }
 
             // Set the value of the pixel in the new surface to the computed average
-            r /= weight_sum;
-            g /= weight_sum;
-            b /= weight_sum;
-            a /= weight_sum;
+            if (weight_sum != 0) {
+               r /= weight_sum;
+               g /= weight_sum;
+               b /= weight_sum;
+               a /= weight_sum;
+            }
             blurred[y * width + x] = color(r, g, b, a);
          }
       }
@@ -310,7 +327,9 @@ PImage::PImage( std::shared_ptr<PImageImpl> impl_ ) {
 }
 
 PImage::operator bool() const {
-   return impl->pixels != nullptr;
+   // A default constructed PImage has no implementation at all, and images
+   // created from a texture have no CPU side pixel buffer, but are still valid.
+   return impl && (impl->pixels != nullptr || impl->texture != nullptr);
 }
 
 void PImage::mask(const PImage m) {

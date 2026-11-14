@@ -8,6 +8,7 @@
 #include <numbers>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <random>
 #include <array>
 #include <iterator>
@@ -206,7 +207,10 @@ public:
       if (x == 0 && y == 0) {
          return PVector{z > 0.0 ? 1.0f : -1.0f ,0,0};
       } else {
-         return PVector(-y, x, z);
+         // Rotating the x/y components by 90 degrees gives a vector that is
+         // perpendicular to this one; the z component must not be carried over
+         // or the result is only perpendicular when z is zero.
+          return PVector(-y, x, z);//0.0f);
       }
    }
 
