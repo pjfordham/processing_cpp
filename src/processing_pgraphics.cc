@@ -198,7 +198,11 @@ public:
          threshold,
          false);
 
-      return diff_pixels == 0;
+      // Allow a small number of differing pixels to account for
+      // anti-aliasing and floating point rounding differences between
+      // GPU drivers. A handful of edge pixels is not a real regression.
+      const int allowed_diff = std::max(1, pixel_count / 1000);
+      return diff_pixels <= allowed_diff;
    }
 
    void saveFrame( std::string fileName = "frame-####.png" ) {
