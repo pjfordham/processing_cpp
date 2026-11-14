@@ -808,7 +808,7 @@ struct fmt::formatter<gl::VAO_t> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::VAO_t& v, FormatContext& ctx) {
+   auto format(const gl::VAO_t& v, FormatContext& ctx) const {
       return format_to(ctx.out(), "VAO:{:2} VID:{:2} IID:{:2} V{:8} I{:8} Tx{:2} Tr{:2}",
                        v.vao, v.vertexId, v.indexId,
                        v.vertices.size(), v.indices.size(), v.textures.size(), v.transforms.size());

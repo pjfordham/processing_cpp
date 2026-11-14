@@ -26,13 +26,13 @@ public:
    static void close();
 
    explicit operator bool() const;
-   bool operator<(const PImage& x) {
+   bool operator<(const PImage& x) const noexcept {
       return impl < x.impl;
    }
-   bool operator==(const PImage &x) const {
+   bool operator==(const PImage &x) const noexcept {
       return impl == x.impl;
    };
-   bool operator!=(const PImage &x) const {
+   bool operator!=(const PImage &x) const noexcept {
       return !(x==*this);
    };
    auto operator<=>(const PImage &other) const noexcept = default;
@@ -61,7 +61,7 @@ public:
    // End of properties.
    //
 
-   PImage() {}
+   PImage() noexcept {}
 
    static PImage circle();
 
@@ -79,15 +79,15 @@ public:
 
    void loadPixels() const;
 
-   int pixels_length()const ;
+   int pixels_length() const noexcept;
 
    void releaseTexture();
 
    void updatePixels();
 
-   bool isDirty() const;
+   bool isDirty() const noexcept;
 
-   void setClean();
+   void setClean() noexcept;
 
    void convolve (const std::vector<std::vector<float>> &kernel);
 
@@ -96,10 +96,10 @@ public:
    void save_as( std::string_view filename ) const;
 };
 
-PImage createImage(int width, int height, int mode);
-PImage createImageFromTexture(gl::texture_t_ptr textureID);
-PImage loadImage(std::string_view URL);
-PImage _loadImage(const std::filesystem::path &path);
-PImage requestImage(std::string_view URL);
+[[nodiscard]] PImage createImage(int width, int height, int mode);
+[[nodiscard]] PImage createImageFromTexture(gl::texture_t_ptr textureID);
+[[nodiscard]] PImage loadImage(std::string_view URL);
+[[nodiscard]] PImage _loadImage(const std::filesystem::path &path);
+[[nodiscard]] PImage requestImage(std::string_view URL);
 
 #endif

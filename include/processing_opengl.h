@@ -170,7 +170,7 @@ struct fmt::formatter<gl::material_t> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::material_t& v, FormatContext& ctx) {
+   auto format(const gl::material_t& v, FormatContext& ctx) const {
       return fmt::format_to(ctx.out(), "A{} S{} E{} Shine{}",
                             v.ambient,
                             v.specular,
@@ -187,7 +187,7 @@ struct fmt::formatter<gl::vertex_t> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::vertex_t& v, FormatContext& ctx) {
+   auto format(const gl::vertex_t& v, FormatContext& ctx) const {
       return fmt::format_to(ctx.out(), "P{} N{} M{} Tu{} Tc{} C{}",
                             v.position,
                             v.normal,

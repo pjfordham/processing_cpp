@@ -142,7 +142,7 @@ struct fmt::formatter<gl::texture_t> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::texture_t& v, FormatContext& ctx) {
+   auto format(const gl::texture_t& v, FormatContext& ctx) const {
       return fmt::format_to(ctx.out(), "id={:<2} wrap={} owning={}",
 			    v.id, textureWrapModeToText(v.wrap), v.owning ? "true " : "false" );
    }

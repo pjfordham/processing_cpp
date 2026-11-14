@@ -64,27 +64,27 @@ public:
    color(int c) = delete;
    color() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {
    }
-   color blend(const color& a) {
-        float alpha_a = a.a;
+   color blend(const color& fg) const {
+        float alpha_fg = fg.a;
         float alpha_bg = this->a;
 
         // Combined alpha of the two colors
-        float result_alpha = alpha_a + alpha_bg * (1.0 - alpha_a);
+        float result_alpha = alpha_fg + alpha_bg * (1.0f - alpha_fg);
 
         // Nothing to blend, and the premultiplied divide below would be a
         // division by zero.
-        if (result_alpha <= 0.0) {
+        if (result_alpha <= 0.0f) {
            return color(0.0f, 0.0f, 0.0f, 0.0f);
         }
 
         // Calculate the blended color components
-        float result_r = (a.r * alpha_a + this->r * alpha_bg * (1.0 - alpha_a)) / result_alpha;
-        float result_g = (a.g * alpha_a + this->g * alpha_bg * (1.0 - alpha_a)) / result_alpha;
-        float result_b = (a.b * alpha_a + this->b * alpha_bg * (1.0 - alpha_a)) / result_alpha;
+        float result_r = (fg.r * alpha_fg + this->r * alpha_bg * (1.0f - alpha_fg)) / result_alpha;
+        float result_g = (fg.g * alpha_fg + this->g * alpha_bg * (1.0f - alpha_fg)) / result_alpha;
+        float result_b = (fg.b * alpha_fg + this->b * alpha_bg * (1.0f - alpha_fg)) / result_alpha;
 
         return color(result_r, result_g, result_b, result_alpha);
    }
-   color tint(const color &a) {
+   color tint(const color &a) const {
       return color(a.r*r,a.g*g, a.b*b, a.a*a);
    }
    glm::vec4 gl_color() const {
@@ -190,7 +190,7 @@ struct fmt::formatter<color> {
     }
 
     template <typename FormatContext>
-    auto format(const color& v, FormatContext& ctx) {
+    auto format(const color& v, FormatContext& ctx) const {
        return fmt::format_to(ctx.out(), "R{:3},G{:3},B{:3},A{:3}",(int)v.r,(int)v.g,(int)v.b,(int)v.a);
     }
 };

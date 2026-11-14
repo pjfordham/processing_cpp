@@ -109,7 +109,7 @@ struct fmt::formatter<gl::framebuffer_t> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::framebuffer_t& v, FormatContext& ctx) {
+   auto format(const gl::framebuffer_t& v, FormatContext& ctx) const {
       return fmt::format_to(ctx.out(), "aaFactor={:<2} aaMode={:<1} id={:4} width={:<4} height={:<4} depthBufferID={:<4} colorBufferID={:<4} textureBufferID={:<4}",
                        v.aaFactor, v.aaMode, v.id, v.width, v.height, v.depthBufferID, v.colorBufferID, v.textureBufferID);
    }
@@ -124,7 +124,7 @@ struct fmt::formatter<gl::mainframe_t> {
    }
 
    template <typename FormatContext>
-   auto format(const gl::mainframe_t& v, FormatContext& ctx) {
+   auto format(const gl::mainframe_t& v, FormatContext& ctx) const {
       return fmt::format_to(ctx.out(), "width={:<4} height={:<4}", v.width, v.height );
    }
 };

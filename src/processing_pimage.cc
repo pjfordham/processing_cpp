@@ -300,11 +300,11 @@ struct fmt::formatter<PImageImpl> {
     }
 };
 
-bool PImage::isDirty() const {
+bool PImage::isDirty() const noexcept {
    return impl->isDirty();
 }
 
-void PImage::setClean() {
+void PImage::setClean() noexcept {
    impl->setClean();
 }
 
@@ -356,7 +356,7 @@ void PImage::wrapMode(int w) {
    impl->wrapMode(w);
 }
 
-int PImage::pixels_length() const {
+int PImage::pixels_length() const noexcept {
    return impl->pixels_length();
 }
 
