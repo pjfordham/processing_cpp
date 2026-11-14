@@ -96,7 +96,7 @@ namespace gl {
       width = width_;
       height = height_;
       wrap = wrap_;
-      renderThread.enqueue( [&] {
+      renderThread.enqueue( [this, pixels] {
          if (!id) {
             glGenTextures(1, &id);
          }
@@ -113,7 +113,7 @@ namespace gl {
 
    void texture_t::get_pixels(unsigned int *pixels) const {
       DEBUG_METHOD();
-      renderThread.enqueue( [&] {
+      renderThread.enqueue( [this, pixels] {
          glBindTexture(GL_TEXTURE_2D, id);
          glGetTexImage(GL_TEXTURE_2D, 0 , GL_RGBA, GL_UNSIGNED_BYTE, pixels );
          glBindTexture(GL_TEXTURE_2D, 0);
