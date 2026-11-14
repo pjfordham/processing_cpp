@@ -41,7 +41,6 @@ namespace gl {
          glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
          glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
          glBindTexture(GL_TEXTURE_2D, 0);
-         glBindTexture(GL_TEXTURE_2D, 0);
       });
       renderThread.wait_until_nothing_in_flight();
    }
