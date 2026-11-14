@@ -9,13 +9,16 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <cstdint>
 #include <random>
 #include <array>
 #include <iterator>
 #include <utility>
 #include <fmt/core.h>
 
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -38,7 +41,7 @@ namespace portable_random {
    inline float uniform_float_01(std::mt19937 &rng) {
       // Generate 23-bit mantissa (float has 23 bits)
       uint32_t mantissa = rng() >> 9; // 32 - 23 = 9
-      uint32_t bits = (127 << 23) | mantissa; // exponent = 127 (2^0 = 1.0)
+      uint32_t bits = (127u << 23) | mantissa; // exponent = 127 (2^0 = 1.0)
       float result;
       std::memcpy(&result, &bits, sizeof(result));
       return result - 1.0f; // result in [0.0, 1.0)
@@ -193,7 +196,7 @@ public:
       return *this;
    }
 
-   PVector cross(PVector v) {
+   PVector cross(PVector v) const {
       const glm::vec3 &veca = *this;
       const glm::vec3 &vecb = v;
       return glm::cross( veca, vecb );
@@ -203,7 +206,7 @@ public:
       return glm::normalize(glm::cross(*this,planeNormal));
    }
 
-   PVector normal() {
+   PVector normal() const {
       if (x == 0 && y == 0) {
          return PVector{z > 0.0 ? 1.0f : -1.0f ,0,0};
       } else {
@@ -274,7 +277,7 @@ public:
       z = ::lerp(z, v.z, amt);
    }
 
-   operator std::array<float,3>() {
+   operator std::array<float,3>() const {
       return { x, y, z };
    }
 };
@@ -331,7 +334,7 @@ public:
    PVector2() : glm::vec2{0.0f,0.0f} {}
    PVector2(const glm::vec2 &o) : glm::vec2{o} {}
    PVector2(float x, float y) : glm::vec2{x,y} {}
-   operator std::array<float,2>() {
+   operator std::array<float,2>() const {
       return { x , y };
    }
 };
@@ -341,7 +344,7 @@ public:
    PVector4() : glm::vec4{0.0f,0.0f,0.0f,0.0f} {}
    PVector4(const glm::vec4 &o) : glm::vec4{o} {}
    PVector4(float x, float y, float z, float w) : glm::vec4{x,y,z,w} {}
-   operator PVector() {
+   operator PVector() const {
       return { x, y, z };
    }
 };
@@ -474,8 +477,15 @@ struct PLine {
       float b2 = -d2.y;
       float c2 = d2.x * other.start.y - d2.y * other.start.x;
 
+      // Parallel or coincident lines have no unique intersection, and the
+      // divide below would produce NaN/inf vertices.
+      float denom = a1 * b2 - a2 * b1;
+      if (denom == 0.0f) {
+         return PVector();
+      }
+
       // Z Calculation is totally wrong here
-      return {  (a1*c2 - a2*c1) / (a1*b2 - a2*b1), (b2*c1 - b1*c2) / (a1*b2 - a2*b1), other.start.z };
+      return {  (a1*c2 - a2*c1) / denom, (b2*c1 - b1*c2) / denom, other.start.z };
 
    }
 

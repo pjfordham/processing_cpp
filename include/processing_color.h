@@ -62,7 +62,7 @@ public:
    }
    color(bool b) = delete;
    color(int c) = delete;
-   color()  {
+   color() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {
    }
    color blend(const color& a) {
         float alpha_a = a.a;
@@ -87,7 +87,7 @@ public:
    color tint(const color &a) {
       return color(a.r*r,a.g*g, a.b*b, a.a*a);
    }
-   glm::vec4 gl_color() {
+   glm::vec4 gl_color() const {
       return glm::vec4{r / color::scaleR,  g / color::scaleG, b / color::scaleB, a / color::scaleA};
    }
 };
@@ -139,14 +139,23 @@ inline float brightness(color rgb) {
 }
 
 inline gl::color_t HSBtoRGB(float h, float s, float v, float a) {
-   int i = floorf(h * 6);
-   auto f = h * 6.0 - i;
+   // Wrap the hue into [0,1) so the sector index can never be negative: a
+   // negative index used to fall through the switch and return an
+   // uninitialised colour.
+   float hh = h - std::floor(h);
+   float sector_f = hh * 6.0f;
+   int sector = static_cast<int>(std::floor(sector_f)) % 6;
+   if (sector < 0) {
+      sector += 6;
+   }
+   float f = sector_f - std::floor(sector_f);
+
+   float r = v, g = v, b = v;
    auto p = v * (1.0 - s);
    auto q = v * (1.0 - f * s);
    auto t = v * (1.0 - (1.0 - f) * s);
 
-   float r,g,b;
-   switch (i % 6) {
+   switch (sector) {
    case 0: r = v, g = t, b = p; break;
    case 1: r = q, g = v, b = p; break;
    case 2: r = p, g = v, b = t; break;
