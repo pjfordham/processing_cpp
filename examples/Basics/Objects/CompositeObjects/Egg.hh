@@ -9,6 +9,7 @@ public:
 
   // Constructor
   Egg(float xpos, float ypos, float t, float s) {
+    angle = 0;
     x = xpos;
     y = ypos;
     tilt = t;
