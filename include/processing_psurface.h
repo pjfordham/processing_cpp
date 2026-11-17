@@ -64,7 +64,6 @@ public:
    static void close();
 
    PGraphics g;
-   bool xloop = true;
 
    unsigned int *pixels;
 
