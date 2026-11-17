@@ -61,7 +61,10 @@ void drawParticle(PVector center) {
 
 void initPositions() {
   for (int n = 0; n < npartTotal; n++) {
-    positions.emplace_back(random(-500, +500), random(-500, +500), random(-500, +500));
+      float z = random(-500, +500);
+      float y = random(-500, +500);
+      float x =random(-500, +500);
+      positions.emplace_back(x,y,z);
   }
 }
 

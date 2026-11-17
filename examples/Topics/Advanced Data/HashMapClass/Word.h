@@ -15,8 +15,10 @@ public:
 
    Word() {}
    Word(std::string_view s) {
-    position = PVector(random(width), random(-height, height*2));
-    word = s;
+      float y = random(-height, height * 2);
+      float x = random(width);
+      position = PVector(x,y);
+      word = s;
   }
 
   // We will display a word if it appears at least 5 times

@@ -75,7 +75,11 @@ std::vector<Ball> balls;
 void setup() {
   size(640, 360);
   for (int i = 0; i < numBalls; i++) {
-    balls.emplace_back(random(width), random(height), random(30, 70), i, balls);
+    // Force deterministic evaluation of parameters
+    float d = random(30, 70);
+    float y = random(height);
+    float x = random(width);
+    balls.emplace_back(x, y, d, i, balls);
   }
   noStroke();
   fill(255, 204);

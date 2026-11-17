@@ -28,7 +28,11 @@ void setup() {
   size(640, 360, P3D);
   // Some random planets
   for (int i = 0; i < planets.size(); i++) {
-    planets[i] = Planet(random(0.1, 2), random(-width/2, width/2), random(-height/2, height/2), random(-100, 100));
+     float d = random(-100, 100);
+     float c = random(-height / 2, height / 2);
+     float b = random(-width / 2, width / 2);
+     float a = random(0.1, 2);
+     planets[i] = Planet(a,b,c,d);
   }
   // A single sun
   s = Sun();

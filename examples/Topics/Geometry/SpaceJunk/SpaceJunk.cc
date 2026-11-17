@@ -25,9 +25,13 @@ void setup() {
 
   // Instantiate cubes, passing in random vals for size and postion
   for (int i = 0; i < cubes.size(); i++){
-     cubes[i] = Cube(int(random(-10, 10)), int(random(-10, 10)),
-                     int(random(-10, 10)), int(random(-140, 140)),
-                     int(random(-140, 140)), int(random(-140, 140)));
+    int f = (int)random(-140, 140);
+    int e = (int)random(-140, 140);
+    int d = (int)random(-140, 140);
+    int c = (int)random(-10, 10);
+    int b = (int)random(-10, 10);
+    int a = (int)random(-10, 10);
+    cubes[i] = Cube(a,b,c,d,e,f);
   }
 }
 
