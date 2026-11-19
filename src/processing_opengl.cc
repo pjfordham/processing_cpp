@@ -336,6 +336,8 @@ namespace gl {
          for (auto g : geo) {
             // Add flat shader optimization
             g.shader.bind();
+  uniform_t uSampler = g.shader.get_uniform("texture");
+  uSampler.set( std::vector<int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} );
 
             g.scene.setup( g.shader );
             g.batch->setup( g.shader );
