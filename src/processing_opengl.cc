@@ -536,13 +536,16 @@ namespace gl {
             }
             Nmatrix.set( normals );
 
+            std::vector<glm::vec2> textureOffsets(16);
             int k = 0;
             for (const auto &img : local_textures) {
                if (img != texture_t::circle()) {
-                  glActiveTexture(GL_TEXTURE0 + k++);
+                  glActiveTexture(GL_TEXTURE0 + k);
+                  textureOffsets[k++] = glm::vec2(1.0 / img->get_width(), 1.0 / img->get_height());
                   img->_bind();
                }
             }
+            TexOffset.set(textureOffsets);
          }
          vao->draw();
       }
