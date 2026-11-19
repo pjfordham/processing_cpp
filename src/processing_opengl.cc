@@ -427,7 +427,7 @@ namespace gl {
                           (vaos.back()->transforms == MaxTransformsPerBatch),
                           (vaos.back()->textures == MaxTextureImageUnits), vaos.back()->textures);
             } else {
-               fmt::print("\n");
+                //fmt::print("\n");
             }
             vaos.emplace_back(std::make_unique<VAO_t>());
          }
