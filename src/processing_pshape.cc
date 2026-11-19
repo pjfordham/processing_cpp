@@ -341,8 +341,11 @@ public:
            transforms.push_back(local_transform.glm_data());
          }
          if (sub_batch_stroke) {
-            textures.push_back(gl::texture_t::blank());
-            transforms.push_back(local_transform.glm_data());
+             if (kind == POINTS) {
+                 uses_circles = true;
+             }
+             textures.push_back(gl::texture_t::blank());
+             transforms.push_back(local_transform.glm_data());
          }
       }
    }
@@ -997,25 +1000,27 @@ public:
          }
       } else {
         /* From accumulateTransforms...
-           if (sub_batch_fill) {
-            if ( style.texture_enabled && style.texture_enabled.value()) {
-               if (style.texture_img.value() != PImage::circle()) {
-                  uses_textures = true;
-                  textures.push_back(style.texture_img.value().getTextureID());
-               } else {
-                  uses_circles = true;
-               }
-            } else {
-               textures.push_back(gl::texture_t::blank());
-            }
-            transforms.push_back(local_transform.glm_data());
-         }
-         if (sub_batch_stroke) {
-            textures.push_back(gl::texture_t::blank());
-            transforms.push_back(local_transform.glm_data());
-            }*/
-        // IMPORT CODE FROM flatten(..)
-
+         if (sub_batch_fill) {
+          if ( style.texture_enabled && style.texture_enabled.value()) {
+             if (style.texture_img.value() != PImage::circle()) {
+                uses_textures = true;
+                textures.push_back(style.texture_img.value().getTextureID());
+             } else {
+                uses_circles = true;
+             }
+          } else {
+             textures.push_back(gl::texture_t::blank());
+          }
+          transforms.push_back(local_transform.glm_data());
+       }
+       if (sub_batch_stroke) {
+          textures.push_back(gl::texture_t::blank());
+          transforms.push_back(local_transform.glm_data());
+          }*/
+        /* Stiil use individual sub_batch for each shape but set texture and
+         * transform explicitly. with a new version of add_vertex? or maybe flag
+         * in new constructor to ignore what's specified by add vertex, maybe -1
+         * means derive yourself and real value means use this. */
       }
 
       // Rewrite without subbatches, we should flatten like we used to here
@@ -1027,25 +1032,9 @@ public:
                                       textures,
                                       uses_textures, uses_circles);
       clearSubBatches();
-   }
-
-   void flatten(gl::batch_t_ptr batch, const flat_style_t &parent_style)  {
-      DEBUG_METHOD();
-
-      // Resolve accumulated style and transforms
-      flat_style_t local_style = style.resolve_style( parent_style );
-
-      // have stack of GLM matricies for transforms
-      if ( kind == GROUP ) {
-         for (auto &&child : children) {
-            // For all child shapes pass down transform and style from this shape
-            // and continue to flatten.
-            child.impl->flatten(batch, local_style);
-         }
-      } else {
-         bool circle = kind == POINTS || (local_style.texture_enabled && local_style.texture_img == PImage::circle());
-         sub_batch_fill.emplace( *batch, ci, circle );
-         auto &sb = sub_batch_fill.value();
+      }
+      
+      void _flatten(gl::batch_t::sub_batch_t &sb, gl::batch_t_ptr batch, flat_style_t local_style)  {
 
          std::vector<int> contour; // TODO: reserve amount for this.
          std::vector<vInfoExtra> extras;
@@ -1219,6 +1208,27 @@ public:
          if (stroke) {
             draw_stroke( batch, local_style.stroke_end_cap, contour, extras, idx );
          }
+ }
+
+ void flatten(gl::batch_t_ptr batch, const flat_style_t &parent_style)  {
+      DEBUG_METHOD();
+
+      // Resolve accumulated style and transforms
+      flat_style_t local_style = style.resolve_style( parent_style );
+
+      // have stack of GLM matricies for transforms
+      if ( kind == GROUP ) {
+         for (auto &&child : children) {
+            // For all child shapes pass down transform and style from this shape
+            // and continue to flatten.
+            child.impl->flatten(batch, local_style);
+         }
+      } else {
+         bool circle = kind == POINTS || (local_style.texture_enabled && local_style.texture_img == PImage::circle());
+         sub_batch_fill.emplace( *batch, ci, circle );
+         auto &sb = sub_batch_fill.value();
+
+         _flatten(sb, batch, local_style);
       }
       dirty = false;
    }
