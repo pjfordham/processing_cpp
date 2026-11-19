@@ -423,14 +423,14 @@ namespace gl {
               (vaos.back()->textures == MaxTextureImageUnits) ) {
            // TEXTURE SHARING ISN'T WORKING ever batch has 15 textures, every batch should only have 1 for Esfera?
            // fmt::print("{}", (vaos.size() == 0));
-            if (vaos.size() != 0) {
-               fmt::print(" {} {} {} {}\n",
-                          (vaos.back()->vertices.size() + count > 65536),
-                          (vaos.back()->transforms == MaxTransformsPerBatch),
-                          (vaos.back()->textures == MaxTextureImageUnits), vaos.back()->textures);
-            } else {
-                //fmt::print("\n");
-            }
+            // if (vaos.size() != 0) {
+            //    fmt::print(" {} {} {} {}\n",
+            //               (vaos.back()->vertices.size() + count > 65536),
+            //               (vaos.back()->transforms == MaxTransformsPerBatch),
+            //               (vaos.back()->textures == MaxTextureImageUnits), vaos.back()->textures);
+            // } else {
+            //     //fmt::print("\n");
+            // }
             vaos.emplace_back(std::make_unique<VAO_t>());
          }
       }
