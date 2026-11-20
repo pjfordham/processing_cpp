@@ -96,7 +96,7 @@ static PShape buildPShapeFromFace(FT_Face face, char c) {
    }
    FT_Outline outline = face->glyph->outline;
    FT_Vector* points = outline.points;
-   char* tags = outline.tags;
+   unsigned char* tags = outline.tags;
    int numPoints = outline.n_points;
 
    // Create our PShape for this glyph

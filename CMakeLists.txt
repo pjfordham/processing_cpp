@@ -28,7 +28,7 @@ set(FMT_DOC OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
   fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG        10.2.0
+  GIT_TAG        12.2.1
 )
 FetchContent_MakeAvailable(fmt)
 
@@ -41,7 +41,7 @@ set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
   freetype
   GIT_REPOSITORY https://github.com/freetype/freetype.git
-  GIT_TAG        VER-2-13-2
+  GIT_TAG        VER-2-15-0
 )
 FetchContent_MakeAvailable(freetype)
 
@@ -133,7 +133,7 @@ set(LIBXML2_WITH_ZLIB OFF CACHE BOOL "" FORCE)
 set(LIBXML2_WITH_PROGRAMS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
   libxml2
-  GIT_REPOSITORY https://gitlab.gnome.org/GNOME/libxml2.git
+  GIT_REPOSITORY https://github.com/GNOME/libxml2.git
   GIT_TAG v2.11.4
 )
 FetchContent_MakeAvailable(libxml2)

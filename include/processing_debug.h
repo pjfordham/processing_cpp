@@ -2,7 +2,9 @@
 #define PROCESSING_DEBUG_H
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 #include <type_traits>
+
 const char *const KNRM="\x1B[0m";
 const char *const KRED="\x1B[1;31m";
 const char *const KGRN="\x1B[1;32m";

@@ -1,11 +1,11 @@
 #ifndef PROCESSING_PSHAPE_H
 #define PROCESSING_PSHAPE_H
 
+#include "processing_java_compatability.h"
 #include "processing_math.h"
 #include "processing_color.h"
 #include "processing_enum.h"
 #include "processing_pimage.h"
-#include "processing_java_compatability.h"
 
 #include <vector>
 #include <string_view>
