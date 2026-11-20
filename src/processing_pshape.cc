@@ -534,6 +534,9 @@ public:
          curve_vertices.clear();
       }
 
+      if (vertices.size() == 0)
+         return;
+
       if (kind == POLYGON || kind == LINES)
          type = type_;
       else
@@ -873,11 +876,13 @@ public:
             child.flatten(batch, currentTransform, flatten_transforms);
          }
       } else {
-         if ( isFilled() )
-            draw_fill(batch, currentTransform, flatten_transforms);
-         // draw_normals(batch, currentTransform, flatten_transforms);
-         if ( isStroked() )
-            draw_stroke(batch, currentTransform, flatten_transforms);
+         if (vertices.size() > 0) {
+            if ( isFilled() )
+               draw_fill(batch, currentTransform, flatten_transforms);
+            // draw_normals(batch, currentTransform, flatten_transforms);
+            if ( isStroked() )
+               draw_stroke(batch, currentTransform, flatten_transforms);
+         }
       }
       dirty = false;
    }
@@ -1088,7 +1093,7 @@ void PShapeImpl::populateIndices() {
    if (indices.size() != 0)
       return;
 
-   if (kind == GROUP) return;
+   if (kind == GROUP || kind == LINES || kind == POINTS) return;
 
    if (vertices.size() == 0) return;
 
@@ -1178,8 +1183,6 @@ void PShapeImpl::populateIndices() {
          indices.push_back( i+1 );
          indices.push_back( i+2 );
       }
-   } else if (kind == POINTS || kind == LINES) {
-      // no indices required for these types.
    } else {
       abort();
    }
@@ -1331,76 +1334,7 @@ PShapeImpl drawRoundLine(PVector p1, PVector p2, float weight1, float weight2, c
    return shape;
 }
 
-PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
 
-   PShapeImpl shape;
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
-   PVector normal1 = (p2 - p1).normal();
-   normal1.normalize();
-   normal1.mult(weight1/2.0F);
-   PVector normal2 = (p2 - p1).normal();
-   normal2.normalize();
-   normal2.mult(weight2/2.0F);
-
-   shape.noStroke();
-   shape.normal( 0,0,0 );
-
-   shape.fill(color1);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color1.r, color1.g, color1.b );
-
-   shape.vertex(p1 + normal1);
-   shape.vertex(p1 - normal1);
-
-   shape.fill(color2);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color2.r, color2.g, color2.b );
-   shape.vertex(p2 - normal2);
-   shape.vertex(p2 + normal2);
-
-   shape.endShape(CLOSE);
-   return shape;
-}
-
-PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
-
-   PShapeImpl shape;
-   shape.beginShape(CONVEX_POLYGON);
-   shape.transform( transform );
-   PVector normal1 = (p2 - p1).normal();
-   normal1.normalize();
-   normal1.mult(weight1/2.0F);
-
-   PVector normal2 = (p2 - p1).normal();
-   normal2.normalize();
-   normal2.mult(weight2/2.0F);
-
-   PVector end_offset1 = (p2 - p1);
-   end_offset1.normalize();
-   end_offset1.mult(weight1/2.0F);
-   PVector end_offset2 = (p2 - p1);
-   end_offset2.normalize();
-   end_offset2.mult(weight2/2.0F);
-
-   shape.noStroke();
-   shape.normal( 0,0,0 );
-
-   shape.fill(color1);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color1.r, color1.g, color1.b );
-   shape.vertex(p1 + normal1 - end_offset1);
-   shape.vertex(p1 - normal1 - end_offset1);
-
-   shape.fill(color2);
-   shape.ambient( 0,0,0 );
-   shape.emissive( color2.r, color2.g, color2.b );
-   shape.vertex(p2 - normal2 + end_offset2);
-   shape.vertex(p2 + normal2 + end_offset2);
-
-   shape.endShape(CLOSE);
-   return shape;
-}
 
 PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, color color, const PMatrix &transform) {
    PShape shape = createShape();;
@@ -1420,18 +1354,19 @@ PShape drawUntexturedFilledEllipse(float x, float y, float width, float height, 
    return shape;
 }
 
-void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float weight2, color color1, color color2 ) {
+void _line(PShapeImpl &triangles, const glm::vec3 &p1, const glm::vec3 &p2, float weight1, float weight2, color color1, color color2, const glm::vec3 &pNormal = glm::vec3{0,0,1}  ) {
 
-   PVector normal1 = (p2 - p1).normal();
-   normal1.normalize();
-   normal1.mult(weight1/2.0F);
+   glm::vec3 normal1 = glm::cross((p2 - p1),pNormal);
+   normal1 = glm::normalize(normal1);
+   normal1 *= weight1/2.0;
 
-   PVector normal2 = (p2 - p1).normal();
-   normal2.normalize();
-   normal2.mult(weight2/2.0F);
+   glm::vec3 normal2 = glm::cross((p2 - p1),pNormal);
+   normal2 = glm::normalize(normal2);
+   normal2 *= weight2/2.0;
 
    unsigned short i = triangles.getCurrentIndex();
-   triangles.normal( 0,0,0 );
+
+   triangles.normal( pNormal );
    triangles.fill( color1 );
    triangles.ambient( 0,0,0 );
    triangles.emissive( color1.r,color1.g, color1.b );
@@ -1452,17 +1387,111 @@ void _line(PShapeImpl &triangles, PVector p1, PVector p2, float weight1, float w
    triangles.index( i + 3 );
 }
 
-PShapeImpl drawTriangleNormal(const gl::vertex_t &p0, const gl::vertex_t &p1, const gl::vertex_t &p2, const PMatrix &transform) {
+PShapeImpl drawLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+
    PShapeImpl shape;
    shape.beginShape(TRIANGLES);
-   shape.fill(RED);
    shape.transform( transform );
+   shape.noStroke();
+   _line(shape, p1, p2, weight1, weight2, color1, color2);
+   shape.endShape(CLOSE);
+   return shape;
+}
+
+PShapeImpl drawCappedLine(PVector p1, PVector p2, float weight1, float weight2, color color1, color color2, const PMatrix &transform ) {
+
+   PVector end_offset1 = (p2 - p1);
+   end_offset1.normalize();
+   end_offset1.mult(weight1/2.0);
+   PVector end_offset2 = (p2 - p1);
+   end_offset2.normalize();
+   end_offset2.mult(weight2/2.0);
+
+   PShapeImpl shape;
+   shape.beginShape(TRIANGLES);
+   shape.transform( transform );
+   shape.noStroke();
+   _line(shape, p1 - end_offset1, p2 + end_offset2, weight1, weight2, color1, color2);
+   shape.endShape(CLOSE);
+   return shape;
+}
+
+ PShapeImpl drawTriangleStrip(int points, const gl::vertex_t *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
+    PShapeImpl triangles;
+   int _line_calls = 2 * ( points-2 ) + 1;
+   triangles.reserve( 4 * _line_calls, 6 * _line_calls);
+    triangles.beginShape(TRIANGLES);
+    triangles.transform( transform );
+   triangles.noStroke();
+    _line(triangles, p[0].position, p[1].position,
+          extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
+
+   for (int i = 2; i < points; ++i ) {
+      const glm::vec3 &p0 = p[i-2].position;
+      const glm::vec3 &p1 = p[i-1].position;
+      const glm::vec3 &p2 = p[i+0].position;
+      float w0 = extras[i-2].weight;
+      float w1 = extras[i-1].weight;
+      float w2 = extras[i+0].weight;
+      color c0 = extras[i-2].stroke;
+      color c1 = extras[i-1].stroke;
+      color c2 = extras[i+0].stroke;
+
+      _line(triangles, p1, p2, w1, w2, c1, c2);
+      _line(triangles, p2, p0, w1, w0, c1, c0);
+    }
+
+   triangles.endShape();
+   return triangles;
+}
+
+PShapeImpl drawQuadStrip(int points, const gl::vertex_t *p, const PShapeImpl::vInfoExtra *extras, const PMatrix &transform ) {
+   // TODO: Fix mitred lines to somehow work in 3D
+   PShapeImpl triangles;
+   int _line_calls = 3 * ( (points/2) -2 ) + 1;
+   triangles.reserve( 4 * _line_calls, 6 * _line_calls);
+   triangles.beginShape(TRIANGLES);
+   triangles.transform( transform );
+   triangles.noStroke();
+
+   _line(triangles, p[0].position, p[1].position,
+         extras[0].weight, extras[1].weight, extras[0].stroke, extras[1].stroke);
+
+   for (int i = 2; i < points; i+=2 ) {
+      const glm::vec3 &p0 = p[i-2].position;
+      const glm::vec3 &p1 = p[i-1].position;
+      const glm::vec3 &p2 = p[i+0].position;
+      const glm::vec3 &p3 = p[i+1].position;
+      float w0 = extras[i-2].weight;
+      float w1 = extras[i-1].weight;
+      float w2 = extras[i+0].weight;
+      float w3 = extras[i+1].weight;
+      color c0 = extras[i-2].stroke;
+      color c1 = extras[i-1].stroke;
+      color c2 = extras[i+0].stroke;
+      color c3 = extras[i+1].stroke;
+
+      _line(triangles, p1, p3, w1, w3, c1, c3 );
+      _line(triangles, p3, p2, w3, w2, c3, c2 );
+      _line(triangles, p2, p0, w2, w0, c2, c0 );
+   }
+
+    triangles.endShape();
+    return triangles;
+}
+
+PShapeImpl drawTriangleNormal(const gl::vertex_t &p0, const gl::vertex_t &p1, const gl::vertex_t &p2, const PMatrix &transform) {
+   PShapeImpl triangles;
+   triangles.beginShape(TRIANGLES);
+   triangles.fill(RED);
+   triangles.transform( transform );
+   triangles.noStroke();
    PVector pos = (p0.position + p1.position + p2.position) / 3;
    PVector n = ((p0.normal + p1.normal + p2.normal) / 3).normalize();
    float length = PVector{p0.position - p1.position}.mag() / 10.0f;
-   _line(shape, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
-   shape.endShape();
-   return shape;
+   _line(triangles, pos, pos + length * n, length/10.0f,length/10.0f,RED,RED);
+   triangles.endShape();
+   return triangles;
 }
 
 void PShapeImpl::draw_normals(gl::batch_t_ptr batch, const PMatrix &transform, bool flatten_transforms) const {
@@ -1510,10 +1539,14 @@ void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bo
    }
    case TRIANGLES_NOSTROKE:
    case TRIANGLE_STRIP_NOSTROKE:
+   case GROUP:
       break;
    case TRIANGLES:
    {
+      if (indices.empty())
+         abort();
       // TODO: Fix mitred lines to somehow work in 3D
+      // TODO: Move to drawLinePoly that can walk indices
       PShapeImpl shape;
       shape.reserve(4*vertices.size(), 6 * vertices.size());
       shape.beginShape(TRIANGLES_NOSTROKE);
@@ -1538,23 +1571,29 @@ void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bo
    }
    case LINES:
    {
-      // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(2*vertices.size(), 3 * vertices.size());
-      shape.beginShape(TRIANGLES_NOSTROKE);
       for (int i = 0; i < vertices.size(); i+=2 ) {
-         PVector p0 = vertices[i].position;
-         PVector p1 = vertices[i+1].position;
-         float w0 = override_weight.value_or(extras[i].weight);
-         float w1 = override_weight.value_or(extras[i+1].weight);
-         color c0 = override_color.value_or(extras[i].stroke);
-         color c1 = override_color.value_or(extras[i+1].stroke);
-         _line(shape, p0, p1, w0, w1, c0, c1 );
+         switch(style.line_end_cap) {
+         case ROUND:
+            drawRoundLine( vertices[i].position, vertices[i+1].position,
+                           extras[i].weight, extras[i+1].weight,
+                           extras[i].stroke, extras[i+1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            break;
+         case PROJECT:
+            drawCappedLine( vertices[i].position, vertices[i+1].position,
+                            extras[i].weight, extras[i+1].weight,
+                            extras[i].stroke, extras[i+1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            break;
+         case SQUARE:
+            drawLine( vertices[i].position, vertices[i+1].position,
+                      extras[i].weight, extras[i+1].weight,
+                      extras[i].stroke, extras[i+1].stroke, shape_matrix ).draw_fill( batch, transform, flatten_transforms );
+            break;
+         default:
+            abort();
+         }
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms );
-      break;
-   }
+     break;
+  }
    case POLYGON:
    case CONVEX_POLYGON:
    {
@@ -1578,120 +1617,30 @@ void PShapeImpl::draw_stroke(gl::batch_t_ptr batch, const PMatrix& transform, bo
                }
             }
          }
-      } else if (vertices.size() == 2) {
-         switch(style.line_end_cap) {
-         case ROUND:
-            drawRoundLine( vertices[0].position, vertices[1].position,
-                           override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-                           override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-            break;
-         case PROJECT:
-            drawCappedLine( vertices[0].position, vertices[1].position,
-                            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-                            override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-            break;
-         case SQUARE:
-            drawLine( vertices[0].position, vertices[1].position,
-                      override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-                      override_color.value_or(extras[0].stroke), override_color.value_or(extras[1].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-            break;
-         default:
-            abort();
-         }
-      } else if (vertices.size() == 1) {
-         drawUntexturedFilledEllipse(
-            vertices[0].position.x, vertices[0].position.y,
-            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[0].weight),
-            override_color.value_or(extras[0].stroke), shape_matrix ).draw_fill( batch, transform, flatten_transforms );
-      }
+      } else {
+          // Other cases should have been converted to other primitives.
+      abort();
+        }
       break;
    }
    case QUAD:
    case QUADS:
    {
-      // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES_NOSTROKE);
       for (int i = 0; i < vertices.size(); i+=4 ) {
-         PVector p0 = vertices[i].position;
-         PVector p1 = vertices[i+1].position;
-         PVector p2 = vertices[i+2].position;
-         PVector p3 = vertices[i+3].position;
-         float w0 = override_weight.value_or(extras[i].weight);
-         float w1 = override_weight.value_or(extras[i+1].weight);
-         float w2 = override_weight.value_or(extras[i+2].weight);
-         float w3 = override_weight.value_or(extras[i+3].weight);
-         color c0 = override_color.value_or(extras[i].stroke);
-         color c1 = override_color.value_or(extras[i+1].stroke);
-         color c2 = override_color.value_or(extras[i+2].stroke);
-         color c3 = override_color.value_or(extras[i+3].stroke);
-
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p2, w1, w2, c1, c2 );
-         _line(shape, p2, p3, w2, w3, c2, c3 );
-         _line(shape, p3, p0, w3, w0, c3, c0 );
+          drawLinePoly(4, vertices.data()+i, extras.data()+i, true, shape_matrix,
+           override_color.value_or(extras[i].stroke),override_weight.value_or(extras[i].weight))
+             .draw_fill(batch, transform, flatten_transforms);
       }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
       break;
    }
    case QUAD_STRIP:
-   {
-      // TODO: Fix mitred lines to somehow work in 3D
-      PShapeImpl shape;
-      shape.reserve(4*vertices.size(), 6 * vertices.size());
-      shape.beginShape(TRIANGLES_NOSTROKE);
-      for (int i = 0; i + 3 < vertices.size(); i+=2 ) {
-         PVector p0 = vertices[i+0].position;
-         PVector p1 = vertices[i+1].position;
-         PVector p2 = vertices[i+2].position;
-         PVector p3 = vertices[i+3].position;
-         float w0 = override_weight.value_or(extras[i+0].weight);
-         float w1 = override_weight.value_or(extras[i+1].weight);
-         float w2 = override_weight.value_or(extras[i+2].weight);
-         float w3 = override_weight.value_or(extras[i+3].weight);
-         color c0 = override_color.value_or(extras[i+0].stroke);
-         color c1 = override_color.value_or(extras[i+1].stroke);
-         color c2 = override_color.value_or(extras[i+2].stroke);
-         color c3 = override_color.value_or(extras[i+3].stroke);
-
-         _line(shape, p0, p1, w0, w1, c0, c1 );
-         _line(shape, p1, p3, w1, w3, c1, c3 );
-         _line(shape, p3, p2, w3, w2, c3, c2 );
-         _line(shape, p2, p0, w2, w0, c2, c0 );
-      }
-      shape.endShape();
-      shape.draw_fill( batch, transform, flatten_transforms);
-      break;
-   }
+     drawQuadStrip(vertices.size(), vertices.data(), extras.data(),
+                   shape_matrix).draw_fill(batch, transform, flatten_transforms);
+     break;
    case TRIANGLE_STRIP:
-   {
-      PShapeImpl triangles;
-      triangles.beginShape(TRIANGLES_NOSTROKE);
-      triangles.transform( shape_matrix );
-      _line(triangles,
-            vertices[0].position, vertices[1].position,
-            override_weight.value_or(extras[0].weight), override_weight.value_or(extras[1].weight),
-            override_color.value_or(extras[0].stroke),  override_color.value_or(extras[1].stroke));
-      for (int i=2;i<vertices.size();++i) {
-         PVector p0 = vertices[i-2].position;
-         PVector p1 = vertices[i-1].position;
-         PVector p2 = vertices[i-0].position;
-         float w0 = override_weight.value_or(extras[i-2].weight);
-         float w1 = override_weight.value_or(extras[i-1].weight);
-         float w2 = override_weight.value_or(extras[i-0].weight);
-         color c0 = override_color.value_or(extras[i-2].stroke);
-         color c1 = override_color.value_or(extras[i-1].stroke);
-         color c2 = override_color.value_or(extras[i-0].stroke);
-
-         _line(triangles, p1, p2, w1, w2, c1, c2);
-         _line(triangles, p2, p0, w2, w0, c2, c0);
-      }
-      triangles.endShape();
-      triangles.draw_fill( batch, transform, flatten_transforms );
+       drawTriangleStrip(vertices.size(), vertices.data(), extras.data(),
+                         shape_matrix ).draw_fill( batch, transform, flatten_transforms );
       break;
-   }
    case TRIANGLE_FAN:
    {
       // TODO: Proper 3D miters for triangle fan edges
