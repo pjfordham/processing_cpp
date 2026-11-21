@@ -86,6 +86,25 @@ namespace gl {
       if (aaFactor == 1)
          aaMode = SSAA;
 
+      auto colorBufferId = renderThread.enqueue( [&] {
+
+      if (aaMode == MSAA) {
+         if (!GL_EXT_framebuffer_multisample) {
+            fmt::print(stderr, "MSAA not supported by driver.\n");
+            abort();
+         }
+         // Clamp the requested MSAA sample count to what the driver actually
+         // supports.
+         GLint maxSamples = 0;
+         glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+         if (aaFactor > maxSamples) {
+            fmt::print(stderr,
+               "Requested MSAA factor {} exceeds GL_MAX_SAMPLES={}, "
+               "clamping to {}\n", aaFactor, maxSamples, maxSamples);
+            aaFactor = maxSamples;
+         }
+      }
+
       if (aaMode == SSAA) {
          width = aaFactor * width_;
          height = aaFactor * height_;
@@ -96,15 +115,8 @@ namespace gl {
          abort();
       }
 
-      auto colorBufferId = renderThread.enqueue( [&] {
-
       glGenFramebuffers(1, &id);
       bind();
-
-      if (aaMode == MSAA && !GL_EXT_framebuffer_multisample) {
-         // Multisample extension is not supported
-         abort();
-      }
 
       glGenRenderbuffers(1, &depthBufferID);
       glBindRenderbuffer(GL_RENDERBUFFER, depthBufferID);
